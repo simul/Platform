@@ -69,6 +69,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	targetsAndViewport.textureTargets[0].subresource = crossplatform::DefaultSubresourceLayers;
 	targetsAndViewport.depthTarget.texture = buffer_depth_texture;
 	targetsAndViewport.depthTarget.subresource = crossplatform::DefaultSubresourceLayers;
+	targetsAndViewport.depthTarget.subresource.aspectMask=crossplatform::TextureAspectFlags::DEPTH;
 	targetsAndViewport.rtFormats[0] = col12Texture->pixelFormat;
 	targetsAndViewport.m_dt = dsView;
 	if (buffer_depth_texture && buffer_depth_texture->IsValid())

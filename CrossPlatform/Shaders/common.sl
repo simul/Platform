@@ -57,14 +57,18 @@
 	#define SIMUL_TEXTURE_REGISTER(tex_num) : register(t##tex_num)
 	#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
+	#define SIMUL_RESOURCE_GROUP(group_num) , resource_group(g##group_num)
 	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num) : register(u##rwtex_num)
 	#define SIMUL_STATE_REGISTER(snum) : register(s##snum)
 
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) cbuffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };
-	//
+
 	#define PLATFORM_NAMED_CONSTANT_BUFFER(struct_name,instance_name,buff_num) NamedConstantBuffer<struct_name> instance_name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define PLATFORM_NAMED_CONSTANT_BUFFER_END };
+
+	#define PLATFORM_GROUPED_CONSTANT_BUFFER(name,buff_num,group_num) cbuffer name SIMUL_BUFFER_REGISTER(buff_num) SIMUL_RESOURCE_GROUP(group_num) {
+	#define PLATFORM_GROUPED_CONSTANT_BUFFER_END };
 
 	#define SIMUL_TARGET_OUTPUT : SV_TARGET
 	#define SIMUL_RENDERTARGET_OUTPUT(n) : SV_TARGET##n

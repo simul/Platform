@@ -75,17 +75,17 @@ shader vertexOutput VS_Solid_PosOnly(vertexInputP IN)
 {
 	vertexOutput OUT;
 	vec4 opos		= vec4(IN.position.xyz, 1.0);
-	OUT.wpos		= mul(world, opos).xyz;
+	OUT.wpos		= mul(model, opos).xyz;
 	OUT.view		= normalize(OUT.wpos.xyz - viewPosition);
 	OUT.clip_pos	= mul(opos, worldViewProj);
 	OUT.texCoords0	= vec2(0, 0);
 	OUT.texCoords1	= vec2(0, 0);
 #ifdef SFX_OPENGL
-	OUT.normal.xyz	= mul(IN.position.xyz, mat3(world));
-	OUT.tangent.xyz = mul(vec3(1.0, 0.0, 0.0), mat3(world));
+	OUT.normal.xyz	= mul(IN.position.xyz, mat3(model));
+	OUT.tangent.xyz = mul(vec3(1.0, 0.0, 0.0), mat3(model));
 #else
-	OUT.normal.xyz	= mul(vec4(IN.position.xyz, 0.0), world).xyz;
-	OUT.tangent		= mul(vec4(1.0, 0.0, 0.0, 0.0), world).xyz;
+	OUT.normal.xyz	= mul(vec4(IN.position.xyz, 0.0), model).xyz;
+	OUT.tangent		= mul(vec4(1.0, 0.0, 0.0, 0.0), model).xyz;
 #endif
 	OUT.hPosition	= OUT.clip_pos;
 	return OUT;
@@ -95,7 +95,7 @@ shader vertexOutput VS_Solid(vertexInput IN)
 {
 	vertexOutput OUT;
 	vec4 opos			= vec4(IN.position.xyz, 1.0);
-	vec4 wpos			= mul(world, opos);
+	vec4 wpos			= mul(model, opos);
 	OUT.view			= normalize(wpos.xyz - viewPosition);
 	vec4 viewspace_pos	= mul(view, vec4(wpos.xyz, 1.0));
 	OUT.clip_pos		= mul(proj, vec4(viewspace_pos.xyz, 1.0));
@@ -103,11 +103,11 @@ shader vertexOutput VS_Solid(vertexInput IN)
 	OUT.texCoords0		= IN.texCoords;
 	OUT.texCoords1		= IN.texCoords;
 #ifdef SFX_OPENGL
-	OUT.normal.xyz		= mul(IN.normal, mat3(world));
-	OUT.tangent.xyz		= mul(IN.tangent.xyz, mat3(world));
+	OUT.normal.xyz		= mul(IN.normal, mat3(model));
+	OUT.tangent.xyz		= mul(IN.tangent.xyz, mat3(model));
 #else
-	OUT.normal			= normalize(mul(vec4(IN.normal, 0.0), world).xyz);
-	OUT.tangent			= normalize(mul(vec4(IN.tangent.xyz, 0.0), world).xyz);
+	OUT.normal			= normalize(mul(vec4(IN.normal, 0.0), model).xyz);
+	OUT.tangent			= normalize(mul(vec4(IN.tangent.xyz, 0.0), model).xyz);
 #endif
 	OUT.hPosition		= OUT.clip_pos;
 	return OUT;
@@ -254,7 +254,7 @@ vec4 Solid(vertexOutput IN)
 	vec2 screenPos	=IN.clip_pos.xy/IN.clip_pos.w*vec2(0.5,-0.5)+vec2(0.5,0.5);
 	vec3 tangentx		= normalize(IN.tangent);
 	vec3 tangenty		= normalize(cross(IN.normal, tangentx));
-	mat3 TangentMatrix	= transpose(mat3(tangentx, tangenty, normalize(IN.normal))); //transforms world=>tangent space
+	mat3 TangentMatrix	= transpose(mat3(tangentx, tangenty, normalize(IN.normal))); //transforms model=>tangent space
 
 	vec3 normalLookup	= normalTexture.SampleLevel(wrapSamplerState, IN.texCoords0.xy * normalTexCoordsScalar_R,0).xyz;
 	normalLookup		= 2.0 * (normalLookup.rgb - vec3(0.5, 0.5, 0.5));
@@ -331,7 +331,7 @@ vec4 DebugNormal(vertexOutput IN, int swizzle_mode)
 {
 	vec3 tangentx = normalize(IN.tangent);
 	vec3 tangenty = normalize(cross(IN.normal, tangentx));
-	mat3 TangentMatrix = mat3(tangentx, normalize(tangenty), normalize(IN.normal)); //transforms world=>tangent space
+	mat3 TangentMatrix = mat3(tangentx, normalize(tangenty), normalize(IN.normal)); //transforms model=>tangent space
 
 	vec3 normalLookup	= vec3(0,0,1.0);//normalTexture.Sample(wrapSamplerState, IN.texCoords0.xy * normalTexCoordsScalar_R).bgr;
 	normalLookup		= 2.0 * (normalLookup.rgb - vec3(0.5, 0.5, 0.5));
@@ -413,7 +413,7 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 // Now we calculate the atmospheric effects:
 	vec4 loss;
 	vec3 add;
-// We need clip_pos and view direction (i.e. the direction in world xyz to the pixel from the camera).
+// We need clip_pos and view direction (i.e. the direction in model xyz to the pixel from the camera).
 	AtmosphericsAndCloudOcclusion(loss,add
 				,IN.clip_pos
 				,IN.view

@@ -417,7 +417,7 @@ void Effect::DeclareStruct(const string &name,const Struct &ts,const string &ori
 	declarations[name]=rs;
 }
 
-void Effect::DeclareConstantBuffer(const std::string &name, int slot, const Struct &ts,const string &original)
+void Effect::DeclareConstantBuffer(const std::string &name, int slot, int group_num, const Struct &ts, const string &original)
 {
 	ConstantBuffer *cb = new ConstantBuffer;
 	m_constantBuffers[name] = cb;
@@ -425,6 +425,9 @@ void Effect::DeclareConstantBuffer(const std::string &name, int slot, const Stru
 	cb->original=original;
 	cb->declarationType=DeclarationType::CONSTANT_BUFFER;
 	cb->slot = slot;
+	cb->group_num = group_num;
+	if(group_num<0)
+		cb->group_num=1;
 	cb->name=name;
 	cb->structureType = name;
 	declarations[name]=cb;
@@ -1803,13 +1806,14 @@ NamedConstantBuffer* Effect::DeclareNamedConstantBuffer(const string &name,int s
 	return t;
 }
 
-DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType shaderResourceType,int slot,int space,const string &structureType,const string &original)
+DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType shaderResourceType,int slot,int group,int space,const string &structureType,const string &original)
 {
-	DeclaredTexture* t	  = new DeclaredTexture();
-	t->structureType		= structureType;
-	t->original			 = original;
-	t->name				 = name;
-	t->shaderResourceType	= shaderResourceType;
+	DeclaredTexture* t		= new DeclaredTexture();
+	t->structureType		=structureType;
+	t->original				=original;
+	t->name					=name;
+	t->shaderResourceType	=shaderResourceType;
+	t->group_num			=group;
 
 	bool write = IsRW(shaderResourceType);
 	bool rw = IsRW(shaderResourceType);
@@ -1917,7 +1921,7 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 	declarations[name] = (t);
 	return t;
 }
-SamplerState *Effect::DeclareSamplerState(const string &name,int register_number,const SamplerState &templateSS)
+SamplerState *Effect::DeclareSamplerState(const string &name, int register_number, int group_number, const SamplerState &templateSS)
 {
 	SamplerState *s=new SamplerState();
 	*s= templateSS;
@@ -1925,7 +1929,8 @@ SamplerState *Effect::DeclareSamplerState(const string &name,int register_number
 	{
 		register_number=m_max_sampler_register_number+1;
 	}
-	s->register_number=register_number;
+	s->register_number = register_number;
+	s->group_num = group_number;
 	declarations[name]=s;
 	m_max_sampler_register_number=std::max(register_number,m_max_sampler_register_number);
 	return s;
@@ -2057,6 +2062,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					else
 						temp_slot=GenerateTextureSlot(td->slot);
 					find_and_replace(dec, "{slot}", ToString(temp_slot));
+					find_and_replace(dec, "{group}", ToString(td->group_num));
 					find_and_replace(dec, "{content}", td->structureType + " " + td->name + "[];");
 					ssbouid++;
 				
@@ -2139,6 +2145,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 						slot++;
 					slot=GenerateTextureWriteSlot(slot);
 					find_and_replace(str, "{slot}", ToString(slot));
+					find_and_replace(str, "{group}", ToString(td->group_num));
 
 					if (!sfxConfig.toImageFormat.empty())
 					{
@@ -2178,6 +2185,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 						find_and_replace(str, "{type}", CombinedTypeString(td->type,td->structureType));
 						find_and_replace(str, "{name}", td->name);
 						find_and_replace(str, "{slot}", ToString(GenerateTextureSlot(td->slot)));
+						find_and_replace(str, "{group}", ToString(td->group_num));
 						dec = str;
 					}
 				}
@@ -2377,12 +2385,13 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				if (s->slot == -1)
 				{
 					// Let the compiler decide
-					find_and_replace(str, "layout(binding = {slot})", "");
+					find_and_replace(str, "binding = {slot}", "");
 				}
 				else
 				{
 					find_and_replace(str, "{slot}", ToString(GenerateConstantBufferSlot(s->slot)));
 				}
+				find_and_replace(str, "{group}", ToString(s->group_num));
 				os << str.c_str() << endl;
 			}
 			break;
@@ -2431,6 +2440,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				find_and_replace(str, "{members}", members);
 				find_and_replace(str, "{name}", s->structureType);
 				find_and_replace(str, "{slot}", ToString(c->slot));
+				find_and_replace(str, "{group}", ToString(c->group_num));
 				find_and_replace(str, "{instance_name}", c->instance_name);
 				os << str.c_str() << endl;
 			}
@@ -2502,7 +2512,8 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			{
 				string thisDeclaration=sfxConfig.samplerDeclaration;
 				find_and_replace(thisDeclaration,"{name}",s->name);
-				find_and_replace(thisDeclaration,"{slot}",ToString(gEffect->GenerateSamplerSlot(s->register_number)));
+				find_and_replace(thisDeclaration, "{slot}", ToString(gEffect->GenerateSamplerSlot(s->register_number)));
+				find_and_replace(thisDeclaration, "{group}", ToString(s->group_num));
 				find_and_replace(thisDeclaration,"{type}","sampler");
 				theShader<<thisDeclaration<<"\n";
 			}
@@ -2725,7 +2736,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 						find_and_replace(m,"{type}",j.type);
 						find_and_replace(m,"{name}",j.name);
 						find_and_replace(m,"{semantic}",j.semantic);
-						find_and_replace(m,"{slot}",ToString(num++));
+						find_and_replace(m, "{slot}", ToString(num++));
 						auto s=sfxConfig.vertexSemantics.find(j.semantic);
 						if(shaderInstance->shaderType==sfx::ShaderType::VERTEX_SHADER&&s!=sfxConfig.vertexSemantics.end())
 						{

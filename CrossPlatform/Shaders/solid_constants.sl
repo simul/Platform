@@ -2,6 +2,11 @@
 #ifndef SOLID_CONSTANTS_SL
 #define SOLID_CONSTANTS_SL
 
+SIMUL_CONSTANT_BUFFER(PerObjectConstants, 11)
+uniform mat4 model;
+vec4 lightmapScaleOffset;
+SIMUL_CONSTANT_BUFFER_END
+
 SIMUL_CONSTANT_BUFFER(SceneConstants, 12)
 	vec4 fullResToLowResTransformXYWH;
 

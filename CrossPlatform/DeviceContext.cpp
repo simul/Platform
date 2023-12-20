@@ -130,6 +130,7 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 		}
 		defaultTargetsAndViewport.depthTarget.texture=depth_target;
 		defaultTargetsAndViewport.depthTarget.subresource = crossplatform::DefaultSubresourceLayers;
+		defaultTargetsAndViewport.depthTarget.subresource.aspectMask=TextureAspectFlags::DEPTH;
 		if (depth_target)
 			defaultTargetsAndViewport.depthFormat = depth_target->GetFormat();
 	}

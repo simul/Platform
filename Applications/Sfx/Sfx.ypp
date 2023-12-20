@@ -586,7 +586,7 @@
 %}
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SHADER_VARIANTS_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
-%token REGISTER NUM INCLUDE SAMPLER P_FLOAT CONST STATIC
+%token REGISTER RESOURCE_GROUP NUM INCLUDE SAMPLER P_FLOAT CONST STATIC
 %token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D NAMED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
@@ -632,15 +632,16 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 	| declaration_or_function
 	{
 	}
-	| RENDER_STATE_DECL IDENTIFIER lex_fx optional_register_semantic lex_passthrough optional_renderstate_def ';' 
+	| RENDER_STATE_DECL IDENTIFIER lex_fx optional_register_semantic optional_resource_group lex_passthrough optional_renderstate_def ';' 
 	{
 		$$.lineno			=$5.lineno;
 		RenderStateType t	=renderStateType;
 		string type			=$1.strs[0];
 		string name			=$2.strs[0];
 		string semantic		=$4.strs[0];
-		int register_number	=$4.num;
-		string def			=$6.strs[0];
+		int register_number =$4.num;
+		int group_number	=$5.num;
+		string def			=$7.strs[0];
 		if(t==RENDERTARGETFORMAT_STATE)
 		{
 			RenderTargetFormatState* fs	= gEffect->DeclareRenderTargetFormatState(name);
@@ -657,7 +658,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		}
 		if(t==SAMPLER_STATE)
 		{
-			SamplerState *ss=gEffect->DeclareSamplerState(name,register_number,buildSamplerState);
+			SamplerState *ss = gEffect->DeclareSamplerState(name, register_number, group_number,buildSamplerState);
 			ss->global_line_number	=$1.lineno;
 			// Set to default:
 			buildSamplerState=SamplerState();
@@ -669,6 +670,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 					string s=config->samplerDeclaration;
 					find_and_replace(s,"{name}",name);
 					find_and_replace(s,"{slot}",ToString(gEffect->GenerateSamplerSlot(ss->register_number)));
+					find_and_replace(s,"{group}",ToString(ss->group_num));
 					find_and_replace(s,"{type}",type);
 					gEffect->m_sharedCode<<s<<"\n";
 				}
@@ -718,14 +720,15 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		cs->names.insert(shaderInstanceName);
 		gEffect->m_shaderInstances[shaderInstanceName]=cs;
 	}
-	| optional_uniform resource_type optional_template_type IDENTIFIER optional_register_semantic ';'
+	| optional_uniform resource_type optional_template_type IDENTIFIER optional_register_semantic optional_resource_group ';'
 	{
 		const SfxConfig *config		=gEffect->GetConfig();
 		string type=$2.strs[0];
 		string templ=$3.strs[0];
 		string templ_type=$3.strs[1];
 		string name=$4.strs[0];
-		int slot=$5.num;
+		int slot = $5.num;
+		int group = $6.num;
 		
 		int space=0;
 		string space_num=$5.strs[2];
@@ -768,7 +771,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		ostr<<" "<<name<<": register("<<semantic<<");\n";
 		string original=ostr.str();
 		{
-			DeclaredTexture *dt=gEffect->DeclareTexture(name, srt, slot, space, templ_type, original);
+			DeclaredTexture *dt=gEffect->DeclareTexture(name, srt, slot, group, space, templ_type, original);
 			if (!dt)
 				sfxError = true;
 			else
@@ -807,7 +810,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		// Set to default:
 		buildStruct					=Struct();
 	}
-	| NAMED_CONSTANT_BUFFER '<' IDENTIFIER '>' IDENTIFIER optional_register_semantic struct_definition ';'
+	| NAMED_CONSTANT_BUFFER '<' IDENTIFIER '>' IDENTIFIER optional_register_semantic optional_resource_group struct_definition ';'
 	{
 		const SfxConfig* config = gEffect->GetConfig();
 		string type = $3.strs[0];
@@ -815,6 +818,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		string templ_type = type;
 		string name = $5.strs[0];
 		int slot = $6.num;
+		int group = $7.num;
 
 		int space = 0;
 		string space_num = $5.strs[2];
@@ -846,7 +850,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		if (templ.length() > 0)
 			ostr << "<" << templ << ">";
 		ostr << " " << name << ": register(" << semantic << ");\n";
-		string original = $7.strs[0]; // ostr.str();
+		string original = $8.strs[0]; // ostr.str();
 		NamedConstantBuffer* dt = gEffect->DeclareNamedConstantBuffer(name, slot, space, templ_type, buildStruct, original);
 		if (!dt)
 			sfxError = true;
@@ -859,13 +863,15 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		}
 		buildStruct = Struct();
 	}
-	| CONSTANT_BUFFER IDENTIFIER optional_register_semantic shader_fx struct_definition ';' lex_passthrough
+	| CONSTANT_BUFFER IDENTIFIER optional_register_semantic optional_resource_group shader_fx struct_definition ';' lex_passthrough
 	{
 		const SfxConfig *config		=gEffect->GetConfig();
 		string bufferName	=$2.strs[0];
 		string def			=$5.strs[0];
 		string semantic		=$3.strs[0];
+		string resourceGroupTxt =$4.strs[0];
 		int buffer_number	=$3.num;
+		int resource_group_number=$4.num;
 		int sfx_linenumber	=sfxget_lineno();
 		buildStruct.file_number		=current_filenumber;
 		buildStruct.line_number		=$1.lineno+(last_linenumber-global_linenumber);
@@ -874,10 +880,10 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		ostringstream ostr;
 		{
 			WriteLineNumber(ostr,current_filename,buildStruct.line_number);
-			ostr<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<semantic<<" "<<$5.strs[0]<<";\n";
+			ostr<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<semantic<<" "<<$6.strs[0]<<";\n";
 			WriteLineNumber(ostr,current_filename,sfxget_lineno()+(last_linenumber-global_linenumber));
 		}
-		gEffect->DeclareConstantBuffer(bufferName,buffer_number,buildStruct,ostr.str());
+		gEffect->DeclareConstantBuffer(bufferName,buffer_number,resource_group_number,buildStruct,ostr.str());
 		if (!gEffect->IsConstantBufferMemberAlignmentValid(gEffect->GetDeclaration(bufferName)))
 			sfxError = true;
 
@@ -900,7 +906,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 		GetInputs(inputs,&buildFunction.parameters);
 		delete $5.vars;
 		std::string returnType=$2.strs[0];
-		std::string shaderName=$3.strs[0];
+		std::string shaderName=$3.strs[0]; 
 		// Add definition and code
 		string filename=gEffect->Filename().c_str();
 
@@ -1286,7 +1292,27 @@ optional_register_semantic : ':' REGISTER '(' IDENTIFIER optional_additional_ide
 		$$.strs[1]="";
 		$$.num=-1;
 	}
+optional_resource_group: ',' RESOURCE_GROUP '(' IDENTIFIER ')'
+	{
+		$$.strs[0]=$4.strs[0];
+		string idnum=$4.strs[0];
+		if(idnum.length()>1)
+		{
+			idnum=idnum.substr(1,idnum.length()-1);
+			$$.num=atoi(idnum.c_str());
+		}
+		else
+		{
+			errSem("Can't parse resource group number");
+		}
+	}
+	| %empty
+	{
+		$$.strs[0]="";
 
+		auto config = gEffect->GetConfig();
+		$$.num=config->defaultResourceGroupIndex;
+	}
 shader_brace_block : '{' statement_list '}'
 	{
 		string content = $2.strs[0];

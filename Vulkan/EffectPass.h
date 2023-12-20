@@ -42,15 +42,17 @@ namespace platform
 			// TODO: this is inappropriate here. Lastets created DescriptorSet.
 			inline const vk::DescriptorSet &GetLatestDescriptorSet() { return m_DescriptorSet; }
 		
+			//! Does this pass use the specified ResourceGroup octave? All passes use octave 3 at least.
+			//! 
+			bool UsesResourceLayout(uint8_t l) const
+			{
+				return(((1<<l)&usingResourceLayouts)!=0);
+			}
 		private:
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext, vk::DescriptorSet& descriptorSet);
 			void CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
 			void AllocateDescriptorSets(vk::DescriptorSet& descriptorSet);
 
-			static int GenerateSamplerSlot(int s, bool offset = true);
-			static int GenerateTextureSlot(int s, bool offset = true);
-			static int GenerateTextureWriteSlot(int s, bool offset = true);
-			static int GenerateConstantBufferSlot(int s, bool offset = true);
 			vk::ShaderStageFlags GetShaderFlagsForSlot(int slot, bool(platform::crossplatform::Shader::* pfn)(int) const);
 			
 			void InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline
@@ -73,6 +75,7 @@ namespace platform
 				, bool multiview = false);
 
 		private:
+			uint8_t usingResourceLayouts=0;
 			bool											m_VideoSource = false;
 			std::vector<vk::Sampler>						m_ImmutableSamplers;
 			// TODO: These should probably be per deviceContext:

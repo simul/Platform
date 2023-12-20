@@ -2,7 +2,7 @@
 #ifndef CAMERA_CONSTANTS_SL
 #define CAMERA_CONSTANTS_SL
 
-SIMUL_CONSTANT_BUFFER(CameraConstants,1)
+PLATFORM_GROUPED_CONSTANT_BUFFER(CameraConstants, 0, 0)
 	uniform mat4 invViewProj;
 	uniform mat4 view;
 	uniform mat4 proj;
@@ -10,9 +10,9 @@ SIMUL_CONSTANT_BUFFER(CameraConstants,1)
 	uniform vec3 viewPosition;
 	uniform int frameNumber;
 	vec4 depthToLinFadeDistParams;
-SIMUL_CONSTANT_BUFFER_END
+PLATFORM_GROUPED_CONSTANT_BUFFER_END
 
-SIMUL_CONSTANT_BUFFER(StereoCameraConstants,2)
+PLATFORM_GROUPED_CONSTANT_BUFFER(StereoCameraConstants, 1, 0)
 	uniform mat4 leftInvViewProj;
 	uniform mat4 leftView;
 	uniform mat4 leftProj;

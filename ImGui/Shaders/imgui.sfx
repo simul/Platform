@@ -4,7 +4,7 @@
 #include "render_states.sl"
 #include "sampler_states.sl"
 
-cbuffer vertexBuffer SIMUL_BUFFER_REGISTER(0)
+cbuffer vertexBuffer SIMUL_BUFFER_REGISTER(9)
 {
   mat4 ProjectionMatrix0; 
   mat4 ProjectionMatrix1;

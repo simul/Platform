@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <vulkan/vulkan.hpp>
 #include "Export.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
@@ -44,10 +45,7 @@ namespace platform
 						RenderPlatform();
 			virtual		~RenderPlatform() override;
 
-			inline vk::Device *AsVulkanDevice()
-			{
-				return vulkanDevice;
-			}
+			vk::Device *AsVulkanDevice();
 
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
@@ -246,10 +244,47 @@ namespace platform
 			// Vulkan-specific support for video decoding:
 			vk::Sampler								GetSamplerYcbcr() { return vulkanSamplerYcbcr; }
 			vk::SamplerYcbcrConversionInfo*			GetSamplerYcbcrConversionInfo();
+			
+			static inline int GenerateSamplerSlot(int s)
+			{
+				return s + 300;
+			}
+			static inline int GenerateTextureSlot(int s)
+			{
+				return s + 100;
+			}
+			static inline int GenerateTextureWriteSlot(int s)
+			{
+				return s + 200;
+			}
+			static inline int GenerateConstantBufferSlot(int s)
+			{
+				return s;
+			}
+
+			void AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, const vk::DescriptorSetLayout &layout);
+			const vk::DescriptorSetLayout &GetVulkanDescriptorSetLayoutForResourceGroup(uint8_t g) const
+			{
+				return descriptorSetLayouts[g];
+			}
 		protected:
+			vk::DescriptorPool mDescriptorPool;
+			vk::DescriptorSetLayout descriptorSetLayouts[4];
+			
+			// TODO: These should probably be per deviceContext:
+			std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
+			std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
+			std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
+			//! Number of ring buffers
+			static const uint32_t s_DescriptorSetCount = (SIMUL_VULKAN_FRAME_LAG + 1);
+			// each frame in the 3-frame loop carries a variable-size list of descriptors: one for each submit.
+			std::list<vk::DescriptorSet> m_DescriptorSets[s_DescriptorSetCount];
+			std::list<vk::DescriptorSet>::iterator m_DescriptorSets_It[s_DescriptorSetCount];
+			uint8_t descriptorSetFrame=0;
+
+
 			vk::SamplerYcbcrConversionInfo samplerYcbcrConversionInfo;
 
-		protected:
 			crossplatform::Texture*					createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
@@ -265,11 +300,13 @@ namespace platform
 			vulkan::Texture* mDummy3D = nullptr;
 			vulkan::Texture*								mDummyTextureCube=nullptr;
 			vulkan::Texture*								mDummyTextureCubeArray=nullptr;
-			vk::DescriptorPool								mDescriptorPool;
 			static crossplatform::PixelFormat				defaultColourFormat;
 			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
-			std::map<unsigned long long,crossplatform::TargetsAndViewport>				mTargets;
+			std::map<unsigned long long, crossplatform::TargetsAndViewport> mTargets;
+
+			//! Vulkan-specific apply resource group, called from ApplyContextState().
+			vk::DescriptorSet *ApplyResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g);
 		};
 		template <typename T>
 		void SetVulkanName(crossplatform::RenderPlatform *renderPlatform, const T &ds, const char *name)

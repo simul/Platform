@@ -14,7 +14,7 @@ using namespace crossplatform;
 
 struct ImGuiCB
 {
-	static const int bindingIndex=0;
+	static const int bindingIndex=9;
 	mat4	ProjectionMatrix0;
 	mat4	ProjectionMatrix1;
 };
@@ -344,6 +344,10 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			modelViewProj1.transpose();
 			multiview = true;
 		}
+		else
+		{
+			modelViewProj1 = modelViewProj0;
+		}
 	}
 	bd->constantBuffer.ProjectionMatrix0 = imgui_projection;
 	bd->renderPlatform->SetConstantBuffer(deviceContext, &bd->constantBuffer);
@@ -417,7 +421,7 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 					bd->pInputLayout->Apply(deviceContext);
 					renderPlatform->DrawIndexed(deviceContext,pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
 					bd->pInputLayout->Unapply(deviceContext);
-					renderPlatform->UnapplyPass(deviceContext );
+					renderPlatform->UnapplyPass(deviceContext);
 				}
 				
 			}

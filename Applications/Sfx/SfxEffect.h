@@ -169,7 +169,7 @@ namespace sfx
 		std::shared_ptr<ShaderInstance> AddShaderInstance(const std::string &name,const std::string &functionName,ShaderType type,const std::string &profileName,int lineno);
 		std::vector<std::string> GenerateShaderInstanceVariants(const std::string &basename,const VariantSpec &shaderInstances);
 		void DeclareStruct(const std::string &name, const Struct &ts,const std::string &original);
-		void DeclareConstantBuffer(const std::string &name, int slot,const Struct &ts,const std::string &original);
+		void DeclareConstantBuffer(const std::string &name, int slot,int group_num,const Struct &ts,const std::string &original);
 		void DeclareVariable(const Variable *v);
 		bool IsDeclared(const std::string &name);
 		bool IsConstantBufferMemberAlignmentValid(const Declaration* d);
@@ -178,8 +178,8 @@ namespace sfx
 		int GetRWTextureNumber(std::string n, int specified_slot=-1);
 		int GetTextureNumber(std::string n, int specified_slot=-1);
 		NamedConstantBuffer* DeclareNamedConstantBuffer(const std::string &name,int slot,int space,const std::string &structureType, const Struct& ts,const std::string &original);
-		DeclaredTexture *DeclareTexture(const std::string &name, ShaderResourceType shaderResourceType, int slot,int space,const std::string &templatedType,const std::string &original);
-		SamplerState *DeclareSamplerState(const std::string &name,int reg,const SamplerState &templateSS);
+		DeclaredTexture *DeclareTexture(const std::string &name, ShaderResourceType shaderResourceType, int slot, int group, int space, const std::string &templatedType, const std::string &original);
+		SamplerState *DeclareSamplerState(const std::string &name, int register_number, int group_number, const SamplerState &templateSS);
 		RasterizerState *DeclareRasterizerState(const std::string &name);
 		RenderTargetFormatState *DeclareRenderTargetFormatState(const std::string &name);
 		BlendState *DeclareBlendState(const std::string &name);

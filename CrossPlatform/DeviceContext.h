@@ -175,6 +175,8 @@ namespace platform
 			bool IsDepthActive() const;
 			bool last_action_was_compute = false;
 			Viewport viewports[8];
+			bool viewportsChanged = true;
+			bool scissorChanged=true;
 			const Buffer *indexBuffer=nullptr;
 			phmap::flat_hash_map<int,const Buffer*> applyVertexBuffers;
 			phmap::flat_hash_map<int,Buffer*> streamoutTargets;
@@ -205,12 +207,16 @@ namespace platform
 			bool textureAssignmentMapValid=false;
 			bool rwTextureAssignmentMapValid=false;
 			bool streamoutTargetsValid=false;
-			unsigned int textureSlots=0;
-			unsigned int rwTextureSlots=0;
-			unsigned int rwTextureSlotsForSB=0;
-			unsigned int textureSlotsForSB=0;
-			unsigned int bufferSlots=0;
+			uint32_t textureSlots=0;
+			uint32_t rwTextureSlots=0;
+			uint32_t rwTextureSlotsForSB=0;
+			uint32_t textureSlotsForSB=0;
+			uint32_t bufferSlots=0;
 
+			uint32_t resourceGroupApplyCounter[4]={0,0,0,0};
+			uint32_t resourceGroupUploadedCounter[4] = {uint32_t(-1), uint32_t(-1), uint32_t(-1), 0};
+			uint32_t resourceGroupAppliedCounter[4] = {uint32_t(-1), uint32_t(-1), uint32_t(-1), 0};
+			uint32_t resourceGroupAppliedCounterCompute[4] = {uint32_t(-1), uint32_t(-1), uint32_t(-1), 0};
 			/// Reset the temporary properties, retain persistent properties.
 			void invalidate()
 			{
@@ -256,15 +262,18 @@ namespace platform
 				currentEffectPass = nullptr;
 				currentEffect = nullptr;
 				apply_count = 0;
+				resourceGroupAppliedCounter[0] = resourceGroupAppliedCounter[1] = resourceGroupAppliedCounter[2] = 0;
+				resourceGroupApplyCounter[0] = resourceGroupApplyCounter[1] = resourceGroupApplyCounter[2]=0;
+				resourceGroupUploadedCounter[0] = resourceGroupUploadedCounter[1] = resourceGroupUploadedCounter[2] = 0;
+				resourceGroupAppliedCounterCompute[0] = resourceGroupAppliedCounterCompute[1] = resourceGroupAppliedCounterCompute[2] = 0;
 			}
-		
 		};
 		class EffectTechnique;
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
 		struct MultiviewGraphicsDeviceContext;
 		struct ComputeDeviceContext;
-		enum class DeviceContextType
+		enum class DeviceContextType:uint8_t
 		{
 			GRAPHICS, 
 			MULTIVIEW_GRAPHICS, 

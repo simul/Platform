@@ -176,6 +176,7 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 	targetsAndViewport.depthTarget.subresource.baseArrayLayer = 0;
 	targetsAndViewport.depthTarget.subresource.arrayLayerCount = 1;
 	targetsAndViewport.depthTarget.subresource.mipLevel = 0;
+	targetsAndViewport.depthTarget.subresource.aspectMask = crossplatform::TextureAspectFlags::DEPTH;
 	// note the different interpretation of m_rt in the case that it's a Simul framebuffer not native:
 	targetsAndViewport.m_rt[0] = (void *)0;
 	targetsAndViewport.m_dt = 0;

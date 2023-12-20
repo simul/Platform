@@ -230,6 +230,8 @@ namespace sfx
 		DeclarationType declarationType;
 		// Not used for all:
 		int slot = 0;
+		// Mainly Vulkan descriptorSets:
+		int group_num=0;
 		int space = 0;
 		std::string type;
 	};

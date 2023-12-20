@@ -264,6 +264,9 @@ namespace platform
 			virtual void EndFrame			();
 			bool						FrameStarted() const;
 			long long					GetFrameNumber() const;
+			//! Apply resources in the specified group. If SetResourceGroupLayout() has been used to specify any resources that should go in groups 1-3,
+			//! this must be called to apply them before any shader uses those resources. Group 0 is for per-pass resources.
+			void ApplyResourceGroup(DeviceContext &deviceContext, uint8_t g);
 			//! Makes sure the resource is in the required state specified by transition. 
 			virtual void ResourceTransition (DeviceContext &, crossplatform::Texture *, ResourceTransition ) {};
 			//! Ensures that all UAV read and write operation to the textures are completed.
@@ -471,7 +474,13 @@ namespace platform
 			virtual void					RestoreDepthTextureState		(DeviceContext& deviceContext, crossplatform::Texture* tex) {}
 			virtual void					InvalidCachedFramebuffersAndRenderPasses() {};
 			virtual void					EndRenderPass					(DeviceContext& deviceContext) {};
-
+			//! Set the resource layout for a given "octave"
+			void SetResourceGroupLayout(uint8_t group_index, ResourceGroupLayout l);
+			//! Returns the resource layout for a given "octave"
+			const ResourceGroupLayout &GetResourceGroupLayout(uint8_t group_index) const
+			{
+				return resourceGroupLayouts[group_index];
+			}
 			void							HeightMapToNormalMap			(GraphicsDeviceContext&,Texture *heightMap,Texture *normalMap,float scale);
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
 			platform::core::MemoryInterface *GetAllocator()
@@ -509,6 +518,7 @@ namespace platform
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
 		protected:
+			ResourceGroupLayout resourceGroupLayouts[4];
 			/// Asynchronously recompile the effect.
 			void ScheduleRecompileEffect			(std::string effect_name,std::function <void()> f) ;
 			struct EffectRecompile
@@ -549,10 +559,10 @@ namespace platform
 			crossplatform::EffectTechnique	*textured=nullptr;
 			crossplatform::EffectTechnique	*untextured=nullptr;
 			crossplatform::EffectTechnique	*showVolume=nullptr;
-			crossplatform::EffectTechnique *draw_cubemap_sphere=nullptr;
+			crossplatform::EffectTechnique	*draw_cubemap_sphere=nullptr;
 			crossplatform::ShaderResource	volumeTexture;
 			crossplatform::ShaderResource	imageTexture;
-			crossplatform::ShaderResource debugEffect_cubeTexture;
+			crossplatform::ShaderResource	debugEffect_cubeTexture;
 			//
 
 			crossplatform::ConstantBuffer<DebugConstants> debugConstants;

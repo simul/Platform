@@ -282,6 +282,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"register"								{
 													stdReturn(REGISTER);
 												}
+<INITIAL>"resource_group"						{
+													stdReturn(RESOURCE_GROUP);
+												}
 <INITIAL>"interface"							{
 													sfxlval.lineno = yylineno;
 													stdReturn(INTERFACE);

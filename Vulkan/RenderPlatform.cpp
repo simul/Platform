@@ -38,6 +38,11 @@ RenderPlatform::~RenderPlatform()
 	InvalidateDeviceObjects();
 }
 
+vk::Device *RenderPlatform::AsVulkanDevice()
+{
+	return vulkanDevice;
+}
+
 const char* RenderPlatform::GetName()const
 {
 	return "Vulkan";
@@ -46,33 +51,18 @@ const char* RenderPlatform::GetName()const
 void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 {
 	ERRNO_BREAK
-	
 	void** ptr = (void**)vkDevice_vkInstance_gpu;
 	vulkanDevice = (vk::Device*)ptr[0];
 	vulkanInstance = (vk::Instance*)ptr[1];
 	vulkanGpu = (vk::PhysicalDevice*)ptr[2];
 	immediateContext.platform_context = nullptr;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-
+	 
 	// Check feature support.
 	renderingFeatures = crossplatform::RenderingFeatures::None;
 	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
 		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Multiview);
 
-	int swapchainImageCount = SIMUL_VULKAN_FRAME_LAG + 1;
-	vk::DescriptorPoolSize const poolSizes[] = {
-		vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eCombinedImageSampler).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eSampledImage).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eSampler).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageBuffer).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageBufferDynamic).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eStorageImage).setDescriptorCount(swapchainImageCount * 32)
-		,vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(swapchainImageCount * 32) };
-
-	auto const descriptorPoolCreateInfo =
-		vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount).setPoolSizeCount(_countof(poolSizes)).setPPoolSizes(poolSizes);
-	auto result = vulkanDevice->createDescriptorPool(&descriptorPoolCreateInfo, nullptr, &mDescriptorPool);
 
 	// Vulkan Video decoding support:
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
@@ -92,6 +82,70 @@ void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
 		SetVulkanName(this, vulkanSamplerYcbcr, "Vulkan Sampler Ycbcr");
 	}
 #endif
+
+	// Create the three shared resource group layouts
+	int groupCounts[]={10,30,100,0};
+	int swapchainImageCount=4;
+	for(uint8_t i=0;i<crossplatform::PER_PASS_RESOURCE_GROUP;i++)
+	{
+		int countPerFrame = groupCounts[i];
+		const crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[i];
+		size_t numConstantBufferResourceSlots = resourceGroupLayout.GetNumConstantBuffers();
+		size_t numDescriptors = numConstantBufferResourceSlots;
+
+		vk::Result result;
+		vk::DescriptorSetLayoutBinding *layoutBindings = nullptr;
+		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCI;
+
+		if (numDescriptors > 0)
+		{
+			// Create the "Descriptor Pool":
+			{
+				vk::DescriptorPoolSize *poolSizes = new vk::DescriptorPoolSize[numDescriptors];
+				int poolSizeIdx = 0;
+				if (numConstantBufferResourceSlots)
+				{
+					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * numConstantBufferResourceSlots);
+				}
+				const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
+				result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPool);
+				SIMUL_VK_CHECK(result);
+				SetVulkanName(this, mDescriptorPool, fmt::format("Descriptor pool octave {0}", i));
+				delete[] poolSizes;
+			}
+
+			// Set up the "Descriptor Set Layout CreateInfo":
+			{
+				layoutBindings = new vk::DescriptorSetLayoutBinding[numDescriptors];
+				//int bindingIndex = 0;
+				int slot=0;
+				for (int j = 0; j < numConstantBufferResourceSlots; j++)
+				{
+					while(slot<64&&!resourceGroupLayout.UsesConstantBufferSlot(slot))
+						slot++;
+					if(slot>=64)
+						break;
+					vk::DescriptorSetLayoutBinding &binding = layoutBindings[j];
+					vk::ShaderStageFlags stageFlags = (vk::ShaderStageFlags)(VK_SHADER_STAGE_ALL);
+					binding.setBinding(GenerateConstantBufferSlot(slot))
+						.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+						.setDescriptorCount(1)
+						.setStageFlags(stageFlags)
+						.setPImmutableSamplers(nullptr);
+					slot++;
+				}
+
+				descriptorSetLayoutCI.setBindingCount(numConstantBufferResourceSlots).setPBindings(layoutBindings);
+			}
+		}
+
+		// Create the "Descriptor Set Layout":
+		result = vulkanDevice->createDescriptorSetLayout(&descriptorSetLayoutCI, nullptr, &descriptorSetLayouts[i]);
+		SIMUL_VK_CHECK(result);
+		SetVulkanName(this, descriptorSetLayouts[i], fmt::format("Descriptor layout for octave {0}", i));
+	}
+	for (int i = 0; i < s_DescriptorSetCount; i++)
+		m_DescriptorSets_It[i] = m_DescriptorSets[i].begin();
 }
 
 vk::SamplerYcbcrConversionInfo* RenderPlatform::GetSamplerYcbcrConversionInfo()
@@ -130,6 +184,12 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	if (!vulkanDevice)
 		return;
+	for (int i = 0; i < s_DescriptorSetCount; i++)
+	{
+		m_DescriptorSets[i].clear();
+		m_DescriptorSets_It[i] = m_DescriptorSets[i].begin();
+	}
+
 	for (auto& i : mFramebuffers)
 	{
 		vulkanDevice->destroyFramebuffer(i.second, nullptr);
@@ -444,6 +504,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceCont
 	}
 }
 
+#pragma clang optimize off
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb)
 {
 	EndRenderPass(deviceContext);
@@ -471,12 +532,12 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext& deviceContex
 	if (!commandBuffer)
 		return;
 
-	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	//BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
 	ApplyContextState(deviceContext);
 	commandBuffer->draw(4,1,0,0);
 	SetTopology(deviceContext, crossplatform::Topology::UNDEFINED);
-	EndEvent(deviceContext);
+	//EndEvent(deviceContext);
 }
 
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext,bool error_checking)
@@ -503,10 +564,13 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 
 	// Update frame_number in the DeviceContext from the RenderPlatform.
-	if (frameNumber != GetFrameNumber())
+	if (last_begin_frame_number != GetFrameNumber())
 	{
 		// Call start render at least once per frame to make sure the bins release objects!
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
+		descriptorSetFrame++;
+		descriptorSetFrame = descriptorSetFrame % (s_DescriptorSetCount);
+		m_DescriptorSets_It[descriptorSetFrame] = m_DescriptorSets[descriptorSetFrame].begin();
 	}
 	if (frameNumber != mLastFrame && *commandBuffer != cmdBuffer) //Check this VkCommandBuffer is not the one used of the ImmediateContext - AJR
 	{
@@ -516,17 +580,53 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 		mLastFrame = frameNumber;
 	}
-	
-	//Apply the pass setting up the descriptors, pipeline and render pass.
+	bool is_compute = pass->shaders[crossplatform::SHADERTYPE_COMPUTE] != nullptr;
+	// Apply the pass setting up the descriptors, pipeline and render pass.
 	pass->Apply(deviceContext, false);
 	crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
-	const EffectPass::RenderPassPipeline& renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
-	const vk::PipelineLayout& pipelineLayout = pass->GetLatestPipelineLayout();
-	const vk::DescriptorSet& descriptorSet = pass->GetLatestDescriptorSet();
-	bool setDescriptors = descriptorSet ? true : false;
-
+	vk::DescriptorSet descriptorSets[4];
+	
+	int8_t maxDescriptorSet = -1;
+	int8_t minDescriptorSet = 127;
+	uint32_t *resourceGroupAppliedCtr = is_compute ? cs->resourceGroupAppliedCounterCompute : cs->resourceGroupAppliedCounter;
+	for(uint8_t g=0;g<crossplatform::PER_PASS_RESOURCE_GROUP;g++)
+	{
+		if (resourceGroupAppliedCtr[g] != cs->resourceGroupApplyCounter[g])
+		{
+			auto *d = ApplyResourceGroup(deviceContext, g);
+			if (d)
+			{
+				descriptorSets[g] = *d;
+				minDescriptorSet = std::min(int8_t(g), minDescriptorSet);
+				maxDescriptorSet = std::max(int8_t(g), maxDescriptorSet);
+			}
+		}
+	}
+	const vk::DescriptorSet &descriptorSet = pass->GetLatestDescriptorSet();
+	bool usesPerPassResources = pass->UsesResourceLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
+	if (usesPerPassResources)
+	{
+		maxDescriptorSet = crossplatform::PER_PASS_RESOURCE_GROUP;
+		descriptorSets[crossplatform::PER_PASS_RESOURCE_GROUP] = descriptorSet;
+		minDescriptorSet = std::min(int8_t(crossplatform::PER_PASS_RESOURCE_GROUP), minDescriptorSet);
+	}
+	const EffectPass::RenderPassPipeline &renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
+	const vk::PipelineLayout &pipelineLayout = pass->GetLatestPipelineLayout();
+	if (maxDescriptorSet >= minDescriptorSet)
+	{
+		// Set the Descriptor Sets
+		for(uint8_t g=minDescriptorSet;g<=maxDescriptorSet;g++)
+		{
+			if(descriptorSets[g].operator VkDescriptorSet())
+				commandBuffer->bindDescriptorSets(is_compute ? vk::PipelineBindPoint::eCompute: vk::PipelineBindPoint::eGraphics, pipelineLayout, g, 1, &(descriptorSets[g]), 0, nullptr);
+		}
+		for (int8_t g = minDescriptorSet; g < maxDescriptorSet + 1; g++)
+		{
+			resourceGroupAppliedCtr[g] = cs->resourceGroupApplyCounter[g];
+		}
+	}
 	// If not a compute shader, apply viewports:
-	if (commandBuffer != nullptr && pass->shaders[crossplatform::SHADERTYPE_COMPUTE] == nullptr)
+	if (!is_compute)
 	{
 		for (auto i : cs->applyVertexBuffers)
 		{
@@ -583,6 +683,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 				.setPClearValues(clearValues.data())
 				.setRenderArea(renderArea);
 			commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
+			std::cout << "Begun renderpass\n";
 			deviceContext.contextState.vulkanInsideRenderPass = true;
 		}
 
@@ -590,27 +691,32 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, renderPassPipeline.pipeline);
 
 		//Set the Viewports and Scissors
-		vk::Viewport vkViewports[1];
-		vk::Rect2D vkScissors[1];
-		for (int i = 0; i < 1; i++)
+		if(cs->viewportsChanged)
 		{
-			crossplatform::Viewport& _vp = cs->viewports[i];
-			if (!(_vp.w * _vp.h))
-				_vp = vp;
-			if (!(_vp.w * _vp.h))
-				SIMUL_BREAK("Viewport width and/or height is 0. This is invalid for Vulkan.");
-
-			int4 scissor = cs->scissor;
-			vkViewports[0].setHeight((float)_vp.h).setWidth((float)_vp.w).setX((float)_vp.x).setY((float)_vp.y).setMaxDepth(1.0f).setMinDepth(0.0f);
-			vkScissors[0].setExtent(vk::Extent2D(scissor.z, scissor.w)).setOffset(vk::Offset2D(scissor.x, scissor.y));
+			vk::Viewport vkViewports[1];
+			for (int i = 0; i < 1; i++)
+			{
+				crossplatform::Viewport& _vp = cs->viewports[i];
+				if (!(_vp.w * _vp.h))
+					_vp = vp;
+				if (!(_vp.w * _vp.h))
+					SIMUL_BREAK("Viewport width and/or height is 0. This is invalid for Vulkan.");
+				vkViewports[0].setHeight((float)_vp.h).setWidth((float)_vp.w).setX((float)_vp.x).setY((float)_vp.y).setMaxDepth(1.0f).setMinDepth(0.0f);
+			}
+			commandBuffer->setViewport(0, 1, vkViewports);
+			cs->viewportsChanged = false;
 		}
-		commandBuffer->setViewport(0, 1, vkViewports);
-		commandBuffer->setScissor(0, 1, vkScissors);
-
-		//Set the Descriptor Sets
-		if (setDescriptors)
-			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-
+		if(cs->scissorChanged)
+		{
+			vk::Rect2D vkScissors[1];
+			for (int i = 0; i < 1; i++)
+			{
+				int4 scissor = cs->scissor;
+				vkScissors[0].setExtent(vk::Extent2D(scissor.z, scissor.w)).setOffset(vk::Offset2D(scissor.x, scissor.y));
+			}
+			commandBuffer->setScissor(0, 1, vkScissors);
+			cs->scissorChanged = false;
+		}
 		//Set Vertex and Index buffers
 		for (auto i : cs->applyVertexBuffers)
 		{
@@ -631,12 +737,9 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 	else
 	{
-		//Set Compute Pipeline
+		// Set Compute Pipeline
 		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline.pipeline);
-
-		//Set the Desciptor Sets
-		if (setDescriptors)
-			commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+		
 	}
 	return true;
 }
@@ -1664,10 +1767,10 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 	if (!commandBuffer)
 		return;
 
-	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
+	//BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	ApplyContextState(deviceContext);
 	commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
-	EndEvent(deviceContext);
+	//EndEvent(deviceContext);
 }
 
 void RenderPlatform::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
@@ -1813,6 +1916,129 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	return hashval;
 }
 
+void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, const vk::DescriptorSetLayout &descriptorSetLayout)
+{
+	// Of course, only need to do this if there are ANY inputs.
+	if (!descriptorSetLayout)
+		return;
+
+	vk::Device *vulkanDevice = AsVulkanDevice();
+
+	vk::DescriptorSetAllocateInfo alloc_info = vk::DescriptorSetAllocateInfo()
+												   .setDescriptorSetCount(1)
+												   .setPSetLayouts(&descriptorSetLayout);
+
+	if (mDescriptorPool)
+	{
+		alloc_info = alloc_info.setDescriptorPool(mDescriptorPool);
+		vk::Result result = vulkanDevice->allocateDescriptorSets(&alloc_info, &descriptorSet);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SetVulkanName(this, descriptorSet, fmt::format("Shared Descriptor set"));
+	}
+}
+
+vk::DescriptorSet*lastDescriptorSet[4][4];
+vk::DescriptorSet *RenderPlatform::ApplyResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g)
+{
+	auto &cs = deviceContext.contextState;
+	if (cs.resourceGroupUploadedCounter[g] == cs.resourceGroupApplyCounter[g])
+		return lastDescriptorSet[descriptorSetFrame][g];
+	crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[g];
+	cs.resourceGroupUploadedCounter[g] = cs.resourceGroupApplyCounter[g];
+	if (resourceGroupLayout.constantBufferSlots == 0)
+		return lastDescriptorSet[descriptorSetFrame][g];
+	// get an unused Descriptor Set:
+	if (m_DescriptorSets_It[descriptorSetFrame] == m_DescriptorSets[descriptorSetFrame].end())
+	{
+		// must insert a new descriptor:
+		m_DescriptorSets[descriptorSetFrame].push_back(vk::DescriptorSet());
+		m_DescriptorSets_It[descriptorSetFrame] = m_DescriptorSets[descriptorSetFrame].end();
+		m_DescriptorSets_It[descriptorSetFrame]--;
+		AllocateDescriptorSets(*m_DescriptorSets_It[descriptorSetFrame],descriptorSetLayouts[g]);
+		// std::cout << "New Descriptor Set added: 0x" << std::hex << (void*)((*m_DescriptorSets_It[m_InternalFrameIndex]).operator VkDescriptorSet()) << std::dec << std::endl;
+	}
+
+	auto &descriptorSet=*(m_DescriptorSets_It[descriptorSetFrame]);
+
+	vk::Device *vulkanDevice = AsVulkanDevice();
+
+	int numConstantBuffers = resourceGroupLayout.GetNumConstantBuffers();
+	int numBuffers = numConstantBuffers;
+	int numDescriptors =  numBuffers;
+	if (numDescriptors > m_writeDescriptorSets.size())
+		m_writeDescriptorSets.resize(numDescriptors);
+
+	if (numBuffers > descriptorBufferInfos.size())
+		descriptorBufferInfos.resize(numBuffers);
+	vk::DescriptorBufferInfo *descriptorBufferInfo = descriptorBufferInfos.data();
+	int b = 0;
+	int slot = 0;
+	for (int i = 0; i < numConstantBuffers; i++, b++)
+	{
+		while(slot<64&&!resourceGroupLayout.UsesConstantBufferSlot(slot))
+			slot++;
+		if(slot==64)
+		{
+			break;
+		}
+		crossplatform::ConstantBufferBase *cb = cs.applyBuffers[slot];
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
+		vk::Buffer *vkBuffer = nullptr;
+		vk::DeviceSize vkDeviceSize = 0, offset=0;
+
+		if (cb)
+		{
+			crossplatform::PlatformConstantBuffer *pcb = (crossplatform::PlatformConstantBuffer *)cb->GetPlatformConstantBuffer();
+		
+			write.setDstSet(descriptorSet);
+			write.setDstBinding(vulkan::RenderPlatform::GenerateConstantBufferSlot(slot));
+			pcb->ActualApply(deviceContext);
+			vulkan::PlatformConstantBuffer *vcb = (vulkan::PlatformConstantBuffer *)pcb;
+			vkBuffer = vcb->GetLastBuffer();
+			vkDeviceSize = vcb->GetSize();
+			offset = vcb->GetLastOffset();
+		}
+		else
+		{
+			SIMUL_INTERNAL_CERR<<"All constant buffers must have valid values in each resource group in-use.\n";
+		}
+		write.setDescriptorCount(1);
+		write.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+		if (vkBuffer)
+		{
+			descriptorBufferInfo->setOffset(offset)
+				.setRange(vkDeviceSize)
+				.setBuffer(*vkBuffer);
+			write.setPBufferInfo(descriptorBufferInfo);
+			descriptorBufferInfo++;
+		}
+		else
+		{
+		}
+		cs.bufferSlots |= (1 << slot);
+		slot++;
+	}
+	if (numDescriptors)
+	{
+		for (int i = 0; i < numDescriptors; i++)
+		{
+			vk::WriteDescriptorSet &write = m_writeDescriptorSets[i];
+			bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
+
+			if (no_res)
+			{
+			/*	SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in group '"
+						   << (uint32_t)g << "' has no valid resource associated with it." << std::endl;
+				SIMUL_BREAK("VkWriteDescriptorSet error.");*/
+			}
+		}
+		vulkanDevice->updateDescriptorSets(numDescriptors, m_writeDescriptorSets.data(), 0, nullptr);
+	}
+	if (m_DescriptorSets_It[descriptorSetFrame] != m_DescriptorSets[descriptorSetFrame].end())
+		m_DescriptorSets_It[descriptorSetFrame]++;
+	lastDescriptorSet[descriptorSetFrame][g] = &descriptorSet;
+	return &descriptorSet;
+}
 
 vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::GraphicsDeviceContext& deviceContext)
 {
@@ -1891,7 +2117,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext& device
 			layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 		else if (depthTest && !depthWrite)
 			layout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-		vk::ImageLayout end_layout=vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		vk::ImageLayout end_layout=layout;//vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
 		if (layout == vk::ImageLayout::eUndefined && !clear)
 			clear = true;
@@ -1968,6 +2194,7 @@ void RenderPlatform::EndRenderPass(crossplatform::DeviceContext& deviceContext)
 		commandBuffer->endRenderPass();
 		deviceContext.contextState.vulkanInsideRenderPass = false;
 	}
+	//std::cout<<"Ended renderpass\n";
 }
 
  std::string RenderPlatform::VulkanResultString(vk::Result res)

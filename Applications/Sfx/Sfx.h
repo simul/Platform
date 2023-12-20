@@ -155,6 +155,7 @@ struct SfxConfig
 	std::vector<std::string> shaderPaths;
 	//! Maximum shader model number
 	double maxShaderModel=7.0;
+	int defaultResourceGroupIndex=3;
 };
 
 struct SfxOptions

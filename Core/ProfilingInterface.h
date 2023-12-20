@@ -35,10 +35,12 @@ namespace platform
 #define GET_THREAD_ID platform::core::GetThreadId 
 
 //! Define this to enable internal calls to the profiler, if it has been set with platform::core::SetProfilingInterface().
-#define SIMUL_INTERNAL_PROFILING
+#ifndef PLATFORM_INTERNAL_PROFILING
+#define PLATFORM_INTERNAL_PROFILING 0
+#endif
 
 #ifdef DOXYGEN
-#undef SIMUL_INTERNAL_PROFILING
+#define PLATFORM_INTERNAL_PROFILING 0
 #endif
 namespace platform
 {
@@ -225,7 +227,7 @@ namespace platform
 	}
 }
 
-#ifdef SIMUL_INTERNAL_PROFILING
+#if PLATFORM_INTERNAL_PROFILING
 		#define SIMUL_PROFILE_STARTFRAME \
 			{\
 				THREAD_TYPE thread_id=GET_THREAD_ID();\

@@ -85,6 +85,10 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	effectCompileThread = std::thread(&RenderPlatform::recompileAsync,this);
 #endif
 	numPlatforms++;
+	for(uint8_t i=0;i<4;i++)
+	{
+		resourceGroupLayouts[i]={0};
+	}
 }
 RenderPlatform::~RenderPlatform()
 {
@@ -289,14 +293,11 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 			std::string simul_dir = std::filesystem::weakly_canonical((exe_dir + "../../../").c_str()).generic_string();
 			PushShaderPath((simul_dir + "/../").c_str());
 		}
-		//std::string local_shader_binary_path = "shaderbin/"s + render_platform;
-		//PushShaderBinaryPath(local_shader_binary_path.c_str());
 		if (binary_dir.length())
 		{
 			std::string shader_binary_path = binary_dir + "/"s + render_platform + "/shaderbin"s;
 			std::string platform_build_path = binary_dir + "/Platform"s;
 			std::string this_platform_build_path = platform_build_path+"/"s + render_platform;
-			//PushShaderBinaryPath((platform_build_path+"/shaderbin/"s+render_platform).c_str());
 			PushShaderBinaryPath((binary_dir + "/shaderbin/"s+render_platform).c_str());
 			PushTexturePath((source_dir + "/Resources/Textures").c_str());
 			PushTexturePath((source_dir + "/Media/textures").c_str());
@@ -307,12 +308,8 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		if (cmake_binary_dir.length())
 		{
 			std::string platform_build_path = ((cmake_binary_dir + "/Platform/") + GetPathName());
-			//PushShaderBinaryPath(((cmake_binary_dir + "/") + GetPathName() + "/shaderbin").c_str());
-			//PushShaderBinaryPath((platform_build_path + "/shaderbin").c_str());
 			PushTexturePath((cmake_source_dir + "/Resources/Textures").c_str());
 		}
-		//PushShaderBinaryPath((std::string("shaderbin/") + GetPathName()).c_str());
-
 		initializedDefaultShaderPaths = true;
 	}
 	#endif
@@ -708,6 +705,17 @@ long long RenderPlatform::GetFrameNumber() const
 	return frameNumber;
 }
 
+void RenderPlatform::ApplyResourceGroup(DeviceContext &deviceContext, uint8_t g)
+{
+#if SIMUL_INTERNAL_CHECKS
+	if(g>=3)
+	{
+		SIMUL_BREAK_ONCE("Invalid resource group for RenderPlatform::ApplyResourceGroup");
+	}
+#endif
+	deviceContext.contextState.resourceGroupApplyCounter[g]++;
+}
+
 void RenderPlatform::DispatchComputeAuto(DeviceContext &deviceContext,int3 d)
 {
 	int3 threads=deviceContext.contextState.currentEffectPass->numThreads;
@@ -820,6 +828,29 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	return r;
 }
 
+void RenderPlatform::SetResourceGroupLayout(uint8_t group_index, ResourceGroupLayout l)
+{
+#if defined(_DEBUG) || defined(SIMUL_INTERNAL_CHECKS)
+	if(group_index>=PER_PASS_RESOURCE_GROUP)
+	{
+		SIMUL_BREAK_ONCE("Invalid resource group index");
+		return;
+	}
+	else
+	{
+	}
+#endif
+	resourceGroupLayouts[group_index] = l;
+	// recreate octave layout 0
+	auto &perPassLayout = resourceGroupLayouts[PER_PASS_RESOURCE_GROUP];
+	// initially, use all 64 slots.
+	perPassLayout.constantBufferSlots = ~uint64_t(0);
+	for (uint8_t i = 0; i < PER_PASS_RESOURCE_GROUP; i++)
+	{
+		auto &layout = resourceGroupLayouts[i];
+		perPassLayout.constantBufferSlots&=(~(layout.constantBufferSlots));
+	}
+}
 void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,Texture *heightMap,Texture *normalMap,float scale)
 {
 	if(!heightMap||!heightMap->IsValid())
@@ -1759,12 +1790,16 @@ void RenderPlatform::SetViewports(GraphicsDeviceContext &deviceContext,int num,c
 		memcpy(deviceContext.contextState.viewports,vps,num*sizeof(Viewport));
 	auto *tv=deviceContext.GetCurrentTargetsAndViewport();
 	if(tv&&vps)
+	{
 		tv->viewport=*vps;
+		deviceContext.contextState.viewportsChanged=true;
+	}
 }
 
 void RenderPlatform::SetScissor(GraphicsDeviceContext &deviceContext,int4 sc)
 {
-	deviceContext.contextState.scissor=sc;
+	deviceContext.contextState.scissor = sc;
+	deviceContext.contextState.scissorChanged = true;
 }
 
 int4 RenderPlatform::GetScissor(GraphicsDeviceContext &deviceContext) const

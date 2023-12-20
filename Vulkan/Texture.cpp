@@ -8,6 +8,8 @@
 #include "Platform/External/magic_enum/include/magic_enum.hpp"
 
 #include <algorithm>
+#include <vulkan/vk_enum_string_helper.h>
+
 
 using namespace platform;
 using namespace platform;
@@ -1128,6 +1130,8 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 		aspectMask = vk::ImageAspectFlagBits::eDepth;
 	if (crossplatform::RenderPlatform::IsStencilFormat(pixelFormat))
 		aspectMask |= vk::ImageAspectFlagBits::eStencil;
+	//std::cout << "Texture::SetLayout " << name << " from layout: " << string_VkImageLayout((VkImageLayout)mCurrentImageLayout) << " to layout: " << string_VkImageLayout((VkImageLayout)newLayout) << 
+	//	" - AspectMask is " << string_VkImageAspectFlags((VkImageAspectFlags)aspectMask) << "\n";
 	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
 	vk::AccessFlags dstAccessMask = DstAccessMask(newLayout);
 	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;

@@ -3,7 +3,8 @@ set(PLATFORM_USED_CMAKE_GENERATOR "${CMAKE_GENERATOR}" CACHE STRING "Which CMAKE
 if(NOT DEFINED SIMUL_SOURCE_BUILD)
 	option( SIMUL_SOURCE_BUILD "Build from source?" ON )
 endif()
-option( SIMUL_INTERNAL_CHECKS "Enable Simul internal debugging checks?" OFF )
+option( SIMUL_INTERNAL_CHECKS "Enable Platform's internal debugging checks?" OFF )
+option( PLATFORM_INTERNAL_PROFILING "Enable Platform's internal CPU and GPU profiling?" OFF )
 
 option( SIMUL_BUILD_SHADERS "Build shaders? If false, shaders should be already present." ON )
 option( SIMUL_DEBUG_SHADERS "Compile shaders with debug info." OFF )
@@ -116,7 +117,7 @@ else()
 find_program(PLATFORM_SFX_EXECUTABLE sfx PATHS "${CMAKE_BINARY_DIR}/bin/Release" "${CMAKE_BINARY_DIR}/bin/Debug" "${CMAKE_BINARY_DIR}/bin/Sfx") 
 endif()
 
-mark_as_advanced(SIMUL_INTERNAL_CHECKS SIMUL_DEBUG_SHADERS )
+mark_as_advanced(SIMUL_INTERNAL_CHECKS SIMUL_DEBUG_SHADERS PLATFORM_INTERNAL_PROFILING)
 
 # Defaults for glfw
 set(GLFW_BUILD_TESTS OFF )

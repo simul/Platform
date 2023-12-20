@@ -29,17 +29,6 @@ namespace platform
 {
 	namespace crossplatform
 	{
-		enum class ResourceUsageFrequency
-		{
-			ONCE = 1,
-			ONCE_PER_FRAME = 2,
-			FEW_PER_FRAME = 3,
-			MANY_PER_FRAME = 4,
-			OCTAVE_1 = ONCE,
-			OCTAVE_2 = ONCE_PER_FRAME,
-			OCTAVE_3 = FEW_PER_FRAME,
-			OCTAVE_4 = MANY_PER_FRAME
-		};
 		struct ShaderResource;
 		/// A base class for structured buffers, used by StructuredBuffer internally.
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer

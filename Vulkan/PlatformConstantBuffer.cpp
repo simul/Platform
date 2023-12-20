@@ -1,5 +1,5 @@
-#include "PlatformConstantBuffer.h"
-#include "RenderPlatform.h"
+#include "Platform/Vulkan/RenderPlatform.h"
+#include "Platform/Vulkan/PlatformConstantBuffer.h"
 
 using namespace platform;
 using namespace vulkan;
@@ -27,7 +27,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	renderPlatform = r;
 	if (resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE || resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE_PER_FRAME)
 	{
-	//TODO: is this efficient?
+		//TODO: is this efficient?
 		mBufferSize = (unsigned)sz + 2*kBufferAlign;
 	}
 	SIMUL_ASSERT(sz<=mBufferSize);
@@ -39,7 +39,8 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 		.setSize(mBufferSize)
 		.setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
 		.setSharingMode(vk::SharingMode::eExclusive);
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	vulkan::RenderPlatform *vrp = static_cast<vulkan::RenderPlatform*>(renderPlatform);
+	vk::Device *vulkanDevice = vrp->AsVulkanDevice();
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		auto result = vulkanDevice->createBuffer(&buf_info, nullptr, &mBuffers[i]);
@@ -121,7 +122,7 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 	if (mCurApplyCount >= mMaxAppliesPerFrame)
 	{
 		// This should really be solved by having some kind of pool? Or allocating more space, something like that
-		SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
+		//SIMUL_BREAK_ONCE("This ConstantBuffer reached its maximum apply count");
 		mBufferSize*=2;
 		RestoreDeviceObjects(renderPlatform,size,nullptr);
 		resetframe=true;
