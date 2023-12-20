@@ -80,7 +80,8 @@ bool Query::GetData(crossplatform::DeviceContext&, void* data, size_t sz)
 	return (data != nullptr);
 }
 
-PlatformConstantBuffer::PlatformConstantBuffer():
+PlatformConstantBuffer::PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) : 
+	crossplatform::PlatformConstantBuffer(F),
 	mUBOId(0),
 	mBindingSlot(-1)
 {

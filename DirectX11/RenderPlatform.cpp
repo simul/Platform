@@ -426,9 +426,9 @@ crossplatform::Effect *RenderPlatform::CreateEffect()
 	return e;
 }
 
-crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer()
+crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency F)
 {
-	crossplatform::PlatformConstantBuffer *b=new dx11::PlatformConstantBuffer();
+	crossplatform::PlatformConstantBuffer *b = new dx11::PlatformConstantBuffer(F);
 	return b;
 }
 

@@ -71,7 +71,7 @@ namespace platform
 		class SIMUL_OPENGL_EXPORT PlatformConstantBuffer : public crossplatform::PlatformConstantBuffer
 		{
 		public:
-				PlatformConstantBuffer();
+				PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F);
 				~PlatformConstantBuffer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void* addr);
 			void InvalidateDeviceObjects();

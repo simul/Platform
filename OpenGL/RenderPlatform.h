@@ -82,8 +82,8 @@ namespace platform
 			crossplatform::SamplerState*            CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*                  CreateEffect() override;
 			crossplatform::Effect*                  CreateEffect(const char *filename_utf8) override;
-			crossplatform::PlatformConstantBuffer*  CreatePlatformConstantBuffer() override;
-			crossplatform::PlatformStructuredBuffer*CreatePlatformStructuredBuffer() override;
+			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) override;
+			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer*                  CreateBuffer() override;
 			crossplatform::Layout*                  CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool interleaved) override;
 			crossplatform::RenderState*             CreateRenderState(const crossplatform::RenderStateDesc &desc) override;

@@ -34,7 +34,7 @@ namespace platform
 			bool resize;
 		public:
 			//! Constructor
-			PlatformConstantBuffer();
+			PlatformConstantBuffer(crossplatform::ResourceUsageFrequency ruf);
 			//! Destructor
 			~PlatformConstantBuffer();
 			ID3D11Buffer *asD3D11Buffer();
