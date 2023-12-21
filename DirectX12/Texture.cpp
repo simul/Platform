@@ -1972,7 +1972,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 	if (mSubResourcesStates.empty())
 		return mResourceState;
 
-	if (AreSubresourcesInSameState(subresourceRange))
+	if (AreSubresourcesInSameState(crossplatform::DefaultSubresourceRange))
 		return mResourceState;
 
 	if (AreSubresourcesInSameState(subresourceRange))
