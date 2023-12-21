@@ -306,7 +306,7 @@ namespace platform
 			std::map<unsigned long long, crossplatform::TargetsAndViewport> mTargets;
 
 			//! Vulkan-specific apply resource group, called from ApplyContextState().
-			vk::DescriptorSet *ApplyResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g);
+			vk::DescriptorSet *GetDescriptorSetForResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g);
 		};
 		template <typename T>
 		void SetVulkanName(crossplatform::RenderPlatform *renderPlatform, const T &ds, const char *name)
