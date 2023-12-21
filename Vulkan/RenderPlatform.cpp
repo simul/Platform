@@ -581,11 +581,13 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		mLastFrame = frameNumber;
 	}
 	bool is_compute = pass->shaders[crossplatform::SHADERTYPE_COMPUTE] != nullptr;
+
 	// Apply the pass setting up the descriptors, pipeline and render pass.
 	pass->Apply(deviceContext, false);
 	crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
+	const EffectPass::RenderPassPipeline &renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
+
 	vk::DescriptorSet descriptorSets[4];
-	
 	int8_t maxDescriptorSet = -1;
 	int8_t minDescriptorSet = 127;
 	uint32_t *resourceGroupAppliedCtr = is_compute ? cs->resourceGroupAppliedCounterCompute : cs->resourceGroupAppliedCounter;
@@ -593,7 +595,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	{
 		if (resourceGroupAppliedCtr[g] != cs->resourceGroupApplyCounter[g])
 		{
-			auto *d = GetDescriptorSetForResourceGroup(deviceContext, g);
+			vk::DescriptorSet *d = GetDescriptorSetForResourceGroup(deviceContext, g);
 			if (d)
 			{
 				descriptorSets[g] = *d;
@@ -602,6 +604,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			}
 		}
 	}
+
 	const vk::DescriptorSet &descriptorSet = pass->GetLatestDescriptorSet();
 	bool usesPerPassResources = pass->UsesResourceLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
 	if (usesPerPassResources)
@@ -610,7 +613,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		descriptorSets[crossplatform::PER_PASS_RESOURCE_GROUP] = descriptorSet;
 		minDescriptorSet = std::min(int8_t(crossplatform::PER_PASS_RESOURCE_GROUP), minDescriptorSet);
 	}
-	const EffectPass::RenderPassPipeline &renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
+
 	const vk::PipelineLayout &pipelineLayout = pass->GetLatestPipelineLayout();
 	if (maxDescriptorSet >= minDescriptorSet)
 	{
@@ -625,6 +628,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 			resourceGroupAppliedCtr[g] = cs->resourceGroupApplyCounter[g];
 		}
 	}
+
 	// If not a compute shader, apply viewports:
 	if (!is_compute)
 	{
@@ -1943,10 +1947,12 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 	auto &cs = deviceContext.contextState;
 	if (cs.resourceGroupUploadedCounter[g] == cs.resourceGroupApplyCounter[g])
 		return lastDescriptorSet[descriptorSetFrame][g];
+
 	crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[g];
 	cs.resourceGroupUploadedCounter[g] = cs.resourceGroupApplyCounter[g];
 	if (resourceGroupLayout.constantBufferSlots == 0)
 		return lastDescriptorSet[descriptorSetFrame][g];
+
 	// get an unused Descriptor Set:
 	if (m_DescriptorSets_It[descriptorSetFrame] == m_DescriptorSets[descriptorSetFrame].end())
 	{
@@ -1958,8 +1964,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		// std::cout << "New Descriptor Set added: 0x" << std::hex << (void*)((*m_DescriptorSets_It[m_InternalFrameIndex]).operator VkDescriptorSet()) << std::dec << std::endl;
 	}
 
-	auto &descriptorSet=*(m_DescriptorSets_It[descriptorSetFrame]);
-
+	vk::DescriptorSet &descriptorSet = *(m_DescriptorSets_It[descriptorSetFrame]);
 	vk::Device *vulkanDevice = AsVulkanDevice();
 
 	int numConstantBuffers = resourceGroupLayout.GetNumConstantBuffers();
@@ -1970,22 +1975,32 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 
 	if (numBuffers > descriptorBufferInfos.size())
 		descriptorBufferInfos.resize(numBuffers);
+
 	vk::DescriptorBufferInfo *descriptorBufferInfo = descriptorBufferInfos.data();
 	int b = 0;
 	int slot = 0;
 	for (int i = 0; i < numConstantBuffers; i++, b++)
 	{
-		while(slot<64&&!resourceGroupLayout.UsesConstantBufferSlot(slot))
+		//Find the slot number.
+		while (slot < 64)
+		{
+			if (!resourceGroupLayout.UsesConstantBufferSlot(slot))
+			{
+				break;
+			}
 			slot++;
+		}
+
+		//Validate slot number
 		if(slot==64)
 		{
 			break;
 		}
+
 		crossplatform::ConstantBufferBase *cb = cs.applyBuffers[slot];
 		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		vk::Buffer *vkBuffer = nullptr;
 		vk::DeviceSize vkDeviceSize = 0, offset=0;
-
 		if (cb)
 		{
 			crossplatform::PlatformConstantBuffer *pcb = (crossplatform::PlatformConstantBuffer *)cb->GetPlatformConstantBuffer();
@@ -2013,9 +2028,6 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 				.setBuffer(*vkBuffer);
 			write.setPBufferInfo(descriptorBufferInfo);
 			descriptorBufferInfo++;
-		}
-		else
-		{
 		}
 		cs.bufferSlots |= (1 << slot);
 		slot++;
