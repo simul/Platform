@@ -591,11 +591,11 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	int8_t maxDescriptorSet = -1;
 	int8_t minDescriptorSet = 127;
 	uint32_t *resourceGroupAppliedCtr = is_compute ? cs->resourceGroupAppliedCounterCompute : cs->resourceGroupAppliedCounter;
-	for (uint8_t g = 0; g < crossplatform::PER_PASS_RESOURCE_GROUP; g++)
+	for(uint8_t g=0;g<crossplatform::PER_PASS_RESOURCE_GROUP;g++)
 	{
 		if (resourceGroupAppliedCtr[g] != cs->resourceGroupApplyCounter[g])
 		{
-			vk::DescriptorSet *d = ApplyResourceGroup(deviceContext, g);
+			vk::DescriptorSet *d = GetDescriptorSetForResourceGroup(deviceContext, g);
 			if (d)
 			{
 				descriptorSets[g] = *d;
@@ -618,7 +618,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	if (maxDescriptorSet >= minDescriptorSet)
 	{
 		// Set the Descriptor Sets
-		for (uint8_t g = minDescriptorSet; g <= maxDescriptorSet; g++)
+		for(uint8_t g=minDescriptorSet;g<=maxDescriptorSet;g++)
 		{
 			if(descriptorSets[g].operator VkDescriptorSet())
 				commandBuffer->bindDescriptorSets(is_compute ? vk::PipelineBindPoint::eCompute: vk::PipelineBindPoint::eGraphics, pipelineLayout, g, 1, &(descriptorSets[g]), 0, nullptr);
@@ -1942,7 +1942,7 @@ void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, co
 }
 
 vk::DescriptorSet*lastDescriptorSet[4][4];
-vk::DescriptorSet *RenderPlatform::ApplyResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g)
+vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g)
 {
 	auto &cs = deviceContext.contextState;
 	if (cs.resourceGroupUploadedCounter[g] == cs.resourceGroupApplyCounter[g])
@@ -1992,7 +1992,7 @@ vk::DescriptorSet *RenderPlatform::ApplyResourceGroup(crossplatform::DeviceConte
 		}
 
 		//Validate slot number
-		if(slot == 64)
+		if(slot==64)
 		{
 			break;
 		}
@@ -2015,7 +2015,9 @@ vk::DescriptorSet *RenderPlatform::ApplyResourceGroup(crossplatform::DeviceConte
 		}
 		else
 		{
-			SIMUL_INTERNAL_CERR << "All constant buffers must have valid values in each resource group in-use.\n";
+			SIMUL_INTERNAL_CERR<<"All constant buffers must have valid values in each resource group in-use.\n";
+			b--;
+			continue;
 		}
 		write.setDescriptorCount(1);
 		write.setDescriptorType(vk::DescriptorType::eUniformBuffer);
@@ -2030,6 +2032,7 @@ vk::DescriptorSet *RenderPlatform::ApplyResourceGroup(crossplatform::DeviceConte
 		cs.bufferSlots |= (1 << slot);
 		slot++;
 	}
+	numDescriptors=b;
 	if (numDescriptors)
 	{
 		for (int i = 0; i < numDescriptors; i++)

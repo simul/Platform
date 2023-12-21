@@ -214,9 +214,9 @@ namespace platform
 			uint32_t bufferSlots=0;
 
 			uint32_t resourceGroupApplyCounter[4]={0,0,0,0};
-			uint32_t resourceGroupUploadedCounter[4] = {uint32_t(-1), uint32_t(-1), uint32_t(-1), 0};
-			uint32_t resourceGroupAppliedCounter[4] = {uint32_t(-1), uint32_t(-1), uint32_t(-1), 0};
-			uint32_t resourceGroupAppliedCounterCompute[4] = {uint32_t(-1), uint32_t(-1), uint32_t(-1), 0};
+			uint32_t resourceGroupUploadedCounter[4] = {0, 0, 0, 0};
+			uint32_t resourceGroupAppliedCounter[4] = {0, 0, 0, 0};
+			uint32_t resourceGroupAppliedCounterCompute[4] = {0, 0, 0, 0};
 			/// Reset the temporary properties, retain persistent properties.
 			void invalidate()
 			{
