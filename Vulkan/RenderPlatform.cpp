@@ -1984,7 +1984,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		//Find the slot number.
 		while (slot < 64)
 		{
-			if (!resourceGroupLayout.UsesConstantBufferSlot(slot))
+			if (resourceGroupLayout.UsesConstantBufferSlot(slot))
 			{
 				break;
 			}
@@ -1994,6 +1994,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		//Validate slot number
 		if(slot==64)
 		{
+			SIMUL_INTERNAL_CERR<<"Didn't find every slot for resource group "<<g<<"\n";
 			break;
 		}
 

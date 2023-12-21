@@ -38,10 +38,16 @@ namespace platform
 			inline uint8_t GetNumConstantBuffers() const
 			{
 				uint8_t count = 0;
-				for(uint8_t i=0;i<64;i++)
+				uint64_t slotsRemaining = constantBufferSlots;
+				for(uint8_t s=0;s<64;s++)
 				{
-					if (UsesConstantBufferSlot(i))
+					uint64_t b = uint64_t(1) << uint64_t(s);
+					uint64_t present = b & constantBufferSlots;
+					if(present != uint64_t(0))
 						count++;
+					slotsRemaining&=(~b);
+					if(!slotsRemaining)
+						break;
 				}
 				return count;
 			}
