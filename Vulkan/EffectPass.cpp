@@ -516,7 +516,8 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	vk::DescriptorSetLayoutBinding* layoutBindings = nullptr;
 	vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCI;
 
-	usingResourceLayouts &= ~(1 << crossplatform::PER_PASS_RESOURCE_GROUP);
+	//usingResourceLayouts &= ~(1 << crossplatform::PER_PASS_RESOURCE_GROUP);
+	usingResourceLayouts = 0;
 	if (numDescriptors > 0)
 	{
 		// Create the "Descriptor Pool":
@@ -559,6 +560,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			for (int i = 0; i < numResourceSlots; i++, bindingIndex++)
 			{
 				int slot = resourceSlots[i];
+				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesTextureSlot);
 				binding.setBinding(vulkan::RenderPlatform::GenerateTextureSlot(slot))
@@ -575,6 +577,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			for (int i = 0; i < numRwResourceSlots; i++, bindingIndex++)
 			{
 				int slot = rwResourceSlots[i];
+				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesRwTextureSlot);
 				binding.setBinding(vulkan::RenderPlatform::GenerateTextureWriteSlot(slot))
@@ -586,6 +589,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			for (int i = 0; i < numSbResourceSlots; i++, bindingIndex++)
 			{
 				int slot = sbResourceSlots[i];
+				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesTextureSlotForSB);
 				binding.setBinding(vulkan::RenderPlatform::GenerateTextureSlot(slot))
@@ -597,6 +601,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			for (int i = 0; i < numRwSbResourceSlots; i++, bindingIndex++)
 			{
 				int slot = rwSbResourceSlots[i];
+				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesRwTextureSlotForSB);
 				binding.setBinding(vulkan::RenderPlatform::GenerateTextureWriteSlot(slot))
@@ -608,6 +613,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			for (int i = 0; i < numSamplerResourceSlots; i++, bindingIndex++)
 			{
 				int slot = samplerResourceSlots[i];
+				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
 				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
 				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesSamplerSlot);
 				binding.setBinding(vulkan::RenderPlatform::GenerateSamplerSlot(slot))
@@ -619,7 +625,6 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			// Only constantBuffers in octave 4 are to be added to the layout. For others, we check which octave they are in
 			// and mark that octave as being in-use for this pass.
 			const crossplatform::ResourceGroupLayout &perPassLayout = renderPlatform->GetResourceGroupLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
-			usingResourceLayouts=0;
 			for (int i = 0; i < numConstantBufferResourceSlots; i++)
 			{
 				int slot = constantBufferResourceSlots[i];

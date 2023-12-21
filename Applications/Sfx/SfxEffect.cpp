@@ -891,7 +891,9 @@ void Effect::CalculateResourceSlots(ShaderInstance *shaderInstance,set<int> &tex
 		}
 		else
 		{
+		#if SIMUL_INTERNAL_CHECKS
 			std::cerr<< GetFilenameOrNumber(d->file_number)<<"("<<d->line_number<<")" <<": Unhandled resource "<<d->name.c_str()<<" of type "<<(int)d->declarationType<<"."<<std::endl;
+		#endif
 		}
 	}
 	// older-style anonymous constant buffers.

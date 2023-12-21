@@ -89,7 +89,10 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	{
 		resourceGroupLayouts[i]={0};
 	}
+	auto &perPassLayout = resourceGroupLayouts[PER_PASS_RESOURCE_GROUP];
+	perPassLayout.constantBufferSlots = ~uint64_t(0);
 }
+
 RenderPlatform::~RenderPlatform()
 {
 	numPlatforms--;
@@ -850,6 +853,10 @@ void RenderPlatform::SetResourceGroupLayout(uint8_t group_index, ResourceGroupLa
 		auto &layout = resourceGroupLayouts[i];
 		perPassLayout.constantBufferSlots&=(~(layout.constantBufferSlots));
 	}
+}
+const ResourceGroupLayout &RenderPlatform::GetResourceGroupLayout(uint8_t group_index) const
+{
+	return resourceGroupLayouts[group_index];
 }
 void RenderPlatform::HeightMapToNormalMap(GraphicsDeviceContext &deviceContext,Texture *heightMap,Texture *normalMap,float scale)
 {
