@@ -477,10 +477,7 @@ namespace platform
 			//! Set the resource layout for a given "octave"
 			void SetResourceGroupLayout(uint8_t group_index, ResourceGroupLayout l);
 			//! Returns the resource layout for a given "octave"
-			const ResourceGroupLayout &GetResourceGroupLayout(uint8_t group_index) const
-			{
-				return resourceGroupLayouts[group_index];
-			}
+			const ResourceGroupLayout &GetResourceGroupLayout(uint8_t group_index) const;
 			void							HeightMapToNormalMap			(GraphicsDeviceContext&,Texture *heightMap,Texture *normalMap,float scale);
 			//! Get the memory allocator - used in particular where API's allocate memory directly.
 			platform::core::MemoryInterface *GetAllocator()
