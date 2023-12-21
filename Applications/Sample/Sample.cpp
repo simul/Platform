@@ -322,7 +322,6 @@ public:
 		raytrace_effect=renderPlatform->CreateEffect();
 		raytrace_effect->Load(renderPlatform,"raytrace");
 		sceneConstants.RestoreDeviceObjects(renderPlatform);
-		sceneConstants.LinkToEffect(effect,"SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
 		lightsStructuredBuffer.RestoreDeviceObjects(renderPlatform,10);
 
@@ -460,15 +459,15 @@ public:
 		hdrFramebuffer->Activate(deviceContext);
 		hdrFramebuffer->Clear(deviceContext, 1.0f, 1.0f, 1.0f, 1.0f, reverseDepth ? 0.0f : 1.0f);
 		{
-			cameraConstants.world = deviceContext.viewStruct.model;
-			cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
-			cameraConstants.invWorldViewProj=deviceContext.viewStruct.invViewProj;
+			//cameraConstants.world = deviceContext.viewStruct.model;
+			//cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
+			//cameraConstants.invWorldViewProj=deviceContext.viewStruct.invViewProj;
 			cameraConstants.view = deviceContext.viewStruct.view;
 			cameraConstants.proj = deviceContext.viewStruct.proj;
 			cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
 			renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
-			mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
-			mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
+			//mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
+			//mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
 			renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 			
 			rayGenConstants.viewport={-1.f,-1.f,1.f,1.f};

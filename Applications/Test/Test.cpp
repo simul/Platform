@@ -291,7 +291,6 @@ public:
 		effect = renderPlatform->CreateEffect();
 		effect->Load(renderPlatform, "solid");
 		sceneConstants.RestoreDeviceObjects(renderPlatform);
-		sceneConstants.LinkToEffect(effect, "SolidConstants");
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
 		test = renderPlatform->CreateEffect("Test");
 		texture = renderPlatform->CreateTexture();
