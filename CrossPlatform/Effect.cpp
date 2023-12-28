@@ -1438,6 +1438,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				layoutSlot=0;
 				passNum++;
 			}
+			phmap::flat_hash_map<std::string, std::string> variantValues;
 			// Find the shader definitions e.g.:
 			// vertex: simple_VS_Main_vv.sb
 			// pixel: simple_PS_Main_p.sb
@@ -1455,8 +1456,11 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					uses=line.substr(cm+1,line.length()-cm-1);
 				platform::core::ClipWhitespace(uses);
 				platform::core::ClipWhitespace(type);
-
-				std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?");
+				std::string var_name_regex="[a-z0-9A-Z_]+";
+				std::string var_val_regex = "[a-z0-9A-Z]+";
+				std::string var_combo_regex = "("s+var_name_regex+")\\s*=\\s*("+var_name_regex+")";
+				const std::string variant_regex = "(?:\\s*variant:\\(" + var_combo_regex + "(?:\\s*,\\s*" + var_combo_regex + ")*\\))?"s; //" + var_combo_regex+"(?:,"+var_combo_regex+")*
+				std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 				std::smatch fe_smatch;
 				
 				std::smatch sm;
@@ -1487,6 +1491,16 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 								{
 									SIMUL_BREAK(platform::core::QuickFormat("Failed to load combined shader binary: %s\n", sfxbFilenameUtf8.c_str()));
 								}
+							}
+						}
+						{
+							int pos=5;
+							while(sm.length(pos+1)>0)
+							{
+								string var_name = sm.str(pos);
+								string var_value = sm.str(pos+1);
+								variantValues[var_name] = var_value;
+								pos+=2;
 							}
 						}
 					}
@@ -1682,6 +1696,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					if(s)
 					{
+						s->variantValues=std::move(variantValues);
 						if(s->type != t)
 						{
 							SIMUL_INTERNAL_CERR << "Shader: " << s->name << " is the wrong type.\n";

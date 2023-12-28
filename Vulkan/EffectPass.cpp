@@ -322,23 +322,21 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 			continue;
 		}
 		crossplatform::ConstantBufferBase* cb = cs->applyBuffers[slot];
-		if (!cb)
-		{
-			numDescriptors--;
-			b--;
-			SIMUL_BREAK_ONCE("Pass {0}, possibly missing constant buffer in slot {1}: {2}", name,slot, effect->GetConstantBufferNameAtSlot(slot));
-			return;
-		}
-		crossplatform::PlatformConstantBuffer *pcb = (crossplatform::PlatformConstantBuffer *)cb->GetPlatformConstantBuffer();
 		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		write.setDstBinding(vulkan::RenderPlatform::GenerateConstantBufferSlot(slot));
+		write.setDescriptorCount(1);
+		write.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+		if (!cb)
+		{
+			SIMUL_BREAK_ONCE("Pass {0}, possibly missing constant buffer in slot {1}: {2}", name, slot, effect->GetConstantBufferNameAtSlot(slot));
+			continue;
+		}
+		crossplatform::PlatformConstantBuffer *pcb = (crossplatform::PlatformConstantBuffer *)cb->GetPlatformConstantBuffer();
 		pcb->ActualApply(deviceContext);
 		vulkan::PlatformConstantBuffer *vcb = (vulkan::PlatformConstantBuffer *)pcb;
 		vk::Buffer *vkBuffer = vcb->GetLastBuffer();
 		vk::DeviceSize vkDeviceSize = vcb->GetSize();
-		write.setDescriptorCount(1);
-		write.setDescriptorType(vk::DescriptorType::eUniformBuffer);
 		SIMUL_ASSERT(vkBuffer != nullptr);
 		if (vkBuffer)
 		{

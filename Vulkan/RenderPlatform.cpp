@@ -687,7 +687,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 				.setPClearValues(clearValues.data())
 				.setRenderArea(renderArea);
 			commandBuffer->beginRenderPass(&renderPassBeginInfo, vk::SubpassContents::eInline);
-			std::cout << "Begun renderpass\n";
+			//std::cout << "Begun renderpass\n";
 			deviceContext.contextState.vulkanInsideRenderPass = true;
 		}
 

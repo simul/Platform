@@ -1,10 +1,9 @@
 #include "ShaderInstance.h"
 using namespace sfx;
 
-ShaderInstance::ShaderInstance(const std::set<Declaration*> &d)
+ShaderInstance::ShaderInstance()
 	:	global_line_number(0)
 {
-	declarations=d;
 }
 
 ShaderInstance::ShaderInstance(const ShaderInstance &cs)

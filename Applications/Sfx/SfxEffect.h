@@ -94,7 +94,7 @@ namespace sfx
 		void AccumulateStructDeclarations(std::map<std::string, std::string> &variantValues,std::set<const Declaration *> &s, std::string i) const;
 		void AccumulateDeclarationsUsed(const Function *f, std::map<std::string, std::string> &variantValues, std::set<const Declaration *> &ss, std::set<std::string> &rwLoad) const;
 		void AccumulateFunctionsUsed(const Function *f, std::map<std::string, std::string> &variantValues, std::set<const Function *> &s) const;
-		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;
+		void AccumulateFunctionsUsed2(const Function *f, std::map<std::string, std::string> &variantValues,std::set<const Function *> &s) const;
 		void AccumulateGlobals(const Function *f,std::set<const Variable *> &s) const;
 		void AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>& s) const;
 		void AccumulateConstantBuffersUsed(const Function *f, std::set<ConstantBuffer*> &s) const;
@@ -140,6 +140,13 @@ namespace sfx
 				return i->second;
 			return nullptr;
 		}
+		NamedConstantBuffer *GetNamedConstantBufferForMember(const std::string &name)
+		{
+			Declaration *d=GetDeclaration(name);
+			if(d->declarationType==DeclarationType::NAMED_CONSTANT_BUFFER)
+				return static_cast<NamedConstantBuffer*>(d);
+			return nullptr;
+		}
 		ConstantBuffer *GetConstantBufferForMember(const std::string &member)
 		{
 			for (auto i : m_constantBuffers)
@@ -177,7 +184,7 @@ namespace sfx
 		std::string GetDeclaredType(const std::string &str) const;
 		int GetRWTextureNumber(std::string n, int specified_slot=-1);
 		int GetTextureNumber(std::string n, int specified_slot=-1);
-		NamedConstantBuffer* DeclareNamedConstantBuffer(const std::string &name,int slot,int space,const std::string &structureType, const Struct& ts,const std::string &original);
+		NamedConstantBuffer* DeclareNamedConstantBuffer(const std::string &name,int slot,int group,int space,const std::string &structureType, const Struct& ts,const std::string &original);
 		DeclaredTexture *DeclareTexture(const std::string &name, ShaderResourceType shaderResourceType, int slot, int group, int space, const std::string &templatedType, const std::string &original);
 		SamplerState *DeclareSamplerState(const std::string &name, int register_number, int group_number, const SamplerState &templateSS);
 		RasterizerState *DeclareRasterizerState(const std::string &name);

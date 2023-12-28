@@ -145,10 +145,10 @@
 	}
 	void CallingFunction(const char *name)
 	{
-			const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
-			auto j=functions.find(name);
-			for(auto u=j->second.begin();u!=j->second.end();u++)
-				buildFunction.functionsCalled.insert(*u);
+		const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
+		auto j=functions.find(name);
+		for(auto u=j->second.begin();u!=j->second.end();u++)
+			buildFunction.AddFunctionCall(*u);
 	}
 	string GetDeclaredType(string name)
 	{
@@ -851,7 +851,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 			ostr << "<" << templ << ">";
 		ostr << " " << name << ": register(" << semantic << ");\n";
 		string original = $8.strs[0]; // ostr.str();
-		NamedConstantBuffer* dt = gEffect->DeclareNamedConstantBuffer(name, slot, space, templ_type, buildStruct, original);
+		NamedConstantBuffer* dt = gEffect->DeclareNamedConstantBuffer(name, slot,group, space, templ_type, buildStruct, original);
 		if (!dt)
 			sfxError = true;
 		else
@@ -1017,6 +1017,8 @@ primary_exp : IDENTIFIER
 		{
 			buildFunction.declarations.insert(varName);
 			buildFunction.resources.insert(varName);
+			if (cb=gEffect->GetNamedConstantBufferForMember(varName))
+				buildFunction.constantBuffers.insert(cb);
 		}
 		else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
 		{
@@ -2016,7 +2018,7 @@ postfix_exp : primary_exp
 				const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
 				auto j=functions.find("reverse_y_coord");
 				for(auto u=j->second.begin();u!=j->second.end();u++)
-					buildFunction.functionsCalled.insert(*u);
+					buildFunction.AddFunctionCall(*u);
 			}
 			full_expr << cmd;	
 		}
@@ -2103,7 +2105,7 @@ postfix_exp : primary_exp
 				const std::map<std::string, std::vector<Function *>> &functions = gEffect->GetFunctions();
 				auto j = functions.find("reverse_y_coord");
 				for (auto u = j->second.begin(); u != j->second.end(); u++)
-					buildFunction.functionsCalled.insert(*u);
+					buildFunction.AddFunctionCall(*u);
 			}
 			full_expr << cmd;
 		}
@@ -2145,7 +2147,7 @@ postfix_exp : primary_exp
 				// default parameters?
 				if (vars.size() < (*u)->min_parameters)
 					continue;
-				buildFunction.functionsCalled.insert(*u);
+				buildFunction.AddFunctionCall(*u);
 				num++;
 			}
 			for(auto u=j->second.begin();u!=j->second.end();u++)
@@ -2514,13 +2516,18 @@ variant_conditional_expression: SFX_VARIANT_IF '(' conditional_exp ')'
 {
 // TODO: Properly change the identifiers, instead of this hack.
 	$$.strs[0]=std::string("#if sfx_variant_var_")+$3.strs[0];
+	buildFunction.variant_conditions.push_back($3.strs[0]);
 }
 | SFX_VARIANT_ELSE
 {
+	std::string cond = "!"s+buildFunction.variant_conditions.back();
+	buildFunction.variant_conditions.pop_back();
+	buildFunction.variant_conditions.push_back(cond);
 	$$.strs[0]="#else";
 }
 | SFX_VARIANT_END
 {
+	buildFunction.variant_conditions.pop_back();
 	$$.strs[0]="#endif";
 }
 

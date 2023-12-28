@@ -108,6 +108,7 @@ bool CheckVariantCondition(const StructMember &m, std::string value)
 	};
 	return ok;
 }
+
 Effect::Effect()
 	: m_includes(0)
 	, m_active(true)
@@ -183,18 +184,47 @@ Function* Effect::DeclareFunction(const std::string &functionName, Function &bui
 	return f;
 }
 
-void Effect::AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const
+bool ConditionApplies( const std::string &value)
+{
+	bool val=(value=="true");
+	return val;
+
+}
+
+bool ConditionsMatch(const std::set<std::string> &variant_conditions, const std::map<std::string, std::string> &variantValues)
+{
+	for(auto c:variant_conditions)
+	{
+		std::string condition_name=c;
+		bool reverse=false;
+		if(condition_name[0]=='!')
+		{
+			condition_name = condition_name.substr(1,condition_name.length()-1);
+			reverse=true;
+		}
+		auto v = variantValues.find(condition_name);
+		if(v==variantValues.end())
+			return false;
+		std::string value=v->second;
+		if(!(reverse^ConditionApplies(value)))
+			return false;
+	}
+	return true;
+}
+
+void Effect::AccumulateFunctionsUsed2(const Function *f, std::map<std::string, std::string> &variantValues, std::set<const Function *> &s) const
 {
 	s.insert(f);
 	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
 	{
-		AccumulateFunctionsUsed(*u,s);
+		if(ConditionsMatch(u->second.variant_conditions,variantValues))
+			AccumulateFunctionsUsed2(u->first, variantValues,s);
 	}
 }
 
 void Effect::AccumulateFunctionsUsed(const Function *f, std::map<std::string, std::string> &variantValues, std::set<const Function *> &s) const
 {
-	AccumulateFunctionsUsed(f,s);
+	AccumulateFunctionsUsed2(f, variantValues,s);
 	for (auto u = f->variant_parameters.begin(); u != f->variant_parameters.end(); u++)
 	{
 		if(u->type=="function")
@@ -345,10 +375,10 @@ void Effect::AccumulateDeclarationsUsed(const Function *f, map<string, string> &
 	{
 		AccumulateStructDeclarations(variantValues,s, i);
 	}
-	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
+/*	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
 	{
-		AccumulateDeclarationsUsed(*u, variantValues,s, rwLoad);
-	}
+		AccumulateDeclarationsUsed(u->first, variantValues,s, rwLoad);
+	}*/
 	for (auto u = f->variant_parameters.begin(); u != f->variant_parameters.end(); u++)
 	{
 		if(u->type=="function")
@@ -374,10 +404,6 @@ void Effect::AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>
 	{
 		s.insert(i);
 	}
-	for (auto u = f->functionsCalled.begin(); u != f->functionsCalled.end(); u++)
-	{
-		AccumulateGlobalsAsStrings(*u, s);
-	}
 }
 
 void Effect::AccumulateGlobals(const Function *f,std::set<const Variable *> &s) const
@@ -391,22 +417,26 @@ void Effect::AccumulateGlobals(const Function *f,std::set<const Variable *> &s) 
 			s.insert(D);
 		}
 	}
-	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
-	{
-		AccumulateGlobals(*u,s);
-	}
 }
 
 void Effect::AccumulateConstantBuffersUsed(const Function *f, std::set<ConstantBuffer*> &s) const
 {
+	// the constantBuffers list only contains implicit cb's, referenced by their members.
 	for (auto i : f->constantBuffers)
 		s.insert(i);
-	for (auto u = f->functionsCalled.begin(); u != f->functionsCalled.end(); u++)
+	for (auto i : f->globals)
 	{
-		AccumulateConstantBuffersUsed(*u, s);
+		auto d=declarations.find(i);
+		if(d!=declarations.end())
+		{
+			if(d->second->declarationType==DeclarationType::NAMED_CONSTANT_BUFFER)
+			{
+				ConstantBuffer *cb = static_cast<ConstantBuffer*>(d->second);
+				s.insert(cb);
+			}
+		}
 	}
 }
-
 void Effect::DeclareStruct(const string &name,const Struct &ts,const string &original)
 {
 	Struct *rs					=new Struct;
@@ -427,7 +457,7 @@ void Effect::DeclareConstantBuffer(const std::string &name, int slot, int group_
 	cb->slot = slot;
 	cb->group_num = group_num;
 	if(group_num<0)
-		cb->group_num=1;
+		cb->group_num=3;
 	cb->name=name;
 	cb->structureType = name;
 	declarations[name]=cb;
@@ -469,7 +499,7 @@ Function *Effect::GetFunction(const std::string &functionName, std::map<std::str
 				Function *vf = GetFunction(v->second, 0);
 				if (vf)
 				{
-					specializedFunction->functionsCalled.insert(vf);
+					specializedFunction->functionsCalled[vf];
 				}
 			}
 			find_and_replace_identifier(specializedFunction->content, u->identifier, v->second);
@@ -912,21 +942,8 @@ std::shared_ptr<ShaderInstance> Effect::AddShaderInstance(const std::string &sha
 	if(!function)
 		return nullptr;
 	std::set<Declaration *> declarations;
-	std::set<string> globals;
-	gEffect->AccumulateGlobalsAsStrings(function,globals);
-	// find out what slots the function uses by interrogating its global variables.
-	// At this point we're not interested in params, just globals.
-	for(auto i:globals)
-	{
-		string type=gEffect->GetDeclaredType(i);
-		auto d=gEffect->GetDeclarations().find(i);
-		if (d==gEffect->GetDeclarations().end())
-			continue;
-		Declaration *dec=d->second;
-		declarations.insert(dec);
-	}
 
-	std::shared_ptr<ShaderInstance> shaderInstance=std::make_shared<ShaderInstance>(declarations);
+	std::shared_ptr<ShaderInstance> shaderInstance=std::make_shared<ShaderInstance>();
 	m_uniqueShaderInstances.insert(shaderInstance);
 	m_shaderInstances[shaderInstanceName]	=shaderInstance;
 	
@@ -943,7 +960,6 @@ std::shared_ptr<ShaderInstance> Effect::AddShaderInstance(const std::string &sha
 	{
 		d->ref_count++;
 	}
-	AccumulateConstantBuffersUsed(function, shaderInstance->constantBuffers);
 	return shaderInstance;
 }
 
@@ -1390,7 +1406,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 				outstr<<Tab(2)<<"{\n";
 				for(int var=0;var<pass->GetNumVariants();var++)
 				{
-					string variantName=pass->GetVariantName(var);
+					string variantName = pass->GetVariantName(var);
 					int t=3;
 					if(pass->GetNumVariants()>1)
 					{
@@ -1468,6 +1484,19 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 								}
 
 							}
+							if (shaderInstance->variantValues.size())
+							{
+								outstr << " variant:(";
+								bool first = true;
+								for (auto v : shaderInstance->variantValues)
+								{
+									if (!first)
+										outstr << ", ";
+									first = false;
+									outstr << v.first << "=" << v.second;
+								}
+								outstr << ")";
+							}
 							// Print texture slots
 							outstr<<", t:(";
 							for(auto w:textureSlots)
@@ -1516,7 +1545,8 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 									outstr<<",";
 								outstr<<GenerateSamplerSlot(w,false);
 							}
-							outstr<<")\n";
+							outstr<<")";
+							outstr<<"\n";
 						};
 				
 					bool multiviewDeclared = false;
@@ -1787,17 +1817,18 @@ string Effect::GetDeclaredType(const string &name) const
 	return "unknown";
 }
 
-NamedConstantBuffer* Effect::DeclareNamedConstantBuffer(const string &name,int slot,int space,const string &structureType, const Struct& ts,const string &original)
+NamedConstantBuffer* Effect::DeclareNamedConstantBuffer(const string &name,int slot,int group,int space,const string &structureType, const Struct& ts,const string &original)
 {
 	NamedConstantBuffer* t	  = new NamedConstantBuffer();
 	*(static_cast<Struct*>(t)) = ts;
 	t->declarationType		=DeclarationType::NAMED_CONSTANT_BUFFER;
-	t->structureType		= structureType;
-	t->original			 = original;
-	t->name				 = name;
-	t->slot				=slot;
-	t->space			=space;
-	t->instance_name = name;
+	t->structureType		=structureType;
+	t->original				=original;
+	t->name					=name;
+	t->slot					=slot;
+	t->group_num			=group;
+	t->space				=space;
+	t->instance_name		=name;
 	declarations[name] = (t);
 	declarations[structureType] = (t);
 	if (!IsConstantBufferMemberAlignmentValid(declarations[name]))
@@ -2029,7 +2060,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 	 }
 	 for (const auto cf : func->functionsCalled)
 	 {
-		 if (CheckDeclaredGlobal(cf, toCheck))
+		 if (CheckDeclaredGlobal(cf.first, toCheck))
 		 {
 			 return true;
 		 }
@@ -2474,7 +2505,8 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	std::set<std::string> rwTexturesUsedForLoad;
 	std::set<const Function *> fns;
 	AccumulateFunctionsUsed(function, shaderInstance->variantValues, fns);
-	AccumulateDeclarationsUsed(function, shaderInstance->variantValues,decs, rwTexturesUsedForLoad);
+	for(auto f:fns)
+		AccumulateDeclarationsUsed(f, shaderInstance->variantValues,decs, rwTexturesUsedForLoad);
 	// Keep a set of the sampler states used:
 	for (const auto d : decs)
 	{
@@ -2487,14 +2519,34 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			}
 		}
 	}
-	// for now, add in ALL the constant buffers...
+	std::set<string> globals;
+	for (auto f : fns)
+		AccumulateGlobalsAsStrings(f,globals);
+	// find out what slots the function uses by interrogating its global variables.
+	// At this point we're not interested in params, just globals.
+	for(auto i:globals)
+	{
+		string type=gEffect->GetDeclaredType(i);
+		auto d=gEffect->GetDeclarations().find(i);
+		if (d==gEffect->GetDeclarations().end())
+			continue;
+		Declaration *dec=d->second;
+		decs.insert(dec);
+	}
+	for (auto f : fns)
+		AccumulateConstantBuffersUsed(f, shaderInstance->constantBuffers);
+	// for now, add in ALL the constant buffers - except the named ones, we should be able to
+	// distinguish which of those are needed...
 	for(auto i:shaderInstance->constantBuffers)
 	{
-		decs.insert(i);
+		if(i->declarationType!=DeclarationType::NAMED_CONSTANT_BUFFER)
+			decs.insert(i);
 	}
 	std::map<int,const Declaration *> ordered_decs;
 	for (auto u = decs.begin(); u != decs.end(); u++)
 	{
+		(*u)->ref_count++;
+		shaderInstance->declarations.insert(*u);
 		int main_linenumber=(*u)->global_line_number;
 		while (ordered_decs.find(main_linenumber) != ordered_decs.end())
 		{
@@ -2572,9 +2624,11 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			Declare(shaderInstance,theShader, (Declaration*)&samplerCB, textureCB, samplerCB, rwTexturesUsedForLoad, samplerStates, function);
 		}
 	}
-	std::map<int,const Function *> ordered_fns;
+	std::map<int, const Function *> ordered_fns;
+	std::set<const Variable *> vars;
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
+		AccumulateGlobals(*u, vars);
 		// Add only the called functions, not the main one. That goes at the end.
 		if (*u != function)
 		{
@@ -2604,8 +2658,6 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			}
 		}
 	}
-	std::set<const Variable*> vars;
-	AccumulateGlobals(function, vars);
 	for (auto v = vars.begin(); v != vars.end(); v++)
 	{
 		theShader<<v.operator*()->original<<std::endl;

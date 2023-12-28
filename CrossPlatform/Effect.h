@@ -250,6 +250,7 @@ namespace platform
 			unsigned constantBufferSlots;	//b
 			unsigned samplerSlots;			//s
 			crossplatform::RenderPlatform *renderPlatform;
+			phmap::flat_hash_map<std::string, std::string> variantValues;
 		};
 		//! A class representing a shader resource.
 		struct SIMUL_CROSSPLATFORM_EXPORT ShaderResource
@@ -535,7 +536,7 @@ namespace platform
 			typedef phmap::flat_hash_map<std::string,ShaderResource*> TextureDetailsMap;
 			typedef phmap::flat_hash_map<const char *,ShaderResource*> TextureCharMap;
 			TextureDetailsMap textureDetailsMap;
-			ShaderResource *textureResources[32];
+			ShaderResource *textureResources[32]={0};
 			mutable TextureCharMap textureCharMap;
 			phmap::flat_hash_map<std::string,crossplatform::SamplerState *> samplerStates;
 			phmap::flat_hash_map<std::string,crossplatform::RenderState *> depthStencilStates;

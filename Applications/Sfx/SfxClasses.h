@@ -223,7 +223,7 @@ namespace sfx
 		int global_line_number;
 		int file_number;
 		int line_number;
-		int ref_count;
+		mutable int ref_count;
 		std::string name;
 		std::string original;
 		std::string structureType; // e.g. Buffer<structType> if used.

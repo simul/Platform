@@ -58,7 +58,7 @@ struct Raytracing_AABB
 
 //Constant Buffer Structs
 //NamedConstantBuffer<TraceRayParameters> traceRayParameters : register(b0)
-PLATFORM_NAMED_CONSTANT_BUFFER(TraceRayParameters, traceRayParameters,0)
+PLATFORM_NAMED_CONSTANT_BUFFER(TraceRayParameters, traceRayParameters,0,3)
 	uint instanceInclusionMask;								//Inclusion Mask for instances
 	uint rayContributionToHitGroupIndex;					//HitGroup Index for Ray into the SBT.
 	uint multiplierForGeometryContributionToHitGroupIndex;	//HitGroup Stride for Geometry into the SBT.

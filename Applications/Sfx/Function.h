@@ -31,13 +31,26 @@ namespace sfx
 			numThreads[1] = 0;
 			numThreads[2] = 0;
 		}
+		std::string name;
 		std::string						declaration;
 		std::set<std::string>			declarations;
-		std::set<Function*>				functionsCalled;
+		struct FunctionCall
+		{
+			std::set<std::string> variant_conditions;
+		};
+		void AddFunctionCall(Function*f)
+		{
+			auto &fnc=functionsCalled[f];
+			for(auto c:variant_conditions)
+			{
+				fnc.variant_conditions.insert(c);
+			}
+		}
+		std::vector<std::string> variant_conditions;
+		std::map<Function *, FunctionCall> functionsCalled;
 		std::set<ConstantBuffer*>		constantBuffers;
 		const std::set<std::string>&	GetTypesUsed() const;
 		std::string						returnType;
-		std::string						name;
 		std::string						content;
 		//! textures, samplers, buffers. To be divided into parameters and globals when we read the signature
 		//! of the function.

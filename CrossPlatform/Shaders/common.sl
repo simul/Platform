@@ -64,7 +64,7 @@
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) cbuffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };
 
-	#define PLATFORM_NAMED_CONSTANT_BUFFER(struct_name,instance_name,buff_num) NamedConstantBuffer<struct_name> instance_name SIMUL_BUFFER_REGISTER(buff_num) {
+	#define PLATFORM_NAMED_CONSTANT_BUFFER(struct_name,instance_name,buff_num,group_num) NamedConstantBuffer<struct_name> instance_name SIMUL_BUFFER_REGISTER(buff_num) SIMUL_RESOURCE_GROUP(group_num){
 	#define PLATFORM_NAMED_CONSTANT_BUFFER_END };
 
 	#define PLATFORM_GROUPED_CONSTANT_BUFFER(name,buff_num,group_num) cbuffer name SIMUL_BUFFER_REGISTER(buff_num) SIMUL_RESOURCE_GROUP(group_num) {
