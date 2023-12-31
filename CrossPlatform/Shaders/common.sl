@@ -48,6 +48,10 @@
 #define sample_3d_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 
 #ifndef __cplusplus
+vec2 ReverseYTextureCoordinates(vec2 texc)
+{
+	return vec2(texc.x, 1.0 - texc.y);
+}
 #ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
 	#define BottomUpTextureCoordinates(original_texc) original_texc
 	#define BottomUpTextureCoordinates4(original_texc) original_texc

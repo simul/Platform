@@ -25,7 +25,7 @@ PLATFORM_GROUPED_CONSTANT_BUFFER(StereoCameraConstants, 1, 0)
 
     vec4 depthToLinFadeDistParamsX;
 
-	uniform vec3 stereoViewPosition;
+	uniform vec4 stereoViewPosition[2];
 SIMUL_CONSTANT_BUFFER_END
 
 #ifndef __cplusplus
