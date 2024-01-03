@@ -9,7 +9,7 @@ struct Viewport
     float bottom;
 };
 
-PLATFORM_NAMED_CONSTANT_BUFFER(RayGenConstantBuffer, g_rayGenCB, 0)
+PLATFORM_NAMED_CONSTANT_BUFFER(RayGenConstantBuffer, g_rayGenCB, 0, 3)
     Viewport viewport;
     Viewport stencil;
 PLATFORM_NAMED_CONSTANT_BUFFER_END
