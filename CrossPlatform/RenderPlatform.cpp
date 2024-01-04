@@ -783,7 +783,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		}
 	}
 }
-#include "Platform/Core/StringFunctions.h"
+
 void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *t,bool wrap,int array_idx)
 {
 	if(!t||!t->IsValid())
