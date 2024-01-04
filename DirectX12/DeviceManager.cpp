@@ -221,11 +221,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 						std::string id = "";//std::string(magic_enum::enum_name<D3D12_MESSAGE_ID>(ID)); 
 						std::string description = pDescription;
 						
-						category = category.substr(category.rfind('_') + 1);
-						severity = severity.substr(severity.rfind('_') + 1);
+						category = category.substr(std::string("D3D12_MESSAGE_CATEGORY_").size());
+						severity = severity.substr(std::string("D3D12_MESSAGE_SEVERITY_").size());
 
 						std::string errorMessage;
-						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + severity + " " + category + " #" + std::to_string(ID) + ": " + id + " ]");
+						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + category + " " + severity + " #" + std::to_string(ID) + ": " + id + " ]");
 						if (Severity < D3D12_MESSAGE_SEVERITY_WARNING)
 						{
 							SIMUL_BREAK(errorMessage.c_str());
