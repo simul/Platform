@@ -35,9 +35,9 @@ namespace platform
 			{
 				mCpuHandle=h;
 			}
-        private:
-            D3D12_CPU_DESCRIPTOR_HANDLE     mCpuHandle;
-            crossplatform::SamplerStateDesc mCachedDesc;
+		private:
+			D3D12_CPU_DESCRIPTOR_HANDLE     mCpuHandle;
+			crossplatform::SamplerStateDesc mCachedDesc;
 		};
 
 		//! Texture class for DirectX12, it implement the base Texture methods
@@ -171,9 +171,9 @@ namespace platform
 			std::unordered_map<uint64_t, D3D12_CPU_DESCRIPTOR_HANDLE*> depthStencilViews;
 			std::unordered_map<uint64_t, D3D12_CPU_DESCRIPTOR_HANDLE*> renderTargetViews;
 
-            //! We need to store the old MSAA state
-            DXGI_SAMPLE_DESC                mCachedMSAAState;
-            int                             mNumSamples;
+			//! We need to store the old MSAA state
+			DXGI_SAMPLE_DESC                mCachedMSAAState;
+			int                             mNumSamples;
 			
 			void AssumeLayout(D3D12_RESOURCE_STATES state);
 			unsigned GetSubresourceIndex(int mip, int layer);

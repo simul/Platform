@@ -1232,9 +1232,9 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 		return mSubResourcesLayouts[subresourceRange.baseArrayLayer][subresourceRange.baseMipLevel];
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t& numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t& numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	// Return the resource state of a mip or array layer, or the whole resource
 	if (numMips > 1 || numLayers > 1)
@@ -1309,9 +1309,9 @@ void Texture::SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, 
 	};
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t &numMips = (subresourceRange.mipLevelCount == 0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t& numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	uint32_t numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t& numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	auto const barrier = vk::ImageMemoryBarrier()
 		.setSrcAccessMask(srcAccessMask)

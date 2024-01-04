@@ -22,6 +22,7 @@
 #include "Platform/DirectX12/TopLevelAccelerationStructure.h"
 #include "Platform/Math/Matrix4x4.h"
 #include <algorithm>
+#include <iomanip>
 
 #if SIMUL_ENABLE_PIX
 #if defined(_GAMING_XBOX)
@@ -241,7 +242,6 @@ std::string RenderPlatform::D3D12ResourceStateToString(D3D12_RESOURCE_STATES sta
 	stateStrings[states] = str;
 	return str;
 }
-#include <iomanip>
 
 RenderPlatform::ContextBarriers &RenderPlatform::GetBarriers(crossplatform::DeviceContext &deviceContext)
 {
@@ -3012,6 +3012,10 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceContext, bool error_checking)
 {
 	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();
+
+	//auto barriers = GetBarriers(deviceContext);
+	//SIMUL_ASSERT(barriers.mCurBarriers == 0);
+	FlushBarriers(deviceContext);
 
 	crossplatform::ContextState *cs = GetContextState(deviceContext);
 	if (!cs || !cs->currentEffectPass)
