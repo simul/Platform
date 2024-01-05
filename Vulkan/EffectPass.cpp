@@ -956,11 +956,6 @@ RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFo
 	if (layout)
 	{
 		hashval += layout->GetHash();
-	/*	const auto& lDesc = layout->GetDesc();
-		for (const auto& l : lDesc)
-		{
-			hashval += ((unsigned long long)l.format) * 3279 + ((unsigned long long)l.semanticIndex) * 6357;
-		}*/
 	}
 	if (blendState)
 	{
