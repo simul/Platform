@@ -48,7 +48,7 @@ void SphereRenderer::LoadShaders()
 	effect=renderPlatform->CreateEffect("sphere");
 }
 
-void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec3 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour)
+void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec3 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int pass)
 {
 	if (reload_shaders)
 		LoadShaders();
@@ -79,7 +79,7 @@ void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,cross
 	renderPlatform->SetConstantBuffer(deviceContext, &sphereConstants);
 
 	deviceContext.renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLESTRIP);
-	effect->Apply(deviceContext, tech, 0);
+	effect->Apply(deviceContext, tech, pass);
 	deviceContext.renderPlatform->Draw(deviceContext, 4, 0);
 	effect->Unapply(deviceContext);
 }
