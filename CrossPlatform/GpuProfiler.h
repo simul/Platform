@@ -138,7 +138,7 @@ namespace platform
 	}
 }
 
-#ifdef SIMUL_INTERNAL_PROFILING
+#ifdef PLATFORM_INTERNAL_PROFILING
 		
 		#define SIMUL_GPU_PROFILE_STARTFRAME(ctx) \
 			{platform::crossplatform::GpuProfilingInterface *gpuProfilingInterface=platform::crossplatform::GetGpuProfilingInterface(ctx); \
