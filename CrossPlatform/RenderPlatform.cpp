@@ -1090,6 +1090,8 @@ void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, 
 	Draw(deviceContext, 2, 0);
 	debugEffect->Unapply(deviceContext);
 	
+	if (posColourLayout)
+		posColourLayout->Unapply(deviceContext);
 }
 
 void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVertex * lines,int count,bool strip,bool test_depth,bool view_centred)
@@ -1139,6 +1141,7 @@ void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVer
 	Draw(deviceContext, count, 0);
 	SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 	debugEffect->Unapply(deviceContext);
+	posColourLayout->Unapply(deviceContext);
 }
 
 
@@ -1152,8 +1155,8 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 	vec3 pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	vec3 d=dir;
 	d/=length(d);
-	pos+=d;
-	float radius=rads;
+	pos += 1.5f * d;
+	float radius = 1.5f * rads;
 	DrawCircle(deviceContext,pos,dir,radius,colr,fill);
 }
 
