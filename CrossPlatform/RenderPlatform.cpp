@@ -452,6 +452,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
 	}
+	for (auto &debugVertexBuffer : debugVertexBuffers)
+	{
+		debugVertexBuffer->InvalidateDeviceObjects();
+	}
+	debugVertexBuffers.clear();
 	/*for(auto s:shaders)
 	{
 		s.second->Release();
@@ -1096,7 +1101,21 @@ void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, 
 
 void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVertex * lines,int count,bool strip,bool test_depth,bool view_centred)
 {
-	if (!debugVertexBuffer )
+	static uint64_t previousFrameNumber = 0;
+	uint64_t currentFrameNumber = deviceContext.renderPlatform->GetFrameNumber();
+
+	static uint64_t vertexBufferIdx = 0; //Get new vertex buffer each DrawLines render.
+
+	if (currentFrameNumber != previousFrameNumber)
+	{
+		previousFrameNumber = currentFrameNumber;
+		vertexBufferIdx = 0;
+	}
+	if (!(vertexBufferIdx < debugVertexBuffers.size()))
+		debugVertexBuffers.resize(vertexBufferIdx + 1);
+
+	std::shared_ptr<Buffer> &debugVertexBuffer = debugVertexBuffers[vertexBufferIdx++];
+	if (!debugVertexBuffer)
 	{
 		debugVertexBuffer.reset(CreateBuffer());
 	}

@@ -584,7 +584,7 @@ namespace platform
 			TextRenderer					*textRenderer;
 			std::map<StandardRenderState,RenderState*> standardRenderStates;
 			bool initializedDefaultShaderPaths = false;
-			std::shared_ptr<Buffer> debugVertexBuffer;
+			std::vector<std::shared_ptr<Buffer>> debugVertexBuffers;
 			std::shared_ptr<Layout> posColourLayout;
 		};
 
