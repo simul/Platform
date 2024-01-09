@@ -88,7 +88,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
 		, vk::BufferUsageFlagBits::eTransferSrc
 		, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-		, bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory, "vertex buffer upload");
+		, bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory, "index buffer upload");
 
 	void* target_data=nullptr;
 	if (src_data)
@@ -105,7 +105,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
 		, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer
 		, vk::MemoryPropertyFlagBits::eDeviceLocal
-		, mBuffer, mBufferMemory, "Index buffer");
+		, mBuffer, mBufferMemory, "index buffer");
 	loadingComplete = false;
 }
 

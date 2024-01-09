@@ -223,6 +223,8 @@ namespace platform
 			crossplatform::ShaderBindingTable*		CreateShaderBindingTable() override;
 			crossplatform::DisplaySurface*			CreateDisplaySurface() override;
 			crossplatform::GpuProfiler*				CreateGpuProfiler() override;
+			
+			void									PrintDeviceRemovedExtendedData();
 
 			void									PresentSwapChain(crossplatform::DeviceContext &, crossplatform::Window *s) {};
 
