@@ -6,8 +6,8 @@
 #include <iostream>
 
 #ifdef _MSC_VER
-	#pragma warning(push)  
-	#pragma warning(disable : 4251)  
+	#pragma warning(push)
+	#pragma warning(disable : 4251)
 #endif
 
 namespace platform
@@ -15,8 +15,7 @@ namespace platform
 	namespace core
 	{
 		/// A pseudo allocator that tracks video memory but does not actually allocate it.
-		class PLATFORM_CORE_EXPORT TrackingAllocator :
-			public platform::core::MemoryInterface
+		class PLATFORM_CORE_EXPORT TrackingAllocator : public platform::core::MemoryInterface
 		{
 			size_t maxVideoAllocated;
 			size_t totalVideoAllocated;
@@ -56,5 +55,5 @@ namespace platform
 }
 
 #ifdef _MSC_VER
-	#pragma warning(pop)  
+	#pragma warning(pop)
 #endif

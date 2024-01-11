@@ -1265,7 +1265,7 @@ void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext, cr
 
 	auto src = (dx12::Texture *)s;
 	auto dst = (dx12::Texture *)t;
-	if (!src || !dst)
+	if (!src || !dst || !src->IsValid() || !dst->IsValid())
 	{
 		SIMUL_CERR << "Passed a null texture to CopyTexture(), ignoring call.\n";
 		return;
