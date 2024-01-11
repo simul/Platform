@@ -75,7 +75,7 @@ void DisplaySurfaceManager::Shutdown()
 	surfaces.clear();
 }
 
-void DisplaySurfaceManager::SetRenderer(crossplatform::RenderDelegaterInterface *ci)
+void DisplaySurfaceManager::SetRenderer(crossplatform::RenderDelegatorInterface *ci)
 {
 	renderDelegater=ci;
 	for(auto s:surfaces)

@@ -31,7 +31,7 @@ void DisplaySurface::ResizeSwapChain(DeviceContext &)
 		renderer->ResizeView(mViewId,viewport.w,viewport.h);
 }
 
-void DisplaySurface::SetRenderer(crossplatform::RenderDelegaterInterface *ci)
+void DisplaySurface::SetRenderer(crossplatform::RenderDelegatorInterface *ci)
 {
 	renderer	=ci;
 }

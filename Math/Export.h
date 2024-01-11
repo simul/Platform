@@ -15,22 +15,6 @@
     #pragma warning Unknown dynamic link import/export semantics.
 #endif
 
-#if defined(_MSC_VER) && !defined(SIMUL_MATH_DLL)
-	#ifdef _DEBUG
-		#ifdef _DLL
-			#pragma comment(lib,"SimulMath_MDd")
-		#else
-			#pragma comment(lib,"SimulMath_MTd")
-		#endif
-	#else
-		#ifdef _DLL
-			#pragma comment(lib,"SimulMath_MD")
-		#else
-			#pragma comment(lib,"SimulMath_MT")
-		#endif
-	#endif
-#endif
-
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
 // In this lib:
 	#if !defined(SIMUL_MATH_DLL) 

@@ -18,21 +18,6 @@
     #pragma warning Unknown dynamic link import/export semantics.
 #endif
 
-#if defined(_MSC_VER) && !defined(PLATFORM_CORE_DLL)
-	#ifdef _DEBUG
-		#ifdef _DLL
-			#pragma comment(lib,"Core_MDd")
-		#else
-			#pragma comment(lib,"Core_MTd")
-		#endif
-	#else
-		#ifdef _DLL
-			#pragma comment(lib,"Core_MD")
-		#else
-			#pragma comment(lib,"Core_MT")
-		#endif
-	#endif
-#endif
 
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
     // In this lib:

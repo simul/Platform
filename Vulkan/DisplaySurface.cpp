@@ -283,6 +283,8 @@ void DisplaySurface::InitSwapChain()
 	viewport.x = 0;
 	viewport.y = 0;
 
+	if (!mSurface)
+		return;
 	// what formats are supported?
 	uint32_t surfaceformats = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, nullptr);
@@ -349,8 +351,6 @@ void DisplaySurface::InitSwapChain()
 	// if(!swapchain)
 	//		swapchain.swap(new vk::SwapchainKHR);
 	vk::SwapchainKHR oldSwapchain = swapchain;
-	if (!mSurface)
-		return;
 	// Check the mSurface capabilities and formats
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
 	vk::PhysicalDevice *gpu = GetGPU();

@@ -20,22 +20,6 @@
     #pragma warning Unknown dynamic link import/export semantics.
 #endif
 
-#if defined(_MSC_VER) && !defined(SIMUL_VULKAN_DLL)
-	#ifdef _DEBUG
-		#ifdef _DLL
-			#pragma comment(lib,"SimulVulkan_MDd")
-		#else
-			#pragma comment(lib,"SimulVulkan_MTd")
-		#endif
-	#else
-		#ifdef _DLL
-			#pragma comment(lib,"SimulVulkan_MD")
-		#else
-			#pragma comment(lib,"SimulVulkan_MT")
-		#endif
-	#endif
-#endif
-
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
     // In this lib:
 	#if !defined(SIMUL_VULKAN_DLL) 

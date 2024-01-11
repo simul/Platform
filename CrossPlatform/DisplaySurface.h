@@ -23,7 +23,7 @@ namespace platform
 			//! Platform-dependent function called when uninitializing the display surface.
 			virtual void InvalidateDeviceObjects() {}
 			void Release();
-			void SetRenderer(RenderDelegaterInterface *ci);
+			void SetRenderer(RenderDelegatorInterface *ci);
 			void ResizeSwapChain(DeviceContext &deviceContext);
 			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex, long long frameNumber){};
 			virtual void StartFrame() {}
@@ -40,7 +40,7 @@ namespace platform
 			int GetViewId() { return mViewId; }
 
 			Viewport viewport;
-			RenderDelegaterInterface *renderer;
+			RenderDelegatorInterface *renderer;
 
 		protected:
 			bool				swapChainIsGammaEncoded = false;
