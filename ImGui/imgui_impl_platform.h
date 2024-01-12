@@ -25,7 +25,7 @@ namespace platform
 		class RenderPlatform;
 		struct GraphicsDeviceContext;
 		class DisplaySurfaceManagerInterface;
-		class RenderDelegaterInterface;
+		class RenderDelegatorInterface;
 	}
 }
 
@@ -73,7 +73,7 @@ IMGUI_IMPL_API void		ImGui_ImplPlatform_ShutdownPlatformInterface();
 
 
 IMGUI_IMPL_API void		ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
-																		platform::crossplatform::RenderDelegaterInterface *p);
+																		platform::crossplatform::RenderDelegatorInterface *p);
 IMGUI_IMPL_API ImDrawData *ImGui_ImplPlatform_GetDrawData(int view_id);
 
 //! Draw the specified texture
