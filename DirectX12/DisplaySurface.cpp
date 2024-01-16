@@ -81,6 +81,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	swapChainDesc12.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc12.SampleDesc.Count = 1;
 	swapChainDesc12.SampleDesc.Quality = 0;
+	swapChainDesc12.Flags = mIsVSYNC == false ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 	IDXGIFactory4* factory = nullptr;
 	res = CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
@@ -338,8 +339,8 @@ void DisplaySurface::EndFrame()
 
 #ifndef _GAMING_XBOX
 	// Present new frame
-	const DWORD dwFlags = 0;
-	const UINT SyncInterval = 0;
+	const DWORD dwFlags = mIsVSYNC ? 0 : DXGI_PRESENT_ALLOW_TEARING;
+	const UINT SyncInterval = mIsVSYNC ? 1 : 0;
 	res = mSwapChain->Present(SyncInterval, dwFlags);
 	if (res != S_OK)
 	{
