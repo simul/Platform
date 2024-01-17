@@ -115,7 +115,7 @@ platform::crossplatform::RenderPlatform* renderPlatform = nullptr;
 platform::core::CommandLineParams commandLineParams;
 
 //! An example of how to use platform::dx11::SimulWeatherRendererDX12 in context.
-class PlatformRenderer:public crossplatform::RenderDelegaterInterface
+class PlatformRenderer:public crossplatform::RenderDelegatorInterface
 {
 	//! It is better to use a reversed depth buffer format, i.e. the near plane is z=1 and the far plane is z=0. This
 	//! distributes numerical precision to where it is better used.
