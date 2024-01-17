@@ -37,7 +37,7 @@ MouseHandler::MouseHandler(bool yv)
 	}
 	vec3 y={0,1.f,0};
 	vec3 z={0,0,1.f};
-	vec3 vert = y_vertical ? y : z;
+	vec3 vert = y_vertical ? -y : z;
 	camera->LookInDirection(lookAtPos-cameraPos,vert);
 }
 
