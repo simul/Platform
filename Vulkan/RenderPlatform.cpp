@@ -12,7 +12,7 @@
 #include "Platform/Vulkan/DisplaySurface.h"
 #include "DeviceManager.h"
 #include <vulkan/vulkan.hpp>
-
+#pragma optimize("", off)
 #ifndef _countof
 #define _countof(a) (sizeof(a)/sizeof(*(a)))
 #endif
@@ -1936,7 +1936,8 @@ void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, co
 		alloc_info = alloc_info.setDescriptorPool(mDescriptorPool);
 		vk::Result result = vulkanDevice->allocateDescriptorSets(&alloc_info, &descriptorSet);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(this, descriptorSet, fmt::format("Shared Descriptor set"));
+		if (result == vk::Result::eSuccess)
+			SetVulkanName(this, descriptorSet, fmt::format("Shared Descriptor set"));
 	}
 }
 
@@ -2039,12 +2040,12 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		{
 			vk::WriteDescriptorSet &write = m_writeDescriptorSets[i];
 			bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
-
+			no_res|=write.dstSet.operator VkDescriptorSet()==0;
 			if (no_res)
 			{
-			/*	SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in group '"
+				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in group '"
 						   << (uint32_t)g << "' has no valid resource associated with it." << std::endl;
-				SIMUL_BREAK("VkWriteDescriptorSet error.");*/
+				SIMUL_BREAK("VkWriteDescriptorSet error.");
 			}
 		}
 		vulkanDevice->updateDescriptorSets(numDescriptors, m_writeDescriptorSets.data(), 0, nullptr);

@@ -28,7 +28,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	if (resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE || resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE_PER_FRAME)
 	{
 		//TODO: is this efficient?
-		mBufferSize = (unsigned)sz + 2*kBufferAlign;
+		mBufferSize = (unsigned)sz + 4*kBufferAlign;
 	}
 	SIMUL_ASSERT(sz<=mBufferSize);
 	mSlots = unsigned(((sz + size_t(kBufferAlign - 1)) & ~size_t(kBufferAlign - 1)) / size_t(kBufferAlign));
@@ -76,7 +76,6 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 
 	lastBuffer=nullptr;
 	last_offset=0;
-	src=0;
 	size=sz;
 	last_offset=0;
 }
@@ -126,7 +125,6 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 		mBufferSize*=2;
 		RestoreDeviceObjects(renderPlatform,size,nullptr);
 		resetframe=true;
-		return;
 	}
 
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;
