@@ -58,6 +58,8 @@ namespace platform
 			bool getRightButton() const;
 			bool getMiddleButton() const;
 
+			//! @brief Given the last mouse position, what direction is the mouse pointer in?
+			vec3 getMouseDirection(int x, int y, int viewport_x, int viewport_y) const;
 		protected:
 			int step_rotate_x, step_rotate_y;
 			CameraMode cameraMode;

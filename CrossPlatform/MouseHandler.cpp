@@ -37,7 +37,7 @@ MouseHandler::MouseHandler(bool yv)
 	}
 	vec3 y={0,1.f,0};
 	vec3 z={0,0,1.f};
-	vec3 vert = y_vertical ? -y : z;
+	vec3 vert = y_vertical ? y : z;
 	camera->LookInDirection(lookAtPos-cameraPos,vert);
 }
 
@@ -88,6 +88,15 @@ void MouseHandler::mouseMove(int x,int y)
 	MouseY=y;
 	if (updateViews)
 		updateViews();
+}
+#pragma optimize("",off)
+vec3 MouseHandler::getMouseDirection(int x,int y,int viewport_x,int viewport_y) const
+{
+	float screenX = (float(x) / float(viewport_x) );
+	float screenY = (float(y) / float(viewport_y) );
+	float aspect=float(viewport_x)/float(viewport_y);
+	vec3 dir=camera->ScreenPositionToDirection(screenX,screenY,aspect);
+	return dir;
 }
 
 void MouseHandler::getMousePosition(int &x,int &y) const
@@ -161,8 +170,6 @@ void MouseHandler::Update(float time_step)
 		camera->Orientation.GlobalToLocalDirection(offset_camspace,dir);
 	}
 	platform::math::Vector3 view_dir = camera->Orientation.Tz();
-	if (y_vertical)
-		view_dir *= -1.0f;
 	view_dir.Normalize();
 	{
 		float cam_spd=speed_factor*(shift_down?shift_multiplier:1.f);
@@ -194,7 +201,7 @@ void MouseHandler::Update(float time_step)
 		}
 
 		if(y_vertical)
-			pos += forward_back_spd * time_step * view_dir;
+			pos -= forward_back_spd * time_step * view_dir;
 		else
 			pos -= forward_back_spd * time_step * view_dir;
 		pos+=right_left_spd*time_step*camera->Orientation.Tx();
@@ -255,7 +262,7 @@ void MouseHandler::Update(float time_step)
 
 		platform::math::Vector3 vertical(0,0,-1.f);
 		if(y_vertical)
-			vertical.Define(0,1.f,0);
+			vertical.Define(0,-1.f,0);
 		static float sr=0.1f;
 		platform::math::Vector3 del=vertical*(x_rotate+sr*step_rotate_x);
 		step_rotate_x=0;
@@ -273,6 +280,8 @@ void MouseHandler::Update(float time_step)
 		camera->LocalRotate(del);
 
 		static float correct_tilt=0.005f;
+		dir=camera->Orientation.Tz();
+		dir.Normalize();
 		if(!alt_down)
 			camera->Rotate(-correct_tilt * tilt, view_dir);
 
