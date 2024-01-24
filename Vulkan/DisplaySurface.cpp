@@ -849,7 +849,7 @@ void DisplaySurface::Present()
 
 void DisplaySurface::EndFrame()
 {
-	RestoreDeviceObjects(mHwnd, renderPlatform, false, 0, 1, pixelFormat);
+	RestoreDeviceObjects(mHwnd, renderPlatform, false, pixelFormat);
 	// We check for resize here, because we must manage the SwapChain from the main thread.
 	// we may have to do it after executing the command list, because Resize destroys the CL, and we don't want to lose commands.
 	Resize();
