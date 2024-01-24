@@ -25,7 +25,7 @@ namespace platform
 		public:
 			DisplaySurface(int view_id);
 			virtual ~DisplaySurface();
-			virtual void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt) override;
+			virtual void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, crossplatform::PixelFormat outFmt) override;
 			virtual void InvalidateDeviceObjects() override;
 			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			virtual void EndFrame() override;
