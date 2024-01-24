@@ -130,7 +130,7 @@ void MouseHandler::mouseWheel(int delta,int modifiers)
 	else if(delta>0&&fov>min_deg*1.1f)
 		fov/=1.1f;
 	camera->SetHorizontalFieldOfViewDegrees(fov);
-	/*camera->SetVerticalFieldOfViewDegrees(0);*/
+	camera->SetVerticalFieldOfViewDegrees(0);
 	if (updateViews)
 		updateViews();
 }
