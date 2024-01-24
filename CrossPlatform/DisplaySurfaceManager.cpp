@@ -133,7 +133,7 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 		window=renderPlatform->CreateDisplaySurface();
 	window->SetRenderer(renderDelegater);
 	surfaces[hwnd]=window;
-	window->RestoreDeviceObjects(hwnd,renderPlatform,true,0,1,fmt);
+	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,fmt);
 }
 
 void DisplaySurfaceManager::EndFrame(bool clear)
