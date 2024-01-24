@@ -30,7 +30,7 @@ namespace platform
             //! Will resize the swap chain only if needed
             void Resize();
             //! SwapChain used to present images
-            IDXGISwapChain*             mSwapChain;
+            IDXGISwapChain1*            mSwapChain;
             //! The back buffer render target
             ID3D11RenderTargetView*     mBackBufferRT;
             //! Back Buffer texture
