@@ -96,6 +96,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	requestedPixelFormat = outFmt;
 	crossplatform::DeviceContext &immediateContext = r->GetImmediateContext();
 	mHwnd = handle;
+	mIsVSYNC = vsync;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 	auto hInstance = GetModuleHandle(nullptr);
@@ -444,7 +445,7 @@ void DisplaySurface::InitSwapChain()
 								  .setPQueueFamilyIndices(nullptr)
 								  .setPreTransform(preTransform)
 								  .setCompositeAlpha(compositeAlpha)
-								  .setPresentMode(swapchainPresentMode)
+								  .setPresentMode(mIsVSYNC ? swapchainPresentMode : vk::PresentModeKHR::eImmediate) // Use vk::PresentModeKHR::eImmediate for no v-sync.
 								  .setClipped(true)
 								  .setOldSwapchain(oldSwapchain);
 	int supported = 0;
