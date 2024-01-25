@@ -400,7 +400,7 @@ namespace platform
 				ret.z = q1.z + l * (Q2.z - q1.z);
 				ret.s = q1.s + l * (Q2.s - q1.s);
 				ret.MakeUnit();
-				return;
+				return ret;
 			}
 			if (dot < -T(1.0))
 				dot = -T(1.0);

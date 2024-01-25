@@ -75,6 +75,9 @@ namespace platform
 			float forward_back_spd;
 			float right_left_spd;
 			float shift_multiplier=100.0f;
+			float lastTimeStep=0.f;
+			int wheel_forward=0;
+			int wheel_backward=0;
 		};
 
 	}
