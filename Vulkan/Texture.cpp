@@ -1025,7 +1025,7 @@ void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
 {
-	SetLayout(deviceContext, mExternalLayout, {});
+	SetLayout(deviceContext, mExternalLayout, crossplatform::DefaultSubresourceRange);
 }
 
 void Texture::InitViewTable(int l, int m)

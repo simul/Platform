@@ -184,6 +184,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	if (!vulkanDevice)
 		return;
+	
+	vulkanDevice->waitIdle();
+
 	for (int i = 0; i < s_DescriptorSetCount; i++)
 	{
 		m_DescriptorSets[i].clear();

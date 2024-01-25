@@ -215,8 +215,7 @@ void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &de
 	vk::ImageView attachments[2] = {nullptr, nullptr};
 	framebufferCreateInfo.pAttachments = attachments;
 	if (buffer_depth_texture)
-		attachments[1] = *(buffer_depth_texture->AsVulkanImageView(MakeTextureView(crossplatform::ShaderResourceType::TEXTURE_2D, 
-			crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1)));
+		attachments[1] = *(buffer_depth_texture->AsVulkanImageView(MakeTextureView(crossplatform::ShaderResourceType::TEXTURE_2D, crossplatform::TextureAspectFlags::DEPTH, 0, 1, 0, 1)));
 	int totalNum = is_cubemap ? 6 : 1;
 	for (int i = 1; i < 8; i++)
 	{
