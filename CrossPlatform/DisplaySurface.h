@@ -19,7 +19,7 @@ namespace platform
 			DisplaySurface(int view_id);
 			virtual ~DisplaySurface();
 			//! Platform-dependent function called when initializing the display surface.
-			virtual void RestoreDeviceObjects(cp_hwnd handle, RenderPlatform *renderPlatform, bool m_vsync_enabled, int numerator, int denominator, PixelFormat outFmt);
+			virtual void RestoreDeviceObjects(cp_hwnd handle, RenderPlatform *renderPlatform, bool m_vsync_enabled, PixelFormat outFmt);
 			//! Platform-dependent function called when uninitializing the display surface.
 			virtual void InvalidateDeviceObjects() {}
 			void Release();

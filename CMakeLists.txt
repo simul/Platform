@@ -25,6 +25,10 @@ if(PLATFORM_USE_ASSIMP)
 	endif()
 endif()
 
+include("CMake/Variables.cmake")
+include("CMake/Include.cmake")
+include("CMake/Shader.cmake")
+
 if(PLATFORM_USE_FMT)
 	set(FMT_DOC false)
 	set(FMT_INSTALL false)
@@ -43,10 +47,6 @@ if(PLATFORM_USE_FMT)
 		set_target_properties(fmt PROPERTIES VS_GLOBAL_XdkEditionTarget ${GDK_TOOLCHAIN_VERSION})
 	endif()
 endif()
-
-include("CMake/Variables.cmake")
-include("CMake/Include.cmake")
-include("CMake/Shader.cmake")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake" ${CMAKE_MODULE_PATH})
 

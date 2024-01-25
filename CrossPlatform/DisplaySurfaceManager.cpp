@@ -9,7 +9,7 @@ void platform::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 	if(surfaces.find(hwnd)==surfaces.end())
 		return;
 	toRender.erase(hwnd);
-    DisplaySurface *w=surfaces[hwnd];
+	DisplaySurface *w=surfaces[hwnd];
 	SetFullScreen(hwnd,false,0);
 	delete w;
 	surfaces.erase(hwnd);
@@ -88,7 +88,7 @@ int DisplaySurfaceManager::GetViewId(cp_hwnd hwnd)
 {
 	if(surfaces.find(hwnd)==surfaces.end())
 		return -1;
-    DisplaySurface *w=surfaces[hwnd];
+	DisplaySurface *w=surfaces[hwnd];
 	return w->GetViewId();
 }
 
@@ -96,23 +96,23 @@ DisplaySurface *DisplaySurfaceManager::GetWindow(cp_hwnd hwnd)
 {
 	if(surfaces.find(hwnd)==surfaces.end())
 		return NULL;
-    DisplaySurface *w=surfaces[hwnd];
+	DisplaySurface *w=surfaces[hwnd];
 	return w;
 }
 
 void DisplaySurfaceManager::SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output)
 {
-    DisplaySurface *w=(DisplaySurface*)GetWindow(hwnd);
+	DisplaySurface *w=(DisplaySurface*)GetWindow(hwnd);
 	if(!w)
 		return;
-    // TO-DO!
+	// TO-DO!
 }
 
 void DisplaySurfaceManager::ResizeSwapChain(cp_hwnd hwnd)
 {
 	if(surfaces.find(hwnd)==surfaces.end())
 		return;
-    DisplaySurface *w=surfaces[hwnd];
+	DisplaySurface *w=surfaces[hwnd];
 	if(!w)
 		return;
 	DeviceContext &deviceContext =renderPlatform->GetImmediateContext();
@@ -126,14 +126,14 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 	if(fmt==crossplatform::UNKNOWN)
 		fmt=kDisplayFormat;
 	SIMUL_NULL_CHECK_RETURN(renderPlatform,"Can't add a window when renderPlatform has not been set.")
-    DisplaySurface *window=nullptr;
+	DisplaySurface *window=nullptr;
 	if(createSurfaceDelegate)
 		window=createSurfaceDelegate(hwnd);
 	else
 		window=renderPlatform->CreateDisplaySurface();
 	window->SetRenderer(renderDelegater);
 	surfaces[hwnd]=window;
-	window->RestoreDeviceObjects(hwnd,renderPlatform,false,0,1,fmt);
+	window->RestoreDeviceObjects(hwnd,renderPlatform,false,fmt);
 }
 
 void DisplaySurfaceManager::EndFrame(bool clear)

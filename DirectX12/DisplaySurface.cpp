@@ -28,7 +28,7 @@ DisplaySurface::~DisplaySurface()
 	InvalidateDeviceObjects();
 }
 
-void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)
+void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, crossplatform::PixelFormat outFmt)
 {
 	if (mHwnd && mHwnd == handle)
 	{
