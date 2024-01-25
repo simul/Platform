@@ -806,7 +806,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 			.setCullMode(cullModeFlags)
 			.setFrontFace(frontFace)
 			.setDepthBiasEnable(VK_FALSE)
-			.setLineWidth(1.0f);
+			.setLineWidth(4.0f);
 		vk::PipelineMultisampleStateCreateInfo multisampleInfo = vk::PipelineMultisampleStateCreateInfo().setRasterizationSamples(vk::SampleCountFlagBits(numOfSamples));
 		vk::StencilOpState stencilOp = vk::StencilOpState().setFailOp(vk::StencilOp::eKeep).setPassOp(vk::StencilOp::eKeep).setCompareOp(vk::CompareOp::eAlways);
 		vk::PipelineDepthStencilStateCreateInfo depthStencilInfo = vk::PipelineDepthStencilStateCreateInfo()

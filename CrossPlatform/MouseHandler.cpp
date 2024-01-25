@@ -123,13 +123,24 @@ bool MouseHandler::getMiddleButton() const
 void MouseHandler::mouseWheel(int delta,int modifiers)
 {
 	BaseMouseHandler::mouseWheel(delta,modifiers);
-	static float min_deg=5.0f;
-	float fov = camera->GetHorizontalFieldOfViewDegrees();
-	if(delta<0&&fov<180.f/1.1f)
-		fov*=1.1f;
-	else if(delta>0&&fov>min_deg*1.1f)
-		fov/=1.1f;
-	camera->SetHorizontalFieldOfViewDegrees(fov);
+	if(modifiers==4)
+	{
+		static float min_deg=5.0f;
+		float fov = camera->GetHorizontalFieldOfViewDegrees();
+		if(delta<0&&fov<180.f/1.1f)
+			fov*=1.1f;
+		else if(delta>0&&fov>min_deg*1.1f)
+			fov/=1.1f;
+		camera->SetHorizontalFieldOfViewDegrees(fov);
+	}
+	else
+	{
+		int mult = (modifiers==1)?3:1;
+		if(delta>0)
+			wheel_forward=5*mult;
+		if (delta<0)
+			wheel_backward=5*mult;
+	}
 	/*camera->SetVerticalFieldOfViewDegrees(0);*/
 	if (updateViews)
 		updateViews();
@@ -181,10 +192,12 @@ void MouseHandler::Update(float time_step)
 		forward_back_spd*=retain;
 		right_left_spd*=retain;
 		up_down_spd*=retain;
-		if(move_forward)
+		if(move_forward||wheel_forward)
 			forward_back_spd+=cam_spd*introduce;
-		if(move_backward)
-			forward_back_spd-=cam_spd*introduce;
+		if(move_backward||wheel_backward)
+			forward_back_spd -= cam_spd * introduce;
+		forward_back_spd += cam_spd * introduce * float(wheel_forward - wheel_backward);
+		wheel_forward=wheel_backward = 0;
 		if(move_left)
 			right_left_spd-=cam_spd*introduce;
 		if(move_right)
@@ -297,6 +310,7 @@ void MouseHandler::Update(float time_step)
 		dir.Normalize();
 		camera->LookInDirection(-dir);
 	}
+	lastTimeStep = time_step;
 }
 
 

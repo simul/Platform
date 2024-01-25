@@ -415,6 +415,11 @@
 			tvector4 r(x*m,y*m,z*m,w*m);
 			return r;
 		}
+		tvector4 operator/(T m)
+		{
+			tvector4 r(x / m, y /m, z /m, w /m);
+			return r;
+		}
 		tvector4 operator*(const tvector4& v)
 		{
 			tvector4 r(x*v.x,y*v.y,z*v.z,w*v.w);
@@ -549,6 +554,87 @@
 	{
 		tvector3<T> result={abs(v.x), abs(v.y), abs(v.z)};
 		return result;
+	}
+	template <typename T> void
+	closest_approach(const tvector3<T> A, const tvector3<T> B, tvector3<T> C, const tvector3<T> D, bool limit,tvector3<T> &P1,tvector3<T> &P2)
+	{
+		tvector3 u = B - A;
+		tvector3 v = D - C;
+		tvector3 w = A - C;
+
+		T a = dot(u , u); // always >= 0
+		T b = dot(u , v);
+		T c = dot(v , v); // always >= 0
+		T d = dot(u , w);
+		T e = dot(v , w);
+		T sc, sN, sD = a * c - b * b; // sc = sN / sD, sD >= 0
+		T tc, tN, tD = a * c - b * b; // tc = tN / tD, tD >= 0
+		T tol = T(1e-15);
+		// compute the line parameters of the two closest points
+		if (sD < tol)
+		{			  // the lines are almost parallel
+			sN = 0.0; // force using point A on segment AB
+			sD = 1.0; // to prevent possible division by 0.0 later
+			tN = e;
+			tD = c;
+		}
+		else
+		{ // get the closest points on the infinite lines
+			sN = (b * e - c * d);
+			tN = (a * e - b * d);
+			if(limit)
+			{
+				if (sN < 0.0)
+				{			  // sc < 0 => the s=0 edge is visible
+					sN = 0.0; // compute shortest connection of A to segment CD
+					tN = e;
+					tD = c;
+				}
+				else if (sN > sD)
+				{			 // sc > 1  => the s=1 edge is visible
+					sN = sD; // compute shortest connection of B to segment CD
+					tN = e + b;
+					tD = c;
+				}
+			}
+		}
+		if(limit)
+		{
+			if (tN < 0.0)
+			{ // tc < 0 => the t=0 edge is visible
+				tN = 0.0;
+				// recompute sc for this edge
+				if ( -d < 0.0) // compute shortest connection of C to segment AB
+					sN = 0.0;
+				else if ( -d > a)
+					sN = sD;
+				else
+				{
+					sN = -d;
+					sD = a;
+				}
+			}
+			else if (tN > tD)
+			{ // tc > 1  => the t=1 edge is visible
+				tN = tD;
+				// recompute sc for this edge
+				if ((-d + b) < 0.0) // compute shortest connection of D to segment AB
+					sN = 0;
+				else if ( (-d + b) > a)
+					sN = sD;
+				else
+				{
+					sN = (-d + b);
+					sD = a;
+				}
+			}
+		}
+		// finally do the division to get sc and tc
+		sc = (fabs(sN) < tol ? 0.0 : sN / sD);
+		tc = (fabs(tN) < tol ? 0.0 : tN / tD);
+
+		P1 = A + (sc * u);
+		P2 = C + (tc * v);
 	}
 	inline vec3 cross(const vec3 &a,const vec3 &b)
 	{
