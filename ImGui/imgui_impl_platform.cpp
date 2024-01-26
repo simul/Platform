@@ -1090,7 +1090,7 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,fl
 }
 
 void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, const char* textureName, float mip, int slice, int width, int height)
-	{
+{
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 
 	if (width <= 0 || height <= 0)
