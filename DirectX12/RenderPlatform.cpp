@@ -25,15 +25,18 @@
 #include <iomanip>
 
 #if PLATFORM_ENABLE_PIX
+
 #if defined(_GAMING_XBOX)
 #define PLATFORM_PIX_XBOX
 #endif
+
 #if defined(PLATFORM_PIX_XBOX) // Xbox
 #include <pix3.h>
 #pragma comment(lib, "pixevt.lib")
 #else // Windows
 static HMODULE hWinPixEventRuntime;
 #endif
+
 #endif
 
 using namespace platform;
