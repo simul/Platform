@@ -24,11 +24,11 @@
 #include <algorithm>
 #include <iomanip>
 
-#if SIMUL_ENABLE_PIX
+#if PLATFORM_ENABLE_PIX
 #if defined(_GAMING_XBOX)
-#define SIMUL_PIX_XBOX
+#define PLATFORM_PIX_XBOX
 #endif
-#if defined(SIMUL_PIX_XBOX) // Xbox
+#if defined(PLATFORM_PIX_XBOX) // Xbox
 #include <pix3.h>
 #pragma comment(lib, "pixevt.lib")
 #else // Windows
@@ -121,15 +121,18 @@ const char *PlatformD3D12GetErrorText(HRESULT hr)
 #endif
 	return str.c_str();
 }
-RenderPlatform::RenderPlatform() : DepthStateOverride(nullptr), BlendStateOverride(nullptr), RasterStateOverride(nullptr)
-
-								   ,
-								   mTimeStampFreq(0), m12Device(nullptr), mGraphicsQueue(nullptr), mComputeQueue(nullptr), mCopyQueue(nullptr), mFrameHeap(nullptr), mFrameOverrideSamplerHeap(nullptr), mSamplerHeap(nullptr), mRenderTargetHeap(nullptr), mDepthStencilHeap(nullptr), mNullHeap(nullptr), mGRootSignature(nullptr), mDummy2D(nullptr), mDummy3D(nullptr), mCurInputLayout(nullptr), mIsMsaaEnabled(false)
+RenderPlatform::RenderPlatform() 
+	: DepthStateOverride(nullptr), BlendStateOverride(nullptr), RasterStateOverride(nullptr)
+	, mTimeStampFreq(0), m12Device(nullptr), mGraphicsQueue(nullptr), mComputeQueue(nullptr)
+	, mCopyQueue(nullptr), mFrameHeap(nullptr), mFrameOverrideSamplerHeap(nullptr)
+	, mSamplerHeap(nullptr), mRenderTargetHeap(nullptr), mDepthStencilHeap(nullptr)
+	, mNullHeap(nullptr), mGRootSignature(nullptr), mDummy2D(nullptr), mDummy3D(nullptr)
+	, mCurInputLayout(nullptr), mIsMsaaEnabled(false)
 {
 	mMsaaInfo.Count = 1;
 	mMsaaInfo.Quality = 0;
-#if SIMUL_ENABLE_PIX && !defined(SIMUL_PIX_XBOX)
-	// We need a better way to load binaries from the Platform submodules. It can't just be relative to the working directory.
+#if PLATFORM_ENABLE_PIX && !defined(PLATFORM_PIX_XBOX)
+	// We need a better way to load binaries from the Platform submodules. It can't just be a relative directory.
 	if (hWinPixEventRuntime == 0)
 		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
 	if (hWinPixEventRuntime == 0)
@@ -140,7 +143,7 @@ RenderPlatform::RenderPlatform() : DepthStateOverride(nullptr), BlendStateOverri
 RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
-#if SIMUL_ENABLE_PIX && !defined(SIMUL_PIX_XBOX)
+#if PLATFORM_ENABLE_PIX && !defined(PLATFORM_PIX_XBOX)
 	if (hWinPixEventRuntime != 0)
 	{
 		if (!FreeLibrary(hWinPixEventRuntime))
@@ -1077,8 +1080,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, const char *name)
 {
-#if SIMUL_ENABLE_PIX
-#if defined(SIMUL_PIX_XBOX)
+#if PLATFORM_ENABLE_PIX
+#if defined(PLATFORM_PIX_XBOX)
 	PIXBeginEvent(deviceContext.asD3D12Context(), 0, name);
 #else
 	typedef HRESULT(WINAPI * PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList *, UINT64, _In_ PCSTR);
@@ -1096,8 +1099,8 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, con
 
 void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 {
-#if SIMUL_ENABLE_PIX
-#if defined(SIMUL_PIX_XBOX)
+#if PLATFORM_ENABLE_PIX
+#if defined(PLATFORM_PIX_XBOX)
 	PIXEndEvent(deviceContext.asD3D12Context());
 #else
 	typedef HRESULT(WINAPI * PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList *);
