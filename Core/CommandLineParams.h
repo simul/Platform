@@ -29,6 +29,7 @@ namespace platform
 				,opengl(false)
 				,vulkan(false)
 				,debug(false)
+				,vsync(false)
 			{
 			}
 			bool operator()(const char *);
@@ -41,6 +42,7 @@ namespace platform
 			std::string screenshotFilenameUtf8;
 			bool dx11, dx12, opengl, vulkan;
 			bool debug;
+			bool vsync;
 			std::vector<std::string> strings;
 		};
 		/// Convert the inputs to an executable into a CommandLineParams struct.
@@ -121,6 +123,10 @@ namespace platform
 					else if (FoundArg("-debug") || FoundArg("-DEBUG"))
 					{
 						commandLineParams.debug = true;
+					}
+					else if (FoundArg("-vsync") || FoundArg("-VSYNC"))
+					{
+						commandLineParams.vsync = true;
 					}
 					else
 						commandLineParams.strings.push_back(arg);
