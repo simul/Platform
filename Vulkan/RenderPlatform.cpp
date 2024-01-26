@@ -20,6 +20,14 @@
 bool platform::vulkan::debugUtilsSupported=false;
 bool platform::vulkan::debugMarkerSupported=false;
 
+namespace platform::vulkan
+{
+	static PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = nullptr;
+	static PFN_vkCmdDebugMarkerBeginEXT vkCmdDebugMarkerBeginEXT = nullptr;
+	static PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT = nullptr;
+	static PFN_vkCmdDebugMarkerEndEXT vkCmdDebugMarkerEndEXT = nullptr;
+}
+
 using namespace platform;
 using namespace vulkan;
 
@@ -30,7 +38,6 @@ RenderPlatform::RenderPlatform():
 	mirrorY	 = false;
 	mirrorY2	= false;
 	mirrorYText = false;
-
 }
 
 RenderPlatform::~RenderPlatform()
@@ -48,16 +55,28 @@ const char* RenderPlatform::GetName()const
 	return "Vulkan";
 }
 
-void RenderPlatform::RestoreDeviceObjects(void* vkDevice_vkInstance_gpu)
+void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 {
 	ERRNO_BREAK
-	void** ptr = (void**)vkDevice_vkInstance_gpu;
-	vulkanDevice = (vk::Device*)ptr[0];
-	vulkanInstance = (vk::Instance*)ptr[1];
-	vulkanGpu = (vk::PhysicalDevice*)ptr[2];
+	void **ptr = (void **)vkDevice_vkInstance_gpu;
+	vulkanDevice = (vk::Device *)ptr[0];
+	vulkanInstance = (vk::Instance *)ptr[1];
+	vulkanGpu = (vk::PhysicalDevice *)ptr[2];
 	immediateContext.platform_context = nullptr;
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
-	 
+
+	// Load debug markers PFNs.
+	if (debugUtilsSupported)
+	{
+		vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdBeginDebugUtilsLabelEXT");
+		vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdEndDebugUtilsLabelEXT");
+	}
+	if (debugMarkerSupported)
+	{
+		vkCmdDebugMarkerBeginEXT = (PFN_vkCmdDebugMarkerBeginEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerBeginEXT");
+		vkCmdDebugMarkerEndEXT = (PFN_vkCmdDebugMarkerEndEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerEndEXT");
+	}
+
 	// Check feature support.
 	renderingFeatures = crossplatform::RenderingFeatures::None;
 	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
@@ -443,7 +462,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 		labelInfo.color[0] = labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
 
 		vk::DispatchLoaderDynamic d;
-		d.vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdBeginDebugUtilsLabelEXT");
+		d.vkCmdBeginDebugUtilsLabelEXT = vkCmdBeginDebugUtilsLabelEXT;
 		commandBuffer->beginDebugUtilsLabelEXT(&labelInfo, d);
 	}
 	if (debugMarkerSupported)
@@ -455,7 +474,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 		markerInfo.color[0] = markerInfo.color[1] = markerInfo.color[2] = markerInfo.color[3] = 1.0f;
 
 		vk::DispatchLoaderDynamic d;
-		d.vkCmdDebugMarkerBeginEXT = (PFN_vkCmdDebugMarkerBeginEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerBeginEXT");
+		d.vkCmdDebugMarkerBeginEXT = vkCmdDebugMarkerBeginEXT;
 		commandBuffer->debugMarkerBeginEXT(markerInfo, d);
 	}
 }
@@ -466,14 +485,14 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 	{
 		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
 		vk::DispatchLoaderDynamic d;
-		d.vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vulkanInstance->getProcAddr("vkCmdEndDebugUtilsLabelEXT");
+		d.vkCmdEndDebugUtilsLabelEXT = vkCmdEndDebugUtilsLabelEXT;
 		commandBuffer->endDebugUtilsLabelEXT(d);
 	}
 	if (debugMarkerSupported)
 	{
 		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
 		vk::DispatchLoaderDynamic d;
-		d.vkCmdDebugMarkerEndEXT = (PFN_vkCmdDebugMarkerEndEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerEndEXT");
+		d.vkCmdDebugMarkerEndEXT = vkCmdDebugMarkerEndEXT;
 		commandBuffer->debugMarkerEndEXT(d);
 	}
 }
