@@ -67,7 +67,7 @@ namespace simul
             //! Storage for the values of the fence
             UINT64						                mFenceValues[FrameCount];
             //! Used to record commands
-            ID3D12GraphicsCommandList*	                mCommandList;
+            ID3D12GraphicsCommandList*	                mCommandList=nullptr;
             bool                                        mRecordingCommands;
         };
     }

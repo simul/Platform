@@ -272,6 +272,8 @@ void DisplaySurface::StartFrame()
 		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvents[idx]);
 		WaitForSingleObject(mWindowEvents[idx], INFINITE);
 	}
+	FlushAllGPUWork();
+
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 
@@ -353,13 +355,12 @@ void DisplaySurface::Resize()
 		EndFrame();
 	}
 
-	int idx = (GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
+	UINT idx = GetCurrentBackBufferIndex();
 	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
 	{
 		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvents[idx]);
 		WaitForSingleObject(mWindowEvents[idx], INFINITE);
 	}
-
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	for (UINT i = 0; i < FrameCount; i++)
