@@ -111,8 +111,8 @@ vec4 simul::crossplatform::GetDepthToDistanceParameters(const crossplatform::Vie
 	return GetDepthToDistanceParameters(viewStruct.depthTextureStyle, viewStruct, max_dist_metres);
 }
 
-static float x_sgn = -1.f;
-static float y_sgn = -1.f;
+static float x_sgn = +1.f;
+static float y_sgn = +1.f;
 Frustum simul::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 {
 	Frustum frustum;
