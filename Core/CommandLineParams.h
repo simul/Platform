@@ -98,6 +98,10 @@ namespace platform
 							commandLineParams.screenshotFilenameUtf8=right;
 							commandLineParams.quitafterframe=50;
 						}
+						else
+						{
+							commandLineParams.strings.push_back(arg);
+						}
 					}
 					else if(arg.find("SCREENSHOT")<arg.length()||arg.find("screenshot")<arg.length())
 					{
@@ -129,7 +133,9 @@ namespace platform
 						commandLineParams.vsync = true;
 					}
 					else
+					{
 						commandLineParams.strings.push_back(arg);
+					}
 				}
 			}
 		}
