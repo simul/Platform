@@ -25,7 +25,7 @@ namespace simul
 			UNKNOWN=0xFFFF
 		};
 		//! A cross-platform equivalent to the OpenGL and DirectX pixel formats
-		enum PixelFormat
+		enum PixelFormat : uint8_t
 		{
 			UNKNOWN=0
 			,RGBA_32_FLOAT
