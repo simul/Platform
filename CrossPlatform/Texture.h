@@ -203,7 +203,7 @@ namespace simul
 			int default_slot;
 			crossplatform::RenderPlatform *renderPlatform;
 		};
-		enum class ShaderResourceType;
+		enum class ShaderResourceType : uint16_t;
 
 		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceRange
 		{

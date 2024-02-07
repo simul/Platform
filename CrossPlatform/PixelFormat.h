@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 namespace simul
 {
 	namespace crossplatform
@@ -86,7 +87,7 @@ namespace simul
 			,NV12
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
-		enum PixelOutputFormat
+		enum PixelOutputFormat : uint8_t
 		{
 			FMT_UNKNOWN
 			,FMT_32_GR
@@ -100,7 +101,7 @@ namespace simul
 			,OUTPUT_FORMAT_COUNT
 		};
 		//! This refers to the type of a shader resource, which should be compatible with the type of any resource assigned to it.
-		enum class ShaderResourceType
+		enum class ShaderResourceType: uint16_t
 		{
 			UNKNOWN=0
 			,RW		=1

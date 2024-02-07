@@ -2720,7 +2720,7 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 	imageBuffer->Map(0, &readRange, &ptr);
 	std::vector<char> pixelData;
 	pixelData.resize(NumRows * RowSizesInBytes);
-	for (int row = 0; row < NumRows; row++)
+	for (UINT row = 0; row < NumRows; row++)
 	{
 		auto index = row * RowSizesInBytes;
 		memcpy(&pixelData[index], ptr, RowSizesInBytes);

@@ -45,7 +45,7 @@ namespace simul
 		class SamplerState;
 		class Layout;
 		class TopLevelAccelerationStructure;
-		enum class ShaderResourceType;
+		enum class ShaderResourceType : uint16_t;
 		struct TextureFence
 		{
 			crossplatform::Texture *texture;
