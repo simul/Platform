@@ -38,7 +38,6 @@ namespace platform
 			int GetViewId(cp_hwnd hwnd);
             DisplaySurface *GetWindow(cp_hwnd hwnd);
 
-			platform::core::ReadWriteMutex *delegatorReadWriteMutex;
 			///
 			void EndFrame(bool clear=true);
 			typedef std::function<DisplaySurface*(cp_hwnd)> CreateSurfaceDelegate;
@@ -46,7 +45,9 @@ namespace platform
 			{
 				createSurfaceDelegate=d;
 			}
-		protected:
+
+		private:
+			platform::core::ReadWriteMutex *delegatorReadWriteMutex=nullptr;
 			CreateSurfaceDelegate createSurfaceDelegate;
 	
             static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;

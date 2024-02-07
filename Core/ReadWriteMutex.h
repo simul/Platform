@@ -13,11 +13,15 @@ namespace platform
 		{
 			std::condition_variable unlocked;
 			std::mutex mutex;
-			bool writer;
-			int readers;
+			bool writer=false;
+			int readers=0;
 		public:
-			ReadWriteMutex():writer(false),readers(0)
+			ReadWriteMutex()
 			{
+			}
+			bool locked() const
+			{
+				return (readers!=0)||writer;
 			}
 			void lock_for_read()
 			{

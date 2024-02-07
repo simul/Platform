@@ -224,6 +224,15 @@ namespace platform
 				r.z=-z;
 				return r;
 			}
+			Quaternion conjugate() const
+			{
+				Quaternion r;
+				r.s = s;
+				r.x = -x;
+				r.y = -y;
+				r.z = -z;
+				return r;
+			}
 			Quaternion& operator=(const T *q)
 			{
 				x=q[0];
@@ -275,7 +284,7 @@ namespace platform
 				return *this;
 			}
 			
-			tvector3<T> RotateVector(const tvector3<T> &v)
+			tvector3<T> RotateVector(const tvector3<T> &v) const
 			{
 				const T &x0=v.x;
 				const T &y0=v.y;
@@ -400,7 +409,7 @@ namespace platform
 				ret.z = q1.z + l * (Q2.z - q1.z);
 				ret.s = q1.s + l * (Q2.s - q1.s);
 				ret.MakeUnit();
-				return;
+				return ret;
 			}
 			if (dot < -T(1.0))
 				dot = -T(1.0);

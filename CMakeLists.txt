@@ -49,6 +49,18 @@ include("CMake/Variables.cmake")
 include("CMake/Include.cmake")
 include("CMake/Shader.cmake")
 
+# FetchContent download timestamp policy:
+cmake_policy(SET CMP0135 NEW)
+cmake_policy(SET CMP0077 NEW)
+# fetch magic_enum
+include(FetchContent)
+FetchContent_Declare(
+  magic_enum
+  URL https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.5.zip
+  SOURCE_DIR magic_enum
+)
+FetchContent_MakeAvailable(magic_enum)
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
 add_subdirectory(Core)

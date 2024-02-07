@@ -5,10 +5,10 @@
 
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/StringFunctions.h"
-#include "Platform/External/magic_enum/include/magic_enum.hpp"
+#include <magic_enum/magic_enum.hpp>
 
 #include <algorithm>
-#include <vulkan/vk_enum_string_helper.h>
+//#include <vulkan/vk_enum_string_helper.h>
 
 
 using namespace platform;
