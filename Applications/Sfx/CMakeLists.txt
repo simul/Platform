@@ -36,7 +36,7 @@ if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 	add_static_executable(Sfx CONSOLE SOURCES ${SOURCES} ${HEADERS} ${CMAKE} ${FLEX_BISON} ${GeneratedFiles} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 	target_include_directories(Sfx PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles" )
 	
-	set( SFX_TEST_PLATFORMS "DirectX12";"Vulkan" CACHE STRING "Which platform to use when debugging the Sfx executable" )
+	set( SFX_TEST_PLATFORMS "DirectX12;Vulkan" CACHE STRING "Which platform to use when debugging the Sfx executable" )
 	#SET_PROPERTY(CACHE SFX_TEST_PLATFORM PROPERTY STRINGS DirectX11 DirectX12 Vulkan OpenGL PS4 GLES Commodore) 
 
 	set(SFX_TEST_FILE "${CMAKE_SOURCE_DIR}/Shaders/Sfx/test.sfx" CACHE FILEPATH "Which file to use when debugging Sfx")

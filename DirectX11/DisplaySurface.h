@@ -16,7 +16,7 @@ namespace platform
             DisplaySurface(int view_id);
             ~DisplaySurface();
 			//! Platform-dependent function called when initializing the display surface.
-            void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)override;
+            void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, crossplatform::PixelFormat outFmt)override;
 			//! Platform-dependent function called when uninitializing the display surface.
 			void InvalidateDeviceObjects() override;
 			//! Render to the display surface. Requires a reference to the mutex to make sure that this rendering doesn't take place at the same time as other render calls.
@@ -30,7 +30,7 @@ namespace platform
             //! Will resize the swap chain only if needed
             void Resize();
             //! SwapChain used to present images
-            IDXGISwapChain*             mSwapChain;
+            IDXGISwapChain1*            mSwapChain;
             //! The back buffer render target
             ID3D11RenderTargetView*     mBackBufferRT;
             //! Back Buffer texture

@@ -85,7 +85,7 @@ vk::PhysicalDevice *DisplaySurface::GetGPU()
 	return gpu;
 }
 
-void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform *r, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)
+void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform *r, bool vsync, crossplatform::PixelFormat outFmt)
 {
 	if (mHwnd && mHwnd == handle)
 	{
@@ -96,6 +96,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	requestedPixelFormat = outFmt;
 	crossplatform::DeviceContext &immediateContext = r->GetImmediateContext();
 	mHwnd = handle;
+	mIsVSYNC = vsync;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 	auto hInstance = GetModuleHandle(nullptr);
@@ -283,6 +284,8 @@ void DisplaySurface::InitSwapChain()
 	viewport.x = 0;
 	viewport.y = 0;
 
+	if (!mSurface)
+		return;
 	// what formats are supported?
 	uint32_t surfaceformats = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, nullptr);
@@ -349,8 +352,6 @@ void DisplaySurface::InitSwapChain()
 	// if(!swapchain)
 	//		swapchain.swap(new vk::SwapchainKHR);
 	vk::SwapchainKHR oldSwapchain = swapchain;
-	if (!mSurface)
-		return;
 	// Check the mSurface capabilities and formats
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
 	vk::PhysicalDevice *gpu = GetGPU();
@@ -444,7 +445,7 @@ void DisplaySurface::InitSwapChain()
 								  .setPQueueFamilyIndices(nullptr)
 								  .setPreTransform(preTransform)
 								  .setCompositeAlpha(compositeAlpha)
-								  .setPresentMode(swapchainPresentMode)
+								  .setPresentMode(mIsVSYNC ? swapchainPresentMode : vk::PresentModeKHR::eImmediate) // Use vk::PresentModeKHR::eImmediate for no v-sync.
 								  .setClipped(true)
 								  .setOldSwapchain(oldSwapchain);
 	int supported = 0;
@@ -857,7 +858,7 @@ void DisplaySurface::Present()
 
 void DisplaySurface::EndFrame()
 {
-	RestoreDeviceObjects(mHwnd, renderPlatform, false, 0, 1, pixelFormat);
+	RestoreDeviceObjects(mHwnd, renderPlatform, false, pixelFormat);
 	// We check for resize here, because we must manage the SwapChain from the main thread.
 	// we may have to do it after executing the command list, because Resize destroys the CL, and we don't want to lose commands.
 	Resize();

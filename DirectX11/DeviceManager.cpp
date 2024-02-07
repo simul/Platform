@@ -324,7 +324,7 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	viewport.TopLeftY = 0.0f;
 }
 
-void Window::SetRenderer(crossplatform::RenderDelegaterInterface *ci,int vw_id)
+void Window::SetRenderer(crossplatform::RenderDelegatorInterface *ci,int vw_id)
 {
 	if(renderer==ci)
 		return;

@@ -35,8 +35,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	stride = layout->GetStructSize();
 	mBufferSize = num_vertices * layout->GetStructSize();
 	count = num_vertices;
-	SAFE_DELETE(d3d12Buffer);
-	SAFE_DELETE(mIntermediateHeap);
+	InvalidateDeviceObjects();
 
 	auto defaultHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto defaultDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
@@ -86,8 +85,8 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	mBufferSize = index_size_bytes * num_indices;
 	count = num_indices;
 	upload_data=data;
-	SAFE_DELETE(d3d12Buffer);
-	SAFE_DELETE(mIntermediateHeap);
+	InvalidateDeviceObjects();
+
 	auto defaultHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto defaultDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 	res = renderPlatform->AsD3D12Device()->CreateCommittedResource

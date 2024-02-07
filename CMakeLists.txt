@@ -18,13 +18,16 @@ if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set(PLATFORM_BUILD_DIR ${PLATFORM_BUILD_DIR} PARENT_SCOPE)
 endif()
 
-
 if(PLATFORM_USE_ASSIMP)
 	set(ASSIMP_LIBNAME assimp-vc${MSVC_TOOLSET_VERSION}-mt$<$<CONFIG:Debug>:d> )
 	if(NOT PLATFORM_WINDOWS)
 		add_subdirectory(External/assimp)
 	endif()
 endif()
+
+include("CMake/Variables.cmake")
+include("CMake/Include.cmake")
+include("CMake/Shader.cmake")
 
 if(PLATFORM_USE_FMT)
 	set(FMT_DOC false)
@@ -33,7 +36,9 @@ if(PLATFORM_USE_FMT)
 	add_subdirectory(External/fmt)
 	add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
 	if( PLATFORM_WINDOWS )
+		if(${PLATFORM_WINDOWS_RUNTIME} MATCHES "static")
 		set_property(TARGET fmt PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	endif()
 	endif()
 	set_target_properties( fmt PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/External)
 	set_target_properties( fmt PROPERTIES PREFIX "" )
@@ -44,10 +49,6 @@ if(PLATFORM_USE_FMT)
 		set_target_properties(fmt PROPERTIES VS_GLOBAL_XdkEditionTarget ${GDK_TOOLCHAIN_VERSION})
 	endif()
 endif()
-
-include("CMake/Variables.cmake")
-include("CMake/Include.cmake")
-include("CMake/Shader.cmake")
 
 # FetchContent download timestamp policy:
 cmake_policy(SET CMP0135 NEW)

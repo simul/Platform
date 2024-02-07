@@ -801,7 +801,7 @@ void ImGui_ImplPlatform_DebugInfo()
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 platform::crossplatform::DisplaySurfaceManagerInterface *displaySurfaceManagerInterface=nullptr;
-platform::crossplatform::RenderDelegaterInterface *platformRendererInterface=nullptr;
+platform::crossplatform::RenderDelegatorInterface *platformRendererInterface=nullptr;
 // Helper structure we store in the void* RenderUserData field of each ImGuiViewport to easily retrieve our backend data.
 struct ImGui_ImplPlatform_ViewportData
 {
@@ -810,7 +810,7 @@ struct ImGui_ImplPlatform_ViewportData
 };
 
 void ImGui_ImplPlatform_SetDisplaySurfaceManagerAndPlatformRenderer(platform::crossplatform::DisplaySurfaceManagerInterface *d,
-																		platform::crossplatform::RenderDelegaterInterface *p)
+																		platform::crossplatform::RenderDelegatorInterface *p)
 {
 	displaySurfaceManagerInterface=d;
 	platformRendererInterface=p;
@@ -1090,7 +1090,7 @@ void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::Texture* texture,fl
 }
 
 void ImGui_ImplPlatform_DrawTexture(platform::crossplatform::RenderDelegate d, const char* textureName, float mip, int slice, int width, int height)
-	{
+{
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 
 	if (width <= 0 || height <= 0)

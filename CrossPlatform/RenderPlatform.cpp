@@ -452,6 +452,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
 	}
+	for (auto &debugVertexBuffer : debugVertexBuffers)
+	{
+		debugVertexBuffer->InvalidateDeviceObjects();
+	}
+	debugVertexBuffers.clear();
 	/*for(auto s:shaders)
 	{
 		s.second->Release();
@@ -783,7 +788,7 @@ void RenderPlatform::ClearTexture(crossplatform::DeviceContext &deviceContext,cr
 		}
 	}
 }
-#include "Platform/Core/StringFunctions.h"
+
 void RenderPlatform::GenerateMips(GraphicsDeviceContext &deviceContext,Texture *t,bool wrap,int array_idx)
 {
 	if(!t||!t->IsValid())
@@ -1090,11 +1095,27 @@ void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, 
 	Draw(deviceContext, 2, 0);
 	debugEffect->Unapply(deviceContext);
 	
+	if (posColourLayout)
+		posColourLayout->Unapply(deviceContext);
 }
 
 void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVertex * lines,int count,bool strip,bool test_depth,bool view_centred)
 {
-	if (!debugVertexBuffer )
+	static uint64_t previousFrameNumber = 0;
+	uint64_t currentFrameNumber = deviceContext.renderPlatform->GetFrameNumber();
+
+	static uint64_t vertexBufferIdx = 0; //Get new vertex buffer each DrawLines render.
+
+	if (currentFrameNumber != previousFrameNumber)
+	{
+		previousFrameNumber = currentFrameNumber;
+		vertexBufferIdx = 0;
+	}
+	if (!(vertexBufferIdx < debugVertexBuffers.size()))
+		debugVertexBuffers.resize(vertexBufferIdx + 1);
+
+	std::shared_ptr<Buffer> &debugVertexBuffer = debugVertexBuffers[vertexBufferIdx++];
+	if (!debugVertexBuffer)
 	{
 		debugVertexBuffer.reset(CreateBuffer());
 	}
@@ -1124,7 +1145,10 @@ void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVer
 	debugVertexBuffer->Unmap(deviceContext);
 
 	mat4 wvp;
-	crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
+	if (view_centred)
+		crossplatform::MakeCentredViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	else
+		crossplatform::MakeViewProjMatrix((float*)&wvp,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	debugConstants.debugWorldViewProj=wvp;//deviceContext.viewStruct.viewProj;
 	debugConstants.debugWorldViewProj.transpose();
 	auto *b=debugVertexBuffer.get();
@@ -1132,10 +1156,11 @@ void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVer
 	SetConstantBuffer(deviceContext,&debugConstants);
 	SetLayout(deviceContext,posColourLayout.get());
 	debugEffect->Apply(deviceContext,"lines_3d","lines3d_nodepth");
-	SetTopology(deviceContext,Topology::LINELIST);
+	SetTopology(deviceContext, strip?Topology::LINESTRIP:Topology::LINELIST);
 	Draw(deviceContext, count, 0);
 	SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 	debugEffect->Unapply(deviceContext);
+	posColourLayout->Unapply(deviceContext);
 }
 
 
@@ -1149,8 +1174,8 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 	vec3 pos=GetCameraPosVector(deviceContext.viewStruct.view);
 	vec3 d=dir;
 	d/=length(d);
-	pos+=d;
-	float radius=rads;
+	pos += 1.5f * d;
+	float radius = 1.5f * rads;
 	DrawCircle(deviceContext,pos,dir,radius,colr,fill);
 }
 

@@ -7,23 +7,23 @@
 using namespace platform;
 using namespace crossplatform;
 
-RenderDelegater::RenderDelegater(crossplatform::RenderPlatform *r)
+RenderDelegator::RenderDelegator(crossplatform::RenderPlatform *r)
 	:last_view_id(0)
 	,renderPlatform(r)
 {
 }
 
-RenderDelegater::~RenderDelegater()
+RenderDelegator::~RenderDelegator()
 {
 	OnLostDevice();
 }
 
-void RenderDelegater::SetRenderPlatform(crossplatform::RenderPlatform *r)
+void RenderDelegator::SetRenderPlatform(crossplatform::RenderPlatform *r)
 {
 	renderPlatform=r;
 }
 
-void RenderDelegater::OnLostDevice()
+void RenderDelegator::OnLostDevice()
 {
 	for(auto d:shutdownDeviceDelegates)
 		d();
@@ -31,30 +31,30 @@ void RenderDelegater::OnLostDevice()
 	shutdownDeviceDelegates.clear();
 }
 
-int	RenderDelegater::AddView()
+int	RenderDelegator::AddView()
 {
 	return last_view_id++;
 }
 
-void RenderDelegater::RemoveView	(int view_id)
+void RenderDelegator::RemoveView	(int view_id)
 {
 }
 
-void RenderDelegater::ResizeView(int view_id,int w,int h)
+void RenderDelegator::ResizeView(int view_id,int w,int h)
 {
 }
 
-void RenderDelegater::SetRenderDelegate(int view_id,crossplatform::RenderDelegate d)
+void RenderDelegator::SetRenderDelegate(int view_id,crossplatform::RenderDelegate d)
 {
 	renderDelegate[view_id]=d;
 }
 
-void RenderDelegater::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDelegate d)
+void RenderDelegator::RegisterShutdownDelegate(crossplatform::ShutdownDeviceDelegate d)
 {
 	shutdownDeviceDelegates.push_back(d);
 }
 
-void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,int h, long long f, void* context_allocator)
+void RenderDelegator::Render(int view_id,void* context,void* rendertarget,int w,int h, long long f, void* context_allocator)
 {
 	ERRNO_BREAK
 	crossplatform::GraphicsDeviceContext deviceContext;
@@ -63,6 +63,9 @@ void RenderDelegater::Render(int view_id,void* context,void* rendertarget,int w,
 	deviceContext.platform_context_allocator = context_allocator;
 	deviceContext.renderPlatform		= renderPlatform;
 	deviceContext.viewStruct.view_id	= view_id;
+	static platform::core::Timer timer;
+	
+	deviceContext.predictedDisplayTimeS	=double(timer.AbsoluteTimeMS())*0.001;
 	crossplatform::Viewport vps[1];
 	vps[0].x = vps[0].y = 0;
 	vps[0].w = w;

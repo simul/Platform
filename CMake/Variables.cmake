@@ -13,7 +13,8 @@ mark_as_advanced(SIMUL_BUILD_SAMPLES)
 option(PLATFORM_BUILD_SAMPLES "Build executable samples?" ${SIMUL_BUILD_SAMPLES})
 option(PLATFORM_WARNINGS_AS_ERRORS "Should Platform treat C++ compile warnings as errors. " ON)
 mark_as_advanced(PLATFORM_WARNINGS_AS_ERRORS)
-
+set(PLATFORM_WINDOWS_RUNTIME static CACHE STRING "Which runtime to use for Windows compilation, static (/MT) or dyanmic(/MD)")
+SET_PROPERTY(CACHE PLATFORM_WINDOWS_RUNTIME PROPERTY STRINGS static dynamic) 
 
 set(PLATFORM_STD_FILESYSTEM 1 CACHE STRING "Use std::filesystem?" )
 if(XBOXONE)

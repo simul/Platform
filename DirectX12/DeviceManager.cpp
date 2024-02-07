@@ -170,11 +170,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			if(infoQueue)
 			{
 				// Set break on_x settings
-#if SIMUL_ENABLE_PIX
+#if PLATFORM_ENABLE_PIX
 				static bool breakOnWarning = false;
 #else
 				static bool breakOnWarning = true;
-#endif // SIMUL_ENABLE_PIX
+#endif // PLATFORM_ENABLE_PIX
 
 				SIMUL_COUT << "-Break on Warning = " << (breakOnWarning ? "enabled" : "disabled") << std::endl;
 				if (breakOnWarning)
@@ -221,11 +221,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 						std::string id = "";//std::string(magic_enum::enum_name<D3D12_MESSAGE_ID>(ID)); 
 						std::string description = pDescription;
 						
-						category = category.substr(category.rfind('_') + 1);
-						severity = severity.substr(severity.rfind('_') + 1);
+						category = category.substr(std::string("D3D12_MESSAGE_CATEGORY_").size());
+						severity = severity.substr(std::string("D3D12_MESSAGE_SEVERITY_").size());
 
 						std::string errorMessage;
-						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + severity + " " + category + " #" + std::to_string(ID) + ": " + id + " ]");
+						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + category + " " + severity + " #" + std::to_string(ID) + ": " + id + " ]");
 						if (Severity < D3D12_MESSAGE_SEVERITY_WARNING)
 						{
 							SIMUL_BREAK(errorMessage.c_str());

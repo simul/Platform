@@ -4,15 +4,14 @@ using namespace platform;
 using namespace core;
 using namespace crossplatform;
 
-MouseHandler::MouseHandler()
+MouseHandler::MouseHandler(bool yv)
 	:step_rotate_x(0)
 	,step_rotate_y(0)
 	,cameraMode(LOOKAROUND)
 	,CameraDamping(1e5f)
 	,minAlt(0.f)
 	,maxAlt(10000.f)
-	,speed_factor(100.f)
-	,y_vertical(false)
+	,y_vertical(yv)
 	,aspect(1.f)
 	,camera(NULL)
 	,move_forward(false)
@@ -28,15 +27,18 @@ MouseHandler::MouseHandler()
 	,right_left_spd(0.f)
 {
 	camera=new platform::crossplatform::Camera();
-	vec4 cameraPos(0.f,0,1500.f,0);
+	vec3 cameraPos(0,0,0);
 	camera->SetPosition(cameraPos);
-	vec4 lookAtPos(-7.07f,cameraPos.y+0.f,7.07f,0);
+	vec3 lookAtPos(-1.0f, cameraPos.y, cameraPos.z);
 	if(!y_vertical)
 	{
 		std::swap(lookAtPos.y,lookAtPos.z);
 		std::swap(cameraPos.y,cameraPos.z);
 	}
-	camera->LookInDirection(lookAtPos-cameraPos);
+	vec3 y={0,1.f,0};
+	vec3 z={0,0,1.f};
+	vec3 vert = y_vertical ? y : z;
+	camera->LookInDirection(lookAtPos-cameraPos,vert);
 }
 
 MouseHandler::~MouseHandler()
@@ -87,6 +89,15 @@ void MouseHandler::mouseMove(int x,int y)
 	if (updateViews)
 		updateViews();
 }
+#pragma optimize("",off)
+vec3 MouseHandler::getMouseDirection(int x,int y,int viewport_x,int viewport_y) const
+{
+	float screenX = (float(x) / float(viewport_x) );
+	float screenY = (float(y) / float(viewport_y) );
+	float aspect=float(viewport_x)/float(viewport_y);
+	vec3 dir=camera->ScreenPositionToDirection(screenX,screenY,aspect);
+	return dir;
+}
 
 void MouseHandler::getMousePosition(int &x,int &y) const
 {
@@ -112,13 +123,24 @@ bool MouseHandler::getMiddleButton() const
 void MouseHandler::mouseWheel(int delta,int modifiers)
 {
 	BaseMouseHandler::mouseWheel(delta,modifiers);
-	static float min_deg=5.0f;
-	float fov = camera->GetHorizontalFieldOfViewDegrees();
-	if(delta<0&&fov<180.f/1.1f)
-		fov*=1.1f;
-	else if(delta>0&&fov>min_deg*1.1f)
-		fov/=1.1f;
-	camera->SetHorizontalFieldOfViewDegrees(fov);
+	if (modifiers == (int)KeyboardModifiers::Ctrl)
+	{
+		static float min_deg=5.0f;
+		float fov = camera->GetHorizontalFieldOfViewDegrees();
+		if(delta<0&&fov<180.f/1.1f)
+			fov*=1.1f;
+		else if(delta>0&&fov>min_deg*1.1f)
+			fov/=1.1f;
+		camera->SetHorizontalFieldOfViewDegrees(fov);
+	}
+	else
+	{
+		int mult = (modifiers==1)?3:1;
+		if(delta>0)
+			wheel_forward=5*mult;
+		if (delta<0)
+			wheel_backward=5*mult;
+	}
 	camera->SetVerticalFieldOfViewDegrees(0);
 	if (updateViews)
 		updateViews();
@@ -158,8 +180,10 @@ void MouseHandler::Update(float time_step)
 		dir-=centre;
 		camera->Orientation.GlobalToLocalDirection(offset_camspace,dir);
 	}
+	platform::math::Vector3 view_dir = camera->Orientation.Tz();
+	view_dir.Normalize();
 	{
-		float cam_spd=speed_factor*(shift_down?100.f:1.f);
+		float cam_spd=speed_factor*(shift_down?shift_multiplier:1.f);
 		platform::math::Vector3 pos=camera->GetPosition();
 
 		float retain=1.f/(1.f+CameraDamping*time_step);
@@ -168,10 +192,12 @@ void MouseHandler::Update(float time_step)
 		forward_back_spd*=retain;
 		right_left_spd*=retain;
 		up_down_spd*=retain;
-		if(move_forward)
+		if(move_forward||wheel_forward)
 			forward_back_spd+=cam_spd*introduce;
-		if(move_backward)
-			forward_back_spd-=cam_spd*introduce;
+		if(move_backward||wheel_backward)
+			forward_back_spd -= cam_spd * introduce;
+		forward_back_spd += cam_spd * introduce * float(wheel_forward - wheel_backward);
+		wheel_forward=wheel_backward = 0;
 		if(move_left)
 			right_left_spd-=cam_spd*introduce;
 		if(move_right)
@@ -188,9 +214,9 @@ void MouseHandler::Update(float time_step)
 		}
 
 		if(y_vertical)
-			pos+=forward_back_spd*time_step*camera->Orientation.Tz();
+			pos -= forward_back_spd * time_step * view_dir;
 		else
-			pos-=forward_back_spd*time_step*camera->Orientation.Tz();
+			pos -= forward_back_spd * time_step * view_dir;
 		pos+=right_left_spd*time_step*camera->Orientation.Tx();
 		if(y_vertical)
 			pos.y+=up_down_spd*time_step;
@@ -249,7 +275,7 @@ void MouseHandler::Update(float time_step)
 
 		platform::math::Vector3 vertical(0,0,-1.f);
 		if(y_vertical)
-			vertical.Define(0,1.f,0);
+			vertical.Define(0,-1.f,0);
 		static float sr=0.1f;
 		platform::math::Vector3 del=vertical*(x_rotate+sr*step_rotate_x);
 		step_rotate_x=0;
@@ -270,7 +296,7 @@ void MouseHandler::Update(float time_step)
 		dir=camera->Orientation.Tz();
 		dir.Normalize();
 		if(!alt_down)
-			camera->Rotate(-correct_tilt*tilt,dir);
+			camera->Rotate(-correct_tilt * tilt, view_dir);
 
 	}
 	if(cameraMode==CENTRED)
@@ -284,6 +310,7 @@ void MouseHandler::Update(float time_step)
 		dir.Normalize();
 		camera->LookInDirection(-dir);
 	}
+	lastTimeStep = time_step;
 }
 
 

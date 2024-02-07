@@ -13,7 +13,7 @@ namespace simul
         public:
             DisplaySurface();
             ~DisplaySurface();
-            void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt)override;
+            void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, crossplatform::PixelFormat outFmt)override;
             void InvalidateDeviceObjects() override;
             void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			void EndFrame() override;

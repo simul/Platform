@@ -31,7 +31,7 @@ namespace platform
 			std::string name;
 			uint64_t memorySize;
 		};
-		class RenderDelegaterInterface;
+		class RenderDelegatorInterface;
 		/// An interface class for managing GPU-accelerated graphics windows.
 		/// The derived class 
 		class SIMUL_CROSSPLATFORM_EXPORT GraphicsDeviceInterface
@@ -51,10 +51,10 @@ namespace platform
 		class DisplaySurfaceManagerInterface
 		{
 		public:
-			virtual void	AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN)=0;
+			virtual void	AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN,bool vsync=false)=0;
 			virtual void	RemoveWindow(cp_hwnd h)=0;
 			virtual void	Render(cp_hwnd h)=0;
-			virtual void	SetRenderer(RenderDelegaterInterface *ci)=0;
+			virtual void	SetRenderer(RenderDelegatorInterface *ci)=0;
 			virtual void	SetFullScreen(cp_hwnd h,bool fullscreen,int which_output)=0;
 			virtual void	ResizeSwapChain(cp_hwnd h)=0;
 			virtual int		GetViewId(cp_hwnd h)=0;

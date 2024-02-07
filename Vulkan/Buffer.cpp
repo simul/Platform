@@ -1,5 +1,5 @@
 #ifdef _MSC_VER
-    #include <windows.h>
+	#include <windows.h>
 #endif
 #include "Buffer.h"
 #include "RenderPlatform.h"
@@ -47,11 +47,12 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 								,bool cpu_access
 								,bool streamout_target)
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 	renderPlatform=r;
 
 	stride = layout->GetStructSize();
 	bufferLoad.size= num_vertices * layout->GetStructSize();
+	count = num_vertices;
 	
 	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
 					,vk::BufferUsageFlagBits::eTransferSrc
@@ -79,16 +80,17 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 
 void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,int index_size_bytes,std::shared_ptr<std::vector<uint8_t>> src_data, bool cpu_access )
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 	renderPlatform = r;
 	bufferType=crossplatform::BufferType::INDEX;
 	stride = index_size_bytes;
 	bufferLoad.size = num_indices * index_size_bytes;
+	count = num_indices;
 
 	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
 		, vk::BufferUsageFlagBits::eTransferSrc
 		, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-		, bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory, "vertex buffer upload");
+		, bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory, "index buffer upload");
 
 	void* target_data=nullptr;
 	if (src_data)
@@ -105,7 +107,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
 		, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer
 		, vk::MemoryPropertyFlagBits::eDeviceLocal
-		, mBuffer, mBufferMemory, "Index buffer");
+		, mBuffer, mBufferMemory, "index buffer");
 	loadingComplete = false;
 }
 

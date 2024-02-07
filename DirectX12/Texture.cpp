@@ -492,12 +492,10 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 		mip_length = (mip_length + 1) / 2;
 		m++;
 	}
-	//renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, true);
 	
 	UpdateSubresources(deviceContext.asD3D12Context(), mTextureDefault, mTextureUpload, 0, 0, numImages, textureSubDatas.data());
 	// no need to flush?
 	SetLayout(deviceContext, D3D12_RESOURCE_STATE_GENERIC_READ, crossplatform::DefaultSubresourceRange, true);
-	//	renderPlatformDx12->ResourceTransitionSimple(deviceContext, mTextureDefault, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, true);
 	upload_data = nullptr;
 }
 
@@ -1200,9 +1198,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		SIMUL_ASSERT(w > 0 && l > 0 && w <= 65536 && l <= 65536);
 
 		D3D12_RESOURCE_FLAGS textureFlags = D3D12_RESOURCE_FLAG_NONE;
-		textureFlags = (D3D12_RESOURCE_FLAGS)(textureFlags |
-			(computable		? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS	: 0) |
-											  (rendertargets ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0));
+		textureFlags = (D3D12_RESOURCE_FLAGS)(textureFlags | (computable ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : 0) | (rendertargets ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET : 0));
 
 		CD3DX12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex3D(
 			dxgi_format,
@@ -2013,7 +2009,7 @@ D3D12_RESOURCE_STATES Texture::GetCurrentState(crossplatform::DeviceContext &dev
 void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOURCE_STATES state,crossplatform::SubresourceRange subresourceRange, bool flush)
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-	int curArray = cubemap ? arraySize * 6 : arraySize;
+	int totalNum = cubemap ? arraySize * 6 : arraySize;
 	const bool split_layouts = !AreSubresourcesInSameState(crossplatform::DefaultSubresourceRange);
 
 	const uint32_t &startMip = subresourceRange.baseMipLevel;
@@ -2021,37 +2017,32 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 	const uint32_t &startLayer = subresourceRange.baseArrayLayer;
 	const uint32_t &numLayers = subresourceRange.arrayLayerCount == 0xFF ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
-	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == curArray));
+	bool allSubresources = ((startMip == 0) && (startLayer == 0)) && ((numMips == mips) && (numLayers == totalNum));
 
 	// Set the whole resource state
 	if (allSubresources)
 	{
-		int numLayers = (int)curArray;
 		if (split_layouts)
 		{
 			// And set all the subresources to that state
 			// We understand that we transitioned ALL the resources
-			for (int l = 0; l < numLayers; l++)
+			for (int l = 0; l < totalNum; l++)
 			{
 				for (int m = 0; m < mips; m++)
 				{
-					if (mSubResourcesStates[l][m] != state)
-						rPlat->ResourceTransitionSimple(deviceContext, mTextureDefault, mSubResourcesStates[l][m], state, false, GetSubresourceIndex(m, l));
-					mSubResourcesStates[l][m] = state;
+					D3D12_RESOURCE_STATES& oldState = mSubResourcesStates[l][m];
+					if (oldState == state)
+						continue;
+					rPlat->ResourceTransitionSimple(deviceContext, mTextureDefault, mSubResourcesStates[l][m], state, flush, GetSubresourceIndex(m, l));
+					oldState = state;
 				}
 			}
 		}
 		else if(mResourceState != state)
 		{
-			rPlat->ResourceTransitionSimple(deviceContext,mTextureDefault, mResourceState, state,flush, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
-			for (int l = 0; l < numLayers; l++)
-			{
-				for (int m = 0; m < mips; m++)
-				{
-					mSubResourcesStates[l][m] = state;
-				}
-			}
+			rPlat->ResourceTransitionSimple(deviceContext ,mTextureDefault, mResourceState, state, flush, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 		}
+		AssumeLayout(state);
 		mResourceState = state;
 	}
 	// Set a subresource range states
@@ -2061,15 +2052,12 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 		{
 			for (uint32_t m = startMip; m < startMip + numMips; m++)
 			{
-				D3D12_RESOURCE_STATES oldState = mResourceState;
-				if (split_layouts)
-					oldState = mSubResourcesStates[l][m];
-				if (state != oldState)
-				{
-					int resourceIndex = GetSubresourceIndex(m, l);
-					rPlat->ResourceTransitionSimple(deviceContext, mTextureDefault, oldState, state, flush, resourceIndex);
-				}
-				mSubResourcesStates[l][m] = state;
+				D3D12_RESOURCE_STATES &oldState = mSubResourcesStates[l][m];
+				if (oldState == state)
+					continue;
+					
+				rPlat->ResourceTransitionSimple(deviceContext, mTextureDefault, oldState, state, flush, GetSubresourceIndex(m, l));
+				oldState = state;
 			}
 		}
 	}

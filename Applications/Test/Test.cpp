@@ -107,7 +107,7 @@ enum class TestType
 	MULTIVIEW
 };
 
-class PlatformRenderer : public crossplatform::RenderDelegaterInterface
+class PlatformRenderer : public crossplatform::RenderDelegatorInterface
 {
 public:
 	crossplatform::RenderPlatformType renderPlatformType = crossplatform::RenderPlatformType::Unknown;

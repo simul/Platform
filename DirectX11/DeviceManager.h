@@ -52,7 +52,7 @@ namespace platform
 			void Release();
 			void CreateRenderTarget(ID3D11Device* d3dDevice);
 			void CreateDepthBuffer(ID3D11Device* d3dDevice);
-			void SetRenderer(crossplatform::RenderDelegaterInterface *ci, int view_id);
+			void SetRenderer(crossplatform::RenderDelegatorInterface *ci, int view_id);
 			void ResizeSwapChain(ID3D11Device* d3dDevice);
 			cp_hwnd hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
@@ -63,7 +63,7 @@ namespace platform
 			ID3D11Texture2D				*m_renderTexture;
 			ID3D11RasterizerState		*m_rasterState;
 			D3D11_VIEWPORT				viewport;
-			crossplatform::RenderDelegaterInterface *renderer;
+			crossplatform::RenderDelegatorInterface *renderer;
 		};
 	}
 }

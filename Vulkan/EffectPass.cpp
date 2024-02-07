@@ -445,11 +445,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		int numOfSamples = 1;
 		pixelFormat =  vulkan::RenderPlatform::GetActivePixelFormat(*graphicsDeviceContext);
 		numOfSamples = vulkan::RenderPlatform::GetActiveNumOfSamples(*graphicsDeviceContext);
-		crossplatform::Topology appliedTopology = topology;
-		if (cs->topology != crossplatform::Topology::UNDEFINED)
-			appliedTopology = cs->topology;
-		if (appliedTopology == crossplatform::Topology::UNDEFINED)
-			appliedTopology = crossplatform::Topology::TRIANGLESTRIP;
+		crossplatform::Topology appliedTopology = (cs->topology != crossplatform::Topology::UNDEFINED)?cs->topology:topology;
 
 		hashval = MakeRenderPassHash(pixelFormat, numOfSamples, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
 		const auto& p = m_RenderPasses.find(hashval);
@@ -931,13 +927,13 @@ EffectPass::RenderPassPipeline& EffectPass::GetRenderPassPipeline(crossplatform:
 	crossplatform::ContextState* cs = &deviceContext.contextState;
 	crossplatform::PixelFormat pixelFormat = vulkan::RenderPlatform::GetActivePixelFormat(deviceContext);
 	int numOfSamples = vulkan::RenderPlatform::GetActiveNumOfSamples(deviceContext);
-	crossplatform::Topology topology = cs->topology;
+	crossplatform::Topology appliedTopology = (cs->topology != crossplatform::Topology::UNDEFINED) ? cs->topology : topology;
 
-	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, numOfSamples,topology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
+	RenderPassHash hashval = MakeRenderPassHash(pixelFormat, numOfSamples, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
 	const auto& p = m_RenderPasses.find(hashval);
 	if (p == m_RenderPasses.end())
 	{
-		InitializePipeline(deviceContext, &m_RenderPasses[hashval], pixelFormat, numOfSamples, topology, blendState, depthStencilState, rasterizerState, multiview);
+		InitializePipeline(deviceContext, &m_RenderPasses[hashval], pixelFormat, numOfSamples, appliedTopology, blendState, depthStencilState, rasterizerState, multiview);
 	}
 
 	return m_RenderPasses[hashval];
@@ -956,11 +952,6 @@ RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFo
 	if (layout)
 	{
 		hashval += layout->GetHash();
-	/*	const auto& lDesc = layout->GetDesc();
-		for (const auto& l : lDesc)
-		{
-			hashval += ((unsigned long long)l.format) * 3279 + ((unsigned long long)l.semanticIndex) * 6357;
-		}*/
 	}
 	if (blendState)
 	{

@@ -779,12 +779,12 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* renderPlatform, 
 void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, vec4 colourClear)
 {
 	const int &layerCount = NumFaces();
-	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::COLOUR, 0, (uint8_t)mips, 0, (uint8_t)layerCount};
+	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::COLOUR, (uint8_t)0, (uint8_t)mips, (uint8_t)0, (uint8_t)layerCount};
 
 	vk::ImageLayout prevImageLayout = mCurrentImageLayout;
 	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subresource);
 
-	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, (uint8_t)mips, 0, (uint8_t)layerCount);
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eColor, (uint32_t)0, (uint32_t)mips, (uint32_t)0, (uint32_t)layerCount);
 
 	vk::ClearColorValue clearValue;
 	clearValue.float32[0] = colourClear[0];
@@ -804,12 +804,12 @@ void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, v
 void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceContext, float depthClear, int stencilClear)
 {
 	const int& layerCount = NumFaces();
-	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::DEPTH, 0, uint8_t(mips), 0, uint8_t(layerCount)};
+	crossplatform::SubresourceRange subresource = {crossplatform::TextureAspectFlags::DEPTH, (uint8_t)0, (uint8_t)mips, 0, (uint8_t)layerCount};
 
 	vk::ImageLayout prevImageLayout = mCurrentImageLayout;
 	SetLayout(deviceContext, vk::ImageLayout::eTransferDstOptimal, subresource);
 
-	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, uint8_t(layerCount));
+	vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlagBits::eDepth, (uint32_t)0, (uint32_t)1, (uint32_t)0, (uint32_t)layerCount);
 
 	vk::ClearDepthStencilValue clearValue;
 	clearValue.depth = depthClear;
@@ -1025,7 +1025,7 @@ void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 
 void Texture::RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext)
 {
-	SetLayout(deviceContext, mExternalLayout, {});
+	SetLayout(deviceContext, mExternalLayout, crossplatform::DefaultSubresourceRange);
 }
 
 void Texture::InitViewTable(int l, int m)
@@ -1232,9 +1232,9 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 		return mSubResourcesLayouts[subresourceRange.baseArrayLayer][subresourceRange.baseMipLevel];
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t &numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t& numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	const uint32_t &numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t& numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	// Return the resource state of a mip or array layer, or the whole resource
 	if (numMips > 1 || numLayers > 1)
@@ -1309,9 +1309,9 @@ void Texture::SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, 
 	};
 
 	const uint32_t& startMip = subresourceRange.baseMipLevel;
-	const uint32_t &numMips = (subresourceRange.mipLevelCount == 0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
+	const uint32_t& numMips = subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : subresourceRange.mipLevelCount;
 	const uint32_t& startLayer = subresourceRange.baseArrayLayer;
-	uint32_t numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
+	const uint32_t& numLayers = subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : subresourceRange.arrayLayerCount;
 
 	auto const barrier = vk::ImageMemoryBarrier()
 		.setSrcAccessMask(srcAccessMask)

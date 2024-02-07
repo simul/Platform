@@ -28,7 +28,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	if (resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE || resourceUsageFrequency == crossplatform::ResourceUsageFrequency::ONCE_PER_FRAME)
 	{
 		//TODO: is this efficient?
-		mBufferSize = (unsigned)sz + 2*kBufferAlign;
+		mBufferSize = (unsigned)sz + 4*kBufferAlign;
 	}
 	SIMUL_ASSERT(sz<=mBufferSize);
 	mSlots = unsigned(((sz + size_t(kBufferAlign - 1)) & ~size_t(kBufferAlign - 1)) / size_t(kBufferAlign));

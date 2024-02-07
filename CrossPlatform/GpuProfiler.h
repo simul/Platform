@@ -138,7 +138,7 @@ namespace platform
 	}
 }
 
-#ifdef SIMUL_INTERNAL_PROFILING
+#ifdef PLATFORM_INTERNAL_PROFILING
 		
 		#define SIMUL_GPU_PROFILE_STARTFRAME(ctx) \
 			{platform::crossplatform::GpuProfilingInterface *gpuProfilingInterface=platform::crossplatform::GetGpuProfilingInterface(ctx); \
@@ -171,7 +171,7 @@ namespace platform
 		#define SIMUL_COMBINED_PROFILE_ENDFRAME(ctx) \
 			SIMUL_GPU_PROFILE_ENDFRAME(ctx) \
 			SIMUL_PROFILE_ENDFRAME
-
+		#ifndef SIMUL_DISABLE_PROFILING
 		#define SIMUL_DISABLE_PROFILING \
 			#undef SIMUL_PROFILE_START \
 			#undef SIMUL_PROFILE_END \
@@ -181,6 +181,7 @@ namespace platform
 			#define SIMUL_PROFILE_END \
 			#define SIMUL_GPU_PROFILE_START(ctx,name) \
 			#define SIMUL_GPU_PROFILE_END
+		#endif
 #else
 		#define SIMUL_GPU_PROFILE_STARTFRAME(ctx)
 		#define SIMUL_GPU_PROFILE_ENDFRAME(ctx)

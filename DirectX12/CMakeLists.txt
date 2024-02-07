@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-option(SIMUL_D3D12_ENABLE_PIX "" OFF)
+option(PLATFORM_D3D12_ENABLE_PIX "" OFF)
 option(PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 option(PLATFORM_SUPPORT_D3D12_VIEWINSTANCING "" OFF)
 option(PLATFORM_DEBUG_BARRIERS "Whether to output debug info for resource layout transition barriers. Slow." OFF)
@@ -45,10 +45,10 @@ set(DX12_DEFS SIMUL_DIRECTX12_DLL=1
 	PLATFORM_SUPPORT_D3D12_VIEWINSTANCING=$<BOOL:${PLATFORM_SUPPORT_D3D12_VIEWINSTANCING}> 
 	PLATFORM_DEBUG_BARRIERS=$<BOOL:${PLATFORM_DEBUG_BARRIERS}> )
 
-if(${SIMUL_D3D12_ENABLE_PIX})
-	set(DX12_DEFS ${DX12_DEFS} SIMUL_ENABLE_PIX=1 USE_PIX)
+if(${PLATFORM_D3D12_ENABLE_PIX})
+	set(DX12_DEFS ${DX12_DEFS} PLATFORM_ENABLE_PIX=1 USE_PIX)
 else()
-	set(DX12_DEFS ${DX12_DEFS} SIMUL_ENABLE_PIX=0)
+	set(DX12_DEFS ${DX12_DEFS} PLATFORM_ENABLE_PIX=0)
 endif()
 
 if(PLATFORM_WINDOWS AND NOT PLATFORM_WINGDK)
@@ -60,22 +60,11 @@ else()
 endif()
 
 add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
-	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" DEPENDENCIES SimulCrossPlatform_MT)
-	
-if(PLATFORM_BUILD_MD_LIBS)
-	add_dynamic_library(SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} DEFINITIONS ${DX12_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
- endif()
+	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" DEPENDENCIES SimulCrossPlatform${STATIC_LINK_SUFFIX})
+
 
 option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 if(SIMUL_SOURCE_BUILD)
-	if(PLATFORM_BUILD_MD_LIBS)
-		target_compile_definitions(SimulDirectX12_MD PRIVATE ${DX12_DEFS})
-		set_target_properties(SimulDirectX12_MD PROPERTIES LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
-		target_include_directories(SimulDirectX12_MD PUBLIC "${SIMUL_PLATFORM_DIR}/DirectX12")
-		target_include_directories(SimulDirectX12_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" )
-		target_include_directories(SimulDirectX12_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/assimp/build_md/include" )
-		LibraryDefaults(SimulDirectX12_MD)
-	endif()
 	if(XBOXONE)
 		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/HLSL12X.json" )
 		set( PLATFORM_SUPPORT_D3D12_RAYTRACING False)
@@ -100,7 +89,7 @@ if(SIMUL_SOURCE_BUILD)
 			set(out_RootSignatureFolder "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME")
 		# Create the target directory for the cso file:
 			file(MAKE_DIRECTORY ${out_RootSignatureFolder})
-			add_custom_command(TARGET SimulDirectX12_MT
+			add_custom_command(TARGET SimulDirectX12${STATIC_LINK_SUFFIX}
 						COMMAND ${GDK_BIN_PATH}/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"Sfx" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
 						MAIN_DEPENDENCY ${in_RootSignature}
 						WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -108,8 +97,4 @@ if(SIMUL_SOURCE_BUILD)
 						)
 		endif()
 	endif()
-	if(PLATFORM_BUILD_MD_LIBS)
-		target_link_libraries(SimulDirectX12_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
-	endif()
-
 endif()
