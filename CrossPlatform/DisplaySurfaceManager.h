@@ -20,7 +20,7 @@ namespace platform
 		class SIMUL_CROSSPLATFORM_EXPORT DisplaySurfaceManager: public crossplatform::DisplaySurfaceManagerInterface
 		{
 		public:
-            DisplaySurfaceManager();
+			DisplaySurfaceManager();
 			~DisplaySurfaceManager();
 			void Initialize(RenderPlatform *r);
 			void Shutdown();
@@ -37,7 +37,7 @@ namespace platform
 			void ResizeSwapChain(cp_hwnd hwnd) override;
 			int GetViewId(cp_hwnd hwnd) override;
 
-            DisplaySurface *GetWindow(cp_hwnd hwnd);
+			DisplaySurface *GetWindow(cp_hwnd hwnd);
 
 			void EndFrame(bool clear=true);
 			typedef std::function<DisplaySurface*(cp_hwnd)> CreateSurfaceDelegate;
@@ -46,19 +46,21 @@ namespace platform
 				createSurfaceDelegate=d;
 			}
 
+			platform::core::ReadWriteMutex *GetDelegatorReadWriteMutex() { return delegatorReadWriteMutex; }
+
 		private:
 			platform::core::ReadWriteMutex *delegatorReadWriteMutex=nullptr;
 			CreateSurfaceDelegate createSurfaceDelegate;
 	
-            static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
+			static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
 			RenderPlatform*                             renderPlatform;
 			typedef std::map<cp_hwnd, DisplaySurface*>  DisplaySurfaceMap;
-            DisplaySurfaceMap                           surfaces;
+			DisplaySurfaceMap                           surfaces;
 			RenderDelegatorInterface					*renderDelegater=nullptr;
 			std::set<cp_hwnd> toRender;
 		};
 	}
 }
 #ifdef _MSC_VER
-    #pragma warning(pop)  
+	#pragma warning(pop)  
 #endif
