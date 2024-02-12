@@ -271,7 +271,10 @@ function(LibraryDefaults targname)
 		target_include_directories(${targname} PUBLIC ${SIMUL_PLATFORM_DIR}/External/fmt/include)
 		target_compile_definitions(${targname} PRIVATE FMT_HEADER_ONLY )
 	endif()
+	
 	target_include_directories(${targname} PRIVATE "${magic_enum_SOURCE_DIR}/include")
+	#message(STATUS "${magic_enum_SOURCE_DIR}/include")
+
 	if(XBOXONE)
 		target_include_directories(${targname} PRIVATE "${SIMUL_PLATFORM_DIR}/XboxOne")
 		add_definitions( -DNOMINMAX )
