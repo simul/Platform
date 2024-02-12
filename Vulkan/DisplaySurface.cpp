@@ -658,8 +658,13 @@ void DisplaySurface::CreateFramebuffers()
 void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex, long long frameNumber)
 {
 	if (delegatorReadWriteMutex)
+	{
+		if(delegatorReadWriteMutex->locked())
+ 			return;
 		delegatorReadWriteMutex->lock_for_write();
-
+	}
+	try
+	{
 	if (!swapchain)
 		InitSwapChain();
 
@@ -727,7 +732,11 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 
 	Present();
 	Resize();
-
+	}
+	catch(...)
+	{
+		SIMUL_BREAK("");
+	}
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
 }

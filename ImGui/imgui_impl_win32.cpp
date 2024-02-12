@@ -592,7 +592,6 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
 {
     if (ImGui::GetCurrentContext() == NULL)
         return 0;
-
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
 
@@ -736,6 +735,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     case WM_DISPLAYCHANGE:
         bd->WantUpdateMonitors = true;
         return 0;
+    break;
     }
     return 0;
 }

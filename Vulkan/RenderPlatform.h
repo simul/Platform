@@ -111,6 +111,8 @@ namespace platform
 			template <typename T>
 			void PushToReleaseManager(T &r)
 			{
+				if(!r)
+					return;
 				static_assert(sizeof(T) == sizeof(uint64_t), "VulkanHPP type are not 8 bytes is size.");
 				resourcesToBeReleased = true;
 

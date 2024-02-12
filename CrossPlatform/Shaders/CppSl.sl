@@ -1006,8 +1006,32 @@
 				(powf(orientation.w, 2) + powf(orientation.x, 2) - powf(orientation.y, 2) - powf(orientation.z, 2)), 2 * (orientation.x * orientation.y - orientation.z * orientation.w), 2 * (orientation.x * orientation.z + orientation.y * orientation.w), 0,
 				2 * (orientation.x * orientation.y + orientation.z * orientation.w), (powf(orientation.w, 2) - powf(orientation.x, 2) + powf(orientation.y, 2) - powf(orientation.z, 2)), 2 * (orientation.y * orientation.z - orientation.x * orientation.w), 0,
 				2 * (orientation.x * orientation.z - orientation.y * orientation.w), 2 * (orientation.y * orientation.z + orientation.x * orientation.w), (powf(orientation.w, 2) - powf(orientation.x, 2) - powf(orientation.y, 2) + powf(orientation.z, 2)), 0,
-				0, 0, 0, 1
+				0, 0, 0, T(1)
 			};
+		}
+		template <typename U>
+		static tmatrix4 scale(const tvector3<U> &scale)
+		{
+			return {
+				scale.x, 0, 0, 0,
+				0, scale.y, 0, 0,
+				0, 0, scale.z, 0,
+				0, 0, 0, T(1)};
+		}
+		//! Get the translation, if this matrix is a transform matrix for premultiplication
+		//! (i.e. the translation is the rightmost column)
+		tvector3<T> GetTranslation() const
+		{
+			return {_m03, _m13, _m23};
+		}
+		//! Get the scale, if this matrix is a transform matrix
+		tvector3<T> GetScale() const
+		{
+			tvector3<T> x={_m00, _m10, _m20};
+			tvector3<T> y={_m01, _m11, _m21};
+			tvector3<T> z={_m02, _m12, _m22};
+
+			return {length(x), length(y), length(z)};
 		}
 	};
 	typedef tmatrix4<float> mat4;

@@ -43,6 +43,8 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	vk::Device *vulkanDevice = vrp->AsVulkanDevice();
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
+		vrp->PushToReleaseManager(mBuffers[i]);
+		vrp->PushToReleaseManager(mMemory[i]);
 		auto result = vulkanDevice->createBuffer(&buf_info, nullptr, &mBuffers[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 		SetVulkanName(renderPlatform,mBuffers[i],"Constant buffer");
@@ -125,6 +127,7 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 		mBufferSize*=2;
 		RestoreDeviceObjects(renderPlatform,size,nullptr);
 		resetframe=true;
+		//return;
 	}
 
 	auto rPlat = (vulkan::RenderPlatform*)renderPlatform;

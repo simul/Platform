@@ -43,6 +43,10 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 		}
 		w->StartFrame();
 		w->Render(delegatorReadWriteMutex, renderPlatform->GetFrameNumber());
+		if(delegatorReadWriteMutex->locked())
+		{
+			SIMUL_BREAK("Locked mutex");
+		}
 	}
 	if(clear)
 		toRender.clear();
