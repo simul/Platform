@@ -18,7 +18,7 @@ Framebuffer::Framebuffer(const char* name):
 	BaseFramebuffer(name)
 {
 	if(name)
-		this->name = name;
+		this->name.assign(name);
 }
 
 Framebuffer::~Framebuffer()
