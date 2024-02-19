@@ -205,18 +205,18 @@ void DisplaySurface::GetQueues()
 	graphics_queue_family_index = graphicsQueueFamilyIndex;
 	present_queue_family_index = presentQueueFamilyIndex;
 
-    bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
+	bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
 	
 	vk::Device *vulkanDevice=GetVulkanDevice();
 	vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
-    if (!separate_present_queue) {
-        present_queue = graphics_queue;
-    } else {
-        vulkanDevice->getQueue(present_queue_family_index, 0, &present_queue);
-    }
+	if (!separate_present_queue) {
+		present_queue = graphics_queue;
+	} else {
+		vulkanDevice->getQueue(present_queue_family_index, 0, &present_queue);
+	}
 
 	
-    vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
+	vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
 	if (!separate_present_queue)
 	{
 		present_queue = graphics_queue;
@@ -797,7 +797,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 		InitSwapChain();
 
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
-// Ensure no more than FRAME_LAG renderings are outstanding
+
 	vk::Result result=vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
 	if (result != vk::Result::eSuccess)
 	{
@@ -808,19 +808,20 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	{
 		SIMUL_CERR << "Vulkan operation failed\n";
 	}
+
 	do
 	{
 		result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
 		if (result == vk::Result::eErrorOutOfDateKHR)
 		{
-// demo->swapchain is out of date (e.g. the window was resized) and
-// must be recreated:
+			// demo->swapchain is out of date (e.g. the window was resized) and
+			// must be recreated:
 			Resize();
 		}
 		else if (result == vk::Result::eSuboptimalKHR)
 		{
-// swapchain is not as optimal as it could be, but the platform's
-// presentation engine will still present the image correctly.
+			// swapchain is not as optimal as it could be, but the platform's
+			// presentation engine will still present the image correctly.
 			break;
 		}
 		else
@@ -860,9 +861,8 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	commandBuffer.end();
 
 	Present();
-	current_buffer++;
-	current_buffer=current_buffer%(swapchain_image_resources.size());
 	Resize();
+
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
 }
@@ -959,30 +959,30 @@ void DisplaySurface::Present()
 	// otherwise wait for draw complete
 	auto const presentInfo = vk::PresentInfoKHR()
 		.setWaitSemaphoreCount(1)
-		.setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index]
-			: &draw_complete_semaphores[frame_index])
+		.setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index] : &draw_complete_semaphores[frame_index])
 		.setSwapchainCount(1)
 		.setPSwapchains(&swapchain)
 		.setPImageIndices(&current_buffer);
 
 	result = present_queue.presentKHR(&presentInfo);
-	frame_index += 1;
-	frame_index %= swapchain_image_resources.size();
 	if (result == vk::Result::eErrorOutOfDateKHR)
 	{
-// swapchain is out of date (e.g. the window was resized) and
-// must be recreated:
-	//	Resize();
+		// swapchain is out of date (e.g. the window was resized) and
+		// must be recreated:
+		//	Resize();
 	}
 	else if (result == vk::Result::eSuboptimalKHR)
 	{
-// swapchain is not as optimal as it could be, but the platform's
-// presentation engine will still present the image correctly.
+		// swapchain is not as optimal as it could be, but the platform's
+		// presentation engine will still present the image correctly.
 	}
 	else
 	{
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
+
+	frame_index += 1;
+	frame_index %= swapchain_image_resources.size();
 }
 
 
