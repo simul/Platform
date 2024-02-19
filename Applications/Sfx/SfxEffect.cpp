@@ -1851,7 +1851,8 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 	bool write = IsRW(shaderResourceType);
 	bool rw = IsRW(shaderResourceType);
 	int num = 0;
-	if (sfxConfig.generateSlots)
+	// We only generate slots for the default resource group. Other groups must stick to their assigned slots.
+	if (sfxConfig.generateSlots && group == sfxConfig.defaultResourceGroupIndex)
 	{
 		num	= -1;
 		// scene

@@ -165,10 +165,7 @@ Effect::~Effect()
 
 bool Effect::Load(crossplatform::RenderPlatform* r, const char* filename_utf8)
 {
-	
 		return crossplatform::Effect::Load(r, filename_utf8);
-	
-
 }
 
 EffectTechnique* Effect::CreateTechnique()

@@ -497,7 +497,21 @@
 			r.w=-w;
 			return r;
 		}
+		bool operator==(const tvector4 &v) const
+		{
+			return (x == v.x && y == v.y && z == v.z && z == v.w);
+		}
+		bool operator!=(const tvector4 &v) const
+		{
+			return (x != v.x || y != v.y || z != v.z || w != v.w);
+		}
 	};
+	template <typename T>
+	T length(const tvector4<T> &u)
+	{
+		T size = u.x * u.x + u.y * u.y + u.z * u.z + u.w * u.w;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
 	namespace std
 	{
 		template <typename T> tvector2<T> max(tvector2<T> a, tvector2<T> b)

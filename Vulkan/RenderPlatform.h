@@ -264,7 +264,7 @@ namespace platform
 				return s;
 			}
 
-			void AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, const vk::DescriptorSetLayout &layout);
+			void AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, const vk::DescriptorSetLayout &layout, uint8_t g);
 			const vk::DescriptorSetLayout &GetVulkanDescriptorSetLayoutForResourceGroup(uint8_t g) const
 			{
 				return descriptorSetLayouts[g];
@@ -280,8 +280,8 @@ namespace platform
 			//! Number of ring buffers
 			static const uint32_t s_DescriptorSetCount = (SIMUL_VULKAN_FRAME_LAG + 1);
 			// each frame in the 3-frame loop carries a variable-size list of descriptors: one for each submit.
-			std::list<vk::DescriptorSet> m_DescriptorSets[s_DescriptorSetCount];
-			std::list<vk::DescriptorSet>::iterator m_DescriptorSets_It[s_DescriptorSetCount];
+			std::list<vk::DescriptorSet> m_DescriptorSets[3][s_DescriptorSetCount];
+			std::list<vk::DescriptorSet>::iterator m_DescriptorSets_It[3][s_DescriptorSetCount];
 			uint8_t descriptorSetFrame=0;
 
 

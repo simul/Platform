@@ -110,7 +110,8 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 		int countPerFrame = groupCounts[i];
 		const crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[i];
 		size_t numConstantBufferResourceSlots = resourceGroupLayout.GetNumConstantBuffers();
-		size_t numDescriptors = numConstantBufferResourceSlots;
+		size_t numReadOnlyResourceSlots = resourceGroupLayout.GetNumReadOnlyResources();
+		size_t numDescriptors = numConstantBufferResourceSlots + numReadOnlyResourceSlots;
 
 		vk::Result result;
 		vk::DescriptorSetLayoutBinding *layoutBindings = nullptr;
@@ -126,6 +127,10 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 				{
 					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numConstantBufferResourceSlots);
 				}
+				if (numReadOnlyResourceSlots)
+				{
+					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampledImage).setDescriptorCount(countPerFrame * swapchainImageCount * numReadOnlyResourceSlots);
+				}
 				const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
 				result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPool);
 				SIMUL_VK_CHECK(result);
@@ -134,11 +139,13 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 			}
 
 			// Set up the "Descriptor Set Layout CreateInfo":
+			if(numDescriptors)
 			{
 				layoutBindings = new vk::DescriptorSetLayoutBinding[numDescriptors];
-				//int bindingIndex = 0;
+				
 				int slot=0;
-				for (int j = 0; j < numConstantBufferResourceSlots; j++)
+				int binding_index=0;
+				for (int j = 0; j < numConstantBufferResourceSlots; j++, binding_index++)
 				{
 					while(slot<64&&!resourceGroupLayout.UsesConstantBufferSlot(slot))
 						slot++;
@@ -153,8 +160,24 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 						.setPImmutableSamplers(nullptr);
 					slot++;
 				}
+				slot = 0;
+				for (int j = 0; j < numReadOnlyResourceSlots; j++,binding_index++)
+				{
+					while (slot < 64 && !resourceGroupLayout.UsesReadOnlyResourceSlot(slot))
+						slot++;
+					if (slot >= 64)
+						break;
+					vk::DescriptorSetLayoutBinding &binding = layoutBindings[binding_index];
+					vk::ShaderStageFlags stageFlags = (vk::ShaderStageFlags)(VK_SHADER_STAGE_ALL);
+					binding.setBinding(GenerateTextureSlot(slot))
+						.setDescriptorType(vk::DescriptorType::eSampledImage)
+						.setDescriptorCount(1)
+						.setStageFlags(stageFlags)
+						.setPImmutableSamplers(nullptr);
+					slot++;
+				}
 
-				descriptorSetLayoutCI.setBindingCount((int)numConstantBufferResourceSlots).setPBindings(layoutBindings);
+				descriptorSetLayoutCI.setBindingCount(numDescriptors).setPBindings(layoutBindings);
 			}
 		}
 
@@ -163,8 +186,9 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 		SIMUL_VK_CHECK(result);
 		SetVulkanName(this, descriptorSetLayouts[i], fmt::format("Descriptor layout for octave {0}", i));
 	}
+	for (int g= 0; g < 3; g++)
 	for (int i = 0; i < s_DescriptorSetCount; i++)
-		m_DescriptorSets_It[i] = m_DescriptorSets[i].begin();
+		m_DescriptorSets_It[g][i] = m_DescriptorSets[g][i].begin();
 }
 
 vk::SamplerYcbcrConversionInfo* RenderPlatform::GetSamplerYcbcrConversionInfo()
@@ -206,10 +230,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	
 	vulkanDevice->waitIdle();
 
+	for (int g = 0; g < 3; g++)
 	for (int i = 0; i < s_DescriptorSetCount; i++)
 	{
-		m_DescriptorSets[i].clear();
-		m_DescriptorSets_It[i] = m_DescriptorSets[i].begin();
+		m_DescriptorSets[g][i].clear();
+		m_DescriptorSets_It[g][i] = m_DescriptorSets[g][i].begin();
 	}
 
 	for (auto& i : mFramebuffers)
@@ -591,7 +616,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		ContextFrameBegin(*deviceContext.AsGraphicsDeviceContext());
 		descriptorSetFrame++;
 		descriptorSetFrame = descriptorSetFrame % (s_DescriptorSetCount);
-		m_DescriptorSets_It[descriptorSetFrame] = m_DescriptorSets[descriptorSetFrame].begin();
+		for(int g=0;g<3;g++)
+		m_DescriptorSets_It[g][descriptorSetFrame] = m_DescriptorSets[g][descriptorSetFrame].begin();
 	}
 	if (frameNumber != mLastFrame && *commandBuffer != cmdBuffer) //Check this VkCommandBuffer is not the one used of the ImmediateContext - AJR
 	{
@@ -1941,7 +1967,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	return hashval;
 }
 
-void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, const vk::DescriptorSetLayout &descriptorSetLayout)
+void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, const vk::DescriptorSetLayout &descriptorSetLayout, uint8_t g)
 {
 	// Of course, only need to do this if there are ANY inputs.
 	if (!descriptorSetLayout)
@@ -1959,7 +1985,7 @@ void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, co
 		vk::Result result = vulkanDevice->allocateDescriptorSets(&alloc_info, &descriptorSet);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 		if (result == vk::Result::eSuccess)
-			SetVulkanName(this, descriptorSet, fmt::format("Shared Descriptor set"));
+			SetVulkanName(this, descriptorSet, fmt::format("Shared Descriptor set {0}",g));
 	}
 }
 
@@ -1972,26 +1998,28 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 
 	crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[g];
 	cs.resourceGroupUploadedCounter[g] = cs.resourceGroupApplyCounter[g];
-	if (resourceGroupLayout.constantBufferSlots == 0)
+	if (resourceGroupLayout.constantBufferSlots == 0&&resourceGroupLayout.readOnlyResourceSlots==0)
 		return lastDescriptorSet[descriptorSetFrame][g];
 
 	// get an unused Descriptor Set:
-	if (m_DescriptorSets_It[descriptorSetFrame] == m_DescriptorSets[descriptorSetFrame].end())
+	if (m_DescriptorSets_It[g][descriptorSetFrame] == m_DescriptorSets[g][descriptorSetFrame].end())
 	{
 		// must insert a new descriptor:
-		m_DescriptorSets[descriptorSetFrame].push_back(vk::DescriptorSet());
-		m_DescriptorSets_It[descriptorSetFrame] = m_DescriptorSets[descriptorSetFrame].end();
-		m_DescriptorSets_It[descriptorSetFrame]--;
-		AllocateDescriptorSets(*m_DescriptorSets_It[descriptorSetFrame],descriptorSetLayouts[g]);
+		m_DescriptorSets[g][descriptorSetFrame].push_back(vk::DescriptorSet());
+		m_DescriptorSets_It[g][descriptorSetFrame] = m_DescriptorSets[g][descriptorSetFrame].end();
+		m_DescriptorSets_It[g][descriptorSetFrame]--;
+		AllocateDescriptorSets(*m_DescriptorSets_It[g][descriptorSetFrame], descriptorSetLayouts[g], g);
 		// std::cout << "New Descriptor Set added: 0x" << std::hex << (void*)((*m_DescriptorSets_It[m_InternalFrameIndex]).operator VkDescriptorSet()) << std::dec << std::endl;
 	}
 
-	vk::DescriptorSet &descriptorSet = *(m_DescriptorSets_It[descriptorSetFrame]);
+	vk::DescriptorSet &descriptorSet = *(m_DescriptorSets_It[g][descriptorSetFrame]);
 	vk::Device *vulkanDevice = AsVulkanDevice();
 
 	int numConstantBuffers = resourceGroupLayout.GetNumConstantBuffers();
+	int numReadOnlyResources = resourceGroupLayout.GetNumReadOnlyResources();
 	int numBuffers = numConstantBuffers;
-	int numDescriptors =  numBuffers;
+	int numImages = numReadOnlyResources;
+	int numDescriptors = numBuffers + numReadOnlyResources;
 	if (numDescriptors > m_writeDescriptorSets.size())
 		m_writeDescriptorSets.resize(numDescriptors);
 
@@ -1999,6 +2027,10 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		descriptorBufferInfos.resize(numBuffers);
 
 	vk::DescriptorBufferInfo *descriptorBufferInfo = descriptorBufferInfos.data();
+
+	if (numImages > descriptorImageInfos.size())
+		descriptorImageInfos.resize(numImages);
+	vk::DescriptorImageInfo *descriptorImageInfo = descriptorImageInfos.data();
 	int b = 0;
 	int slot = 0;
 	for (int i = 0; i < numConstantBuffers; i++, b++)
@@ -2019,7 +2051,6 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 			SIMUL_INTERNAL_CERR<<"Didn't find every slot for resource group "<<g<<"\n";
 			break;
 		}
-
 		crossplatform::ConstantBufferBase *cb = cs.applyBuffers[slot];
 		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		vk::Buffer *vkBuffer = nullptr;
@@ -2055,6 +2086,58 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		cs.bufferSlots |= (1 << slot);
 		slot++;
 	}
+	slot=0;
+	for (int i = 0; i < numImages; i++, b++)
+	{
+		// Find the slot number.
+		while (slot < 64)
+		{
+			if (resourceGroupLayout.UsesReadOnlyResourceSlot(slot))
+			{
+				break;
+			}
+			slot++;
+		}
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
+		write.setDstSet(descriptorSet);
+		crossplatform::TextureAssignment &ta = cs.textureAssignmentMap[slot];
+		vk::ImageView *vkImageView=nullptr;
+		vulkan::Texture *texture = (vulkan::Texture *)(ta.texture);
+		if(texture)
+		{
+			texture->FinishLoading(deviceContext);
+		}
+		else
+		{
+			// We really don't want to have to do this, but Vulkan GLSL can't eliminate unused textures in compilation:
+			if (ta.resourceType == crossplatform::ShaderResourceType::UNKNOWN )
+				ta.resourceType=crossplatform::ShaderResourceType::TEXTURE_2D;
+			texture = GetDummyTexture(ta.resourceType);
+			ta.subresource = crossplatform::DefaultSubresourceRange;
+		}
+		texture->SetLayout(deviceContext, vk::ImageLayout::eShaderReadOnlyOptimal, ta.subresource);
+		write.setDstBinding(vulkan::RenderPlatform::GenerateTextureSlot(slot));
+		write.setDescriptorCount(1);
+		if(texture)
+			vkImageView = texture->AsVulkanImageView(MakeTextureView(ta.resourceType, ta.subresource));
+		if (vkImageView)
+			descriptorImageInfo->setImageView(*vkImageView);
+		descriptorImageInfo->setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+		//if (!m_VideoSource)
+		{
+			write.setDescriptorType(vk::DescriptorType::eSampledImage);
+		}
+	/*	else
+		{
+			// video texture:
+			write.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+			descriptorImageInfo->setSampler(vulkanRenderPlatform->GetSamplerYcbcr());
+		}*/
+		write.setPImageInfo(descriptorImageInfo);
+		cs.textureSlots |= 1 << slot;
+		slot++;
+		descriptorImageInfo++;
+	}
 	numDescriptors=b;
 	if (numDescriptors)
 	{
@@ -2072,8 +2155,8 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		}
 		vulkanDevice->updateDescriptorSets(numDescriptors, m_writeDescriptorSets.data(), 0, nullptr);
 	}
-	if (m_DescriptorSets_It[descriptorSetFrame] != m_DescriptorSets[descriptorSetFrame].end())
-		m_DescriptorSets_It[descriptorSetFrame]++;
+	if (m_DescriptorSets_It[g][descriptorSetFrame] != m_DescriptorSets[g][descriptorSetFrame].end())
+		m_DescriptorSets_It[g][descriptorSetFrame]++;
 	lastDescriptorSet[descriptorSetFrame][g] = &descriptorSet;
 	return &descriptorSet;
 }
