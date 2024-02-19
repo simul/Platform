@@ -10,8 +10,8 @@
 typedef struct GLFWwindow GLFWwindow;
 namespace simul
 {
-    namespace vulkan
-    {
+	namespace vulkan
+	{
 		struct SwapchainImageResources
 		{
 			vk::Image image;
@@ -20,18 +20,18 @@ namespace simul
 			vk::ImageView view;
 			vk::Framebuffer framebuffer;
 		} ;
-        class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
-        {
-        public:
-            DisplaySurface();
-            ~DisplaySurface();
-            void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt) override;
-            void InvalidateDeviceObjects() override;
-            void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
+		class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
+		{
+		public:
+			DisplaySurface();
+			~DisplaySurface();
+			void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, int numerator, int denominator, crossplatform::PixelFormat outFmt) override;
+			void InvalidateDeviceObjects() override;
+			void Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			void EndFrame() override;
-        private:
-            //! Will resize the swap chain only if needed
-            void Resize();
+		private:
+			//! Will resize the swap chain only if needed
+			void Resize();
 			crossplatform::DeviceContext deferredContext;
 			crossplatform::PixelFormat pixelFormat;
 
@@ -61,8 +61,8 @@ namespace simul
 			void CreateFramebuffers();
 			void CreateDefaultLayout();
 			void CreateDefaultPipeline();
-            void Present();
-			int frame_index;
+			void Present();
+			uint32_t frame_index;
 			uint32_t current_buffer;
 			uint32_t graphics_queue_family_index;
 			uint32_t present_queue_family_index;
@@ -74,8 +74,8 @@ namespace simul
 			vk::PhysicalDevice* GetGPU();
 			void EnsureImageLayout();
 			void EnsureImagePresentLayout();
-        };
-    }
+		};
+	}
 }
 
 
