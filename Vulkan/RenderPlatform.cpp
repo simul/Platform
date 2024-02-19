@@ -124,7 +124,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 				int poolSizeIdx = 0;
 				if (numConstantBufferResourceSlots)
 				{
-					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * numConstantBufferResourceSlots);
+					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numConstantBufferResourceSlots);
 				}
 				const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
 				result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPool);
@@ -154,7 +154,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 					slot++;
 				}
 
-				descriptorSetLayoutCI.setBindingCount(numConstantBufferResourceSlots).setPBindings(layoutBindings);
+				descriptorSetLayoutCI.setBindingCount((int)numConstantBufferResourceSlots).setPBindings(layoutBindings);
 			}
 		}
 
