@@ -5,13 +5,13 @@
 ; The name of the installer
 Name "Simul trueSKY for Win GDK"
 !ifndef SIMUL_VERSION
-!define SIMUL_VERSION '4.3.1.0026'
+!define SIMUL_VERSION '4.4.0'
 !endif
 !ifndef GDK_VERSION
-!define GDK_VERSION '200806'
+!define GDK_VERSION '221001'
 !endif
 !ifndef SIMUL
-!define SIMUL C:\Simul\4.3\Simul
+!define SIMUL C:\Simul\4.4\Simul
 !endif
 !ifndef SIMUL_BUILD
 !define SIMUL_BUILD ${SIMUL}\build_wingdk_${GDK_VERSION}
@@ -78,6 +78,13 @@ Section "-Headers"
 	SetOutPath $INSTDIR\Simul\Terrain
 	File /r "${SIMUL}\Terrain\*.h"
 
+	SetOutPath $INSTDIR\Simul\Clouds\Shaders
+	File /r "${SIMUL_DIR}\Clouds\Shaders\*.sl"
+	SetOutPath $INSTDIR\Simul\Sky\Shaders
+	File /r "${SIMUL_DIR}\Sky\Shaders\*.sl"
+	SetOutPath $INSTDIR\Simul\Terrain\Shaders
+	File /r "${SIMUL_DIR}\Terrain\Shaders\*.sl"
+
 	SetOutPath $INSTDIR\Simul\Tools\Setup
 	File /nonfatal "${SIMUL}\Tools\Setup\*.rules"
 	SetOutPath $INSTDIR\Simul\Products
@@ -88,18 +95,21 @@ Section "-CrossPlatform"
 	SetOutPath $INSTDIR\Simul\Media
 	SetOutPath $INSTDIR\Simul\Platform\CrossPlatform
 	File /nonfatal /r "${SIMUL}\Platform\CrossPlatform\*.h"
-	File /nonfatal /r "${SIMUL}\Platform\CrossPlatform\*.sfx"
 	File /nonfatal /r "${SIMUL}\Platform\CrossPlatform\*.sl"
+
 	SetOutPath $INSTDIR\Simul\Platform\DirectX12
 	File /r "${SIMUL}\Platform\DirectX12\*.h"
 	File /r "${SIMUL}\Platform\DirectX12\*.sl"
-	SetOutPath $INSTDIR\Simul\Platform\DirectX12\shaderbin
-	File /r "${SIMUL_BUILD}\Platform\DirectX12\shaderbin\*.*"
+	SetOutPath ${SIMUL_INSTDIR}\build\shaderbin\DirectX12
+	File /r "${SIMUL_BUILD}\shaderbin\DirectX12\*.sfxo"
+	File /r "${SIMUL_BUILD}\shaderbin\DirectX12\*.sfxb"
+
 	SetOutPath $INSTDIR\Simul\Platform\DirectX11
 	File /r "${SIMUL}\Platform\DirectX11\*.h"
 	File /r "${SIMUL}\Platform\DirectX11\*.sl"
-	SetOutPath $INSTDIR\Simul\Platform\DirectX11\shaderbin
-	File /r "${SIMUL_BUILD}\Platform\DirectX11\shaderbin\*.*"
+	SetOutPath ${SIMUL_INSTDIR}\build\shaderbin\DirectX11
+	File /r "${SIMUL_BUILD}\shaderbin\DirectX11\*.sfxo"
+	File /r "${SIMUL_BUILD}\shaderbin\DirectX11\*.sfxb"
 SectionEnd
  
 Section "-Built"	

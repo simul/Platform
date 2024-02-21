@@ -106,29 +106,14 @@ if(PLATFORM_WINDOWS)
 	if( PLATFORM_SUPPORT_D3D11 )
 		add_subdirectory(DirectX11)
 	endif()
-endif()
-
-if(XBOXONE AND PLATFORM_SUPPORT_D3D11)
-	add_subdirectory(DirectX11)
-endif()
-
-if(PLATFORM_WINDOWS AND PLATFORM_SUPPORT_D3D12)
-	add_subdirectory(DirectX12)
-endif()
-
-if(XBOXONE AND PLATFORM_SUPPORT_D3D12)
-	add_subdirectory(DirectX12)
-endif()
-
-if(XBOXONE)
-	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
+	if( PLATFORM_SUPPORT_D3D12 )
+		add_subdirectory(DirectX12)
+	endif()
 endif()
 
 if(GDK)
 	add_subdirectory(DirectX12)
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
 endif()
 
 if(PLATFORM_WINGDK)
