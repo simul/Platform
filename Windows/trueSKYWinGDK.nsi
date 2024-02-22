@@ -60,8 +60,8 @@ SectionEnd
 Section "-Headers"
 	SetOutPath $INSTDIR\Simul
 	
-	SetOutPath $INSTDIR\Simul\Products\TrueSky
-	File /nonfatal /r "${SIMUL}\Products\TrueSky\Version.h"
+	#SetOutPath $INSTDIR\Simul\Products\TrueSky
+	#File /nonfatal /r "${SIMUL}\Products\TrueSky\Version.h"
 	
 	SetOutPath $INSTDIR\Simul\Base
 	File /r "${SIMUL}\Base\*.h"
@@ -79,11 +79,11 @@ Section "-Headers"
 	File /r "${SIMUL}\Terrain\*.h"
 
 	SetOutPath $INSTDIR\Simul\Clouds\Shaders
-	File /r "${SIMUL_DIR}\Clouds\Shaders\*.sl"
+	File /r "${SIMUL}\Clouds\Shaders\*.sl"
 	SetOutPath $INSTDIR\Simul\Sky\Shaders
-	File /r "${SIMUL_DIR}\Sky\Shaders\*.sl"
+	File /r "${SIMUL}\Sky\Shaders\*.sl"
 	SetOutPath $INSTDIR\Simul\Terrain\Shaders
-	File /r "${SIMUL_DIR}\Terrain\Shaders\*.sl"
+	File /r "${SIMUL}\Terrain\Shaders\*.sl"
 
 	SetOutPath $INSTDIR\Simul\Tools\Setup
 	File /nonfatal "${SIMUL}\Tools\Setup\*.rules"
@@ -100,14 +100,14 @@ Section "-CrossPlatform"
 	SetOutPath $INSTDIR\Simul\Platform\DirectX12
 	File /r "${SIMUL}\Platform\DirectX12\*.h"
 	File /r "${SIMUL}\Platform\DirectX12\*.sl"
-	SetOutPath ${SIMUL_INSTDIR}\build\shaderbin\DirectX12
+	SetOutPath $INSTDIR\Simul\build_WinGDK\shaderbin\DirectX12
 	File /r "${SIMUL_BUILD}\shaderbin\DirectX12\*.sfxo"
 	File /r "${SIMUL_BUILD}\shaderbin\DirectX12\*.sfxb"
 
 	SetOutPath $INSTDIR\Simul\Platform\DirectX11
 	File /r "${SIMUL}\Platform\DirectX11\*.h"
 	File /r "${SIMUL}\Platform\DirectX11\*.sl"
-	SetOutPath ${SIMUL_INSTDIR}\build\shaderbin\DirectX11
+	SetOutPath $INSTDIR\Simul\build_WinGDK\shaderbin\DirectX11
 	File /r "${SIMUL_BUILD}\shaderbin\DirectX11\*.sfxo"
 	File /r "${SIMUL_BUILD}\shaderbin\DirectX11\*.sfxb"
 SectionEnd

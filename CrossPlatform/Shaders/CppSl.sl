@@ -1002,6 +1002,106 @@
 		{
 			return(_m30==0&&_m31==0&&_m32==0);
 		}
+		/// Set the translation as the 4th column, assigning 1.0 to the 4,4 corner.
+		template <typename U>
+		void setColumnTranslation(const tvector3<U> &translation)
+		{
+			_m03 = translation.x;
+			_m13 = translation.y;
+			_m23 = translation.z;
+			_m33 = T(1);
+		}
+		/// Set the rotation to the given quaternion, on the basis of a premultiplying transform matrix.
+		template <typename U>
+		void setRotation(const tvector4<U> &q)
+		{
+			_m00=(powf(q.w, 2) + powf(q.x, 2) - powf(q.y, 2) - powf(q.z, 2));
+			_m01=2 * (q.x * q.y - q.z * q.w);
+			_m02=2 * (q.x * q.z + q.y * q.w);
+			
+			_m10=2 * (q.x * q.y + q.z * q.w);
+			_m11=(powf(q.w, 2) - powf(q.x, 2) + powf(q.y, 2) - powf(q.z, 2));
+			_m12=2 * (q.y * q.z - q.x * q.w);
+
+			_m20=2 * (q.x * q.z - q.y * q.w);
+			_m21=2 * (q.y * q.z + q.x * q.w);
+			_m22 = (powf(q.w, 2) - powf(q.x, 2) - powf(q.y, 2) + powf(q.z, 2));
+
+			_m30 =0;
+			_m31 =0;
+			_m32 =0;
+		}
+		/// Set the rotation to the given quaternion, and the translation to the given vector, on the basis of a premultiplying transform matrix.
+		template <typename U,typename V>
+		void setRotationTranslation(const tvector4<U> &q, const tvector3<V> &translation)
+		{
+			T ww = q.w * q.w;
+			T xx = q.x * q.x;
+			T yy = q.y * q.y;
+			T zz = q.z * q.z;
+			T xy = q.x * q.y;
+			T yz = q.y * q.z;
+			T zx = q.z * q.x;
+			T xw = q.x * q.w;
+			T yw = q.y * q.w;
+			T zw = q.z * q.w;
+			_m00 = (ww + xx - yy - zz);
+			_m01 = 2 * (xy - zw);
+			_m02 = 2 * (zx + yw);
+			_m03 = translation.x;
+
+			_m10 = 2 * (xy + zw);
+			_m11 = (ww - xx + yy - zz);
+			_m12 = 2 * (yz - xw);
+			_m13 = translation.y;
+
+			_m20 = 2 * (zx - yw);
+			_m21 = 2 * (yz + xw);
+			_m22 = (ww - xx - yy + zz);
+			_m23 = translation.z;
+
+			_m30 = 0;
+			_m31 = 0;
+			_m32 = 0;
+			_m33 = T(1);
+		}
+		/// Set the rotation to the given quaternion, the translation to the given vector, and the scale to the given scale,
+		/// on the basis of a premultiplying transform matrix.
+		template <typename U, typename V, typename W>
+		void setRotationTranslationScale(const tvector4<U> &q, const tvector3<V> &translation, const tvector3<W> &scale)
+		{
+			T ww = q.w * q.w;
+			T xx = q.x * q.x;
+			T yy = q.y * q.y;
+			T zz = q.z * q.z;
+			T xy = q.x * q.y;
+			T yz = q.y * q.z;
+			T zx = q.z * q.x;
+			T xw = q.x * q.w;
+			T yw = q.y * q.w;
+			T zw = q.z * q.w;
+			_m00 = (ww + xx - yy - zz);
+			_m01 = T(2) * (xy - zw);
+			_m02 = T(2) * (zx + yw);
+			_m03 = translation.x;
+
+			_m10 = T(2) * (xy + zw);
+			_m11 = (ww - xx + yy - zz);
+			_m12 = T(2) * (yz - xw);
+			_m13 = translation.y;
+
+			_m20 = T(2) * (zx - yw);
+			_m21 = T(2) * (yz + xw);
+			_m22 = (ww - xx - yy + zz);
+			_m23 = translation.z;
+
+			_m30 = 0;
+			_m31 = 0;
+			_m32 = 0;
+			_m33 = T(1);
+			applyScale(scale);
+		}
+		
 		template<typename U>
 		static tmatrix4 translation(const tvector3<U>& translation)
 		{
@@ -1012,6 +1112,19 @@
 				0.0f, 0.0f, 1.0f, translation.z,
 				0.0f, 0.0f, 0.0f, 1.0f
 			};
+		}
+		template <typename U>
+		void applyScale(const tvector3<U> &scale)
+		{
+			_m00 *= scale.x;
+			_m01 *= scale.y;
+			_m02 *= scale.z;
+			_m10 *= scale.x;
+			_m11 *= scale.y;
+			_m12 *= scale.z;
+			_m20 *= scale.x;
+			_m21 *= scale.y;
+			_m22 *= scale.z;
 		}
 		template<typename U>
 		static tmatrix4 rotation(const tvector4<U>& orientation)
