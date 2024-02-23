@@ -24,6 +24,9 @@
 #include <algorithm>
 #include <iomanip>
 
+//Just include this header file where it's needed.
+#include "D3D12MemAlloc.h"
+
 #if PLATFORM_ENABLE_PIX
 
 #if defined(_GAMING_XBOX)

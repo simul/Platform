@@ -12,6 +12,11 @@
 #include "Platform/Vulkan/DisplaySurface.h"
 #include "DeviceManager.h"
 #include <vulkan/vulkan.hpp>
+
+//This file alone implements VMA, include only the header file elsewhere.
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
 #pragma optimize("", off)
 #ifndef _countof
 #define _countof(a) (sizeof(a)/sizeof(*(a)))

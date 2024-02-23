@@ -25,6 +25,15 @@ set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR=$<BOOL:${PLATFORM_S
 set(VK_DEFS ${VK_DEFS} PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS=$<BOOL:${PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS}>)
 
 if(SIMUL_SOURCE_BUILD)
+	# Get Vulkan Memory Allocator library into [PLATFORM_BINARY]/vma
+	FetchContent_Declare(
+		vma
+		GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+		GIT_TAG v3.0.1
+		SOURCE_DIR vma
+	)
+	FetchContent_MakeAvailable(vma)
+
 	add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} ${SHADER_INCLUDES} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 
 	if(PLATFORM_WINDOWS)
@@ -40,5 +49,7 @@ if(SIMUL_SOURCE_BUILD)
 	# For parallel_hashmap
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
+	# For VMA
+	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${vma_SOURCE_DIR}/include")
 
 endif()
