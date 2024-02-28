@@ -22,7 +22,7 @@ namespace platform
 			#define MPH_TO_MS (0.44704f)
 			using std::string;
 			using std::vector;
-            static size_t ttab;
+			static size_t ttab;
 			vector<string> SplitPath(const string& fullPath)
 			{
 				size_t slash_pos = fullPath.rfind("/");
@@ -241,7 +241,7 @@ namespace platform
 				{
 					idx++;
 					str+=x;
-                    if(idx>=size_t(Line.length()))
+					if(idx>=size_t(Line.length()))
 						x=0;
 					else
 						x=Line[idx];
@@ -253,7 +253,7 @@ namespace platform
 			{
 				string num=NextNum(Line);
 				char *stopstring;
-                int val=int(strtol(num.c_str(),&stopstring,10));
+				int val=int(strtol(num.c_str(),&stopstring,10));
 				return val;
 			}
 			//------------------------------------------------------------------------------
@@ -569,7 +569,7 @@ namespace platform
 			if(pos<0)
 				return "";
 			return str.substr(0,pos);
-        }
+		}
 		std::string stringFormat(std::string fmt, ...)
 		{
 			int size=(int)fmt.size()+100;
@@ -604,7 +604,7 @@ namespace platform
 			int n=-1;
 			while(n<0||n>=size)
 			{
-                str.resize(size_t(size));
+				str.resize(size_t(size));
 				va_start(ap, format_str);
 				//n = vsnprintf_s((char *)str.c_str(), size, size,format_str, ap);
 				n = vsnprintf((char *)str.c_str(), size,format_str, ap);
