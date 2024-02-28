@@ -50,6 +50,6 @@ if(SIMUL_SOURCE_BUILD)
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
 	# For VMA
-	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${vma_SOURCE_DIR}/include")
+	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${vma_SOURCE_DIR}/include")
 
 endif()

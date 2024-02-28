@@ -3,18 +3,19 @@
 
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Buffer.h"
+#include "Platform/Vulkan/Allocation.h"
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4251)
+	#pragma warning(push)
+	#pragma warning(disable:4251)
 #endif
 
 namespace platform
 {
 	namespace vulkan
 	{
-        //! Vulkan buffer (vertex/index) implementation
-		class SIMUL_VULKAN_EXPORT Buffer:public platform::crossplatform::Buffer
+		//! Vulkan buffer (vertex/index) implementation
+		class SIMUL_VULKAN_EXPORT Buffer : public platform::crossplatform::Buffer
 		{
 		public:
 						Buffer();
@@ -27,24 +28,19 @@ namespace platform
 
 			vk::Buffer	asVulkanBuffer();
 			void		FinishLoading(crossplatform::DeviceContext& deviceContext);
-        private:
+		private:
 			vk::Buffer mBuffer;
-			vk::DeviceMemory mBufferMemory;
+			AllocationInfo mAllocation;
 			
-			//uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
-			//void CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory);
-			struct BufferLoad
-			{
-				uint32_t size;
-				vk::Buffer stagingBuffer;
-				vk::DeviceMemory stagingBufferMemory;
-			};
-			BufferLoad bufferLoad;
-			bool loadingComplete=true;
+			vk::Buffer mStagingBuffer;
+			AllocationInfo mStagingAllocation;
+			
+			uint32_t size;
+			bool loadingComplete = true;
 		};
 	}
 };
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+	#pragma warning(pop)
 #endif

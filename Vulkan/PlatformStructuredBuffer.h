@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "Platform/Vulkan/Export.h"
+#include "Platform/Vulkan/Allocation.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include <list>
 
@@ -53,16 +54,16 @@ namespace platform
 
 			struct PerFrameBuffer
 			{
-				vk::Buffer 					mBuffer;
-				vk::BufferView 				mBufferView;
-				vk::DeviceMemory			mMemory;
+				vk::Buffer					mBuffer;
+				vk::BufferView				mBufferView;
+				AllocationInfo				mAllocationInfo;
 			};
 			std::list<PerFrameBuffer>		perFrameBuffers;
 			std::list<PerFrameBuffer>::iterator lastBuffer;
 			std::list<PerFrameBuffer>::iterator firstBuffer;
 			
 			vk::Buffer						mReadBuffers[kNumBuffers];
-			vk::DeviceMemory				mReadBufferMemory[kNumBuffers];
+			AllocationInfo					mReadBufferAllocationInfo[kNumBuffers];
 			const int kBufferAlign			= 256;
 			size_t							last_offset;
 
