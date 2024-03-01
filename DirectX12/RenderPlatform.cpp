@@ -605,14 +605,29 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		}
 #endif
 	}
-
 	// Set up D3D12MA CPU and GPU allicators
 	IDXGIAdapter1 *adapter = nullptr;
+#if defined(_GAMING_XBOX)
+	// First, dxgiDevice the underlying DXGI device from the D3D device.
+	IDXGIDevice1 *dxgiDevice = nullptr;
+	m12Device->QueryInterface(SIMUL_PPV_ARGS(&dxgiDevice));
+
+	// Identify the physical adapter (GPU or card) this device is running on.
+	IDXGIAdapter* dxgiAdapter = nullptr;
+	dxgiDevice->GetAdapter(&dxgiAdapter);
+
+	// And obtain the factory object that created it.
+	IDXGIFactory2* dxgiFactory = nullptr;
+	dxgiAdapter->GetParent(IID_GRAPHICS_PPV_ARGS(&dxgiFactory));
+	adapter = (IDXGIAdapter1*)dxgiAdapter;
+
+#else
 	IDXGIFactory4 *factory = nullptr;
 	HRESULT result = CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
 	if (result == S_OK && factory)
 		factory->EnumAdapterByLuid(m12Device->GetAdapterLuid(), SIMUL_PPV_ARGS(&adapter));
 	SAFE_RELEASE(factory);
+#endif
 
 	D3D12MA::ALLOCATOR_DESC allocatorDesc;
 	allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_NONE;

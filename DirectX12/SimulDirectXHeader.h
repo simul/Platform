@@ -36,29 +36,38 @@
 
 inline void SetD3DName(ID3D12Object *obj, const char *name)
 {
+#if defined(_GAMING_XBOX)
+	size_t size = strlen(name);
+	wchar_t *src_w = new wchar_t[size + 1];
+	MultiByteToWideChar(CP_UTF8, 0, name, (int)size, src_w, (int)size);
+	D3D_SET_OBJECT_NAME_W(obj, src_w);
+	delete[] src_w;
+#else
 	D3D_SET_OBJECT_NAME_A(obj, name);
+#endif
 }
 
 inline void GetD3DName(ID3D12Object *obj, std::string& name)
 {
-#if defined(_GAMING_XBOX)
-	// not implemented?????
-	return;
-#endif
-
 	if(!obj)
 	{
 		return;
 	}
 
-	UINT size = 0;
+#if defined(_GAMING_XBOX)
+	GUID g = WKPDID_D3DDebugObjectNameW;
+#else
 	GUID g = WKPDID_D3DDebugObjectName;
+#endif
+
+	UINT size = 0;
 	HRESULT hr = (obj)->GetPrivateData(g, &size, nullptr);
 	if (hr == S_OK)
 	{
 		name.resize(size);
 		(obj)->GetPrivateData(g, &size, name.data());
 	}
+#if !defined(_GAMING_XBOX)
 	else
 	{
 		g = WKPDID_D3DDebugObjectNameW;
@@ -73,6 +82,7 @@ inline void GetD3DName(ID3D12Object *obj, std::string& name)
 			delete[] src_w;
 		}
 	}
+#endif
 }
 
 #ifndef SAFE_RELEASE
