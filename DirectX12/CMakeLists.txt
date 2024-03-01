@@ -59,23 +59,15 @@ else()
 	list(FILTER HEADERS EXCLUDE REGEX "Video*")
 endif()
 
-# Get Vulkan Memory Allocator library into [PLATFORM_BINARY]/d3d12ma
-FetchContent_Declare(
-	d3d12ma
-	GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator.git
-	GIT_TAG v2.0.1
-	SOURCE_DIR d3d12ma
-)
-FetchContent_MakeAvailable(d3d12ma)
-
-# Add in D3D12MemAlloc.cpp
-set(SOURCES ${SOURCES} "${d3d12ma_SOURCE_DIR}/src/D3D12MemAlloc.cpp")
+# Add in D3D12MemAlloc.cpp/.h
+set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include/D3D12MemAlloc.h")
+set(SOURCES ${SOURCES} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
 
 add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
 	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" DEPENDENCIES SimulCrossPlatform${STATIC_LINK_SUFFIX})
 
 # For D3D12MA
-target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} PRIVATE "${d3d12ma_SOURCE_DIR}/include")
+target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
 
 option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 if(SIMUL_SOURCE_BUILD)
