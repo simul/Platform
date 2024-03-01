@@ -34,45 +34,45 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
-inline void SetD3DName(ID3D12Object* obj, const char* name)
+inline void SetD3DName(ID3D12Object *obj, const char *name)
 {
-	std::wstring n(name, name+strlen(name));
-	obj->SetName(n.c_str());
+	D3D_SET_OBJECT_NAME_A(obj, name);
 }
-inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
+
+inline void GetD3DName(ID3D12Object *obj, std::string& name)
 {
-	if(!maxsize)
-		return;
-	if(!obj)
-	{
-		name[0]=0;
-		return;
-	}
-	UINT size=0;
 #if defined(_GAMING_XBOX)
 	// not implemented?????
-	name[0] = 0;
-#else
-	GUID g = WKPDID_D3DDebugObjectName;
-	HRESULT hr=(obj)->GetPrivateData(g,&size,	nullptr);
-	if(hr==S_OK)
+	return;
+#endif
+
+	if(!obj)
 	{
-		if(size <= maxsize)
-			(obj)->GetPrivateData(g, &size, name);
+		return;
+	}
+
+	UINT size = 0;
+	GUID g = WKPDID_D3DDebugObjectName;
+	HRESULT hr = (obj)->GetPrivateData(g, &size, nullptr);
+	if (hr == S_OK)
+	{
+		name.resize(size);
+		(obj)->GetPrivateData(g, &size, name.data());
 	}
 	else
 	{
-		g= WKPDID_D3DDebugObjectNameW;
+		g = WKPDID_D3DDebugObjectNameW;
 		hr = (obj)->GetPrivateData(g, &size, nullptr);
 		if (hr == S_OK)
 		{
-			wchar_t * src_w =new wchar_t[size+1];
+			name.resize(size);
+
+			wchar_t *src_w = new wchar_t[size + 1];
 			(obj)->GetPrivateData(g, &size, src_w);
-			WideCharToMultiByte(CP_UTF8, 0, src_w, (int)size, name, (int)maxsize, NULL, NULL);
-			delete [] src_w;
+			WideCharToMultiByte(CP_UTF8, 0, src_w, (int)size, name.data(), (int)size, NULL, NULL);
+			delete[] src_w;
 		}
 	}
-#endif
 }
 
 #ifndef SAFE_RELEASE
@@ -84,8 +84,8 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 											int refct=(p)->Release()-1;\
 											if(refct!=21623460)\
 											{\
-												char name[20];\
-												GetD3DName((p),name,20);\
+												std::string name;\
+												GetD3DName((p),name);\
 												SIMUL_COUT<< name<<" refct "<<refct<<std::endl;\
 											}\
 											(p)->Release();\
@@ -95,15 +95,38 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 #endif
 
 #ifndef SAFE_RELEASE_LATER
-#define SAFE_RELEASE_LATER(p)			{ if(p) {\
-		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;\
-		if(renderPlatformDx12)\
-			renderPlatformDx12->PushToReleaseManager(p, #p);\
-		else\
-			p->Release();\
-		p = nullptr;\
-		 } }
+#define SAFE_RELEASE_LATER(p)	{\
+									if(p) {\
+										auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;\
+										if(renderPlatformDx12)\
+											renderPlatformDx12->PushToReleaseManager(p);\
+										else\
+											p->Release();\
+										p = nullptr;\
+									}\
+								}
 #endif
+#ifndef SAFE_RELEASE_ALLOCATIR_LATER
+#define SAFE_RELEASE_ALLOCATIR_LATER(p, a)	{\
+												if(p && a) {\
+													auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;\
+													if(renderPlatformDx12)\
+													{\
+														renderPlatformDx12->PushToReleaseManager(p, a);\
+													}\
+													else\
+													{\
+														(a)->allocation->Release();\
+														p->Release();\
+													}\
+													(a)->allocator = nullptr;\
+													(a)->allocation = nullptr;\
+													p = nullptr;\
+												}\
+											}
+#endif
+
+
 #ifndef SAFE_RELEASE_ARRAY
 	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<int(n);i++) if(p[i]) { (p[i])->Release(); (p[i])=nullptr; } }
 #endif
@@ -131,3 +154,16 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 	#define LOG_BARRIER_INFO(name, res, before, after)
 #endif
 
+// D3D12MA
+#define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
+#define D3D12MA_IID_PPV_ARGS SIMUL_PPV_ARGS
+#include "D3D12MemAlloc.h"
+
+namespace platform::dx12
+{
+	struct AllocationInfo
+	{
+		D3D12MA::Allocator *allocator = nullptr;
+		D3D12MA::Allocation *allocation = nullptr;
+	};
+}

@@ -102,7 +102,7 @@ namespace platform
 			ID3D12Fence *d3d12Fence=nullptr;
 		};
 		//! A class to implement common rendering functionality for DirectX 12.
-		class SIMUL_DIRECTX12_EXPORT RenderPlatform: public crossplatform::RenderPlatform
+		class SIMUL_DIRECTX12_EXPORT RenderPlatform : public crossplatform::RenderPlatform
 		{
 		public:
 											RenderPlatform();
@@ -111,7 +111,9 @@ namespace platform
 			const char* GetName() const override { return PLATFORM_NAME; }
 			crossplatform::RenderPlatformType GetType() const override
 			{
-#if defined(_GAMING_XBOX)
+#if defined(_GAMING_XBOX_SCARLETT)
+				return crossplatform::RenderPlatformType::Spectrum;
+#elif defined(_GAMING_XBOX_XBOXONE)
 				return crossplatform::RenderPlatformType::XboxOneD3D12;
 #else
 				return crossplatform::RenderPlatformType::D3D12;
@@ -156,7 +158,8 @@ namespace platform
 			void							FlushBarriers(crossplatform::DeviceContext& deviceContext);
 			//! Keeps track of a resource that must be released. It has a delay of a few frames
 			//! so we the object won't be deleted while in use
-			void							PushToReleaseManager(ID3D12DeviceChild* res, const char *name,bool owned=true);
+			void							PushToReleaseManager(ID3D12Object* res, AllocationInfo *allocationInfo = nullptr, bool owned = true);
+			void							ClearReleaseManager(bool force = false);
 			//! Clears the input assembler state (index and vertex buffers)
 			void							ClearIA(crossplatform::DeviceContext &deviceContext);
 
@@ -207,13 +210,13 @@ namespace platform
 
 			void									ApplyDefaultMaterial();
 
-			crossplatform::Framebuffer			*CreateFramebuffer(const char *name=nullptr) override;
+			crossplatform::Framebuffer				*CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState				*CreateSamplerState(crossplatform::SamplerStateDesc *d) override;
 			crossplatform::Effect					*CreateEffect() override;
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) override;
 			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer					*CreateBuffer() override;
-			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool) override;			
+			crossplatform::Layout					*CreateLayout(int num_elements,const crossplatform::LayoutDesc *,bool) override;
 			crossplatform::RenderState				*CreateRenderState(const crossplatform::RenderStateDesc &desc);
 			crossplatform::Query					*CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Fence					*CreateFence(const char* name) override;
@@ -287,28 +290,37 @@ namespace platform
 			D3D12_CPU_DESCRIPTOR_HANDLE				GetNullSampler()const;
 
 			//! Holds, if any, an override depth state
-			D3D12_DEPTH_STENCIL_DESC*			   DepthStateOverride;
+			D3D12_DEPTH_STENCIL_DESC*				DepthStateOverride;
 			//! Holds, if any, an override blend state
-			D3D12_BLEND_DESC*					   BlendStateOverride;
+			D3D12_BLEND_DESC*						BlendStateOverride;
 			//! Holds, if any, an override raster state
-			D3D12_RASTERIZER_DESC*				  RasterStateOverride;
+			D3D12_RASTERIZER_DESC*					RasterStateOverride;
 
 			D3D12_DEPTH_STENCIL_DESC				DefaultDepthState;
 			D3D12_BLEND_DESC						DefaultBlendState;
-			D3D12_RASTERIZER_DESC				   DefaultRasterState;
+			D3D12_RASTERIZER_DESC					DefaultRasterState;
 
-			crossplatform::PixelFormat			  DefaultOutputFormat;
+			crossplatform::PixelFormat				DefaultOutputFormat;
+
+			void									CreateResource(const D3D12_RESOURCE_DESC& resourceDesc, D3D12_RESOURCE_STATES state, 
+																	D3D12_CLEAR_VALUE *clear, D3D12_HEAP_TYPE type, ID3D12Resource **resource, 
+																	AllocationInfo &allocationInfo, const char *name);
 			
 		protected:
+			D3D12MA::Allocator *mCPUAllocator = nullptr;
+			D3D12MA::Allocator *mGPUAllocator = nullptr;
+			UINT mCPUPreferredBlockSize = 0;
+			UINT mGPUPreferredBlockSize = 0;
+
 			friend class CommandListController;
 			static ID3D12CommandQueue* CreateCommandQueue(ID3D12Device* device, D3D12_COMMAND_LIST_TYPE type, const char* name);
 			static void FlushCommandQueue(ID3D12Device* device, ID3D12CommandQueue* queue);
 			//D3D12-specific things
 			virtual void ContextFrameBegin(crossplatform::GraphicsDeviceContext&) override;
 			crossplatform::Texture* createTexture() override;
-			void							CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
+			void						CheckBarriersForResize(crossplatform::DeviceContext &deviceContext);
 			//! The GPU timestamp counter frequency (in ticks/second)
-			UINT64					  mTimeStampFreq;
+			UINT64						mTimeStampFreq;
 			//! Reference to the DX12 device
 			ID3D12Device*				m12Device=nullptr;
 			//! Reference to the graphics command queue
@@ -344,14 +356,15 @@ namespace platform
 			D3D_PRIMITIVE_TOPOLOGY		mStoredTopology;
 
 			//! Holds resources to be deleted and its age
-			struct ResourceToFree
+			struct ReleaseResourceInfo
 			{
-				unsigned int age=0;
-				bool owned=true;
-				std::string freeName;
-				ID3D12DeviceChild *resource=nullptr;
+				ID3D12Object *resource = nullptr;
+				AllocationInfo allocationInfo;
+				unsigned int age = 0;
+				bool owned = true;
 			};
-			std::vector<ResourceToFree> mResourceBin;
+			std::vector<ReleaseResourceInfo> mReleaseResources;
+
 			//! Default number of barriers we hold, the number will increase
 			//! if we run out of barriers
 			struct ContextBarriers
@@ -359,7 +372,7 @@ namespace platform
 				ContextBarriers()
 				{
 					mCurBarriers    = 0;
-					mTotalBarriers  = 16; 
+					mTotalBarriers  = 16;
 					mPendingBarriers.resize(mTotalBarriers);
 				}
 
