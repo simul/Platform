@@ -76,7 +76,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	allocatorCreateInfo.flags = 0;
 	allocatorCreateInfo.physicalDevice = *vulkanGpu;
 	allocatorCreateInfo.device = *vulkanDevice;
-	allocatorCreateInfo.preferredLargeHeapBlockSize = mCPUPreferredBlockSize;
+	allocatorCreateInfo.preferredLargeHeapBlockSize = mCPUPreferredBlockSize = 256 * 1048576;
 	allocatorCreateInfo.pAllocationCallbacks = nullptr;
 	allocatorCreateInfo.pDeviceMemoryCallbacks = nullptr;
 	allocatorCreateInfo.pHeapSizeLimit = nullptr;
@@ -86,7 +86,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	allocatorCreateInfo.pTypeExternalMemoryHandleTypes = nullptr;
 	SIMUL_VK_CHECK((vk::Result)vmaCreateAllocator(&allocatorCreateInfo, &mCPUAllocator));
 
-	allocatorCreateInfo.preferredLargeHeapBlockSize = mGPUPreferredBlockSize;
+	allocatorCreateInfo.preferredLargeHeapBlockSize = mGPUPreferredBlockSize = 256 * 1048576;
 	SIMUL_VK_CHECK((vk::Result)vmaCreateAllocator(&allocatorCreateInfo, &mGPUAllocator));
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
