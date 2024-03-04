@@ -1,4 +1,16 @@
 cmake_minimum_required(VERSION 3.5)
+
+# Get Vulkan Memory Allocator library into [PLATFORM_BINARY]/vma
+FetchContent_Declare(
+	vma
+	GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+	GIT_TAG v3.0.1
+	SOURCE_DIR vma
+)
+FetchContent_MakeAvailable(vma)
+
+set(vma_INCLUDE_DIR ${vma_SOURCE_DIR}/include)
+
 option(PLATFORM_SUPPORT_VULKAN_MULTIVIEW "" OFF)
 option(PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR "" OFF)
 option(PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS "" OFF)
@@ -35,6 +47,7 @@ if(SIMUL_SOURCE_BUILD)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
 	endif()
 	
+	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${vma_INCLUDE_DIR}")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 	# For parallel_hashmap

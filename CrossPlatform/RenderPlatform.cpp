@@ -1184,22 +1184,22 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill)
 {
 	PosColourVertex line_vertices[37];
-	math::Vector3 direction(dir);
-	direction.Unit();
-	math::Vector3 z(0,0,1.f);
-	math::Vector3 y(0,1.f,0);
-	math::Vector3 x=z^direction;
-	if(x.Magnitude()>.1f)
-		x.Unit();
+	vec3 direction(dir);
+	direction = normalize(direction);
+	vec3 z(0,0,1.f);
+	vec3 y(0,1.f,0);
+	vec3 x=cross(z,direction);
+	if(length(x)>.1f)
+		x=normalize(x);
 	else
-		x=direction^y;
+		x=cross(direction,y);
 	x*=radius;
-	y=(direction^x);
+	y = cross(direction , x);
 	int l=0;
 	for(int j=0;j<36;j++)
 	{
 		float angle					=(float(j)/35.0f)*2.0f*3.1415926536f;
-		line_vertices[l].pos		=pos+(x*cos(angle)+y*sin(angle));
+		line_vertices[l].pos		=vec3(pos)+(x*cos(angle)+y*sin(angle));
 		line_vertices[l++].colour	=colr;
 	}
 	DrawLines(deviceContext,line_vertices,36,true,false,false);
@@ -1751,11 +1751,9 @@ int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int
 void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour)
 {
 	PosColourVertex pts[2];
-	pts[0].pos=pos1;
-	pts[0].pos.z=0;
+	pts[0].pos={pos1.x,pos1.y,0};
 	pts[0].colour=colour;
-	pts[1].pos=pos2;
-	pts[1].pos.z=0;
+	pts[1].pos = {pos2.x, pos2.y, 0};
 	pts[1].colour=colour;
 	Draw2dLines(deviceContext,pts,2,false);
 }

@@ -229,7 +229,7 @@ bool Framebuffer::CreateBuffers()
 	}
 	if(!external_depth_texture&&depth_format!=crossplatform::UNKNOWN)
 	{
-		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height,1, depth_format, false, false, true, numAntialiasingSamples, quality, false, vec4(0.0f), DefaultClearDepth,DefaultClearStencil);
+		buffer_depth_texture->ensureTexture2DSizeAndFormat(renderPlatform, Width, Height,1, depth_format, false, false, true, numAntialiasingSamples, quality, false, vec4(0), DefaultClearDepth,DefaultClearStencil);
 	}
 	return true;
 }
