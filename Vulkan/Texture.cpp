@@ -166,10 +166,8 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	{
 		if(!external_texture)
 		{
-			r->PushToReleaseManager(mImage);
-			r->PushToReleaseManager(mMem);
+			r->PushToReleaseManager(mImage, &mAllocationInfo);
 		}
-		r->PushToReleaseManager(mBuffer);
 		// don't free defaultImageView, it's a duplicate.
 		for (auto imageView : mImageViews)
 		{
@@ -534,21 +532,9 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
-	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
-	vk::MemoryRequirements mem_reqs;
-	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
-	
-	mMemAlloc.setAllocationSize(mem_reqs.size);
-	mMemAlloc.setMemoryTypeIndex(0);
 
-	if(!((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal, &mMemAlloc.memoryTypeIndex))
-		return false;
-
-	RETURN_FALSE_IF_FAILED(vulkanDevice->allocateMemory(&mMemAlloc, nullptr, &mMem));
-	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
-
-	vulkanDevice->bindImageMemory(mImage, mMem, 0);
+	std::string _name = name + " texture mImage";
+	vulkanRenderPlatform->CreateVulkanImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	InitViewTable(1, m);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
@@ -644,22 +630,9 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
-	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
-	vk::MemoryRequirements mem_reqs;
-	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
-	
-	mMemAlloc.setAllocationSize(mem_reqs.size);
-	mMemAlloc.setMemoryTypeIndex(0);
 
-	if(!((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal,
-		&mMemAlloc.memoryTypeIndex))
-		return false;
-
-	RETURN_FALSE_IF_FAILED( vulkanDevice->allocateMemory(&mMemAlloc, nullptr, &mMem));
-	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
-
-	vulkanDevice->bindImageMemory(mImage, mMem, 0);
+	std::string _name = name + " texture mImage";
+	vulkanRenderPlatform->CreateVulkanImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	pixelFormat=f;
 	width=w;
@@ -735,22 +708,9 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
-	
-	RETURN_FALSE_IF_FAILED( vulkanDevice->createImage(&imageCreateInfo, nullptr, &mImage));
-	SetVulkanName(renderPlatform,mImage,name+" texture mImage");
-	vk::MemoryRequirements mem_reqs;
-	vulkanDevice->getImageMemoryRequirements(mImage, &mem_reqs);
-	
-	mMemAlloc.setAllocationSize(mem_reqs.size);
-	mMemAlloc.setMemoryTypeIndex(0);
 
-	if(!((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal, &mMemAlloc.memoryTypeIndex))
-		return false;
-
-	RETURN_FALSE_IF_FAILED(vulkanDevice->allocateMemory(&mMemAlloc, nullptr, &mMem));
-	SetVulkanName(renderPlatform,mMem,name+" texture mMem");
-
-	vulkanDevice->bindImageMemory(mImage, mMem, 0);
+	std::string _name = name + " texture mImage";
+	vulkanRenderPlatform->CreateVulkanImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 	
 	InitViewTable(1, m);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
@@ -963,36 +923,17 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	//int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
-	auto const buffer_create_info = vk::BufferCreateInfo()
-		.setSize(bufferSize)//lt.x * lt.y *lt.z * 4 *texelBytes)
-		.setUsage(vk::BufferUsageFlagBits::eTransferSrc)
-		.setSharingMode(vk::SharingMode::eExclusive)
-		.setQueueFamilyIndexCount(0)
-		.setPQueueFamilyIndices(nullptr);
+	std::string _name = name + " texture upload buffer";
 
-	auto result = vulkanDevice->createBuffer(&buffer_create_info, nullptr, &lt.buffer);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-	vk::MemoryRequirements mem_reqs;
-	vulkanDevice->getBufferMemoryRequirements(lt.buffer, &mem_reqs);
-
-	lt.mem_alloc.setAllocationSize(mem_reqs.size);
-	lt.mem_alloc.setMemoryTypeIndex(0);
-
-	vk::MemoryPropertyFlags requirements = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-	auto pass = vkRenderPlatform->MemoryTypeFromProperties(mem_reqs.memoryTypeBits, requirements, &lt.mem_alloc.memoryTypeIndex);
-	SIMUL_ASSERT(pass == true);
-
-	result = vulkanDevice->allocateMemory(&lt.mem_alloc, nullptr, &(lt.mem));
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SetVulkanName(renderPlatform,lt.mem,name+" texture lt.mem");
-
-	vulkanDevice->bindBufferMemory(lt.buffer, lt.mem, 0);
+	vkRenderPlatform->CreateVulkanBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+		lt.buffer, lt.allocationInfo, _name.c_str());
 
 	vk::SubresourceLayout layout;
 	memset(&layout, 0, sizeof(layout));
 	layout.rowPitch = SysMemPitch;//lt.x * texelBytes;
-	auto mapped_data = vulkanDevice->mapMemory(lt.mem, 0, lt.mem_alloc.allocationSize);
+	void *mapped_data = nullptr;
+	vmaMapMemory(lt.allocationInfo.allocator, lt.allocationInfo.allocation, &mapped_data);
 	SIMUL_ASSERT(mapped_data !=nullptr);
 	
 	//memcpy(data, lt.data, lt.x * lt.y*4);
@@ -1004,14 +945,14 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 		memcpy(target_data, cPtr,SysMemPitch);
 		cPtr		+= SysMemPitch;
 		target_data	+= layout.rowPitch;
-		totalBytes+=SysMemPitch;
+		totalBytes	+= SysMemPitch;
 	}
 	
 	if(cf!=platform::crossplatform::CompressionFormat::UNCOMPRESSED)
 	{
 		//SIMUL_CERR<<"Texture "<<name.c_str()<<", surface "<<" mip "<<": Uploaded "<<totalBytes<<" bytes.\n";
 	}
-	vulkanDevice->unmapMemory(lt.mem);
+	vmaUnmapMemory(lt.allocationInfo.allocator, lt.allocationInfo.allocation);
 	textureUploadComplete=false;
 }
 
@@ -1354,8 +1295,7 @@ void Texture::PushLoadedTexturesToReleaseManager()
 	{
 		for (auto i : j)
 		{
-			r->PushToReleaseManager(i.buffer);
-			r->PushToReleaseManager(i.mem);
+			r->PushToReleaseManager(i.buffer, &(i.allocationInfo));
 		}
 	}
 }

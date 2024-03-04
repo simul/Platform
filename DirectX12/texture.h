@@ -20,7 +20,7 @@ namespace platform
 	namespace dx12
 	{
 		//! Sampler class for DirectX12
-		class SIMUL_DIRECTX12_EXPORT SamplerState:public crossplatform::SamplerState
+		class SIMUL_DIRECTX12_EXPORT SamplerState : public crossplatform::SamplerState
 		{
 		public:
 			SamplerState(crossplatform::SamplerStateDesc *d);
@@ -36,12 +36,12 @@ namespace platform
 				mCpuHandle=h;
 			}
 		private:
-			D3D12_CPU_DESCRIPTOR_HANDLE     mCpuHandle;
-			crossplatform::SamplerStateDesc mCachedDesc;
+			D3D12_CPU_DESCRIPTOR_HANDLE		mCpuHandle;
+			crossplatform::SamplerStateDesc	mCachedDesc;
 		};
 
 		//! Texture class for DirectX12, it implement the base Texture methods
-		class SIMUL_DIRECTX12_EXPORT Texture:public crossplatform::Texture
+		class SIMUL_DIRECTX12_EXPORT Texture : public crossplatform::Texture
 		{
 		public:
 			Texture();
@@ -154,9 +154,12 @@ namespace platform
 			dx12::Heap						mTextureDsHeap;
 
 			//! Texture data that lives in the GPU
-			ID3D12Resource*									mTextureDefault;
+			ID3D12Resource*					mTextureDefault;
+			AllocationInfo					mTextureDefaultAllocationInfo;
 			//! Used to upload texture data to the GPU
-			ID3D12Resource*									mTextureUpload;
+			ID3D12Resource*					mTextureUpload;
+			AllocationInfo					mTextureUploadAllocationInfo;
+
 			//! States of the subresources mSubResourcesStates[index][mip]
 			std::vector<std::vector<D3D12_RESOURCE_STATES>>	mSubResourcesStates;
 			//! Full resource state
@@ -172,8 +175,8 @@ namespace platform
 			std::unordered_map<uint64_t, D3D12_CPU_DESCRIPTOR_HANDLE*> renderTargetViews;
 
 			//! We need to store the old MSAA state
-			DXGI_SAMPLE_DESC                mCachedMSAAState;
-			int                             mNumSamples;
+			DXGI_SAMPLE_DESC				mCachedMSAAState;
+			int								mNumSamples;
 			
 			void AssumeLayout(D3D12_RESOURCE_STATES state);
 			unsigned GetSubresourceIndex(int mip, int layer);

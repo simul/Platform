@@ -36,6 +36,9 @@ set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_MULTIVIEW=$<BOOL:${PLATFORM_SUPPO
 set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR=$<BOOL:${PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR}>)
 set(VK_DEFS ${VK_DEFS} PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS=$<BOOL:${PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS}>)
 
+# Add in vk_mem_alloc.h
+set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include/vk_mem_alloc.h")
+
 if(SIMUL_SOURCE_BUILD)
 	add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} ${SHADER_INCLUDES} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 
@@ -53,5 +56,7 @@ if(SIMUL_SOURCE_BUILD)
 	# For parallel_hashmap
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
+	# For VMA
+	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include")
 
 endif()

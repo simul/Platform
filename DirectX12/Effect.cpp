@@ -81,27 +81,30 @@ void EffectPass::InvalidateDeviceObjects()
 	// TO-DO:  memory leaks here??
 	auto pl = (dx12::RenderPlatform*)renderPlatform;
 	
-	//Graphics
-	for (auto& ele : mGraphicsPsoMap)
-	{
-		pl->PushToReleaseManager(ele.second.pipelineState, "Graphics PSO");
-	}
-	mGraphicsPsoMap.clear();
-
+	//Target Map
 	for (auto& value : mTargetsMap)
 	{
 		SAFE_DELETE(value.second);
 	}
 	mTargetsMap.clear();
 
+	//Graphics
+	for (auto& ele : mGraphicsPsoMap)
+	{
+		pl->PushToReleaseManager(ele.second.pipelineState);
+	}
+	mGraphicsPsoMap.clear();
+
 	//Compute
-	pl->PushToReleaseManager(mComputePso, "Compute PSO");
+	pl->PushToReleaseManager(mComputePso);
 	mComputePso = nullptr;
-#if PLATFORM_SUPPORT_D3D12_RAYTRACING
+
 	//Raytrace
-	pl->PushToReleaseManager(mRaytracePso, "Raytrace PSO");
+#if PLATFORM_SUPPORT_D3D12_RAYTRACING
+	pl->PushToReleaseManager(mRaytracePso);
 	mRaytracePso = nullptr;
 #endif
+	
 	SAFE_DELETE(shaderBindingTable);
 }
 
@@ -492,9 +495,8 @@ void EffectPass::CreateComputePso(crossplatform::DeviceContext& deviceContext)
 	if (res == S_OK)
 	{
 		SIMUL_GPU_TRACK_MEMORY(mComputePso, 100)	// TODO: not the real size!
-		std::wstring name = L"ComputePSO_";
-		name += std::wstring(mTechName.begin(), mTechName.end());
-		mComputePso->SetName(name.c_str());
+		std::string name = "ComputePSO_" + mTechName;
+		SetD3DName(mComputePso, name.c_str());
 	}
 	else
 	{
@@ -1091,11 +1093,11 @@ void EffectPass::CreateRaytracePso()
 	HRESULT res = pDevice5->CreateStateObject(&stateObject, SIMUL_PPV_ARGS(&mRaytracePso));
 	
 	mTechName = this->name;
-	std::wstring w_name = L"RaytracePSO_";
-	w_name += std::wstring(mTechName.begin(), mTechName.end());
-	mRaytracePso->SetName(w_name.c_str());
+	std::string name = "RaytracePSO_" + mTechName;
+	SetD3DName(mRaytracePso, name.c_str());
+
 	V_CHECK(res);
-	SIMUL_GPU_TRACK_MEMORY(mRaytracePso, 100)	
+	SIMUL_GPU_TRACK_MEMORY(mRaytracePso, 100)
 
 	SAFE_RELEASE(pDevice5);
 #endif

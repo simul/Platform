@@ -29,7 +29,9 @@ namespace platform
 			}
 		private:
 			ID3D12Resource*				mGpuHeap;
+			AllocationInfo				mGpuHeapAllocationInfo;
 			ID3D12Resource*				mIntermediateHeap;
+			AllocationInfo				mIntermediateHeapAllocationInfo;
 			UINT32						mBufferSize;
 			UINT8*						mGpuMappedPtr;
 			crossplatform::RenderPlatform* renderPlatform = nullptr;

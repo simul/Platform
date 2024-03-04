@@ -7,6 +7,7 @@
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include "Platform/CrossPlatform/PixelFormat.h"
+#include "Platform/Vulkan/Allocation.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -37,6 +38,7 @@ namespace platform
 		extern bool debugMarkerSupported;
 		class Material;
 		class Texture;
+
 
 		//! Vulkan renderplatform implementation
 		class SIMUL_VULKAN_EXPORT RenderPlatform:public crossplatform::RenderPlatform
@@ -98,6 +100,8 @@ namespace platform
 			struct ReleaseResourceInfo
 			{
 				uint64_t resourceHandle; //vk::Buffer etc and uint64_t are the same size.
+				VmaAllocator allocator;	 // For VMA, we need the original allocator.
+				VmaAllocation allocation; // For VMA, we need the original allocation.
 				vk::ObjectType type;
 				uint64_t releaseFrame;
 				
@@ -109,7 +113,7 @@ namespace platform
 			};
 
 			template <typename T>
-			void PushToReleaseManager(T &r)
+			void PushToReleaseManager(T &r, AllocationInfo* pAllocationInfo = nullptr)
 			{
 				if(!r)
 					return;
@@ -118,13 +122,15 @@ namespace platform
 
 				ReleaseResourceInfo rri;
 				rri.resourceHandle = *(uint64_t *)&r;
+				rri.allocation = pAllocationInfo ? pAllocationInfo->allocation : nullptr;
+				rri.allocator = pAllocationInfo ? pAllocationInfo->allocator : nullptr;
 				rri.type = T::objectType;
 				rri.releaseFrame = frameNumber + (SIMUL_VULKAN_FRAME_LAG + 1);
 
 				releaseResources.insert(rri);
 				// All descriptor sets allocated from the pool are implicitly freed and become invalid.
 			}
-			void ClearReleaseManager();
+			void ClearReleaseManager(bool force = false);
 
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
@@ -229,7 +235,8 @@ namespace platform
 			static vk::Extent2D						GetTargetAndViewportExtext2D(const crossplatform::TargetsAndViewport* targetsAndViewport);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
-			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
+			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const char *name);
+			void									CreateVulkanImage(vk::ImageCreateInfo& imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name);
 			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass
 																			,int num_colour,const crossplatform::PixelFormat *pixelFormats
 																			,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN
@@ -269,6 +276,7 @@ namespace platform
 			{
 				return descriptorSetLayouts[g];
 			}
+
 		protected:
 			vk::DescriptorPool mDescriptorPool;
 			vk::DescriptorSetLayout descriptorSetLayouts[4];
@@ -299,13 +307,18 @@ namespace platform
 			vulkan::Texture*								mDummy2D=nullptr;
 			vulkan::Texture*								mDummy2DArray = nullptr;
 			vulkan::Texture*								mDummy2DMS=nullptr;
-			vulkan::Texture* mDummy3D = nullptr;
+			vulkan::Texture*								mDummy3D = nullptr;
 			vulkan::Texture*								mDummyTextureCube=nullptr;
 			vulkan::Texture*								mDummyTextureCubeArray=nullptr;
 			static crossplatform::PixelFormat				defaultColourFormat;
 			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
 			std::map<unsigned long long, crossplatform::TargetsAndViewport> mTargets;
+
+			vk::DeviceSize mCPUPreferredBlockSize = 0;
+			vk::DeviceSize mGPUPreferredBlockSize = 0;
+			VmaAllocator mCPUAllocator;
+			VmaAllocator mGPUAllocator;
 
 			//! Vulkan-specific apply resource group, called from ApplyContextState().
 			vk::DescriptorSet *GetDescriptorSetForResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g);

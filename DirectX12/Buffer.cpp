@@ -22,8 +22,8 @@ Buffer::~Buffer()
 void Buffer::InvalidateDeviceObjects()
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-	rPlat->PushToReleaseManager(d3d12Buffer, "Buffer");
-	rPlat->PushToReleaseManager(mIntermediateHeap, "Buffer");
+	rPlat->PushToReleaseManager(d3d12Buffer, &mAllocationInfo);
+	rPlat->PushToReleaseManager(mIntermediateHeap, &mIntermediateAllocationInfo);
 	mIntermediateHeap=nullptr;
 	d3d12Buffer=nullptr;
 }
@@ -37,36 +37,29 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertic
 	count = num_vertices;
 	InvalidateDeviceObjects();
 
-	auto defaultHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	auto defaultDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
 	// NOTE: Buffers must start in the COMMON resource state. Not all drivers enforce this.
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&defaultHeapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&defaultDesc,
+	auto defaultDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
+	std::string n = (name + " Vertex");
+	((dx12::RenderPlatform*)renderPlatform)->CreateResource(
+		defaultDesc,
 		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
-		SIMUL_PPV_ARGS(&d3d12Buffer)
-	);
-	SIMUL_ASSERT(res == S_OK);
-	std::string n = (name + " VertexUpload");
-	SetD3DName(d3d12Buffer,n.c_str());
+		D3D12_HEAP_TYPE_DEFAULT,
+		&d3d12Buffer,
+		mAllocationInfo,
+		n.c_str());
 	SIMUL_GPU_TRACK_MEMORY_NAMED(d3d12Buffer, mBufferSize, n.c_str())
-	auto uploadHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto uploadDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&uploadHeapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadDesc,
+
+	std::string n2 = (name + " Intermediate Vertex");
+	((dx12::RenderPlatform*)renderPlatform)->CreateResource(
+		defaultDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		SIMUL_PPV_ARGS(&mIntermediateHeap)
-	);
-	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY_NAMED(mIntermediateHeap, mBufferSize, n.c_str())
-	mIntermediateHeap->SetName(L"IntermediateVertexBuffer");
+		D3D12_HEAP_TYPE_UPLOAD,
+		&mIntermediateHeap,
+		mIntermediateAllocationInfo,
+		n.c_str());
+	SIMUL_GPU_TRACK_MEMORY_NAMED(mIntermediateHeap, mBufferSize, n2.c_str())
 
 	upload_data=data;
 
@@ -87,34 +80,29 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r, int num_indices
 	upload_data=data;
 	InvalidateDeviceObjects();
 
-	auto defaultHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto defaultDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&defaultHeapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&defaultDesc,
+	std::string n = (name + " Index");
+	((dx12::RenderPlatform*)renderPlatform)->CreateResource(
+		defaultDesc,
 		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
-		SIMUL_PPV_ARGS(&d3d12Buffer)
-	);
-	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY_NAMED(d3d12Buffer, mBufferSize, (name= " IndexUpload").c_str())
-	d3d12Buffer->SetName(L"IndexUpload");
-	auto uploadHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto uploadDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&uploadHeapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadDesc,
+		D3D12_HEAP_TYPE_DEFAULT,
+		&d3d12Buffer,
+		mAllocationInfo,
+		n.c_str());
+	SIMUL_GPU_TRACK_MEMORY_NAMED(d3d12Buffer, mBufferSize, n.c_str())
+
+	std::string n2 = (name + " Intermediate Index");
+	((dx12::RenderPlatform*)renderPlatform)->CreateResource(
+		defaultDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		SIMUL_PPV_ARGS(&mIntermediateHeap)
-	);
-	SIMUL_ASSERT(res == S_OK);
-	SIMUL_GPU_TRACK_MEMORY_NAMED(mIntermediateHeap, mBufferSize, (name = " IntermediateIndexBuffer").c_str())
-	mIntermediateHeap->SetName(L"IntermediateIndexBuffer");
+		D3D12_HEAP_TYPE_UPLOAD,
+		&mIntermediateHeap,
+		mIntermediateAllocationInfo,
+		n.c_str());
+	SIMUL_GPU_TRACK_MEMORY_NAMED(mIntermediateHeap, mBufferSize, n2.c_str())
+
 	DXGI_FORMAT indexFormat;
 	if (index_size_bytes == 4)
 	{

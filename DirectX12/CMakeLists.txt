@@ -59,9 +59,15 @@ else()
 	list(FILTER HEADERS EXCLUDE REGEX "Video*")
 endif()
 
+# Add in D3D12MemAlloc.cpp/.h
+set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include/D3D12MemAlloc.h")
+set(SOURCES ${SOURCES} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
+
 add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
 	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" DEPENDENCIES SimulCrossPlatform${STATIC_LINK_SUFFIX})
 
+# For D3D12MA
+target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
 
 option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 if(SIMUL_SOURCE_BUILD)

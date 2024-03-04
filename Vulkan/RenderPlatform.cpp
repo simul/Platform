@@ -1,4 +1,8 @@
-﻿#include "Platform/Vulkan/RenderPlatform.h"
+﻿//This file alone implements VMA, include only the header file elsewhere.
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
+#include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/Texture.h"
 #include "Platform/Vulkan/Effect.h"
 #include "Platform/Vulkan/Buffer.h"
@@ -11,7 +15,10 @@
 #include "Platform/Vulkan/Texture.h"
 #include "Platform/Vulkan/DisplaySurface.h"
 #include "DeviceManager.h"
+#include "Platform/Core/StringFunctions.h"
 #include <vulkan/vulkan.hpp>
+#include <cstdint>
+
 #pragma optimize("", off)
 #ifndef _countof
 #define _countof(a) (sizeof(a)/sizeof(*(a)))
@@ -63,6 +70,25 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	vulkanInstance = (vk::Instance *)ptr[1];
 	vulkanGpu = (vk::PhysicalDevice *)ptr[2];
 	immediateContext.platform_context = nullptr;
+
+	//Set up VMA CPU and GPU allicators
+	VmaAllocatorCreateInfo allocatorCreateInfo;
+	allocatorCreateInfo.flags = 0;
+	allocatorCreateInfo.physicalDevice = *vulkanGpu;
+	allocatorCreateInfo.device = *vulkanDevice;
+	allocatorCreateInfo.preferredLargeHeapBlockSize = mCPUPreferredBlockSize = 256 * 1048576;
+	allocatorCreateInfo.pAllocationCallbacks = nullptr;
+	allocatorCreateInfo.pDeviceMemoryCallbacks = nullptr;
+	allocatorCreateInfo.pHeapSizeLimit = nullptr;
+	allocatorCreateInfo.pVulkanFunctions = nullptr;
+	allocatorCreateInfo.instance = *vulkanInstance;
+	allocatorCreateInfo.vulkanApiVersion = 0;
+	allocatorCreateInfo.pTypeExternalMemoryHandleTypes = nullptr;
+	SIMUL_VK_CHECK((vk::Result)vmaCreateAllocator(&allocatorCreateInfo, &mCPUAllocator));
+
+	allocatorCreateInfo.preferredLargeHeapBlockSize = mGPUPreferredBlockSize = 256 * 1048576;
+	SIMUL_VK_CHECK((vk::Result)vmaCreateAllocator(&allocatorCreateInfo, &mGPUAllocator));
+
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 
 	// Load debug markers PFNs.
@@ -129,7 +155,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 				}
 				if (numReadOnlyResourceSlots)
 				{
-					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampledImage).setDescriptorCount(countPerFrame * swapchainImageCount * numReadOnlyResourceSlots);
+					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampledImage).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numReadOnlyResourceSlots);
 				}
 				const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
 				result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPool);
@@ -177,7 +203,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 					slot++;
 				}
 
-				descriptorSetLayoutCI.setBindingCount(numDescriptors).setPBindings(layoutBindings);
+				descriptorSetLayoutCI.setBindingCount((uint32_t)numDescriptors).setPBindings(layoutBindings);
 			}
 		}
 
@@ -243,11 +269,18 @@ void RenderPlatform::InvalidateDeviceObjects()
 	}
 	mFramebuffers.clear();
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	SAFE_DELETE(mDummy3D);
 	SAFE_DELETE(mDummy2D);
+	SAFE_DELETE(mDummy2DArray)
+	SAFE_DELETE(mDummy2DMS)
+	SAFE_DELETE(mDummy3D);
+	SAFE_DELETE(mDummyTextureCube)
+	SAFE_DELETE(mDummyTextureCubeArray)
 	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
 
-	ClearReleaseManager();
+	ClearReleaseManager(true);
+
+	vmaDestroyAllocator(mGPUAllocator);
+	vmaDestroyAllocator(mCPUAllocator);
 
 	vulkanDevice = nullptr;
 }
@@ -341,18 +374,25 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext& deviceContext
 
 }
 
-void RenderPlatform::ClearReleaseManager()
+void RenderPlatform::ClearReleaseManager(bool force)
 {
 	auto it = releaseResources.begin();
 	while (it != releaseResources.end())
 	{
-		if (it->releaseFrame < uint64_t(frameNumber))
+		if (it->releaseFrame < uint64_t(frameNumber) || force)
 		{
 			const uint64_t &i = it->resourceHandle;
 			switch (it->type)
 			{
 			case vk::ObjectType::eBuffer:
-				vulkanDevice->destroyBuffer(*(vk::Buffer *)&i, nullptr); break;
+			{
+				if (it->allocator && it->allocation)
+					vmaDestroyBuffer(it->allocator, *(vk::Buffer *)&i, it->allocation);
+				else
+					vulkanDevice->destroyBuffer(*(vk::Buffer *)&i, nullptr);
+
+				break;
+			}
 			case vk::ObjectType::eBufferView:
 				vulkanDevice->destroyBufferView(*(vk::BufferView *)&i, nullptr); break;
 			case vk::ObjectType::eDeviceMemory:
@@ -364,7 +404,14 @@ void RenderPlatform::ClearReleaseManager()
 			case vk::ObjectType::eRenderPass:
 				vulkanDevice->destroyRenderPass(*(vk::RenderPass *)&i, nullptr); break;
 			case vk::ObjectType::eImage:
-				vulkanDevice->destroyImage(*(vk::Image *)&i, nullptr); break;
+			{
+				if (it->allocator && it->allocation)
+					vmaDestroyImage(it->allocator, *(vk::Image *)&i, it->allocation);
+				else
+					vulkanDevice->destroyImage(*(vk::Image*)&i, nullptr);
+
+				break;
+			}
 			case vk::ObjectType::eSampler:
 				vulkanDevice->destroySampler(*(vk::Sampler *)&i, nullptr); break;
 			case vk::ObjectType::ePipeline:
@@ -380,10 +427,8 @@ void RenderPlatform::ClearReleaseManager()
 			default:
 				SIMUL_BREAK("Unknown vk::ObjectType of vk::ObjectType::e{} (0x{}) in ReleaseManager.", vk::to_string(it->type), i);
 			}
-			auto next=it;
-			next++;
-			releaseResources.erase(it);
-			it=next;
+
+			it = releaseResources.erase(it);
 		}
 		else
 		{
@@ -882,32 +927,63 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFl
 	 return 0;
 }
 
-#include "Platform/Core/StringFunctions.h"
-void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name)
+void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, AllocationInfo& allocationInfo, const char *name)
 {
 	vk::BufferCreateInfo bufferInfo = {};
 	bufferInfo.size = size;
 	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	SIMUL_VK_CHECK (vulkanDevice->createBuffer(&bufferInfo, nullptr, &buffer));
+	VkBuffer _buffer = VK_NULL_HANDLE;
+	const VkBufferCreateInfo& _bufferInfo = bufferInfo;
 
-	vk::MemoryRequirements memRequirements;
-	vulkanDevice->getBufferMemoryRequirements( buffer, &memRequirements);
+	VmaAllocationCreateInfo allocationCI;
+	allocationCI.flags = 0;
+	allocationCI.usage = VMA_MEMORY_USAGE_UNKNOWN;
+	allocationCI.requiredFlags = static_cast<VkMemoryPropertyFlags>(properties);
+	allocationCI.preferredFlags = 0;
+	allocationCI.memoryTypeBits = 0;
+	allocationCI.pool = VK_NULL_HANDLE;
+	allocationCI.pUserData = nullptr;
 
-	vk::MemoryAllocateInfo allocInfo = {};
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+	bool gpuMemory = (properties & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	allocationInfo.allocator = gpuMemory ? mGPUAllocator : mCPUAllocator;
 
-	SIMUL_VK_CHECK (vulkanDevice->allocateMemory(&allocInfo, nullptr, &bufferMemory)); 
-	vulkanDevice->bindBufferMemory( buffer, bufferMemory, 0);
-//#ifdef _DEBUG
+	SIMUL_VK_CHECK((vk::Result)vmaCreateBuffer(allocationInfo.allocator, &_bufferInfo, &allocationCI, &_buffer, &allocationInfo.allocation, &allocationInfo.allocationInfo));
+	buffer = _buffer;
+
 	if(name)
 	{
-		SetVulkanName(this,(buffer),name);
-		SetVulkanName(this,(bufferMemory),platform::core::QuickFormat("%s memory",name));
+		SetVulkanName(this, buffer, name);
+		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
 	}
-//#endif
+}
+
+void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name)
+{
+	VkImage _image = VK_NULL_HANDLE;
+	const VkImageCreateInfo &_imageCreateInfo = imageCreateInfo;
+
+	VmaAllocationCreateInfo allocationCI;
+	allocationCI.flags = 0;
+	allocationCI.usage = VMA_MEMORY_USAGE_UNKNOWN;
+	allocationCI.requiredFlags = static_cast<VkMemoryPropertyFlags>(properties);
+	allocationCI.preferredFlags = 0;
+	allocationCI.memoryTypeBits = 0;
+	allocationCI.pool = VK_NULL_HANDLE;
+	allocationCI.pUserData = nullptr;
+
+	bool gpuMemory = (properties & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	allocationInfo.allocator = gpuMemory ? mGPUAllocator : mCPUAllocator;
+
+	SIMUL_VK_CHECK((vk::Result)vmaCreateImage(allocationInfo.allocator, &_imageCreateInfo, &allocationCI, &_image, &allocationInfo.allocation, &allocationInfo.allocationInfo));
+	image = _image;
+
+	if (name)
+	{
+		SetVulkanName(this, image, name);
+		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
+	}
 }
 
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
@@ -1775,7 +1851,7 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContex
 	EndRenderPass(deviceContext);
 }
 
-#include <cstdint>
+
 
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext& deviceContext,int num ,const crossplatform::Viewport* vps)
 {

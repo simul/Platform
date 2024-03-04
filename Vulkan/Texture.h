@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include "Platform/Vulkan/Export.h"
+#include "Platform/Vulkan/Allocation.h"
 #include "Platform/CrossPlatform/Texture.h"
 #include <parallel_hashmap/phmap.h>
 
@@ -25,8 +26,7 @@ namespace platform
 			int n;
 			unsigned char* data;
 			vk::Buffer buffer;
-			vk::MemoryAllocateInfo mem_alloc;
-			vk::DeviceMemory mem;
+			AllocationInfo allocationInfo;
 			crossplatform::PixelFormat pixelFormat;
 		};
 
@@ -38,6 +38,7 @@ namespace platform
 			void	Init(crossplatform::RenderPlatform*r,crossplatform::SamplerStateDesc* desc);
 			void	InvalidateDeviceObjects() override;
 			vk::Sampler *AsVulkanSampler() override;
+
 		private:
 			vk::Sampler		mSampler;
 		};
@@ -120,7 +121,7 @@ namespace platform
 			void			UpdateSplitLayoutsFlag(); //This must be called after modifying mCurrentImageLayout!
 
 			vk::Image										mImage;
-			vk::Buffer										mBuffer;
+			AllocationInfo									mAllocationInfo;
 
 			//! Full resource state
 			vk::ImageLayout									mCurrentImageLayout{ vk::ImageLayout::eUndefined };
@@ -130,8 +131,6 @@ namespace platform
 			
 			phmap::flat_hash_map<uint64_t, vk::ImageView *> mImageViews;
 			vk::ImageView*									mDefaultImageView=nullptr;
-			vk::MemoryAllocateInfo							mMemAlloc;
-			vk::DeviceMemory								mMem;
 			std::vector<std::vector<LoadedTexture>>			mLoadedTextures; //By mip, then by layer.
 			int												mNumSamples = 1;
 			vk::ImageLayout									mExternalLayout;

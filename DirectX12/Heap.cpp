@@ -49,9 +49,9 @@ namespace platform
 			mHandleIncrement				= device->GetDescriptorHandleIncrementSize(type);
 			mCpuHandle						= mHeap->GetCPUDescriptorHandleForHeapStart();
 			if(shaderVisible)
-				mGpuHandle						= mHeap->GetGPUDescriptorHandleForHeapStart();
+				mGpuHandle					= mHeap->GetGPUDescriptorHandleForHeapStart();
 			mName							= name;
-			mHeap->SetName(std::wstring(mName.begin(), mName.end()).c_str());
+			SetD3DName(mHeap, mName.c_str());
 
 			mTotalCnt = totalCnt;
 		}
@@ -111,7 +111,7 @@ namespace platform
 		{
 			if (mHeap)
 			{
-				renderPlatform->PushToReleaseManager(mHeap,mName.c_str());
+				renderPlatform->PushToReleaseManager(mHeap);
 			}
 			mHeap		= nullptr;
 			mCnt		= 0;

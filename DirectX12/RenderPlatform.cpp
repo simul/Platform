@@ -1,4 +1,3 @@
-
 #include "Platform/DirectX12/RenderPlatform.h"
 #include "DisplaySurface.h"
 #include "Platform/Core/FileLoader.h"
@@ -43,15 +42,16 @@ using namespace platform;
 using namespace dx12;
 
 #if SIMUL_INTERNAL_CHECKS
-#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
+#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 1
 #else
 #define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
 #endif
 #if PLATFORM_DEBUG_BARRIERS
 crossplatform::DeviceContextType barrierDeviceContextType = crossplatform::DeviceContextType::GRAPHICS;
 #endif
+
 ///////////////////////
-// D3D12ComputeContext//
+//D3D12ComputeContext//
 ///////////////////////
 
 void D3D12ComputeContext::RestoreDeviceObjects(ID3D12Device *mDevice)
@@ -69,7 +69,7 @@ void D3D12ComputeContext::InvalidateDeviceObjects()
 }
 
 /////////
-// Fence//
+//Fence//
 /////////
 
 void Fence::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
@@ -101,7 +101,7 @@ crossplatform::Fence *RenderPlatform::CreateFence(const char *name)
 }
 
 //////////////////
-// RenderPlatform//
+//RenderPlatform//
 //////////////////
 
 const char *PlatformD3D12GetErrorText(HRESULT hr)
@@ -474,34 +474,95 @@ crossplatform::GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
 	return crossplatform::RenderPlatform::GetImmediateContext();
 }
 
-void RenderPlatform::PushToReleaseManager(ID3D12DeviceChild *res, const char *n, bool owned)
+void RenderPlatform::PushToReleaseManager(ID3D12Object *res, AllocationInfo *allocationInfo, bool owned)
 {
 	if (!res)
-	{
 		return;
-	}
-	std::string dName = n;
+
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
-	char name[20];
-	GetD3DName(res, name, 19);
-	name[19] = 0;
-	SIMUL_COUT << "Push " << name << " (0x" << std::hex << "" << res << ") to release manager.\n";
+	std::string name;
+	GetD3DName(res, name);
+	// core::Info("D3D12_RELEASE_MANAGER: {} ({:#018x}) pushed.", name, (uint64_t)(void *)res);
 	// Don't add duplicates, this operation can be potentially slow if we have tons of resources
-	for (size_t i = 0; i < mResourceBin.size(); i++)
+	for (size_t i = 0; i < mReleaseResources.size(); i++)
 	{
-		if (res == mResourceBin[i].second.second)
+		if (res == mReleaseResources[i].resource)
 		{
-			SIMUL_CERR << (n ? n : "") << " " << (unsigned long long)res << " Pushed to release manager twice." << std::endl;
+			core::Warn("D3D12_RELEASE_MANAGER: {} ({:#018x}) is already present.", name, (uint64_t)(void *)res);
 			return;
 		}
 	}
-#endif
-#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
+
+	//IUnknown *ptr = (allocationInfo && allocationInfo->allocation) ? (IUnknown *)allocationInfo->allocation : (IUnknown *)res;
 	res->AddRef();
-	int count = res->Release();
-	SIMUL_COUT << (n ? n : "") << " 0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << std::dec << " Pushed to release manager with " << count << " refs remaining." << std::endl;
+	ULONG count = res->Release();
+	core::Info("D3D12_RELEASE_MANAGER: {} ({:#018x}) pushed with {} refs remaining.", name, (uint64_t)(void *)res, count);
 #endif
-	mResourceBin.push_back({0, owned, dName, res});
+
+	ReleaseResourceInfo rri;
+	rri.resource = res;
+	rri.allocationInfo.allocator = allocationInfo ? allocationInfo->allocator : nullptr;
+	rri.allocationInfo.allocation = allocationInfo ? allocationInfo->allocation : nullptr;
+	rri.age = 0;
+	rri.owned = owned;
+	mReleaseResources.push_back(rri);
+}
+
+void RenderPlatform::ClearReleaseManager(bool force)
+{
+	// Age and delete old objects
+	unsigned int kMaxAge = 80;
+
+	auto it = mReleaseResources.begin();
+	while (it != mReleaseResources.end())
+	{
+		ReleaseResourceInfo& rri = *it;
+		rri.age++;
+
+		if (rri.age >= kMaxAge || force)
+		{
+			std::string name;
+			GetD3DName(rri.resource, name);
+			ULONG remainRefs = 0;
+
+			if (rri.allocationInfo.allocation)
+			{
+				ULONG allocationRemainRefs = rri.allocationInfo.allocation->Release();
+			}
+
+			if (rri.resource)
+			{
+				remainRefs = rri.resource->Release();
+#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
+				if (remainRefs > 0)
+				{
+					core::Warn("D3D12_RELEASE_MANAGER: {} ({:#018x}) has {} refs remaining.", name, (uint64_t)(void *)rri.resource, remainRefs);
+				}
+				else
+				{
+					core::Info("D3D12_RELEASE_MANAGER: {} ({:#018x}) freed.", name, (uint64_t)(void *)rri.resource);
+				}
+#endif
+			}
+		
+			if (!remainRefs && rri.owned && GetMemoryInterface())
+			{
+				GetMemoryInterface()->UntrackVideoMemory(rri.resource);
+			}
+#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
+			else if (GetMemoryInterface())
+			{
+				core::Warn("Resource {} ({:#018x}) was not released. It is still being referenced {} times.", name, (uint64_t)(void *)rri.resource, remainRefs);
+			}
+#endif
+
+			it = mReleaseResources.erase(it);
+		}
+		else
+		{
+			it++;
+		}
+	}
 }
 
 void RenderPlatform::ClearIA(crossplatform::DeviceContext &deviceContext)
@@ -544,6 +605,43 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		}
 #endif
 	}
+	// Set up D3D12MA CPU and GPU allicators
+	IDXGIAdapter1 *adapter = nullptr;
+#if defined(_GAMING_XBOX)
+	// First, dxgiDevice the underlying DXGI device from the D3D device.
+	IDXGIDevice1 *dxgiDevice = nullptr;
+	m12Device->QueryInterface(SIMUL_PPV_ARGS(&dxgiDevice));
+
+	// Identify the physical adapter (GPU or card) this device is running on.
+	IDXGIAdapter* dxgiAdapter = nullptr;
+	dxgiDevice->GetAdapter(&dxgiAdapter);
+
+	// And obtain the factory object that created it.
+	IDXGIFactory2* dxgiFactory = nullptr;
+	dxgiAdapter->GetParent(IID_GRAPHICS_PPV_ARGS(&dxgiFactory));
+	adapter = (IDXGIAdapter1*)dxgiAdapter;
+
+#else
+	IDXGIFactory4 *factory = nullptr;
+	HRESULT result = CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
+	if (result == S_OK && factory)
+		factory->EnumAdapterByLuid(m12Device->GetAdapterLuid(), SIMUL_PPV_ARGS(&adapter));
+	SAFE_RELEASE(factory);
+#endif
+
+	D3D12MA::ALLOCATOR_DESC allocatorDesc;
+	allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_NONE;
+	allocatorDesc.pDevice = m12Device;
+	allocatorDesc.PreferredBlockSize = mCPUPreferredBlockSize = 256 * 1048576;
+	allocatorDesc.pAllocationCallbacks = nullptr;
+	allocatorDesc.pAdapter = adapter;
+	V_CHECK(D3D12MA::CreateAllocator(&allocatorDesc, &mCPUAllocator));
+
+	allocatorDesc.PreferredBlockSize = mGPUPreferredBlockSize = 256 * 1048576;
+	V_CHECK(D3D12MA::CreateAllocator(&allocatorDesc, &mGPUAllocator));
+
+	SAFE_RELEASE(adapter);
+
 	DefaultBlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	DefaultRasterState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	DefaultDepthState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -853,6 +951,23 @@ void RenderPlatform::FlushImmediateCommandList()
 	mGraphicsQueue->Release();
 }
 
+void RenderPlatform::CreateResource(const D3D12_RESOURCE_DESC &resourceDesc, D3D12_RESOURCE_STATES state, 
+									D3D12_CLEAR_VALUE *clear, D3D12_HEAP_TYPE type, ID3D12Resource **resource, 
+									AllocationInfo &allocationInfo, const char *name)
+{
+	bool gpuMemory = type == D3D12_HEAP_TYPE_DEFAULT;
+	allocationInfo.allocator = gpuMemory ? mGPUAllocator : mCPUAllocator;
+
+	D3D12MA::ALLOCATION_DESC D3D12MAllocationDesc;
+	D3D12MAllocationDesc.Flags = D3D12MA::ALLOCATION_FLAG_NONE;
+	D3D12MAllocationDesc.HeapType = type;
+	D3D12MAllocationDesc.ExtraHeapFlags = D3D12_HEAP_FLAG_NONE;
+	D3D12MAllocationDesc.CustomPool = nullptr;
+
+	V_CHECK(allocationInfo.allocator->CreateResource(&D3D12MAllocationDesc, &resourceDesc, state, clear, &allocationInfo.allocation, SIMUL_PPV_ARGS(resource)));
+	SetD3DName(*resource, name);
+}
+
 ID3D12CommandQueue *RenderPlatform::CreateCommandQueue(ID3D12Device *device, D3D12_COMMAND_LIST_TYPE type, const char *name)
 {
 	ID3D12CommandQueue *queue = nullptr;
@@ -1032,34 +1147,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_RELEASE(mGRaytracingGlobalSignature);
 
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	for (size_t i = 0; i < mResourceBin.size(); i++)
-	{
-		auto &res = mResourceBin[i];
-		auto ptr = res.resource;
-		if (ptr)
-		{
-#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
-			char name[20];
-			GetD3DName(ptr, name, 19);
-			name[19] = 0;
-			SIMUL_COUT << "Releasing: " << name << " (0x" << std::hex << ptr << ".\n";
-			int remainRefs = ptr->Release();
-			if (remainRefs)
-			{
-				SIMUL_COUT << "Resource " << res.freeName.c_str() << " " << (unsigned long long)ptr << " has " << remainRefs << " refs remaining." << std::endl;
-			}
-			else
-			{
-				SIMUL_COUT << "Resource " << res.freeName.c_str() << " " << (unsigned long long)ptr << " freed." << std::endl;
-			}
-#else
-			int remainRefs = ptr->Release();
-#endif
-			if (!remainRefs && GetMemoryInterface() && res.owned)
-				GetMemoryInterface()->UntrackVideoMemory(ptr);
-		}
-	}
-	mResourceBin.clear();
 
 	// Flush and release all command queue.
 	FlushCommandQueue(m12Device, mGraphicsQueue);
@@ -1068,6 +1155,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_RELEASE(mGraphicsQueue);
 	SAFE_RELEASE(mComputeQueue);
 	SAFE_RELEASE(mCopyQueue);
+
+	ClearReleaseManager(true);
+
+	SAFE_RELEASE(mGPUAllocator);
+	SAFE_RELEASE(mCPUAllocator);
 
 	// Shutdown ComputeContext
 	m12ComputeContext.InvalidateDeviceObjects();
@@ -1138,69 +1230,8 @@ void RenderPlatform::BeginFrame()
 	{
 		b.second->mCurBarriers = 0;
 	}
-	// Age and delete old objects
-	unsigned int kMaxAge = 80;
-	if (!mResourceBin.empty())
-	{
-		for (int64_t i = int64_t(mResourceBin.size() - 1); i >= 0; i--)
-		{
-			auto &resource = mResourceBin[static_cast<size_t>(i)];
-			resource.age++;
-			if (resource.age >= kMaxAge)
-			{
-				ULONG remainRefs = 0;
-				ID3D12DeviceChild *ptr = resource.resource;
-				if (ptr)
-				{
-#if 0
-					ID3D12DeviceChild* chkptr = nullptr;
-					HRESULT res = ptr->QueryInterface(__uuidof(ID3D12DeviceChild), (void**)&chkptr);
-					if (!chkptr || res != S_OK) //The chkptr failed, so we can not release the main ptr. Just remove it from the container at the end of the current iteration of the loop.
-					{
-						std::string lastErrorStr = "";
-#if !defined(_GAMING_XBOX)
-						DWORD err = GetLastError();
-						char* msg = nullptr;
-						DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-							nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, nullptr);
-						if (msg != nullptr && msgSize > 0)
-						{
-							lastErrorStr = std::string(msg, msgSize);
-							LocalFree(msg);
-						}
-#endif
-						SIMUL_INTERNAL_CERR << "Fatal error in Release Manager." << std::endl;
-						SIMUL_INTERNAL_CERR << resource.freeName << " (0x" << std::hex << ptr << std::dec << ")" << " was submitted to the Release Manager." << std::endl;
-						SIMUL_INTERNAL_CERR << "QueryInterface<ID3D12DeviceChild> failed to validate the resource." << std::endl;
-						SIMUL_INTERNAL_CERR << "GetLastError() message: " << lastErrorStr << "." << std::endl;
-						SIMUL_BREAK_INTERNAL("Fatal error in Release Manager.");
-					}
-					else //The chkptr succeeded, release both pointers and update the remainRefs variable. The main ptr will be remove from the container at the end of the current iteration of the loop.
-					{
-						SAFE_RELEASE(chkptr);
-						remainRefs = ptr->Release();
-					}
-#else
-					remainRefs = ptr->Release();
-#endif
-				}
-#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
-				if (remainRefs > 0)
-				{
-					SIMUL_CERR << resource.second.first << " is still being referenced " << remainRefs << "." << std::endl;
-				}
-#endif
-				if (!remainRefs && resource.owned && GetMemoryInterface())
-					GetMemoryInterface()->UntrackVideoMemory(ptr);
-				else if (GetMemoryInterface())
-				{
-					SIMUL_INTERNAL_CERR << "Release Manager: Resource " << resource.freeName.c_str() << " " << ptr << " was not released. It is still being referenced " << remainRefs << " times.\n";
-				}
 
-				mResourceBin.erase(mResourceBin.begin() + i);
-			}
-		}
-	}
+	ClearReleaseManager();
 }
 
 void RenderPlatform::ContextFrameBegin(crossplatform::GraphicsDeviceContext &deviceContext)
