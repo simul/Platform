@@ -7,7 +7,18 @@
 
 namespace sfx
 {
-
+	struct ResourceGroupDeclaration
+	{
+		void clear()
+		{
+			textures.clear();
+			constantBuffers.clear();
+			structuredBuffers.clear();
+		}
+		std::set<int> textures;
+		std::set<int> constantBuffers;
+		std::set<int> structuredBuffers;
+	};
 	typedef std::map<std::string,std::vector<Function*> > FunctionMap;
 	typedef std::map<std::string,std::shared_ptr<ShaderInstance>> ShaderInstanceMap;
 	typedef std::map<std::string,std::string> StringMap;
@@ -52,7 +63,8 @@ namespace sfx
 		std::map<std::string,std::string>			m_gslayout;
 		std::set<std::shared_ptr<ShaderInstance>>	m_uniqueShaderInstances;
 		ShaderInstanceMap							m_shaderInstances;
-		//std::map<std::string,ShaderInstanceSet>		m_shaderInstanceSets;
+
+		std::map<int, ResourceGroupDeclaration> resourceGroups;
 		struct InterfaceDcl
 		{
 			std::string id;
@@ -81,6 +93,10 @@ namespace sfx
 		bool CheckDeclaredGlobal(const Function* func,const std::string toCheck);
 		//! Declare in output format.
 		void Declare( ShaderInstance *shaderInstance, std::ostream &os, const Declaration *d, ConstantBuffer &texCB, ConstantBuffer &sampCB, const std::set<std::string> &rwLoad, std::set<const SamplerState *> &declaredSS, const Function *mainFunction);
+
+		void CheckTextureSlotForResourceGroup(int slot, int group);
+		void CheckConstantBufferSlotForResourceGroup(int slot, int group);
+		void CheckStructuredBufferSlotForResourceGroup(int slot, int group);
 	public:
 		std::ostringstream m_sharedCode;
 		std::ostringstream& Log();
@@ -192,6 +208,7 @@ namespace sfx
 		BlendState *DeclareBlendState(const std::string &name);
 		DepthStencilState *DeclareDepthStencilState(const std::string &name);
 		Function *DeclareFunction(const std::string &functionName, Function &buildFunction);
+		void DeclareResourceGroup(int num, const ResourceGroupDeclaration &g);
 		//! Get the function, including variant specifications to create a specialized function if necessary.
 		Function *GetFunction(const std::string &functionName,  std::map<std::string, std::string> &variantValues);
 		Function *GetFunction(const std::string &functionName, int i);

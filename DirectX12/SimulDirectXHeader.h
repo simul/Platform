@@ -34,17 +34,14 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
-inline void SetD3DName(ID3D12Object *obj, const char *name)
+//https://stackoverflow.com/questions/6693010/how-do-i-use-multibytetowidechar
+
+inline void SetD3DName(ID3D12Object *obj, const std::string& name)
 {
-#if defined(_GAMING_XBOX)
-	size_t size = strlen(name);
-	wchar_t *src_w = new wchar_t[size + 1];
-	MultiByteToWideChar(CP_UTF8, 0, name, (int)size, src_w, (int)size);
-	D3D_SET_OBJECT_NAME_W(obj, src_w);
-	delete[] src_w;
-#else
-	D3D_SET_OBJECT_NAME_A(obj, name);
-#endif
+	int count = MultiByteToWideChar(CP_UTF8, 0, name.c_str(), (UINT)name.length(), NULL, 0);
+	std::wstring w_name(count, 0);
+	MultiByteToWideChar(CP_UTF8, 0, name.c_str(), (UINT)name.length(), &w_name[0], count);
+	(obj)->SetPrivateData(WKPDID_D3DDebugObjectNameW, count * sizeof(std::wstring::value_type), w_name.c_str());
 }
 
 inline void GetD3DName(ID3D12Object *obj, std::string& name)
@@ -54,35 +51,17 @@ inline void GetD3DName(ID3D12Object *obj, std::string& name)
 		return;
 	}
 
-#if defined(_GAMING_XBOX)
-	GUID g = WKPDID_D3DDebugObjectNameW;
-#else
-	GUID g = WKPDID_D3DDebugObjectName;
-#endif
-
 	UINT size = 0;
-	HRESULT hr = (obj)->GetPrivateData(g, &size, nullptr);
+	HRESULT hr = (obj)->GetPrivateData(WKPDID_D3DDebugObjectNameW, &size, nullptr);
 	if (hr == S_OK)
 	{
-		name.resize(size);
-		(obj)->GetPrivateData(g, &size, name.data());
-	}
-#if !defined(_GAMING_XBOX)
-	else
-	{
-		g = WKPDID_D3DDebugObjectNameW;
-		hr = (obj)->GetPrivateData(g, &size, nullptr);
-		if (hr == S_OK)
-		{
-			name.resize(size);
+		std::wstring w_name(size / sizeof(std::wstring::value_type), 0);
+		(obj)->GetPrivateData(WKPDID_D3DDebugObjectNameW, &size, &w_name[0]);
 
-			wchar_t *src_w = new wchar_t[size + 1];
-			(obj)->GetPrivateData(g, &size, src_w);
-			WideCharToMultiByte(CP_UTF8, 0, src_w, (int)size, name.data(), (int)size, NULL, NULL);
-			delete[] src_w;
-		}
+		int count = WideCharToMultiByte(CP_UTF8, 0, w_name.c_str(), (UINT)w_name.length(), NULL, 0, NULL, NULL);
+		name.resize(count, 0);
+		WideCharToMultiByte(CP_UTF8, 0, w_name.c_str(), (UINT)w_name.length(), &name[0], count, NULL, NULL);
 	}
-#endif
 }
 
 #ifndef SAFE_RELEASE

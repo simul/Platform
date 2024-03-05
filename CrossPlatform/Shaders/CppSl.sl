@@ -213,11 +213,8 @@
 			this->y=y;
 			this->z=z;
 		}
-		tvector3(const T *v)
-		{
-			operator=(v);
-		}
-		tvector3(const int *v)
+		template <typename U>
+		tvector3(const U *v)
 		{
 			operator=(v);
 		}
@@ -241,17 +238,12 @@
 		{
 			return (x!=v.x||y!=v.y||z!=v.z);
 		}
-		void operator=(const int *v)
+		template <typename U>
+		void operator=(const U *v)
 		{
 			x=T(v[0]);
 			y=T(v[1]);
 			z=T(v[2]);
-		}
-		void operator=(const T *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
 		}
 		template<typename U> const tvector3 &operator=(const tvector3<U> &u)
 		{
@@ -360,7 +352,10 @@
 				T w_;
 			};
 		};
-		tvector4(T x=0,T y=0,T z=0,T w=0)
+		tvector4():xyz()
+		{
+		}
+		tvector4(T x,T y,T z,T w):xyz()
 		{
 			this->x=x;
 			this->y=y;
@@ -1334,46 +1329,8 @@
 		}
 	};
 	typedef unsigned int uint;
-	struct uint2
-	{
-		unsigned x,y;
-		uint2(unsigned x=0,unsigned y=0)
-		{
-			this->x=x;
-			this->y=y;
-		}
-		uint2(const int *v)
-		{
-			operator=(v);
-		}
-		uint2(const float *v)
-		{
-			x=uint(v[0]);
-			y=uint(v[1]);
-		}
-		uint2(const unsigned *v)
-		{
-			operator=(v);
-		}
-		operator const unsigned *() const
-		{
-			return &x;
-		}
-		void operator=(const int *v)
-		{
-			x=v[0];
-			y=v[1];
-		}
-		void operator=(const unsigned *v)
-		{
-			x=v[0];
-			y=v[1];
-		}
-		bool operator==(const uint2 &v) const
-		{
-			return (x==v.x&&y==v.y);
-		}
-	};
+
+	typedef tvector2<unsigned> uint2;
 	struct uint3
 	{
 		unsigned x,y,z;
