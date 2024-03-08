@@ -572,7 +572,12 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	if (!commandBuffer)
 		return;
-
+#if SIMUL_INTERNAL_CHECKS
+	if(w*l*d<=0)
+	{
+		SIMUL_BREAK_ONCE("Empty compute dispatch");
+	}
+#endif
 	EndRenderPass(deviceContext);
 
 	vulkan::EffectPass* vkEffectPass = ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);

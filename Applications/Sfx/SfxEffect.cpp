@@ -32,7 +32,7 @@ typedef int errno_t;
 
 using namespace std;
 extern bool IsRW(ShaderResourceType);
-#pragma optimize("",off)
+
 void process_member_decl(string &str,string &memberDeclaration)
 {
 	// in square brackets [] is the definition for ONE member.
