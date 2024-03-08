@@ -490,7 +490,6 @@ public:
 		}
 
 		{
-			vec4 unity2(1.0f, 1.0f);
 			vec4 unity4(1.0f, 1.0f, 1.0f, 1.0f);
 			vec4 zero4(0, 0, 0, 0);
 			sceneConstants.lightCount = 10;
