@@ -3137,6 +3137,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	else
 	{
 		// Apply the common root signature
+		SetTopology(*deviceContext.AsGraphicsDeviceContext(), pass->GetTopology());
 		cmdList->SetGraphicsRootSignature(mGRootSignature);
 		cmdList->SetGraphicsRootDescriptorTable(cbvSrvUavTableId, mFrameHeap[frameHeapIndex].GpuHandle());
 		cmdList->SetGraphicsRootDescriptorTable(samplerTableId, currentSamplerHeap->GpuHandle());

@@ -940,7 +940,7 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 	VkBuffer _buffer = VK_NULL_HANDLE;
-	const VkBufferCreateInfo& _bufferInfo = bufferInfo;
+	const VkBufferCreateInfo& _bufferInfo = bufferInfo.operator const VkBufferCreateInfo &();
 
 	VmaAllocationCreateInfo allocationCI;
 	allocationCI.flags = 0;
@@ -967,7 +967,7 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name)
 {
 	VkImage _image = VK_NULL_HANDLE;
-	const VkImageCreateInfo &_imageCreateInfo = imageCreateInfo;
+	const VkImageCreateInfo &_imageCreateInfo = imageCreateInfo.operator const VkImageCreateInfo &();
 
 	VmaAllocationCreateInfo allocationCI;
 	allocationCI.flags = 0;
