@@ -1898,6 +1898,7 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceC
 {
 	const int& mip = textureView.elements.subresourceRange.baseMipLevel;
 	const int& array_index = textureView.elements.subresourceRange.baseArrayLayer;
+	const int& array_count = textureView.elements.subresourceRange.arrayLayerCount;
 	if (textureView.elements.type == crossplatform::ShaderResourceType::UNKNOWN)
 		textureView.elements.type = GetShaderResourceTypeForRTVAndDSV();
 
@@ -1908,14 +1909,15 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceC
 		rp->FlushBarriers(deviceContext);
 		auto rtView = AsD3D12RenderTargetView(deviceContext, textureView);
 
-		targetsAndViewport.num				= 1;
-		targetsAndViewport.m_dt				= nullptr;
-		targetsAndViewport.m_rt[0]			= rtView;
-		targetsAndViewport.rtFormats[0]     = pixelFormat;
-		targetsAndViewport.viewport.w		= (int)(std::max(1, (width >> mip)));
-		targetsAndViewport.viewport.h		= (int)(std::max(1, (length >> mip)));
-		targetsAndViewport.viewport.x		= 0;
-		targetsAndViewport.viewport.y		= 0;
+		targetsAndViewport.num					= 1;
+		targetsAndViewport.m_dt					= nullptr;
+		targetsAndViewport.m_rt[0]				= rtView;
+		targetsAndViewport.rtFormats[0]			= pixelFormat;
+		targetsAndViewport.textureTargets[0]	= {this, {crossplatform::TextureAspectFlags::COLOUR, (uint8_t)mip, (uint8_t)array_index, (uint8_t)array_count}};
+		targetsAndViewport.viewport.w			= (int)(std::max(1, (width >> mip)));
+		targetsAndViewport.viewport.h			= (int)(std::max(1, (length >> mip)));
+		targetsAndViewport.viewport.x			= 0;
+		targetsAndViewport.viewport.y			= 0;
 
 		rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
 		
