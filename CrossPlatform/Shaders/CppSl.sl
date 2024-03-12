@@ -587,42 +587,39 @@
 		return os;
 	}
 
-	// Min/Max in namespace std
+	// Min/Max
 
-	namespace std
+	template <typename T>
+	tvector2<T> max(tvector2<T> a, tvector2<T> b)
 	{
-		template <typename T>
-		tvector2<T> max(tvector2<T> a, tvector2<T> b)
-		{
-			return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
-		};
-		template <typename T>
-		tvector2<T> min(tvector2<T> a, tvector2<T> b)
-		{
-			return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
-		};
+		return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
+	};
+	template <typename T>
+	tvector2<T> min(tvector2<T> a, tvector2<T> b)
+	{
+		return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
+	};
 
-		template <typename T>
-		tvector3<T> max(tvector3<T> a,tvector3<T> b)
-		{
-			return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
-		};
-		template <typename T> tvector3<T> min(tvector3<T> a,tvector3<T> b)
-		{
-			return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
-		};
+	template <typename T>
+	tvector3<T> max(tvector3<T> a,tvector3<T> b)
+	{
+		return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
+	};
+	template <typename T> tvector3<T> min(tvector3<T> a,tvector3<T> b)
+	{
+		return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
+	};
 
-		template <typename T>
-		tvector4<T> max(tvector4<T> a, tvector4<T> b)
-		{
-			return tvector4<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
-		};
-		template <typename T>
-		tvector4<T> min(tvector4<T> a, tvector4<T> b)
-		{
-			return tvector4<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
-		};
-	}
+	template <typename T>
+	tvector4<T> max(tvector4<T> a, tvector4<T> b)
+	{
+		return tvector4<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
+	};
+	template <typename T>
+	tvector4<T> min(tvector4<T> a, tvector4<T> b)
+	{
+		return tvector4<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
+	};
 
 	//Length
 
