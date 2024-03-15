@@ -3136,6 +3136,13 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 	else
 	{
+		// Update Topology from pass
+		const crossplatform::Topology& topology = pass->GetTopology();
+		if (topology != crossplatform::Topology::UNDEFINED)
+		{
+			SetTopology(*deviceContext.AsGraphicsDeviceContext(), topology);
+		}
+
 		// Apply the common root signature
 		SetTopology(*deviceContext.AsGraphicsDeviceContext(), pass->GetTopology());
 		cmdList->SetGraphicsRootSignature(mGRootSignature);
