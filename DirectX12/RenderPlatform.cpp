@@ -493,7 +493,6 @@ void RenderPlatform::PushToReleaseManager(ID3D12Object *res, AllocationInfo *all
 		}
 	}
 
-	//IUnknown *ptr = (allocationInfo && allocationInfo->allocation) ? (IUnknown *)allocationInfo->allocation : (IUnknown *)res;
 	res->AddRef();
 	ULONG count = res->Release();
 	core::Info("D3D12_RELEASE_MANAGER: {} ({:#018x}) pushed with {} refs remaining.", name, (uint64_t)(void *)res, count);
@@ -525,8 +524,12 @@ void RenderPlatform::ClearReleaseManager(bool force)
 			GetD3DName(rri.resource, name);
 			ULONG remainRefs = 0;
 
-			if (rri.allocationInfo.allocation)
+			if (rri.allocationInfo.allocation 
+				&& (mCPUAllocator && mGPUAllocator)) // If the allocators are freed, then all alloacation are implicitly freed?
 			{
+#if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
+				core::Info("D3D12_RELEASE_MANAGER: Freeing {}'s ({:#018x}) allocation ({:#018x}).", name, (uint64_t)(void *)rri.resource, (uint64_t)(void *)rri.allocationInfo.allocation);
+#endif
 				ULONG allocationRemainRefs = rri.allocationInfo.allocation->Release();
 			}
 

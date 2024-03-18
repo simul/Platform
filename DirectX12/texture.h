@@ -155,7 +155,7 @@ namespace platform
 
 			//! Texture data that lives in the GPU
 			ID3D12Resource*					mTextureDefault;
-			AllocationInfo					mTextureDefaultAllocationInfo;
+			AllocationInfo					mTextureDefaultAllocationInfo = {};
 			//! Used to upload texture data to the GPU
 			ID3D12Resource*					mTextureUpload;
 			AllocationInfo					mTextureUploadAllocationInfo;
