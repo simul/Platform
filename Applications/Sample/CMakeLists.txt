@@ -11,9 +11,8 @@ file(GLOB shaders "Shaders/*.sfx" "Shaders/*.sl")
 set(SAMPLE_API SAMPLE_USE_D3D12)  
 
 source_group("Shaders" src FILES ${shaders} )
- 
+
 add_static_executable(Sample_MT WIN32 SOURCES ${SOURCES} ${HEADERS} ${shaders} DEFINITIONS ${SAMPLE_API} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-set_target_properties(Sample_MT PROPERTIES FOLDER Static/Applications)
 target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 target_compile_definitions(Sample_MT PRIVATE DO_PROFILING=0 )
 target_compile_definitions(Sample_MT PRIVATE FMT_HEADER_ONLY )
