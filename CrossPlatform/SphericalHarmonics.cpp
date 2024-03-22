@@ -2,6 +2,7 @@
 #include "Macros.h"
 #include "GpuProfiler.h"
 #include "RenderPlatform.h"
+#include "Camera.h"
 using namespace platform;
 using namespace crossplatform;
 

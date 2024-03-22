@@ -217,10 +217,6 @@
 		{
 			operator=(v);
 		}
-		tvector3(const int *v)
-		{
-			operator=(v);
-		}
 		template<typename U> tvector3(const tvector3<U> &u)
 		{
 			operator=(u);
@@ -241,17 +237,18 @@
 		{
 			return (x!=v.x||y!=v.y||z!=v.z);
 		}
-		void operator=(const int *v)
+		template<typename U>
+		void operator=(const U *v)
 		{
 			x=T(v[0]);
 			y=T(v[1]);
 			z=T(v[2]);
 		}
-		void operator=(const T *v)
+		template<typename U> const tvector3 &operator=(const tvector2<U> &u)
 		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
+			x = (T)u.x;
+			y = (T)u.y;
+			return *this;
 		}
 		template<typename U> const tvector3 &operator=(const tvector3<U> &u)
 		{
@@ -540,8 +537,6 @@
 		tvector3 c = b*x + a*(T(1.0) - x);
 		return c;
 	}
-	typedef tvector2<float> vec2;
-	typedef tvector3<float> vec3;
 	template<typename T> T cross(const tvector2<T>& a, const tvector2<T>& b)
 	{
 		return  a.x * b.y - b.x * a.y;
@@ -636,9 +631,10 @@
 		P1 = A + (sc * u);
 		P2 = C + (tc * v);
 	}
-	inline vec3 cross(const vec3 &a,const vec3 &b)
+	template <typename T>
+	tvector3<T> cross(const tvector3<T> &a, const tvector3<T> &b) 
 	{
-		vec3 r;
+		tvector3<T> r;
 		r.x=a.y*b.z-b.y*a.z;
 		r.y=a.z*b.x-b.z*a.x;
 		r.z=a.x*b.y-b.x*a.y;
@@ -804,7 +800,7 @@
 			m._11=m._22=m._33=m._44=1.0f;
 			return m;
 		}
-		static inline tmatrix4<T> translationColumnMajor(vec3 tr)
+		static inline tmatrix4<T> translationColumnMajor(tvector3<T> tr)
 		{
 			tmatrix4<T> m=identity();
 			m._14 = tr.x;
@@ -1010,17 +1006,16 @@
 			};
 		}
 	};
-	typedef tmatrix4<float> mat4;
-	typedef tmatrix4<double> mat4d;
 	template<typename T> tmatrix4<T> mul(const tmatrix4<T>& a, const tmatrix4<T>& b)
 	{
 		tmatrix4<T> r;
 		tmatrix4<T>::mul(r, a, b);
 		return r;
 	}
-	inline vec3 operator*(const mat4 &m,const vec3 &v)
+	template <typename T>
+	tvector3<T> operator*(const tmatrix4<T> &m, const tvector3<T> &v)
 	{
-		vec3 r;
+		tvector3 r;
 		r.x=m._11*v.x+m._12*v.y+m._13*v.z;
 		r.y=m._21*v.x+m._22*v.y+m._23*v.z;
 		r.z=m._31*v.x+m._32*v.y+m._33*v.z;
@@ -1034,7 +1029,6 @@
 		r.z=m*v.z;
 		return r;
 	}
-	typedef tvector4<float> vec4;
 	template<typename T>
 	tvector4<T> operator*(T m,const tvector4<T> &v)
 	{
@@ -1056,7 +1050,7 @@
 		return r;
 	}
 	template<typename T>
-	tvector4<T> operator*(const tvector4<T> &v,const mat4 &m)
+	tvector4<T> operator*(const tvector4<T> &v,const tmatrix4<T> &m)
 	{
 		tvector4<T> r;
 		r.x=m._11*v.x+m._21*v.y+m._31*v.z+m._41*v.w;
@@ -1066,7 +1060,7 @@
 		return r;
 	}
 	template<typename T>
-	tvector4<T> operator*(const mat4 &m,const tvector4<T> &v)
+	tvector4<T> operator*(const tmatrix4<T> &m, const tvector4<T> &v)
 	{
 		tvector4<T> r;
 		r.x=m._11*v.x+m._12*v.y+m._13*v.z+m._14*v.w;
@@ -1081,6 +1075,13 @@
 		tvector4 c = b*x + a*(T(1.0) - x);
 		return c;
 	}
+	typedef tvector4<float> vec4;
+	typedef tvector2<float> vec2;
+	typedef tvector3<float> vec3;
+#ifndef EXCLUDE_PLATFORM_TYPEDEFS
+	typedef tmatrix4<float> mat4;
+	typedef tmatrix4<double> mat4d;
+	typedef unsigned int uint;
 	struct int2
 	{
 		int x,y;
@@ -1182,7 +1183,6 @@
 			return *this;
 		}
 	};
-	typedef unsigned int uint;
 	struct uint2
 	{
 		unsigned x,y;
@@ -1223,44 +1223,7 @@
 			return (x==v.x&&y==v.y);
 		}
 	};
-	struct uint3
-	{
-		unsigned x,y,z;
-		uint3(unsigned x=0,unsigned y=0,unsigned z=0)
-		{
-			this->x=x;
-			this->y=y;
-			this->z=z;
-		}
-		uint3(const int *v)
-		{
-			operator=(v);
-		}
-		uint3(const unsigned *v)
-		{
-			operator=(v);
-		}
-		operator const unsigned *() const
-		{
-			return &x;
-		}
-		void operator=(const int *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
-		}
-		void operator=(const unsigned *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
-		}
-		bool operator==(const uint3 &v) const
-		{
-			return (x==v.x&&y==v.y&&z==v.z);
-		}
-	};
+	typedef tvector3<uint32_t> uint3;
 	struct int3
 	{
 		int x,y,z;
@@ -1347,58 +1310,8 @@
 			return (x==v.x&&y==v.y&&z==v.z);
 		}
 	};
-	
-	struct int4
-	{
-		int x,y,z,w;
-		int4(int x=0,int y=0,int z=0,int w=0)
-		{
-			this->x=x;
-			this->y=y;
-			this->z=z;
-			this->w=w;
-		}
-		int4(const int *v)
-		{
-			operator=(v);
-		}
-		int4(const float *v)
-		{
-			operator=(v);
-		}
-		operator const int *() const
-		{
-			return &x;
-		}
-		void operator=(const int *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
-			w=v[3];
-		}
-		void operator=(const float *v)
-		{
-			x=int(v[0]);
-			y=int(v[1]);
-			z=int(v[2]);
-			w=int(v[3]);
-		}
-		void operator*=(int u)
-		{
-			x*=u;
-			y*=u;
-			z*=u;
-			w*=u;
-		}
-		void operator/=(int u)
-		{
-			x/=u;
-			y/=u;
-			z/=u;
-			w/=u;
-		}
-	};
+
+	typedef tvector4<int> int4;
 	
 	struct uint4
 	{
@@ -1470,7 +1383,6 @@
 	};
 	//! Very simple 3 vector of doubles.
 	typedef tvector3<double> vec3d;
-
 	inline void vec3d_to_vec3(vec3&v3,const vec3d& v)
 	{
 		v3= vec3(float(v.x), float(v.y), float(v.z));
@@ -1483,6 +1395,7 @@
 		r.z=a.x*b.y-b.x*a.y;
 		return r;
 	}
+#endif
 	template<typename T> T dot(const tvector3<T> &a,const tvector3<T> &b)
 	{
 		T c;

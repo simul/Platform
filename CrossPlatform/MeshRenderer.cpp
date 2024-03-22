@@ -105,7 +105,7 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 
 	vec2 vec2_unit(1.0f,1.0f);
 	vec4 vec4_unit(1.0f, 1.0f, 1.0f, 1.0f);
-	vec4 vec3_unit(1.0f,  1.0f, 1.0f);
+	vec3 vec3_unit(1.0f,  1.0f, 1.0f);
 	renderPlatform->SetTexture(deviceContext,effect->GetShaderResource("diffuseTexture"),material->albedo.texture);
 	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("normalTexture"), material->normal.texture);
 	renderPlatform->SetTexture(deviceContext, effect->GetShaderResource("metalTexture"), material->metal.texture);
