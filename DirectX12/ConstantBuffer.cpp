@@ -66,19 +66,16 @@ void PlatformConstantBuffer::CreateBuffers(crossplatform::RenderPlatform* r, voi
 	// Each upload heap has 64KB.  (64KB aligned)
 	for (unsigned int i = 0; i < 3; i++)
 	{
-		HRESULT res;
-		auto uploadHeapProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto uploadDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
-		res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-		(
-			&uploadHeapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&uploadDesc,
+		((dx12::RenderPlatform*)renderPlatform)->CreateResource(
+			uploadDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			SIMUL_PPV_ARGS(&mUploadHeap[i])
+			D3D12_HEAP_TYPE_UPLOAD,
+			&mUploadHeap[i],
+			mUploadAllocationInfos[i],
+			name.c_str()
 		);
-		SIMUL_ASSERT(res == S_OK);
 		SIMUL_GPU_TRACK_MEMORY(mUploadHeap[i], mBufferSize)
 		
 		// If it is an UPLOAD buffer, will be the memory allocated in VRAM too?
@@ -107,11 +104,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE PlatformConstantBuffer::AsD3D12ConstantBuffer()
 	// This method is a bit hacky, it basically returns the CPU handle of the last
 	// "current" descriptor we will increase the curApply after the apply that's why 
 	// we substract 1 here
-    if (mCurApplyCount == 0)
-    {
+	if (mCurApplyCount == 0)
+	{
 		SIMUL_BREAK("We must apply this cb first");
 		mCurApplyCount=1;
-    }
+	}
 	return cpuDescriptorHandles[buffer_index][mCurApplyCount-1];
 }
 
@@ -143,8 +140,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
 		mHeaps[i].Release();
-		std::string str= platform::core::QuickFormat("%s mUploadHeap %d",name.c_str(),i);
-		renderPlatformDx12->PushToReleaseManager(mUploadHeap[i],str.c_str());
+		renderPlatformDx12->PushToReleaseManager(mUploadHeap[i], &mUploadAllocationInfos[i]);
 		mUploadHeap[i]=nullptr;
 		delete [] cpuDescriptorHandles[i];
 		cpuDescriptorHandles[i]=nullptr;

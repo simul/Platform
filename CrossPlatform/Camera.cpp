@@ -105,8 +105,8 @@ vec4 platform::crossplatform::GetDepthToDistanceParameters(DepthTextureStyle dep
 	}
 	return vec4(0, 0, 0, 0);
 }
-static float x_sgn = -1.f;
-static float y_sgn = -1.f;
+static float x_sgn = +1.f; //Was -1.f
+static float y_sgn = +1.f; //Was -1.f
 Frustum platform::crossplatform::GetFrustumFromProjectionMatrix(const float *mat)
 {
 	Frustum frustum;

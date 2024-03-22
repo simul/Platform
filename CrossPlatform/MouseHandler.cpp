@@ -123,7 +123,7 @@ bool MouseHandler::getMiddleButton() const
 void MouseHandler::mouseWheel(int delta,int modifiers)
 {
 	BaseMouseHandler::mouseWheel(delta,modifiers);
-	if(modifiers==4)
+	if (modifiers == (int)KeyboardModifiers::Ctrl)
 	{
 		static float min_deg=5.0f;
 		float fov = camera->GetHorizontalFieldOfViewDegrees();
@@ -141,7 +141,7 @@ void MouseHandler::mouseWheel(int delta,int modifiers)
 		if (delta<0)
 			wheel_backward=5*mult;
 	}
-	/*camera->SetVerticalFieldOfViewDegrees(0);*/
+	camera->SetVerticalFieldOfViewDegrees(0);
 	if (updateViews)
 		updateViews();
 }

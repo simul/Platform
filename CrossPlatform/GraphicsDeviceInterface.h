@@ -51,7 +51,7 @@ namespace platform
 		class DisplaySurfaceManagerInterface
 		{
 		public:
-			virtual void	AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN)=0;
+			virtual void	AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN,bool vsync=false)=0;
 			virtual void	RemoveWindow(cp_hwnd h)=0;
 			virtual void	Render(cp_hwnd h)=0;
 			virtual void	SetRenderer(RenderDelegatorInterface *ci)=0;

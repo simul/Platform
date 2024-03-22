@@ -10,4 +10,3 @@ crossplatform::Light::Light() : type(LightType::Sphere)
 crossplatform::Light::~Light()
 {
 }
-

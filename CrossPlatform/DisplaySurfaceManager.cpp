@@ -43,6 +43,10 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 		}
 		w->StartFrame();
 		w->Render(delegatorReadWriteMutex, renderPlatform->GetFrameNumber());
+		if(delegatorReadWriteMutex->locked())
+		{
+			SIMUL_BREAK("Locked mutex");
+		}
 	}
 	if(clear)
 		toRender.clear();
@@ -119,7 +123,7 @@ void DisplaySurfaceManager::ResizeSwapChain(cp_hwnd hwnd)
 	w->ResizeSwapChain(deviceContext);
 }
 
-void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fmt)
+void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fmt,bool vsync)
 {
 	if(surfaces.find(hwnd)!=surfaces.end())
 		return;
@@ -133,7 +137,7 @@ void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fm
 		window=renderPlatform->CreateDisplaySurface();
 	window->SetRenderer(renderDelegater);
 	surfaces[hwnd]=window;
-	window->RestoreDeviceObjects(hwnd,renderPlatform,false,fmt);
+	window->RestoreDeviceObjects(hwnd,renderPlatform,vsync,fmt);
 }
 
 void DisplaySurfaceManager::EndFrame(bool clear)

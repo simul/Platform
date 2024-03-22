@@ -37,7 +37,7 @@ public:
 	virtual ~vsBufferedStringStreamBuf() 
 	{
 		//sync();
-		delete[] pbase();
+		//delete[] pbase();
 	}
 	virtual void writeString(const std::string &str) = 0;
 private:

@@ -35,10 +35,10 @@ if(PLATFORM_USE_FMT)
 	set(FMT_TEST false)
 	add_subdirectory(External/fmt)
 	add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
-	if( PLATFORM_WINDOWS)
+	if( PLATFORM_WINDOWS )
 		if(${PLATFORM_WINDOWS_RUNTIME} MATCHES "static")
-			set_property(TARGET fmt PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-		endif()
+		set_property(TARGET fmt PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	endif()
 	endif()
 	set_target_properties( fmt PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/External)
 	set_target_properties( fmt PROPERTIES PREFIX "" )
@@ -49,6 +49,18 @@ if(PLATFORM_USE_FMT)
 		set_target_properties(fmt PROPERTIES VS_GLOBAL_XdkEditionTarget ${GDK_TOOLCHAIN_VERSION})
 	endif()
 endif()
+
+# FetchContent download timestamp policy:
+cmake_policy(SET CMP0135 NEW)
+cmake_policy(SET CMP0077 NEW)
+# fetch magic_enum
+include(FetchContent)
+FetchContent_Declare(
+  magic_enum
+  URL https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.5.zip
+  SOURCE_DIR magic_enum
+)
+FetchContent_MakeAvailable(magic_enum)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
@@ -94,29 +106,14 @@ if(PLATFORM_WINDOWS)
 	if( PLATFORM_SUPPORT_D3D11 )
 		add_subdirectory(DirectX11)
 	endif()
-endif()
-
-if(XBOXONE AND PLATFORM_SUPPORT_D3D11)
-	add_subdirectory(DirectX11)
-endif()
-
-if(PLATFORM_WINDOWS AND PLATFORM_SUPPORT_D3D12)
-	add_subdirectory(DirectX12)
-endif()
-
-if(XBOXONE AND PLATFORM_SUPPORT_D3D12)
-	add_subdirectory(DirectX12)
-endif()
-
-if(XBOXONE)
-	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
+	if( PLATFORM_SUPPORT_D3D12 )
+		add_subdirectory(DirectX12)
+	endif()
 endif()
 
 if(GDK)
 	add_subdirectory(DirectX12)
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
 endif()
 
 if(PLATFORM_WINGDK)

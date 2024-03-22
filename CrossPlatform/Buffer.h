@@ -80,7 +80,7 @@ namespace platform
 			virtual D3D12_INDEX_BUFFER_VIEW* GetIndexBufferView() { return NULL; }
 		protected:
 			BufferType bufferType= BufferType::UNKNOWN;
-            crossplatform::Layout*  mBufferLayout=nullptr;
+			crossplatform::Layout*  mBufferLayout=nullptr;
 			crossplatform::RenderPlatform *renderPlatform=nullptr;
 			std::string name;
 			std::shared_ptr<std::vector<uint8_t>> upload_data;

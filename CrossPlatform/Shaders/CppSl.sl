@@ -8,6 +8,8 @@
 	#include <math.h>
 	// required for std::min and max
 	#include <algorithm> 
+	// required for stream operators
+	#include <sstream>
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4324)
@@ -51,47 +53,48 @@
 									prag(pack(pop))
 	#define PLATFORM_NAMED_CONSTANT_BUFFER_END SIMUL_CONSTANT_BUFFER_END
 	#define PLATFORM_GROUPED_CONSTANT_BUFFER_END SIMUL_CONSTANT_BUFFER_END
-	struct mat2
-	{
-		float m[8];
-		operator const float *() const
-		{
-			return m;
-		}
-		void operator=(const float *u)
-		{
-			for(int i=0;i<4;i++)
-				m[i]=u[i];
-		}
-		void transpose()
-		{
-			for(int i=0;i<2;i++)
-				for(int j=0;j<2;j++)
-					if(i<j)
-					{
-						float temp=m[i*2+j];
-						m[i*2+j]=m[j*2+i];
-						m[j*2+i]=temp;
-					}
-		}
-	};
+
 #ifdef _MSC_VER
 #pragma warning(disable:4201) // anonymous unions warning
 #endif
+
+	//////////////////
+	//Vector Classes//
+	//////////////////
+
 	template<typename T> struct tvector2
 	{
 		T x, y;
-		tvector2(T X=0.0,T Y=0.0)
+		tvector2()
+		{
+			x = T(0);
+			y = T(0);
+		}
+		tvector2(T X, T Y)
 			:x(X),y(Y)
 		{
 		}
 		tvector2(const T *v)
-			:x(v[0]),y(v[1])
 		{
+			x = v[0];
+			y = v[1];
 		}
-		tvector2(const tvector2 &v)
-			:x(v.x),y(v.y)
+		tvector2(const tvector2<T> &v)
 		{
+			x = v.x;
+			y = v.y;
+		}
+		template<typename U>
+		tvector2(const U *v)
+		{
+			x=T(v[0]);
+			y=T(v[1]);
+		}
+		template<typename U>
+		tvector2(const tvector2<U> &v)
+		{
+			x = T(v.x);
+			y = T(v.y);
 		}
 		bool operator==(const tvector2 &v) const
 		{
@@ -206,6 +209,9 @@
 		T x,y,z;
 		tvector3()
 		{
+			x = T(0);
+			y = T(0);
+			z = T(0);
 		}
 		tvector3(T x,T y,T z)
 		{
@@ -217,7 +223,17 @@
 		{
 			operator=(v);
 		}
-		template<typename U> tvector3(const tvector3<U> &u)
+		tvector3(const tvector3<T> &u)
+		{
+			operator=(u);
+		}
+		template <typename U>
+		tvector3(const U *v)
+		{
+			operator=(v);
+		}
+		template<typename U> 
+		tvector3(const tvector3<U> &u)
 		{
 			operator=(u);
 		}
@@ -250,7 +266,15 @@
 			y = (T)u.y;
 			return *this;
 		}
-		template<typename U> const tvector3 &operator=(const tvector3<U> &u)
+		template <typename U>
+		void operator=(const U *v)
+		{
+			x=T(v[0]);
+			y=T(v[1]);
+			z=T(v[2]);
+		}
+		template<typename U> 
+		const tvector3 &operator=(const tvector3<U> &u)
 		{
 			x = (T)u.x;
 			y = (T)u.y;
@@ -331,6 +355,12 @@
 			y*=v[1];
 			z*=v[2];
 		}
+		void operator/=(const T *v)
+		{
+			x/=v[0];
+			y/=v[1];
+			z/=v[2];
+		}
 		void operator+=(const T *v)
 		{
 			x+=v[0];
@@ -344,7 +374,6 @@
 			z-=v[2];
 		}
 	};
-	
 	template<typename T> struct tvector4
 	{
 		union
@@ -357,7 +386,16 @@
 				T w_;
 			};
 		};
-		tvector4(T x=0,T y=0,T z=0,T w=0)
+		tvector4()
+			:xyz()
+		{
+			x = T(0);
+			y = T(0);
+			z = T(0);
+			w = T(0);
+		}
+		tvector4(T x,T y,T z,T w)
+			:xyz()
 		{
 			this->x=x;
 			this->y=y;
@@ -371,6 +409,28 @@
 			this->z=v.z;
 			this->w=w;
 		}
+		tvector4(const T *v)
+		{
+			this->x = v[0];
+			this->y = v[1];
+			this->z = v[2];
+			this->w = v[3];
+		}
+		tvector4(const tvector4<T> &u)
+		{
+			this->x = u.x;
+			this->y = u.y;
+			this->z = u.z;
+			this->w = u.w;
+		}
+		template<typename U>
+		tvector4(const U *v)
+		{
+			this->x=T(v[0]);
+			this->y=T(v[1]);
+			this->z=T(v[2]);
+			this->w=T(v[3]);
+		}
 		template<typename U>
 		tvector4(const tvector4<U> &u)
 		{
@@ -378,13 +438,6 @@
 			this->y=T(u.y);
 			this->z=T(u.z);
 			this->w=T(u.w);
-		}
-		tvector4(const T *v)
-		{
-			this->x=v[0];
-			this->y=v[1];
-			this->z=v[2];
-			this->w=v[3];
 		}
 		operator const T *() const
 		{
@@ -494,18 +547,68 @@
 			r.w=-w;
 			return r;
 		}
-	};
-	namespace std
-	{
-		template <typename T> tvector2<T> max(tvector2<T> a, tvector2<T> b)
+		bool operator==(const tvector4 &v) const
 		{
+			return (x == v.x && y == v.y && z == v.z && z == v.w);
+		}
+		bool operator!=(const tvector4 &v) const
+		{
+			return (x != v.x || y != v.y || z != v.z || w != v.w);
+		}
+	};
+
+	//Common typedefs
+
+	typedef unsigned int uint;
+
+	typedef tvector2<float> vec2;
+	typedef tvector3<float> vec3;
+	typedef tvector4<float> vec4;
+
+	typedef tvector2<int> int2;
+	typedef tvector3<int> int3;
+	typedef tvector4<int> int4;
+
+	typedef tvector2<uint> uint2;
+	typedef tvector3<uint> uint3;
+	typedef tvector4<uint> uint4;
+
+	// Stream operators
+	
+	template <typename T>
+	std::ostream &operator<<(std::ostream &os, tvector2<T> v)
+	{
+		os << "(" << v.x << ", " << v.y << ")";
+		return os;
+	}
+	template <typename T>
+	std::ostream &operator<<(std::ostream &os, tvector3<T> v)
+		{
+		os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+		return os;
+	}
+	template <typename T>
+	std::ostream &operator<<(std::ostream &os, tvector4<T> v)
+	{
+		os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
+		return os;
+	}
+
+	// Min/Max
+
+	template <typename T>
+	tvector2<T> max(tvector2<T> a, tvector2<T> b)
+	{
 			return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
 		};
-		template <typename T> tvector2<T> min(tvector2<T> a, tvector2<T> b)
+	template <typename T>
+	tvector2<T> min(tvector2<T> a, tvector2<T> b)
 		{
 			return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
 		};
-		template <typename T> tvector3<T> max(tvector3<T> a,tvector3<T> b)
+
+	template <typename T>
+	tvector3<T> max(tvector3<T> a,tvector3<T> b)
 			{
 				return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
 			};
@@ -513,23 +616,73 @@
 			{
 				return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
 			};
-	}
-	template<typename T> T length(const tvector2<T>& u)
+
+	template <typename T>
+	tvector4<T> max(tvector4<T> a, tvector4<T> b)
+	{
+		return tvector4<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
+	};
+	template <typename T>
+	tvector4<T> min(tvector4<T> a, tvector4<T> b)
+	{
+		return tvector4<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
+	};
+
+	//Length
+
+	template<typename T> 
+	T length(const tvector2<T>& u)
 	{
 		T size = u.x * u.x + u.y * u.y ;
 		return static_cast<T>(sqrt(static_cast<double>(size)));
 	}
-	template<typename T> T length(const tvector3<T>& u)
+	template<typename T> 
+	T length(const tvector3<T>& u)
 	{
 		T size = u.x * u.x + u.y * u.y + u.z * u.z;
 		return static_cast<T>(sqrt(static_cast<double>(size)));
 	}
-	template<typename T> tvector3<T> normalize(const tvector3<T>& u)
+	template <typename T>
+	T length(const tvector4<T> &u)
+	{
+		T size = u.x * u.x + u.y * u.y + u.z * u.z + u.w * u.w;
+		return static_cast<T>(sqrt(static_cast<double>(size)));
+	}
+
+	//Normalise
+
+	template <typename T>
+	tvector2<T> normalize(const tvector2<T> &u)
 	{
 		T l=length(u);
 		if(l>0)
 			return u/l;
 		return u;
+	}
+	template<typename T>
+	tvector3<T> normalize(const tvector3<T>& u)
+	{
+		T l=length(u);
+		if(l>0)
+			return u/l;
+		return u;
+	}
+	template <typename T>
+	tvector4<T> normalize(const tvector4<T> &u)
+	{
+		T l = length(u);
+		if (l > 0)
+			return u / l;
+		return u;
+	}
+
+	//Lerp
+
+	template <typename T>
+	tvector2<T> lerp(tvector2<T> a, tvector2<T> b, T x)
+	{
+		tvector2 c = b * x + a * (T(1.0) - x);
+		return c;
 	}
 	template<typename T>
 	tvector3<T> lerp(tvector3<T> a, tvector3<T> b, T x)
@@ -539,88 +692,99 @@
 	}
 	template<typename T> T cross(const tvector2<T>& a, const tvector2<T>& b)
 	{
+		tvector4 c = b * x + a * (T(1.0) - x);
+		return c;
+	}
+	
+
+	//Mat2 Determinant?
+	template<typename T>
+	T cross(const tvector2<T>& a, const tvector2<T>& b)
+	{
 		return  a.x * b.y - b.x * a.y;
 	}
-	template<typename T> T dot(const tvector2<T>& a, const tvector2<T>& b)
+
+	//Cross
+
+	template<typename T>
+	inline tvector3<T> cross(const tvector3<T> &a, const tvector3<T> &b)
+	{
+		tvector3<T> r;
+		r.x = a.y * b.z - b.y * a.z;
+		r.y = a.z * b.x - b.z * a.x;
+		r.z = a.x * b.y - b.x * a.y;
+		return r;
+	}
+
+	//Dot
+
+	template<typename T> 
+	T dot(const tvector2<T>& a, const tvector2<T>& b)
 	{
 		return  a.x * b.x+a.y * b.y;
 	}
-	template<typename T> tvector3<T> abs(const tvector3<T> &v)
+	template <typename T>
+	T dot(const tvector3<T> &a, const tvector3<T> &b)
 	{
-		tvector3<T> result={abs(v.x), abs(v.y), abs(v.z)};
-		return result;
+		return a.x *b.x + a.y *b.y + a.z *b.z;
 	}
-	template <typename T> void
-	closest_approach(const tvector3<T> A, const tvector3<T> B, tvector3<T> C, const tvector3<T> D, bool limit,tvector3<T> &P1,tvector3<T> &P2)
+	template <typename T>
+	T dot(const tvector4<T> &a, const tvector4<T> &b)
 	{
-		tvector3 u = B - A;
-		tvector3 v = D - C;
-		tvector3 w = A - C;
+		return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+	}
 
-		T a = dot(u , u); // always >= 0
-		T b = dot(u , v);
-		T c = dot(v , v); // always >= 0
-		T d = dot(u , w);
-		T e = dot(v , w);
-		T sc, sN, sD = a * c - b * b; // sc = sN / sD, sD >= 0
-		T tc, tN, tD = a * c - b * b; // tc = tN / tD, tD >= 0
-		T tol = T(1e-15);
-		// compute the line parameters of the two closest points
-		if (sD < tol)
-		{			  // the lines are almost parallel
-			sN = 0.0; // force using point A on segment AB
-			sD = 1.0; // to prevent possible division by 0.0 later
-			tN = e;
-			tD = c;
+	//abs
+
+	template <typename T>
+	tvector2<T> abs(const tvector2<T> &v)
+	{
+		return {abs(v.x), abs(v.y)};
 		}
-		else
-		{ // get the closest points on the infinite lines
-			sN = (b * e - c * d);
-			tN = (a * e - b * d);
-			if(limit)
+	template<typename T>
+	tvector3<T> abs(const tvector3<T> &v)
 			{
-				if (sN < 0.0)
-				{			  // sc < 0 => the s=0 edge is visible
-					sN = 0.0; // compute shortest connection of A to segment CD
-					tN = e;
-					tD = c;
+		return {abs(v.x), abs(v.y), abs(v.z)};
 				}
-				else if (sN > sD)
-				{			 // sc > 1  => the s=1 edge is visible
-					sN = sD; // compute shortest connection of B to segment CD
-					tN = e + b;
-					tD = c;
+	template <typename T>
+	tvector4<T> abs(const tvector4<T> &v)
+	{
+		return {abs(v.x), abs(v.y), abs(v.z), abs(v.w)};
 				}
+
+	//Very simple 3 vector of doubles.
+	typedef tvector3<double> vec3d;
+
+	inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)
+	{
+		v3 = vec3(float(v.x), float(v.y), float(v.z));
 			}
-		}
-		if(limit)
+
+	//////////////////
+	//Matrices class//
+	//////////////////
+
+	struct mat2
 		{
-			if (tN < 0.0)
-			{ // tc < 0 => the t=0 edge is visible
-				tN = 0.0;
-				// recompute sc for this edge
-				if ( -d < 0.0) // compute shortest connection of C to segment AB
-					sN = 0.0;
-				else if ( -d > a)
-					sN = sD;
-				else
+		float m[8];
+		operator const float *() const
 				{
-					sN = -d;
-					sD = a;
+			return m;
 				}
+		void operator=(const float *u)
+		{
+			for (int i = 0; i < 4; i++)
+				m[i] = u[i];
 			}
-			else if (tN > tD)
-			{ // tc > 1  => the t=1 edge is visible
-				tN = tD;
-				// recompute sc for this edge
-				if ((-d + b) < 0.0) // compute shortest connection of D to segment AB
-					sN = 0;
-				else if ( (-d + b) > a)
-					sN = sD;
-				else
+		void transpose()
 				{
-					sN = (-d + b);
-					sD = a;
+			for (int i = 0; i < 2; i++)
+				for (int j = 0; j < 2; j++)
+					if (i < j)
+					{
+						float temp = m[i * 2 + j];
+						m[i * 2 + j] = m[j * 2 + i];
+						m[j * 2 + i] = temp;
 				}
 			}
 		}
@@ -713,7 +877,8 @@
 				m[i]=v[i];
 			return *this;
 		}
-		template<typename U> const tmatrix4& operator=(const tmatrix4<U> &u)
+		template<typename U> 
+		const tmatrix4& operator=(const tmatrix4<U> &u)
 		{
 			for(int i=0;i<16;i++)
 				m[i]=T(u.m[i]);
@@ -984,6 +1149,106 @@
 		{
 			return(_m30==0&&_m31==0&&_m32==0);
 		}
+		/// Set the translation as the 4th column, assigning 1.0 to the 4,4 corner.
+		template<typename U>
+		void setColumnTranslation(const tvector3<U> &translation)
+		{
+			_m03 = translation.x;
+			_m13 = translation.y;
+			_m23 = translation.z;
+			_m33 = T(1);
+		}
+		/// Set the rotation to the given quaternion, on the basis of a premultiplying transform matrix.
+		template <typename U>
+		void setRotation(const tvector4<U> &q)
+		{
+			_m00=(powf(q.w, 2) + powf(q.x, 2) - powf(q.y, 2) - powf(q.z, 2));
+			_m01=2 * (q.x * q.y - q.z * q.w);
+			_m02=2 * (q.x * q.z + q.y * q.w);
+			
+			_m10=2 * (q.x * q.y + q.z * q.w);
+			_m11=(powf(q.w, 2) - powf(q.x, 2) + powf(q.y, 2) - powf(q.z, 2));
+			_m12=2 * (q.y * q.z - q.x * q.w);
+
+			_m20=2 * (q.x * q.z - q.y * q.w);
+			_m21=2 * (q.y * q.z + q.x * q.w);
+			_m22 = (powf(q.w, 2) - powf(q.x, 2) - powf(q.y, 2) + powf(q.z, 2));
+
+			_m30 =0;
+			_m31 =0;
+			_m32 =0;
+		}
+		/// Set the rotation to the given quaternion, and the translation to the given vector, on the basis of a premultiplying transform matrix.
+		template <typename U,typename V>
+		void setRotationTranslation(const tvector4<U> &q, const tvector3<V> &translation)
+		{
+			T ww = q.w * q.w;
+			T xx = q.x * q.x;
+			T yy = q.y * q.y;
+			T zz = q.z * q.z;
+			T xy = q.x * q.y;
+			T yz = q.y * q.z;
+			T zx = q.z * q.x;
+			T xw = q.x * q.w;
+			T yw = q.y * q.w;
+			T zw = q.z * q.w;
+			_m00 = (ww + xx - yy - zz);
+			_m01 = 2 * (xy - zw);
+			_m02 = 2 * (zx + yw);
+			_m03 = translation.x;
+
+			_m10 = 2 * (xy + zw);
+			_m11 = (ww - xx + yy - zz);
+			_m12 = 2 * (yz - xw);
+			_m13 = translation.y;
+
+			_m20 = 2 * (zx - yw);
+			_m21 = 2 * (yz + xw);
+			_m22 = (ww - xx - yy + zz);
+			_m23 = translation.z;
+
+			_m30 = 0;
+			_m31 = 0;
+			_m32 = 0;
+			_m33 = T(1);
+		}
+		/// Set the rotation to the given quaternion, the translation to the given vector, and the scale to the given scale,
+		/// on the basis of a premultiplying transform matrix.
+		template <typename U, typename V, typename W>
+		void setRotationTranslationScale(const tvector4<U> &q, const tvector3<V> &translation, const tvector3<W> &scale)
+		{
+			T ww = q.w * q.w;
+			T xx = q.x * q.x;
+			T yy = q.y * q.y;
+			T zz = q.z * q.z;
+			T xy = q.x * q.y;
+			T yz = q.y * q.z;
+			T zx = q.z * q.x;
+			T xw = q.x * q.w;
+			T yw = q.y * q.w;
+			T zw = q.z * q.w;
+			_m00 = (ww + xx - yy - zz);
+			_m01 = T(2) * (xy - zw);
+			_m02 = T(2) * (zx + yw);
+			_m03 = translation.x;
+
+			_m10 = T(2) * (xy + zw);
+			_m11 = (ww - xx + yy - zz);
+			_m12 = T(2) * (yz - xw);
+			_m13 = translation.y;
+
+			_m20 = T(2) * (zx - yw);
+			_m21 = T(2) * (yz + xw);
+			_m22 = (ww - xx - yy + zz);
+			_m23 = translation.z;
+
+			_m30 = 0;
+			_m31 = 0;
+			_m32 = 0;
+			_m33 = T(1);
+			applyScale(scale);
+		}
+		
 		template<typename U>
 		static tmatrix4 translation(const tvector3<U>& translation)
 		{
@@ -996,17 +1261,58 @@
 			};
 		}
 		template<typename U>
+		void applyScale(const tvector3<U> &scale)
+		{
+			_m00 *= scale.x;
+			_m01 *= scale.y;
+			_m02 *= scale.z;
+			_m10 *= scale.x;
+			_m11 *= scale.y;
+			_m12 *= scale.z;
+			_m20 *= scale.x;
+			_m21 *= scale.y;
+			_m22 *= scale.z;
+		}
+		template<typename U>
 		static tmatrix4 rotation(const tvector4<U>& orientation)
 		{
 			return {
 				(powf(orientation.w, 2) + powf(orientation.x, 2) - powf(orientation.y, 2) - powf(orientation.z, 2)), 2 * (orientation.x * orientation.y - orientation.z * orientation.w), 2 * (orientation.x * orientation.z + orientation.y * orientation.w), 0,
 				2 * (orientation.x * orientation.y + orientation.z * orientation.w), (powf(orientation.w, 2) - powf(orientation.x, 2) + powf(orientation.y, 2) - powf(orientation.z, 2)), 2 * (orientation.y * orientation.z - orientation.x * orientation.w), 0,
 				2 * (orientation.x * orientation.z - orientation.y * orientation.w), 2 * (orientation.y * orientation.z + orientation.x * orientation.w), (powf(orientation.w, 2) - powf(orientation.x, 2) - powf(orientation.y, 2) + powf(orientation.z, 2)), 0,
-				0, 0, 0, 1
+				0, 0, 0, T(1)
 			};
 		}
+		template <typename U>
+		static tmatrix4 scale(const tvector3<U> &scale)
+		{
+			return {
+				scale.x, 0, 0, 0,
+				0, scale.y, 0, 0,
+				0, 0, scale.z, 0,
+				0, 0, 0, T(1)};
+		}
+		//! Get the translation, if this matrix is a transform matrix for premultiplication
+		//! (i.e. the translation is the rightmost column)
+		tvector3<T> GetTranslation() const
+		{
+			return {_m03, _m13, _m23};
+		}
+		//! Get the scale, if this matrix is a transform matrix
+		tvector3<T> GetScale() const
+		{
+			tvector3<T> x={_m00, _m10, _m20};
+			tvector3<T> y={_m01, _m11, _m21};
+			tvector3<T> z={_m02, _m12, _m22};
+
+			return {length(x), length(y), length(z)};
+		}
 	};
-	template<typename T> tmatrix4<T> mul(const tmatrix4<T>& a, const tmatrix4<T>& b)
+
+	//Matrix/Vector multiply operators
+
+	template<typename T> 
+	tmatrix4<T> mul(const tmatrix4<T>& a, const tmatrix4<T>& b)
 	{
 		tmatrix4<T> r;
 		tmatrix4<T>::mul(r, a, b);
@@ -1021,7 +1327,8 @@
 		r.z=m._31*v.x+m._32*v.y+m._33*v.z;
 		return r;
 	}
-	template<typename T> tvector3<T> operator*(T m, tvector3<T> v)
+	template<typename T> 
+	tvector3<T> operator*(T m, tvector3<T> v)
 	{
 		tvector3<T> r;
 		r.x=m*v.x;
@@ -1069,11 +1376,31 @@
 		r.w=m._41*v.x+m._42*v.y+m._43*v.z+m._44*v.w;
 		return r;
 	}
+
+	// Others
+
 	template<typename T>
-	tvector4<T> lerp(tvector4<T> a, tvector4<T> b, T x)
+	void closest_approach(const tvector3<T> A, const tvector3<T> B, tvector3<T> C, const tvector3<T> D, bool limit, tvector3<T> &P1, tvector3<T> &P2)
 	{
-		tvector4 c = b*x + a*(T(1.0) - x);
-		return c;
+		tvector3 u = B - A;
+		tvector3 v = D - C;
+		tvector3 w = A - C;
+
+		T a = dot(u, u); // always >= 0
+		T b = dot(u, v);
+		T c = dot(v, v); // always >= 0
+		T d = dot(u, w);
+		T e = dot(v, w);
+		T sc, sN, sD = a * c - b * b; // sc = sN / sD, sD >= 0
+		T tc, tN, tD = a * c - b * b; // tc = tN / tD, tD >= 0
+		T tol = T(1e-15);
+		// compute the line parameters of the two closest points
+		if (sD < tol)
+		{			  // the lines are almost parallel
+			sN = 0.0; // force using point A on segment AB
+			sD = 1.0; // to prevent possible division by 0.0 later
+			tN = e;
+			tD = c;
 	}
 	typedef tvector4<float> vec4;
 	typedef tvector2<float> vec2;
@@ -1084,54 +1411,50 @@
 	typedef unsigned int uint;
 	struct int2
 	{
-		int x,y;
-		int2(int x=0,int y=0)
-		{
-			this->x=x;
-			this->y=y;
+				if (sN < 0.0)
+				{			  // sc < 0 => the s=0 edge is visible
+					sN = 0.0; // compute shortest connection of A to segment CD
+					tN = e;
+					tD = c;
 		}
-		int2(const int2& c)
-		{
-			this->x=c.x;
-			this->y=c.y;
+				else if (sN > sD)
+				{			 // sc > 1  => the s=1 edge is visible
+					sN = sD; // compute shortest connection of B to segment CD
+					tN = e + b;
+					tD = c;
 		}
-		int2(const int *v)
-		{
-			operator=(v);
 		}
-		int2(const unsigned *v)
-		{
-			operator=(v);
 		}
-		operator const int *() const
+		if (limit)
 		{
-			return &x;
+			if (tN < 0.0)
+			{ // tc < 0 => the t=0 edge is visible
+				tN = 0.0;
+				// recompute sc for this edge
+				if (-d < 0.0) // compute shortest connection of C to segment AB
+					sN = 0.0;
+				else if (-d > a)
+					sN = sD;
+				else
+		{
+					sN = -d;
+					sD = a;
 		}
-		operator vec2() const
-		{
-			return vec2(float(x),float(y));
 		}
-		const int2& operator=(const int2 &v)
+			else if (tN > tD)
+			{ // tc > 1  => the t=1 edge is visible
+				tN = tD;
+				// recompute sc for this edge
+				if ((-d + b) < 0.0) // compute shortest connection of D to segment AB
+					sN = 0;
+				else if ((-d + b) > a)
+					sN = sD;
+				else
 		{
-			x=v.x;
-			y=v.y;
-			return *this;
+					sN = (-d + b);
+					sD = a;
 		}
-		const int2& operator=(const int *v)
-		{
-			x=v[0];
-			y=v[1];
-			return *this;
 		}
-		const int2& operator=(const unsigned *v)
-		{
-			x=v[0];
-			y=v[1];
-			return *this;
-		}
-		int2 operator+(const int2 &v) const
-		{
-			return int2(x+v.x,y+v.y);
 		}
 		int2 operator-(const int2 &v) const
 		{
@@ -1313,74 +1636,7 @@
 
 	typedef tvector4<int> int4;
 	
-	struct uint4
-	{
-		uint x,y,z,w;
-		uint4(uint x=0,uint y=0,uint z=0,uint w=0)
-		{
-			this->x=x;
-			this->y=y;
-			this->z=z;
-			this->w=w;
-		}
-		uint4(const uint *v)
-		{
-			operator=(v);
-		}
-		uint4(const float *v)
-		{
-			operator=(v);
-		}
-		uint4(int4 v)
-		{
-			x=v.x;
-			y=v.y;
-			z=v.z;
-			w=v.w;
-		}
-		operator const uint *() const
-		{
-			return &x;
-		}
-		const uint4 &operator=( int4 v)
-		{
-			x=v.x;
-			y=v.y;
-			z=v.z;
-			w=v.w;
-			return *this;
-		}
-		const uint4 &operator=(const uint *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
-			w=v[3];
-			return *this;
-		}
-		const uint4 &operator=(const float *v)
-		{
-			x=uint(v[0]);
-			y=uint(v[1]);
-			z=uint(v[2]);
-			w=uint(v[3]);
-			return *this;
-		}
-		void operator*=(uint u)
-		{
-			x*=u;
-			y*=u;
-			z*=u;
-			w*=u;
-		}
-		void operator/=(uint u)
-		{
-			x/=u;
-			y/=u;
-			z/=u;
-			w/=u;
-		}
-	};
+	}
 	//! Very simple 3 vector of doubles.
 	typedef tvector3<double> vec3d;
 	inline void vec3d_to_vec3(vec3&v3,const vec3d& v)

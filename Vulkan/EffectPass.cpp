@@ -103,6 +103,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	{
 		deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
 	}
+	const crossplatform::ResourceGroupLayout &perPassLayout = renderPlatform->GetResourceGroupLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
 	int numImages = numResourceSlots + numRwResourceSlots + numSamplerResourceSlots;
 	int numBuffers = numSbResourceSlots + numRwSbResourceSlots + numConstantBufferResourceSlots;
 	int numDescriptors = numImages + numBuffers;
@@ -127,6 +128,13 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	for (int i = 0; i < numResourceSlots; i++, b++)
 	{
 		int slot = resourceSlots[i];
+		if (!perPassLayout.UsesReadOnlyResourceSlot(slot))
+		{
+			// This buffer slot is not a per-pass slot.
+			numDescriptors--;
+			b--;
+			continue;
+		}
 		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
 		write.setDstSet(descriptorSet);
 		crossplatform::TextureAssignment& ta = cs->textureAssignmentMap[slot];
@@ -308,7 +316,6 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		}
 
 	}
-	const crossplatform::ResourceGroupLayout &perPassLayout = renderPlatform->GetResourceGroupLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
 	// For constant buffers at least, we wish only to bind PER-PASS buffers for this DescriptorSet.
 	//		buffers that do not change on every call should go in more general
 	for (int i = 0; i < numConstantBufferResourceSlots; i++, b++)
@@ -546,26 +553,39 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			SetVulkanName(renderPlatform, m_DescriptorPool, platform::core::QuickFormat("%s Descriptor pool", name.c_str()));
 			delete[] poolSizes;
 		}
-
+		const crossplatform::ResourceGroupLayout &perPassLayout = renderPlatform->GetResourceGroupLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
+			
 		// Set up the "Descriptor Set Layout CreateInfo":
 		{
 			layoutBindings = new vk::DescriptorSetLayoutBinding[numDescriptors];
 			int bindingIndex = 0;
-			for (int i = 0; i < numResourceSlots; i++, bindingIndex++)
+			for (int i = 0; i < numResourceSlots; i++)
 			{
 				int slot = resourceSlots[i];
-				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
-				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
-				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesTextureSlot);
-				binding.setBinding(vulkan::RenderPlatform::GenerateTextureSlot(slot))
-					.setDescriptorType(m_VideoSource ? vk::DescriptorType::eCombinedImageSampler : vk::DescriptorType::eSampledImage)
-					.setDescriptorCount(1)
-					.setStageFlags(stageFlags);
-				if (m_VideoSource)
+				if (perPassLayout.UsesReadOnlyResourceSlot(slot))
 				{
-					m_ImmutableSamplers.clear();
-					m_ImmutableSamplers.push_back(vulkanRenderPlatform->GetSamplerYcbcr());
-					binding.setPImmutableSamplers(m_ImmutableSamplers.data());
+					usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
+					vk::DescriptorSetLayoutBinding &binding = layoutBindings[bindingIndex];
+					vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesTextureSlot);
+					binding.setBinding(vulkan::RenderPlatform::GenerateTextureSlot(slot))
+						.setDescriptorType(m_VideoSource ? vk::DescriptorType::eCombinedImageSampler : vk::DescriptorType::eSampledImage)
+						.setDescriptorCount(1)
+						.setStageFlags(stageFlags);
+					if (m_VideoSource)
+					{
+						m_ImmutableSamplers.clear();
+						m_ImmutableSamplers.push_back(vulkanRenderPlatform->GetSamplerYcbcr());
+						binding.setPImmutableSamplers(m_ImmutableSamplers.data());
+					}
+					bindingIndex++;
+				}
+				for (uint8_t l = 0; l < crossplatform::PER_PASS_RESOURCE_GROUP; l++)
+				{
+					const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(l);
+					if (layout.UsesReadOnlyResourceSlot(slot))
+					{
+						usingResourceLayouts |= (1 << l);
+					}
 				}
 			}
 			for (int i = 0; i < numRwResourceSlots; i++, bindingIndex++)
@@ -618,7 +638,6 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			}
 			// Only constantBuffers in octave 4 are to be added to the layout. For others, we check which octave they are in
 			// and mark that octave as being in-use for this pass.
-			const crossplatform::ResourceGroupLayout &perPassLayout = renderPlatform->GetResourceGroupLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
 			for (int i = 0; i < numConstantBufferResourceSlots; i++)
 			{
 				int slot = constantBufferResourceSlots[i];
@@ -806,7 +825,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 			.setCullMode(cullModeFlags)
 			.setFrontFace(frontFace)
 			.setDepthBiasEnable(VK_FALSE)
-			.setLineWidth(4.0f);
+			.setLineWidth(1.0f);
 		vk::PipelineMultisampleStateCreateInfo multisampleInfo = vk::PipelineMultisampleStateCreateInfo().setRasterizationSamples(vk::SampleCountFlagBits(numOfSamples));
 		vk::StencilOpState stencilOp = vk::StencilOpState().setFailOp(vk::StencilOp::eKeep).setPassOp(vk::StencilOp::eKeep).setCompareOp(vk::CompareOp::eAlways);
 		vk::PipelineDepthStencilStateCreateInfo depthStencilInfo = vk::PipelineDepthStencilStateCreateInfo()

@@ -5,6 +5,18 @@
 
 #ifndef __cplusplus
 
+#ifdef XBOTTOM_UP_TEXTURE_COORDINATES_DEFINED
+	vec2 BottomUpTextureCoordinates(vec2 texc)
+	{
+		return vec2(texc.x,1.0-texc.y);
+	}
+	vec4 BottomUpTextureCoordinates4(vec4 texc)
+	{
+		return vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w);
+	}
+	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
+#endif
+
 #define USE_D3D_REF_MODE 0
 
 // This should be passed to the compiler, do we use it? (gaussian.sfx)
@@ -69,6 +81,10 @@ vec4 reverse_y_coord(vec4 a)
 #define BottomUpTextureCoordinates4(texc) vec4(texc.x, 1.0 - texc.y, texc.z, 1.0 - texc.w)
 #define BottomUpTextureCoordinates(texc) vec2(texc.x, 1.0 - texc.y)
 
+#ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
 #define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 #endif
+
 #endif
+#endif
+

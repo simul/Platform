@@ -34,45 +34,34 @@
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 0 
 #endif
 
-inline void SetD3DName(ID3D12Object* obj, const char* name)
+//https://stackoverflow.com/questions/6693010/how-do-i-use-multibytetowidechar
+
+inline void SetD3DName(ID3D12Object *obj, const std::string& name)
 {
-	std::wstring n(name, name+strlen(name));
-	obj->SetName(n.c_str());
+	int count = MultiByteToWideChar(CP_UTF8, 0, name.c_str(), (UINT)name.length(), NULL, 0);
+	std::wstring w_name(count, 0);
+	MultiByteToWideChar(CP_UTF8, 0, name.c_str(), (UINT)name.length(), &w_name[0], count);
+	(obj)->SetPrivateData(WKPDID_D3DDebugObjectNameW, count * sizeof(std::wstring::value_type), w_name.c_str());
 }
-inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
+
+inline void GetD3DName(ID3D12Object *obj, std::string& name)
 {
-	if(!maxsize)
-		return;
 	if(!obj)
 	{
-		name[0]=0;
 		return;
 	}
-	UINT size=0;
-#if defined(_GAMING_XBOX)
-	// not implemented?????
-	name[0] = 0;
-#else
-	GUID g = WKPDID_D3DDebugObjectName;
-	HRESULT hr=(obj)->GetPrivateData(g,&size,	nullptr);
-	if(hr==S_OK)
+
+	UINT size = 0;
+	HRESULT hr = (obj)->GetPrivateData(WKPDID_D3DDebugObjectNameW, &size, nullptr);
+	if (hr == S_OK)
 	{
-		if(size <= maxsize)
-			(obj)->GetPrivateData(g, &size, name);
+		std::wstring w_name(size / sizeof(std::wstring::value_type), 0);
+		(obj)->GetPrivateData(WKPDID_D3DDebugObjectNameW, &size, &w_name[0]);
+
+		int count = WideCharToMultiByte(CP_UTF8, 0, w_name.c_str(), (UINT)w_name.length(), NULL, 0, NULL, NULL);
+		name.resize(count, 0);
+		WideCharToMultiByte(CP_UTF8, 0, w_name.c_str(), (UINT)w_name.length(), &name[0], count, NULL, NULL);
 	}
-	else
-	{
-		g= WKPDID_D3DDebugObjectNameW;
-		hr = (obj)->GetPrivateData(g, &size, nullptr);
-		if (hr == S_OK)
-		{
-			wchar_t * src_w =new wchar_t[size+1];
-			(obj)->GetPrivateData(g, &size, src_w);
-			WideCharToMultiByte(CP_UTF8, 0, src_w, (int)size, name, (int)maxsize, NULL, NULL);
-			delete [] src_w;
-		}
-	}
-#endif
 }
 
 #ifndef SAFE_RELEASE
@@ -84,8 +73,8 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 											int refct=(p)->Release()-1;\
 											if(refct!=21623460)\
 											{\
-												char name[20];\
-												GetD3DName((p),name,20);\
+												std::string name;\
+												GetD3DName((p),name);\
 												SIMUL_COUT<< name<<" refct "<<refct<<std::endl;\
 											}\
 											(p)->Release();\
@@ -95,15 +84,38 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 #endif
 
 #ifndef SAFE_RELEASE_LATER
-#define SAFE_RELEASE_LATER(p)			{ if(p) {\
-		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;\
-		if(renderPlatformDx12)\
-			renderPlatformDx12->PushToReleaseManager(p, #p);\
-		else\
-			p->Release();\
-		p = nullptr;\
-		 } }
+#define SAFE_RELEASE_LATER(p)	{\
+									if(p) {\
+										auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;\
+										if(renderPlatformDx12)\
+											renderPlatformDx12->PushToReleaseManager(p);\
+										else\
+											p->Release();\
+										p = nullptr;\
+									}\
+								}
 #endif
+#ifndef SAFE_RELEASE_ALLOCATIR_LATER
+#define SAFE_RELEASE_ALLOCATIR_LATER(p, a)	{\
+												if(p && a) {\
+													auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;\
+													if(renderPlatformDx12)\
+													{\
+														renderPlatformDx12->PushToReleaseManager(p, a);\
+													}\
+													else\
+													{\
+														(a)->allocation->Release();\
+														p->Release();\
+													}\
+													(a)->allocator = nullptr;\
+													(a)->allocation = nullptr;\
+													p = nullptr;\
+												}\
+											}
+#endif
+
+
 #ifndef SAFE_RELEASE_ARRAY
 	#define SAFE_RELEASE_ARRAY(p,n)	{ if(p) for(int i=0;i<int(n);i++) if(p[i]) { (p[i])->Release(); (p[i])=nullptr; } }
 #endif
@@ -131,3 +143,16 @@ inline void GetD3DName(ID3D12Object *obj,char *name,size_t maxsize)
 	#define LOG_BARRIER_INFO(name, res, before, after)
 #endif
 
+// D3D12MA
+#define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
+#define D3D12MA_IID_PPV_ARGS SIMUL_PPV_ARGS
+#include "D3D12MemAlloc.h"
+
+namespace platform::dx12
+{
+	struct AllocationInfo
+	{
+		D3D12MA::Allocator *allocator = nullptr;
+		D3D12MA::Allocation *allocation = nullptr;
+	};
+}

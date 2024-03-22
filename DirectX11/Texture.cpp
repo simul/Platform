@@ -1434,6 +1434,9 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceC
 	last_context=deviceContext.asD3D11DeviceContext();
 
 	const int &mip = textureView.elements.subresourceRange.baseMipLevel;
+	const int &array_index = textureView.elements.subresourceRange.baseArrayLayer;
+	const int &array_count = textureView.elements.subresourceRange.arrayLayerCount;
+	
 	if (textureView.elements.type == crossplatform::ShaderResourceType::UNKNOWN)
 		textureView.elements.type = GetShaderResourceTypeForRTVAndDSV();
 
@@ -1453,7 +1456,8 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext& deviceC
 		}
 	}
 
-	targetsAndViewport.m_rt[0] = AsD3D11RenderTargetView(textureView);
+	targetsAndViewport.m_rt[0]=AsD3D11RenderTargetView(textureView);
+	targetsAndViewport.textureTargets[0]={this,{crossplatform::TextureAspectFlags::COLOUR,(uint8_t)mip,(uint8_t)array_index,(uint8_t)array_count}};
 	targetsAndViewport.m_dt=nullptr;
 	targetsAndViewport.viewport.x=targetsAndViewport.viewport.y=0;
 	targetsAndViewport.viewport.w=(int)viewport.Width;

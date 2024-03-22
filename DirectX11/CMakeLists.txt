@@ -30,13 +30,7 @@ add_static_library( SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} 
 
  
 if(SIMUL_SOURCE_BUILD)
-	if(XBOXONE)
-		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/Sfx/DirectX11.json" )
-	elseif(GDK AND NOT PLATFORM_WINGDK)
-		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/Sfx/DirectX11.json" )
-	else()
-		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/DirectX11/Sfx/DirectX11.json" )
-	endif()
+	set( JSON_FILE "${SIMUL_PLATFORM_DIR}/DirectX11/Sfx/DirectX11.json" )
 	
 	if(PLATFORM_BUILD_MD_LIBS)
 		add_dynamic_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})

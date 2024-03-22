@@ -23,35 +23,59 @@ namespace platform
 		//! You may see this referred to as a "Descriptor Set" layout elsewhere.
 		struct ResourceGroupLayout
 		{
-			//! Bitmask for which constant buffer slots are in this group.
-			uint64_t constantBufferSlots=0;
-			inline void UseConstantBufferSlot(uint8_t s)
-			{
-				constantBufferSlots |= uint64_t(1) << uint64_t(s);
-			}
-			inline bool UsesConstantBufferSlot(uint8_t s) const
+			inline bool UsesSlot(uint64_t slots,uint8_t s) const
 			{
 				uint64_t b = uint64_t(1) << uint64_t(s);
-				uint64_t present = b & constantBufferSlots;
-				return present!=uint64_t(0);
+				uint64_t present = b & slots;
+				return present != uint64_t(0);
 			}
-			inline uint8_t GetNumConstantBuffers() const
+			inline uint8_t GetNumResources(uint64_t slots) const
 			{
 				uint8_t count = 0;
-				uint64_t slotsRemaining = constantBufferSlots;
-				for(uint8_t s=0;s<64;s++)
+				uint64_t slotsRemaining = slots;
+				for (uint8_t s = 0; s < 64; s++)
 				{
 					uint64_t b = uint64_t(1) << uint64_t(s);
-					uint64_t present = b & constantBufferSlots;
-					if(present != uint64_t(0))
+					uint64_t present = b & slots;
+					if (present != uint64_t(0))
 						count++;
-					slotsRemaining&=(~b);
-					if(!slotsRemaining)
+					slotsRemaining &= (~b);
+					if (!slotsRemaining)
 						break;
 				}
 				return count;
 			}
-			
+			inline void UseSlot(uint64_t &slots,uint8_t s)
+			{
+				slots |= uint64_t(1) << uint64_t(s);
+			}
+			//! Bitmask for which constant buffer slots are in this group.
+			uint64_t constantBufferSlots=0;
+			inline void UseConstantBufferSlot(uint8_t s)
+			{
+				UseSlot(constantBufferSlots,s);
+			}
+			inline bool UsesConstantBufferSlot(uint8_t s) const
+			{
+				return UsesSlot(constantBufferSlots,s);
+			}
+			uint64_t readOnlyResourceSlots = 0;
+			inline void UseReadOnlyResourceSlot(uint8_t s)
+			{
+				UseSlot(readOnlyResourceSlots, s);
+			}
+			inline bool UsesReadOnlyResourceSlot(uint8_t s) const
+			{
+				return UsesSlot(readOnlyResourceSlots, s);
+			}
+			inline uint8_t GetNumConstantBuffers() const
+			{
+				return GetNumResources(constantBufferSlots);
+			}
+			inline uint8_t GetNumReadOnlyResources() const
+			{
+				return GetNumResources(readOnlyResourceSlots);
+			}
 		};
 	}
 }

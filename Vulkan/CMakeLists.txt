@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
+
 option(PLATFORM_SUPPORT_VULKAN_MULTIVIEW "" OFF)
 option(PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR "" OFF)
+option(PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS "" OFF)
 
 file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
@@ -21,6 +23,18 @@ file(GLOB SHADER_DEFS
 set(VK_DEFS SIMUL_VULKAN_DLL=1 VK_PROTOTYPES)
 set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_MULTIVIEW=$<BOOL:${PLATFORM_SUPPORT_VULKAN_MULTIVIEW}>)
 set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR=$<BOOL:${PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR}>)
+set(VK_DEFS ${VK_DEFS} PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS=$<BOOL:${PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS}>)
+
+# Get Vulkan Memory Allocator library into [PLATFORM_Source]/External/VulkanMemoryAllocator
+if(NOT EXISTS "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include/vk_mem_alloc.h")
+	#Git Tag v3.0.1 is a6bfc237255a6bac1513f7c1ebde6d8aed6b5191
+	file(DOWNLOAD
+		https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/blob/a6bfc237255a6bac1513f7c1ebde6d8aed6b5191/include/vk_mem_alloc.h
+		"${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include/vk_mem_alloc.h")
+endif()
+
+# Add in vk_mem_alloc.h
+set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include/vk_mem_alloc.h")
 
 if(SIMUL_SOURCE_BUILD)
 	add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} ${SHADER_INCLUDES} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
@@ -38,5 +52,7 @@ if(SIMUL_SOURCE_BUILD)
 	# For parallel_hashmap
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
+	# For VMA
+	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include")
 
 endif()

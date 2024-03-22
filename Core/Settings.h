@@ -44,6 +44,8 @@ namespace platform
 			}
 			void SetValue(const char *name, const char *value)
 			{
+				reading = false;
+
 				ini.SetValue(currentGroup.c_str(), name, value, nullptr, true);
 			}
 
@@ -68,7 +70,6 @@ namespace platform
 				{
 					return (T)ini.GetLongValue(currentGroup.c_str(), name, static_cast<long>(defaultValue));
 				}
-				
 				else
 				{
 					SIMUL_BREAK("Unknown Type passed as template argument");
@@ -77,6 +78,11 @@ namespace platform
 			}
 			const char *GetValue(const char *name, const char *defaultValue)
 			{
+				if (!reading)
+				{
+					LoadFile();
+				}
+
 				return ini.GetValue(currentGroup.c_str(), name, defaultValue);
 			}
 

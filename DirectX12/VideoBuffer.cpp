@@ -23,8 +23,8 @@ VideoBuffer::~VideoBuffer()
 void VideoBuffer::InvalidateDeviceObjects()
 {
 	auto rPlat = (dx12::RenderPlatform*)renderPlatform;
-	rPlat->PushToReleaseManager(mGpuHeap, "VideoBuffer");
-	rPlat->PushToReleaseManager(mIntermediateHeap, "VideoBuffer");
+	rPlat->PushToReleaseManager(mGpuHeap, &mGpuHeapAllocationInfo);
+	rPlat->PushToReleaseManager(mIntermediateHeap, &mIntermediateHeapAllocationInfo);
 	mIntermediateHeap = nullptr;
 	mGpuHeap = nullptr;
 	SAFE_DELETE_ARRAY(mGpuMappedPtr);
@@ -41,36 +41,26 @@ void VideoBuffer::EnsureBuffer(crossplatform::RenderPlatform* r, crossplatform::
 	renderPlatform = r;
 	mBufferType = bufferType;
 
-	mState = D3D12_RESOURCE_STATE_COMMON;
-	
-	auto defaultProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto defaultDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&defaultProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&defaultDesc,
-		mState,
+	((dx12::RenderPlatform *)renderPlatform)->CreateResource(
+		defaultDesc,
+		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
-		SIMUL_PPV_ARGS(&mGpuHeap)
-	);
-	SIMUL_ASSERT(res == S_OK);
+		D3D12_HEAP_TYPE_DEFAULT,
+		&mGpuHeap,
+		mGpuHeapAllocationInfo,
+		"VideoBufferUpload");
 	SIMUL_GPU_TRACK_MEMORY(mGpuHeap, mBufferSize)
-	mGpuHeap->SetName(L"VideoBufferUpload");
-	auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto bufferDesc=CD3DX12_RESOURCE_DESC::Buffer(mBufferSize);
-	res = renderPlatform->AsD3D12Device()->CreateCommittedResource
-	(
-		&uploadProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&bufferDesc,
+
+	((dx12::RenderPlatform *)renderPlatform)->CreateResource(
+		defaultDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		SIMUL_PPV_ARGS(&mIntermediateHeap)
-	);
-	SIMUL_ASSERT(res == S_OK);
+		D3D12_HEAP_TYPE_UPLOAD,
+		&mIntermediateHeap,
+		mIntermediateHeapAllocationInfo,
+		"IntermediateVideoBuffer");
 	SIMUL_GPU_TRACK_MEMORY(mIntermediateHeap, mBufferSize)
-	mIntermediateHeap->SetName(L"IntermediateVideoBuffer");
 
 	mGpuMappedPtr = new UINT8[mBufferSize];
 }

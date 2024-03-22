@@ -827,7 +827,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>")"									{
 													stdReturn(')');
 												}
-<IN_SHADER>"="									{
+<IN_SHADER,IN_LAYOUT>"="									{
 													stdReturn('=');
 												}
 <IN_SHADER>";"									{
@@ -1229,6 +1229,18 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_LAYOUT>"MAX_VERTEX_COUNT"					{
 													modReturn(MAX_VERTEX_COUNT, "MaxVertexCount");
 												}
+<IN_LAYOUT>"ResourceGroup"						{
+													stdReturn(RESOURCE_GROUP_DECLARATION);
+												}
+<IN_LAYOUT>"texture"							{
+													stdReturn(RESOURCE_GROUP_TEXTURE);
+												}
+<IN_LAYOUT>"constantbuffer"						{
+													stdReturn(RESOURCE_GROUP_CONSTANTBUFFER);
+												}
+<IN_LAYOUT>"structuredbuffer"					{
+													stdReturn(RESOURCE_GROUP_STRUCTUREDBUFFER);
+												}
 <INITIAL>","									{
 													if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn(',');}
 												}
@@ -1258,12 +1270,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														errLex(yytext);
 													}
 												}
-<IN_RENDER_STATE>"{"							{
+<IN_RENDER_STATE,IN_LAYOUT>"{"							{
 													sfxlval.strs[0]=yytext;
 													brace++;
 													return '{';
 												}
-<IN_RENDER_STATE>"}"							{
+<IN_RENDER_STATE,IN_LAYOUT>"}"							{
 													sfxlval.strs[0]=yytext;
 													brace--;
 													return '}';

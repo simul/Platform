@@ -80,6 +80,7 @@ ShaderCache
 
 # CMake Ignores.
 build/
+build*/
 
 # PGC Ignores.
 Simul_PGC/intermediate

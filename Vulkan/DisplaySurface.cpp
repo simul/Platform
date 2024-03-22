@@ -658,75 +658,84 @@ void DisplaySurface::CreateFramebuffers()
 void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex, long long frameNumber)
 {
 	if (delegatorReadWriteMutex)
+	{
+		if(delegatorReadWriteMutex->locked())
+ 			return;
 		delegatorReadWriteMutex->lock_for_write();
-
-	if (!swapchain)
-		InitSwapChain();
-
-	auto *vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
-
-	vk::Result result = vk::Result::eSuccess;
-	do
-	{
-		result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[0], vk::Fence(), &current_buffer);
-		if (result == vk::Result::eErrorOutOfDateKHR)
-		{
-			// demo->swapchain is out of date (e.g. the window was resized) and
-			// must be recreated:
-			Resize();
-		}
-		else if (result == vk::Result::eSuboptimalKHR)
-		{
-			// swapchain is not as optimal as it could be, but the platform's
-			// presentation engine will still present the image correctly.
-			break;
-		}
-		else
-		{
-			SIMUL_ASSERT(result == vk::Result::eSuccess);
-		}
-	} while (result != vk::Result::eSuccess);
-
-	result = vulkanDevice->waitForFences(1, &fences[current_buffer], VK_TRUE, UINT64_MAX);
-	if (result != vk::Result::eSuccess)
-	{
-		SIMUL_CERR << "Vulkan operation failed\n";
 	}
-	result = vulkanDevice->resetFences(1, &fences[current_buffer]);
-	if (result != vk::Result::eSuccess)
+	try
 	{
-		SIMUL_CERR << "Vulkan operation failed\n";
+		if (!swapchain)
+			InitSwapChain();
+
+		auto *vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
+
+		vk::Result result = vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
+		if (result != vk::Result::eSuccess)
+		{
+			SIMUL_CERR << "Vulkan operation failed\n";
+		}
+		result = vulkanDevice->resetFences(1, &fences[frame_index]);
+		if (result != vk::Result::eSuccess)
+		{
+			SIMUL_CERR << "Vulkan operation failed\n";
+		}
+
+		do
+		{
+			result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
+			if (result == vk::Result::eErrorOutOfDateKHR)
+			{
+				// demo->swapchain is out of date (e.g. the window was resized) and
+				// must be recreated:
+				Resize();
+			}
+			else if (result == vk::Result::eSuboptimalKHR)
+			{
+				// swapchain is not as optimal as it could be, but the platform's
+				// presentation engine will still present the image correctly.
+				break;
+			}
+			else
+			{
+				SIMUL_ASSERT(result == vk::Result::eSuccess);
+			}
+		} while (result != vk::Result::eSuccess);
+
+		vulkanDevice->waitIdle();
+
+		SwapchainImageResources &res = swapchain_image_resources[current_buffer];
+		auto &commandBuffer = res.cmd;
+		auto &fb = res.framebuffer;
+
+		auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+		result = commandBuffer.begin(&commandInfo);
+		SIMUL_VK_CHECK(result);
+
+		deferredContext.platform_context = &commandBuffer;
+		deferredContext.renderPlatform = renderPlatform;
+
+		EnsureImageLayout();
+
+		ERRNO_BREAK
+		if (renderer)
+		{
+			auto *rp = (vulkan::RenderPlatform *)renderPlatform;
+			rp->SetDefaultColourFormat(pixelFormat);
+			renderer->Render(mViewId, deferredContext.platform_context, &fb, viewport.w, viewport.h, frameNumber);
+		}
+
+		EnsureImagePresentLayout();
+
+		commandBuffer.end();
+
+		Present();
+		Resize();
 	}
-
-	vulkanDevice->waitIdle();
-
-	SwapchainImageResources &res = swapchain_image_resources[current_buffer];
-	auto &commandBuffer = res.cmd;
-	auto &fb = res.framebuffer;
-
-	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-	result = commandBuffer.begin(&commandInfo);
-	SIMUL_VK_CHECK(result);
-
-	deferredContext.platform_context = &commandBuffer;
-	deferredContext.renderPlatform = renderPlatform;
-
-	EnsureImageLayout();
-
-	ERRNO_BREAK
-	if (renderer)
+	catch(...)
 	{
-		auto *rp = (vulkan::RenderPlatform *)renderPlatform;
-		rp->SetDefaultColourFormat(pixelFormat);
-		renderer->Render(mViewId, deferredContext.platform_context, &fb, viewport.w, viewport.h, frameNumber);
+		SIMUL_BREAK("");
 	}
-
-	EnsureImagePresentLayout();
-
-	commandBuffer.end();
-
-	Present();
-	Resize();
 
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
@@ -790,13 +799,13 @@ void DisplaySurface::Present()
 	auto const submit_info = vk::SubmitInfo()
 								 .setPWaitDstStageMask(&pipe_stage_flags)
 								 .setWaitSemaphoreCount(1)
-								 .setPWaitSemaphores(&image_acquired_semaphores[0])
+								 .setPWaitSemaphores(&image_acquired_semaphores[frame_index])
 								 .setCommandBufferCount(1)
 								 .setPCommandBuffers(&swapchain_image_resources[current_buffer].cmd)
 								 .setSignalSemaphoreCount(1)
-								 .setPSignalSemaphores(&draw_complete_semaphores[0]);
+								 .setPSignalSemaphores(&draw_complete_semaphores[frame_index]);
 
-	vk::Result result = graphics_queue.submit(1, &submit_info, fences[current_buffer]);
+	vk::Result result = graphics_queue.submit(1, &submit_info, fences[frame_index]);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
@@ -809,11 +818,11 @@ void DisplaySurface::Present()
 		auto const present_submit_info = vk::SubmitInfo()
 											 .setPWaitDstStageMask(&pipe_stage_flags)
 											 .setWaitSemaphoreCount(1)
-											 .setPWaitSemaphores(&draw_complete_semaphores[0])
+											 .setPWaitSemaphores(&draw_complete_semaphores[frame_index])
 											 .setCommandBufferCount(1)
 											 .setPCommandBuffers(&swapchain_image_resources[current_buffer].graphics_to_present_cmd)
 											 .setSignalSemaphoreCount(1)
-											 .setPSignalSemaphores(&image_ownership_semaphores[0]);
+											 .setPSignalSemaphores(&image_ownership_semaphores[frame_index]);
 
 		result = present_queue.submit(1, &present_submit_info, vk::Fence());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -823,8 +832,7 @@ void DisplaySurface::Present()
 	// otherwise wait for draw complete
 	auto const presentInfo = vk::PresentInfoKHR()
 								 .setWaitSemaphoreCount(1)
-								 .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[0]
-																			: &draw_complete_semaphores[0])
+								 .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index] : &draw_complete_semaphores[frame_index])
 								 .setSwapchainCount(1)
 								 .setPSwapchains(&swapchain)
 								 .setPImageIndices(&current_buffer);
@@ -845,6 +853,9 @@ void DisplaySurface::Present()
 	{
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
+
+	frame_index += 1;
+	frame_index %= swapchain_image_resources.size();
 }
 
 void DisplaySurface::EndFrame()

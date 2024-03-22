@@ -22,7 +22,7 @@ namespace platform
 			virtual							~PlatformStructuredBuffer();
 			void							RestoreDeviceObjects(crossplatform::RenderPlatform* renderPlatform,int ct,int unit_size,bool computable,bool cpu_read,void *init_data,const char *name, crossplatform::ResourceUsageFrequency b);
 			void							Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource);
-            void                            ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource);
+			void							ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource &shaderResource);
 			//! Returns an initialized pointer with the size of this structured buffer that can be used to set data. After
 			//! changing the data of this pointer, we must Apply this SB so the changes will be uploaded to the GPU.
 			void*							GetBuffer(crossplatform::DeviceContext &deviceContext);
@@ -36,20 +36,23 @@ namespace platform
 			void							SetData(crossplatform::DeviceContext &deviceContext,void *data);
 			void							InvalidateDeviceObjects();
 			void							Unbind(crossplatform::DeviceContext &deviceContext);
-			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext);
-			D3D12_CPU_DESCRIPTOR_HANDLE*    AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12ShaderResourceView(crossplatform::DeviceContext &deviceContext);
+			D3D12_CPU_DESCRIPTOR_HANDLE*	AsD3D12UnorderedAccessView(crossplatform::DeviceContext &deviceContext,int = 0);
 			ID3D12Resource*					AsD3D12Resource(crossplatform::DeviceContext &deviceContext);
 			void							ActualApply(platform::crossplatform::DeviceContext& deviceContext);
 
 		private:
-            //! If we called GetBuffer, we need to update the GPU data, this methods, handles updating the data at 
-            //! different offsets + CPU<->GPU memory transition
-            void                            UpdateBuffer(platform::crossplatform::DeviceContext& deviceContext);
+			//! If we called GetBuffer, we need to update the GPU data, this methods, handles updating the data at 
+			//! different offsets + CPU<->GPU memory transition
+			void							UpdateBuffer(platform::crossplatform::DeviceContext& deviceContext);
 
 			static const unsigned int		mBuffering = 3;
 			ID3D12Resource*					mGPUBuffer;
+			AllocationInfo					mGPUAllocation;
 			ID3D12Resource*					mUploadBuffer;
+			AllocationInfo					mUploadAllocation;
 			ID3D12Resource*					mReadBuffers[mBuffering];
+			AllocationInfo					mReadAllocations[mBuffering];
 
 			//! We hold the currently mapped pointer
 			UINT8*							mReadSrc;
@@ -61,8 +64,8 @@ namespace platform
 			dx12::Heap						mBufferSrvHeap;
 			dx12::Heap						mBufferUavHeap;
 
-            std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> mSrvViews;
-            std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> mUavViews;
+			std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> mSrvViews;
+			std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> mUavViews;
 
 			D3D12_RESOURCE_STATES			mCurrentState;
 
@@ -72,15 +75,15 @@ namespace platform
 			int								mElementByteSize;
 			//! Total size (size of one unit * max applies)
 			int								mTotalSize;
-            int								mUnitSize;
-            //! Does this buffer allow reads from CPU?
-            bool							mCpuRead;
+			int								mUnitSize;
+			//! Does this buffer allow reads from CPU?
+			bool							mCpuRead;
 
-            //! How many times we can Apply this SB with different data
-            //! During runtime we will check the current applies and recreate if needed
-            int								mMaxApplyMod = 6;
-            int								mCurApplies;
-            uint64_t						mLastFrame;
+			//! How many times we can Apply this SB with different data
+			//! During runtime we will check the current applies and recreate if needed
+			int								mMaxApplyMod = 6;
+			int								mCurApplies;
+			uint64_t						mLastFrame;
 			int								mFrameCycle=0;
 		};
 	}

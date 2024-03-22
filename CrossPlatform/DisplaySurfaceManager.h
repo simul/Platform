@@ -20,44 +20,47 @@ namespace platform
 		class SIMUL_CROSSPLATFORM_EXPORT DisplaySurfaceManager: public crossplatform::DisplaySurfaceManagerInterface
 		{
 		public:
-            DisplaySurfaceManager();
+			DisplaySurfaceManager();
 			~DisplaySurfaceManager();
 			void Initialize(RenderPlatform *r);
 			void Shutdown();
 			//! Call from rendering thread.
-			void RenderAll(bool clear_list=true);		
+			void RenderAll(bool clear_list = true) override;
 			// Implementing Window Manager, which associates Hwnd's with renderers and view ids:
 			//! Add a window. Creates a new Swap Chain.
-			void AddWindow(cp_hwnd h,crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN);
+			void AddWindow(cp_hwnd h, crossplatform::PixelFormat pfm=crossplatform::PixelFormat::UNKNOWN, bool vsync = false) override;
 			//! Removes the window and destroys its associated Swap Chain.
-			void RemoveWindow(cp_hwnd h);
-			void Render(cp_hwnd hwnd);
-			void SetRenderer(crossplatform::RenderDelegatorInterface *ci);
-			void SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output);
-			void ResizeSwapChain(cp_hwnd hwnd);
-			int GetViewId(cp_hwnd hwnd);
-            DisplaySurface *GetWindow(cp_hwnd hwnd);
+			void RemoveWindow(cp_hwnd h) override;
+			void Render(cp_hwnd hwnd) override;
+			void SetRenderer(crossplatform::RenderDelegatorInterface *ci) override;
+			void SetFullScreen(cp_hwnd hwnd, bool fullscreen, int which_output) override;
+			void ResizeSwapChain(cp_hwnd hwnd) override;
+			int GetViewId(cp_hwnd hwnd) override;
 
-			platform::core::ReadWriteMutex *delegatorReadWriteMutex;
-			///
+			DisplaySurface *GetWindow(cp_hwnd hwnd);
+
 			void EndFrame(bool clear=true);
 			typedef std::function<DisplaySurface*(cp_hwnd)> CreateSurfaceDelegate;
 			void SetCreateSurfaceDelegate(CreateSurfaceDelegate d)
 			{
 				createSurfaceDelegate=d;
 			}
-		protected:
+
+			platform::core::ReadWriteMutex *GetDelegatorReadWriteMutex() { return delegatorReadWriteMutex; }
+
+		private:
+			platform::core::ReadWriteMutex *delegatorReadWriteMutex=nullptr;
 			CreateSurfaceDelegate createSurfaceDelegate;
 	
-            static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
+			static const PixelFormat                    kDisplayFormat = BGRA_8_UNORM;
 			RenderPlatform*                             renderPlatform;
 			typedef std::map<cp_hwnd, DisplaySurface*>  DisplaySurfaceMap;
-            DisplaySurfaceMap                           surfaces;
+			DisplaySurfaceMap                           surfaces;
 			RenderDelegatorInterface					*renderDelegater=nullptr;
 			std::set<cp_hwnd> toRender;
 		};
 	}
 }
 #ifdef _MSC_VER
-    #pragma warning(pop)  
+	#pragma warning(pop)  
 #endif
