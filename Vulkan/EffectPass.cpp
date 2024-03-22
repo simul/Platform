@@ -52,6 +52,7 @@ void EffectPass::InvalidateDeviceObjects()
 	renderPlatform = nullptr;
 	m_Initialized = false;
 }
+
 void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompute)
 {
 	// If new frame, update current frame index and reset the apply count
@@ -501,7 +502,6 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 {
 	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
 	vk::Device* vulkanDevice = rp->AsVulkanDevice();
-	m_Initialized = true;
 	int swapchainImageCount = SIMUL_VULKAN_FRAME_LAG + 1;
 	
 	// TODO: This is super-inefficient:
@@ -708,6 +708,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	
 	delete[] layoutBindings;
 	layoutBindings = nullptr;
+	m_Initialized = true;
 }
 
 void EffectPass::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet)

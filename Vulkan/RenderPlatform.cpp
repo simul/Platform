@@ -129,15 +129,15 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 #endif
 
 	// Create the three shared resource group layouts
-	int groupCounts[]={10,30,100,0};
-	int swapchainImageCount=4;
+	size_t totalNumDescriptors=0;
 	for(uint8_t i=0;i<crossplatform::PER_PASS_RESOURCE_GROUP;i++)
 	{
-		int countPerFrame = groupCounts[i];
+		int countPerFrame = resourceGroupCountPerFrame[i];
+		CreateDescriptorPool(i, countPerFrame);
 		const crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[i];
 		size_t numConstantBufferResourceSlots = resourceGroupLayout.GetNumConstantBuffers();
 		size_t numReadOnlyResourceSlots = resourceGroupLayout.GetNumReadOnlyResources();
-		size_t numDescriptors = numConstantBufferResourceSlots + numReadOnlyResourceSlots;
+		size_t numDescriptors = resourceGroupLayout.GetNumResources();
 
 		vk::Result result;
 		vk::DescriptorSetLayoutBinding *layoutBindings = nullptr;
@@ -145,66 +145,44 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 
 		if (numDescriptors > 0)
 		{
-			// Create the "Descriptor Pool":
+		// Set up the "Descriptor Set Layout CreateInfo":
+			layoutBindings = new vk::DescriptorSetLayoutBinding[numDescriptors];
+			
+			int slot=0;
+			int binding_index=0;
+			for (int j = 0; j < numConstantBufferResourceSlots; j++, binding_index++)
 			{
-				vk::DescriptorPoolSize *poolSizes = new vk::DescriptorPoolSize[numDescriptors];
-				int poolSizeIdx = 0;
-				if (numConstantBufferResourceSlots)
-				{
-					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numConstantBufferResourceSlots);
-				}
-				if (numReadOnlyResourceSlots)
-				{
-					poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampledImage).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numReadOnlyResourceSlots);
-				}
-				const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
-				result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPool);
-				SIMUL_VK_CHECK(result);
-				SetVulkanName(this, mDescriptorPool, fmt::format("Descriptor pool octave {0}", i));
-				delete[] poolSizes;
+				while(slot<64&&!resourceGroupLayout.UsesConstantBufferSlot(slot))
+					slot++;
+				if(slot>=64)
+					break;
+				vk::DescriptorSetLayoutBinding &binding = layoutBindings[j];
+				vk::ShaderStageFlags stageFlags = (vk::ShaderStageFlags)(VK_SHADER_STAGE_ALL);
+				binding.setBinding(GenerateConstantBufferSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+				slot++;
+			}
+			slot = 0;
+			for (int j = 0; j < numReadOnlyResourceSlots; j++,binding_index++)
+			{
+				while (slot < 64 && !resourceGroupLayout.UsesReadOnlyResourceSlot(slot))
+					slot++;
+				if (slot >= 64)
+					break;
+				vk::DescriptorSetLayoutBinding &binding = layoutBindings[binding_index];
+				vk::ShaderStageFlags stageFlags = (vk::ShaderStageFlags)(VK_SHADER_STAGE_ALL);
+				binding.setBinding(GenerateTextureSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eSampledImage)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+				slot++;
 			}
 
-			// Set up the "Descriptor Set Layout CreateInfo":
-			if(numDescriptors)
-			{
-				layoutBindings = new vk::DescriptorSetLayoutBinding[numDescriptors];
-				
-				int slot=0;
-				int binding_index=0;
-				for (int j = 0; j < numConstantBufferResourceSlots; j++, binding_index++)
-				{
-					while(slot<64&&!resourceGroupLayout.UsesConstantBufferSlot(slot))
-						slot++;
-					if(slot>=64)
-						break;
-					vk::DescriptorSetLayoutBinding &binding = layoutBindings[j];
-					vk::ShaderStageFlags stageFlags = (vk::ShaderStageFlags)(VK_SHADER_STAGE_ALL);
-					binding.setBinding(GenerateConstantBufferSlot(slot))
-						.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-						.setDescriptorCount(1)
-						.setStageFlags(stageFlags)
-						.setPImmutableSamplers(nullptr);
-					slot++;
-				}
-				slot = 0;
-				for (int j = 0; j < numReadOnlyResourceSlots; j++,binding_index++)
-				{
-					while (slot < 64 && !resourceGroupLayout.UsesReadOnlyResourceSlot(slot))
-						slot++;
-					if (slot >= 64)
-						break;
-					vk::DescriptorSetLayoutBinding &binding = layoutBindings[binding_index];
-					vk::ShaderStageFlags stageFlags = (vk::ShaderStageFlags)(VK_SHADER_STAGE_ALL);
-					binding.setBinding(GenerateTextureSlot(slot))
-						.setDescriptorType(vk::DescriptorType::eSampledImage)
-						.setDescriptorCount(1)
-						.setStageFlags(stageFlags)
-						.setPImmutableSamplers(nullptr);
-					slot++;
-				}
-
-				descriptorSetLayoutCI.setBindingCount((uint32_t)numDescriptors).setPBindings(layoutBindings);
-			}
+			descriptorSetLayoutCI.setBindingCount((uint32_t)numDescriptors).setPBindings(layoutBindings);
 		}
 
 		// Create the "Descriptor Set Layout":
@@ -215,6 +193,32 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	for (int g= 0; g < 3; g++)
 	for (int i = 0; i < s_DescriptorSetCount; i++)
 		m_DescriptorSets_It[g][i] = m_DescriptorSets[g][i].begin();
+}
+
+void RenderPlatform::CreateDescriptorPool(int g, int countPerFrame)
+{
+	const crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[g];
+	size_t numConstantBufferResourceSlots = resourceGroupLayout.GetNumConstantBuffers();
+	size_t numReadOnlyResourceSlots = resourceGroupLayout.GetNumReadOnlyResources();
+	size_t numDescriptors = resourceGroupLayout.GetNumResources();
+	if (numDescriptors > 0)
+	{
+		vk::DescriptorPoolSize *poolSizes = new vk::DescriptorPoolSize[numDescriptors];
+		int poolSizeIdx = 0;
+		if (numConstantBufferResourceSlots)
+		{
+			poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numConstantBufferResourceSlots);
+		}
+		if (numReadOnlyResourceSlots)
+		{
+			poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampledImage).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numReadOnlyResourceSlots);
+		}
+		const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
+		vk::Result result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPools[g]);
+		SIMUL_VK_CHECK(result);
+		SetVulkanName(this, mDescriptorPools[g], fmt::format("Descriptor pool octave {0}", g));
+		delete[] poolSizes;
+	}
 }
 
 vk::SamplerYcbcrConversionInfo* RenderPlatform::GetSamplerYcbcrConversionInfo()
@@ -275,7 +279,10 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy3D);
 	SAFE_DELETE(mDummyTextureCube)
 	SAFE_DELETE(mDummyTextureCubeArray)
-	vulkanDevice->destroyDescriptorPool(mDescriptorPool, nullptr);
+	for(int g=0;g<3;g++)
+	{
+		vulkanDevice->destroyDescriptorPool(mDescriptorPools[g], nullptr);
+	}
 
 	ClearReleaseManager(true);
 
@@ -699,6 +706,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 				minDescriptorSet = std::min(int8_t(g), minDescriptorSet);
 				maxDescriptorSet = std::max(int8_t(g), maxDescriptorSet);
 			}
+			else return false;
 		}
 	}
 
@@ -1900,8 +1908,9 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 		return;
 
 	//BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
-	ApplyContextState(deviceContext);
-	commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
+	// Only actually draw if ApplyContextState() succeeds.
+	if(ApplyContextState(deviceContext))
+		commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
 	//EndEvent(deviceContext);
 }
 
@@ -2060,17 +2069,33 @@ void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, co
 												   .setDescriptorSetCount(1)
 												   .setPSetLayouts(&descriptorSetLayout);
 
-	if (mDescriptorPool)
+	if (mDescriptorPools[g])
 	{
-		alloc_info = alloc_info.setDescriptorPool(mDescriptorPool);
+		alloc_info = alloc_info.setDescriptorPool(mDescriptorPools[g]);
 		vk::Result result = vulkanDevice->allocateDescriptorSets(&alloc_info, &descriptorSet);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
 		if (result == vk::Result::eSuccess)
+		{
 			SetVulkanName(this, descriptorSet, fmt::format("Shared Descriptor set {0}",g));
+		}
+		else if(result==vk::Result::eErrorOutOfPoolMemory)
+		{
+			// The pool we allocated originally has no more to give.
+			resourceGroupCountPerFrame[g]*=2;
+			CreateDescriptorPool(g, resourceGroupCountPerFrame[g]);
+			alloc_info = alloc_info.setDescriptorPool(mDescriptorPools[g]);
+			result = vulkanDevice->allocateDescriptorSets(&alloc_info, &descriptorSet);
+		}
+		if (result != vk::Result::eSuccess)
+		{
+			SIMUL_CERR << "Failed to allocate descriptor set.\n";
+		}
+		if (descriptorSet.operator VkDescriptorSet() == nullptr)
+		{
+			SIMUL_CERR<<"Null descriptor set.\n";
+		}
 	}
 }
 
-vk::DescriptorSet*lastDescriptorSet[4][4];
 vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g)
 {
 	auto &cs = deviceContext.contextState;
@@ -2083,6 +2108,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		return lastDescriptorSet[descriptorSetFrame][g];
 
 	// get an unused Descriptor Set:
+	bool inserted=false;
 	if (m_DescriptorSets_It[g][descriptorSetFrame] == m_DescriptorSets[g][descriptorSetFrame].end())
 	{
 		// must insert a new descriptor:
@@ -2091,9 +2117,15 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		m_DescriptorSets_It[g][descriptorSetFrame]--;
 		AllocateDescriptorSets(*m_DescriptorSets_It[g][descriptorSetFrame], descriptorSetLayouts[g], g);
 		// std::cout << "New Descriptor Set added: 0x" << std::hex << (void*)((*m_DescriptorSets_It[m_InternalFrameIndex]).operator VkDescriptorSet()) << std::dec << std::endl;
+		inserted=true;
 	}
 
 	vk::DescriptorSet &descriptorSet = *(m_DescriptorSets_It[g][descriptorSetFrame]);
+	if (descriptorSet.operator VkDescriptorSet()==nullptr)
+	{
+		SIMUL_BREAK_ONCE("Null DescriptorSet error.");
+		return nullptr;
+	}
 	vk::Device *vulkanDevice = AsVulkanDevice();
 
 	int numConstantBuffers = resourceGroupLayout.GetNumConstantBuffers();
@@ -2215,6 +2247,15 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 			descriptorImageInfo->setSampler(vulkanRenderPlatform->GetSamplerYcbcr());
 		}*/
 		write.setPImageInfo(descriptorImageInfo);
+		bool no_res = write.pImageInfo == nullptr && write.pBufferInfo == nullptr && write.pTexelBufferView == nullptr;
+		no_res |= write.dstSet.operator VkDescriptorSet() == 0;
+		if (no_res)
+		{
+			SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in group '"
+					   << (uint32_t)g << "' has no valid resource associated with it." << std::endl;
+			SIMUL_BREAK_ONCE("VkWriteDescriptorSet error.");
+			return nullptr;
+		}
 		cs.textureSlots |= 1 << slot;
 		slot++;
 		descriptorImageInfo++;
@@ -2231,7 +2272,8 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 			{
 				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in group '"
 						   << (uint32_t)g << "' has no valid resource associated with it." << std::endl;
-				SIMUL_BREAK("VkWriteDescriptorSet error.");
+				SIMUL_BREAK_ONCE("VkWriteDescriptorSet error.");
+				return nullptr;
 			}
 		}
 		vulkanDevice->updateDescriptorSets(numDescriptors, m_writeDescriptorSets.data(), 0, nullptr);
