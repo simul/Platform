@@ -569,19 +569,19 @@
 	// Stream operators
 	
 	template <typename T>
-	std::ostream &operator<<(std::ostream &os, tvector2<T> v)
+	std::ostream &operator<<(std::ostream &os, const tvector2<T> &v)
 	{
 		os << "(" << v.x << ", " << v.y << ")";
 		return os;
 	}
 	template <typename T>
-	std::ostream &operator<<(std::ostream &os, tvector3<T> v)
+	std::ostream &operator<<(std::ostream &os, const tvector3<T> &v)
 	{
 		os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
 		return os;
 	}
 	template <typename T>
-	std::ostream &operator<<(std::ostream &os, tvector4<T> v)
+	std::ostream &operator<<(std::ostream &os, const tvector4<T> &v)
 	{
 		os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
 		return os;
@@ -590,36 +590,83 @@
 	// Min/Max
 
 	template <typename T>
-	tvector2<T> max(tvector2<T> a, tvector2<T> b)
+	tvector2<T> max(const tvector2<T>& a, const tvector2<T>& b)
 	{
 		return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
 	};
 	template <typename T>
-	tvector2<T> min(tvector2<T> a, tvector2<T> b)
+	tvector2<T> min(const tvector2<T>& a, const tvector2<T>& b)
 	{
 		return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
 	};
 
 	template <typename T>
-	tvector3<T> max(tvector3<T> a,tvector3<T> b)
+	tvector3<T> max(const tvector3<T>& a, const tvector3<T>& b)
 	{
-		return tvector3<T>(std::max(a.x,b.x),std::max(a.y,b.y),std::max(a.z,b.z));
+		return tvector3<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z));
 	};
-	template <typename T> tvector3<T> min(tvector3<T> a,tvector3<T> b)
+	template <typename T> 
+	tvector3<T> min(const tvector3<T>& a, const tvector3<T>& b)
 	{
-		return tvector3<T>(std::min(a.x,b.x),std::min(a.y,b.y),std::min(a.z,b.z));
+		return tvector3<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z));
 	};
 
 	template <typename T>
-	tvector4<T> max(tvector4<T> a, tvector4<T> b)
+	tvector4<T> max(const tvector4<T>& a, const tvector4<T>& b)
 	{
 		return tvector4<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
 	};
 	template <typename T>
-	tvector4<T> min(tvector4<T> a, tvector4<T> b)
+	tvector4<T> min(const tvector4<T>& a, const tvector4<T>& b)
 	{
 		return tvector4<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
 	};
+
+	//Clamp
+
+	template <typename T>
+	T clamp(const T &t, const T &mn, const T &mx)
+	{
+		return std::max(std::min(t, mx), mn);
+	}
+	template <typename T>
+	tvector2<T> clamp(const tvector2<T> &t, const tvector2<T> &mn, const tvector2<T> &mx)
+	{
+		return max(min(t, mx), mn);
+	}
+	template <typename T>
+	tvector3<T> clamp(const tvector3<T> &t, const tvector3<T> &mn, const tvector3<T> &mx)
+	{
+		return max(min(t, mx), mn);
+	}
+	template <typename T>
+	tvector4<T> clamp(const tvector4<T> &t, const tvector4<T> &mn, const tvector4<T> &mx)
+	{
+		return max(min(t, mx), mn);
+	}
+
+	//Saturate
+
+	template <typename T>
+	T saturate(const T &t)
+	{
+		return clamp(t, T(1.0), T(0.0));
+	}
+	template <typename T>
+	tvector2<T> saturate(const tvector2<T> &t)
+	{
+		return clamp(t, tvector2<T>(1, 1), tvector2<T>(0, 0));
+	}
+	template <typename T>
+	tvector3<T> saturate(const tvector3<T> &t)
+	{
+		return clamp(t, tvector3<T>(1, 1, 1), tvector3<T>(0, 0, 0));
+	}
+	template <typename T>
+	tvector4<T> saturate(const tvector4<T> &t)
+	{
+		return clamp(t, tvector4<T>(1, 1, 1, 1), tvector4<T>(0, 0, 0, 0));
+	}
 
 	//Length
 
@@ -672,19 +719,24 @@
 	//Lerp
 
 	template <typename T>
-	tvector2<T> lerp(tvector2<T> a, tvector2<T> b, T x)
+	T lerp(const T& a, const T& b, const T& x)
+	{
+		return b * x + a * (T(1.0) - x);
+	}
+	template <typename T>
+	tvector2<T> lerp(const tvector2<T>& a, const tvector2<T>& b, const T& x)
 	{
 		tvector2 c = b * x + a * (T(1.0) - x);
 		return c;
 	}
 	template<typename T>
-	tvector3<T> lerp(tvector3<T> a, tvector3<T> b, T x)
+	tvector3<T> lerp(const tvector3<T>& a, const tvector3<T>& b, const T& x)
 	{
 		tvector3 c = b * x + a * (T(1.0) - x);
 		return c;
 	}
 	template <typename T>
-	tvector4<T> lerp(tvector4<T> a, tvector4<T> b, T x)
+	tvector4<T> lerp(const tvector4<T>& a, const tvector4<T>& b, const T& x)
 	{
 		tvector4 c = b * x + a * (T(1.0) - x);
 		return c;
