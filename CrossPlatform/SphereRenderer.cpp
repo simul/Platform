@@ -1,4 +1,5 @@
 #include "SphereRenderer.h"
+#include "Platform/CrossPlatform/Camera.h"
 
 #if SIMUL_EDITOR
 using namespace platform;

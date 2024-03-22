@@ -113,6 +113,10 @@
 		{
 			return (x!=v.x||y!=v.y);
 		}
+		operator T *()
+		{
+			return &x;
+		}
 		operator const T *() const
 		{
 			return &x;
@@ -127,6 +131,20 @@
 		{
 			x=v.x;
 			y=v.y;
+			return *this;
+		}
+		template<typename U>
+		const tvector2& operator=(const U *v)
+		{
+			x=T(v[0]);
+			y=T(v[1]);
+			return *this;
+		}
+		template<typename U>
+		const tvector2& operator=(const tvector2<U> &v)
+		{
+			x=T(v.x);
+			y=T(v.y);
 			return *this;
 		}
 		void operator+=(tvector2 v)
@@ -263,18 +281,26 @@
 		{
 			return (x!=v.x||y!=v.y||z!=v.z);
 		}
+		const tvector3& operator=(const T *v)
+		{
+			x=v[0];
+			y=v[1];
+			z=v[2];
+			return *this;
+		}
+		const tvector3& operator=(const tvector3 &v)
+		{
+			x=v.x;
+			y=v.y;
+			z=v.z;
+			return *this;
+		}
 		template <typename U>
-		void operator=(const U *v)
+		const tvector3& operator=(const U *v)
 		{
 			x=T(v[0]);
 			y=T(v[1]);
 			z=T(v[2]);
-		}
-		template<typename U> 
-		const tvector3 &operator=(const tvector2<U> &u)
-		{
-			x = (T)u.x;
-			y = (T)u.y;
 			return *this;
 		}
 		template <typename U>
@@ -283,6 +309,13 @@
 			x = (T)u.x;
 			y = (T)u.y;
 			z = (T)u.z;
+			return *this;
+		}
+		template<typename U> 
+		const tvector3 &operator=(const tvector2<U> &u)
+		{
+			x = (T)u.x;
+			y = (T)u.y;
 			return *this;
 		}
 		void operator*=(T m)
@@ -448,6 +481,10 @@
 			this->z=T(v[2]);
 			this->w=T(v[3]);
 		}
+		operator T *()
+		{
+			return &x;
+		}
 		operator const T *() const
 		{
 			return &x;
@@ -458,6 +495,23 @@
 			y=v[1];
 			z=v[2];
 			w=v[3];
+			return *this;
+		}
+		const tvector4 &operator=(const tvector4 &u)
+		{
+			this->x=u.x;
+			this->y=u.y;
+			this->z=u.z;
+			this->w=u.w;
+			return *this;
+		}
+		template<typename U>
+		const tvector4 &operator=(const U *v)
+		{
+			x=T(v[0]);
+			y=T(v[1]);
+			z=T(v[2]);
+			w=T(v[3]);
 			return *this;
 		}
 		template<typename U>
@@ -1033,9 +1087,9 @@
 		//! with the translation in the 4th column.
 		static inline tmatrix4<T> unscaled_inverse_transform(const tmatrix4<T> &M) 
 		{
-#ifdef _DEBUG
+		#ifdef _DEBUG
 			assert(M._m30==0&&M._m31==0&&M._m32==0&&M._m33==1.0f);
-#endif
+		#endif
 			const tvector3<T> XX={M._m00,M._m10,M._m20};
 			const tvector3<T> YY={M._m01,M._m11,M._m21};
 			const tvector3<T> ZZ={M._m02,M._m12,M._m22};
@@ -1401,7 +1455,7 @@
 		return r;
 	}
 	template<typename T>
-tvector4<T> operator*(const tvector4<T> &v, const tmatrix4<T> &m)
+	tvector4<T> operator*(const tvector4<T> &v, const tmatrix4<T> &m)
 	{
 		tvector4<T> r;
 		r.x=m._11*v.x+m._21*v.y+m._31*v.z+m._41*v.w;
@@ -1411,7 +1465,7 @@ tvector4<T> operator*(const tvector4<T> &v, const tmatrix4<T> &m)
 		return r;
 	}
 	template<typename T>
-tvector4<T> operator*(const tmatrix4<T> &m, const tvector4<T> &v)
+	tvector4<T> operator*(const tmatrix4<T> &m, const tvector4<T> &v)
 	{
 		tvector4<T> r;
 		r.x=m._11*v.x+m._12*v.y+m._13*v.z+m._14*v.w;
@@ -1505,36 +1559,36 @@ tvector4<T> operator*(const tmatrix4<T> &m, const tvector4<T> &v)
 		P2 = C + (tc * v);
 	}
 
-typedef tvector4<float> vec4;
-typedef tvector2<float> vec2;
-typedef tvector3<float> vec3;
+	typedef tvector4<float> vec4;
+	typedef tvector2<float> vec2;
+	typedef tvector3<float> vec3;
 
 #ifndef EXCLUDE_PLATFORM_TYPEDEFS
-typedef tmatrix4<float> mat4;
-typedef tmatrix4<double> mat4d;
-
-typedef unsigned int uint;
-typedef tvector2<int32_t> int2;
-typedef tvector3<int32_t> int3;
-typedef tvector4<int32_t> int4;
-
-typedef tvector2<uint32_t> uint2;
-typedef tvector3<uint32_t> uint3;
-
-//! Very simple 3 vector of doubles.
-typedef tvector3<double> vec3d;
-inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)
-{
-	v3 = vec3(float(v.x), float(v.y), float(v.z));
-}
-inline vec3d cross(const vec3d &a, const vec3d &b)
-{
-	vec3d r;
-	r.x = a.y * b.z - b.y * a.z;
-	r.y = a.z * b.x - b.z * a.x;
-	r.z = a.x * b.y - b.x * a.y;
-	return r;
-}
+	typedef tmatrix4<float> mat4;
+	typedef tmatrix4<double> mat4d;
+	
+	typedef unsigned int uint;
+	typedef tvector2<int32_t> int2;
+	typedef tvector3<int32_t> int3;
+	typedef tvector4<int32_t> int4;
+	
+	typedef tvector2<uint32_t> uint2;
+	typedef tvector3<uint32_t> uint3;
+	
+	//! Very simple 3 vector of doubles.
+	typedef tvector3<double> vec3d;
+	inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)
+	{
+		v3 = vec3(float(v.x), float(v.y), float(v.z));
+	}
+	inline vec3d cross(const vec3d &a, const vec3d &b)
+	{
+		vec3d r;
+		r.x = a.y * b.z - b.y * a.z;
+		r.y = a.z * b.x - b.z * a.x;
+		r.z = a.x * b.y - b.x * a.y;
+		return r;
+	}
 #endif
 
 #ifdef _MSC_VER

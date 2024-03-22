@@ -50,6 +50,12 @@ if(PLATFORM_USE_FMT)
 	endif()
 endif()
 
+
+# FetchContent download timestamp policy:
+cmake_policy(SET CMP0135 NEW)
+cmake_policy(SET CMP0077 NEW)
+include(FetchContent)
+
 # Get the "safe" header library for lockable resources
 FetchContent_Declare(
   safe
@@ -59,11 +65,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(safe)
 
-# FetchContent download timestamp policy:
-cmake_policy(SET CMP0135 NEW)
-cmake_policy(SET CMP0077 NEW)
 # fetch magic_enum
-include(FetchContent)
 FetchContent_Declare(
   magic_enum
   URL https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.5.zip
