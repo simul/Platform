@@ -127,7 +127,7 @@ namespace platform
 			int aa_quality = 0;
 			vec4 clear;
 			float clearDepth=0.0f;
-			uint clearStencil = 0;
+			uint32_t clearStencil = 0;
 			bool shared = false;
 			CompressionFormat compressionFormat= CompressionFormat::UNCOMPRESSED;
 			// N arrays of bytes, where N=arraysize*mips and ordered by mips then layers.
@@ -141,7 +141,7 @@ namespace platform
 		{
 			int x=0,y=0;
 			int w=0,h=0;
-			inline const Viewport &operator=(const int4 &i)
+			inline const Viewport &operator=(const tvector4<int> &i)
 			{
 				x=i.x;
 				y=i.y;
@@ -406,13 +406,12 @@ namespace platform
 			//! \deprecated
 			bool ensureTexture2DSizeAndFormat(RenderPlatform* renderPlatform, int w, int l, int m
 				, PixelFormat f, bool computable = false, bool rendertarget = false, bool depthstencil = false, int num_samples = 1, int aa_quality = 0, bool wrap = false,
-				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0, bool shared = false
+				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint32_t clearStencil = 0, bool shared = false
 				, crossplatform::CompressionFormat compressionFormat = crossplatform::CompressionFormat::UNCOMPRESSED
 				, const uint8_t** initData = nullptr);
 			//! Initialize as a standard 2D texture. Not all platforms need \a wrap to be specified. Returns true if modified, false otherwise.
 			virtual bool ensureTexture2DSizeAndFormat(RenderPlatform *renderPlatform,int w,int l,int m
-				,PixelFormat f, std::shared_ptr<std::vector<std::vector<uint8_t>>> data ,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false,
-				vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint clearStencil = 0, bool shared = false
+				,PixelFormat f, std::shared_ptr<std::vector<std::vector<uint8_t>>> data ,bool computable=false,bool rendertarget=false,bool depthstencil=false,int num_samples=1,int aa_quality=0,bool wrap=false, vec4 clear = vec4(0.0f, 0.0f, 0.0f, 0.0f), float clearDepth = 0.0f, uint32_t clearStencil = 0, bool shared = false
 				, crossplatform::CompressionFormat compressionFormat=crossplatform::CompressionFormat::UNCOMPRESSED)=0;
 			// Create texture for use as a reference frame in video encoding or decoding.
 			virtual bool ensureVideoTexture(RenderPlatform* renderPlatform, int w, int l, PixelFormat f, VideoTextureType texType) { return false; };
@@ -502,7 +501,7 @@ namespace platform
 			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
 			void FreeTranslatedTextureData(void *data);
 			uint32_t CalculateSubresourceIndex(uint32_t MipSlice, uint32_t ArraySlice, uint32_t PlaneSlice, uint32_t MipLevels, uint32_t ArraySize);
-			uint3 CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uint32_t ArraySlice); //Returned as { MipSlice, ArraySlice, PlaneSlice }
+			tvector3<uint32_t> CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uint32_t ArraySlice); // Returned as { MipSlice, ArraySlice, PlaneSlice }
 			bool ValidateTextureView(const TextureView &textureView);
 			crossplatform::ShaderResourceType GetDefaultShaderResourceType() const;
 			crossplatform::TextureView defaultTextureView;
