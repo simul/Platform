@@ -1,21 +1,21 @@
 [submodule "External/glfw"]
 	path = External/glfw
-	url = git@github.com:glfw/glfw.git
+	url = https://github.com/glfw/glfw.git
 [submodule "External/stb"]
 	path = External/stb
-	url = git@github.com:nothings/stb.git
+	url = https://github.com/nothings/stb.git
 [submodule "External/fmt"]
 	path = External/fmt
-	url = git@github.com:simul/fmt.git
+	url = https://github.com/simul/fmt.git
 [submodule "External/assimp"]
 	path = External/assimp
-	url = git@github.com:assimp/assimp.git
+	url = https://github.com/assimp/assimp.git
 [submodule "External/imgui"]
 	path = External/imgui
-	url = git@github.com:ocornut/imgui.git
+	url = https://github.com/ocornut/imgui.git
 [submodule "External/freetype"]
 	path = External/freetype
-	url = git@github.com:freetype/freetype.git
+	url = https://github.com/freetype/freetype.git
 [submodule "External/magic_enum"]
 	path = External/magic_enum
 	url = git@github.com:Neargye/magic_enum.git

@@ -469,17 +469,17 @@ struct tvector4
 		this->w = T(u.w);
 		return *this;
 	}
-	tvector4 operator*(T m)
+	tvector4 operator*(T m) const
 	{
 		tvector4 r(x * m, y * m, z * m, w * m);
 		return r;
 	}
-	tvector4 operator/(T m)
+	tvector4 operator/(T m) const
 	{
 		tvector4 r(x / m, y / m, z / m, w / m);
 		return r;
 	}
-	tvector4 operator*(const tvector4 &v)
+	tvector4 operator*(const tvector4 &v) const
 	{
 		tvector4 r(x * v.x, y * v.y, z * v.z, w * v.w);
 		return r;
@@ -566,21 +566,6 @@ struct tvector4
 	}
 };
 
-// Common typedefs
-
-typedef unsigned int uint;
-
-typedef tvector2<float> vec2;
-typedef tvector3<float> vec3;
-typedef tvector4<float> vec4;
-
-typedef tvector2<int> int2;
-typedef tvector3<int> int3;
-typedef tvector4<int> int4;
-
-typedef tvector2<uint> uint2;
-typedef tvector3<uint> uint3;
-typedef tvector4<uint> uint4;
 
 // Stream operators
 
@@ -1449,12 +1434,13 @@ typedef tvector3<float> vec3;
 #ifndef EXCLUDE_PLATFORM_TYPEDEFS
 typedef tmatrix4<float> mat4;
 typedef tmatrix4<double> mat4d;
-typedef unsigned int uint;
+typedef uint32_t uint;
 typedef tvector2<int32_t> int2;
 typedef tvector3<int32_t> int3;
 typedef tvector4<int32_t> int4;
 typedef tvector2<uint32_t> uint2;
 typedef tvector3<uint32_t> uint3;
+typedef tvector4<uint32_t> uint4;
 //! Very simple 3 vector of doubles.
 typedef tvector3<double> vec3d;
 inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)

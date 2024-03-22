@@ -191,7 +191,7 @@ namespace platform
 			Effect *currentEffect=nullptr;
 			Layout *currentLayout=nullptr;
 			Topology topology = Topology::UNDEFINED;
-			int4 scissor={0,0,INT_MAX,INT_MAX};
+			tvector4<int> scissor={0,0,INT_MAX,INT_MAX};
 			uint32_t viewMask = 0; //For ViewInstancing/Multiview
 			int apply_count = 0;
 			bool contextActive=false;
