@@ -35,21 +35,29 @@
 #else
 	#define prag(c) _Pragma(#c)
 #endif
-	#define SIMUL_CONSTANT_BUFFER(name,buff_num) prag(pack(push)) \
-												prag(pack(4)) \
-												struct name {static const int bindingIndex=buff_num;\
+#define SIMUL_CONSTANT_BUFFER(name, buff_num)     \
+	prag(pack(push))                              \
+		prag(pack(4)) struct name                 \
+	{                                             \
+		static const int bindingIndex = buff_num; \
 												static const uint8_t groupIndex=0;
 
-	#define PLATFORM_GROUPED_CONSTANT_BUFFER(name,buff_num,group_num) prag(pack(push)) \
-												prag(pack(4)) \
-												struct name {static const int bindingIndex=buff_num;\
+#define PLATFORM_GROUPED_CONSTANT_BUFFER(name, buff_num, group_num) \
+	prag(pack(push))                                                \
+		prag(pack(4)) struct name                                   \
+	{                                                               \
+		static const int bindingIndex = buff_num;                   \
 												static const uint8_t groupIndex = group_num;
 
-	#define PLATFORM_NAMED_CONSTANT_BUFFER(struct_name, instance_name, buff_num,group_num) prag(pack(push)) \
-												prag(pack(4)) \
-												struct struct_name {static const int bindingIndex=buff_num;\
+#define PLATFORM_NAMED_CONSTANT_BUFFER(struct_name, instance_name, buff_num, group_num) \
+	prag(pack(push))                                                                    \
+		prag(pack(4)) struct struct_name                                                \
+	{                                                                                   \
+		static const int bindingIndex = buff_num;                                       \
 												static const uint8_t groupIndex = group_num;
-	#define SIMUL_CONSTANT_BUFFER_END };\
+#define SIMUL_CONSTANT_BUFFER_END \
+	}                             \
+	;                             \
 									prag(pack(pop))
 	#define PLATFORM_NAMED_CONSTANT_BUFFER_END SIMUL_CONSTANT_BUFFER_END
 	#define PLATFORM_GROUPED_CONSTANT_BUFFER_END SIMUL_CONSTANT_BUFFER_END
@@ -62,7 +70,8 @@
 	//Vector Classes//
 	//////////////////
 
-	template<typename T> struct tvector2
+	template <typename T>
+	struct tvector2
 	{
 		T x, y;
 		tvector2()
@@ -204,7 +213,8 @@
 			return r;
 		}
 	};
-	template<typename T> struct tvector3
+	template <typename T>
+	struct tvector3
 	{
 		T x, y, z;
 		tvector3()
@@ -253,12 +263,6 @@
 		{
 			return (x!=v.x||y!=v.y||z!=v.z);
 		}
-		void operator=(const T *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
-		}
 		template <typename U>
 		void operator=(const U *v)
 		{
@@ -267,6 +271,13 @@
 			z=T(v[2]);
 		}
 		template<typename U> 
+		const tvector3 &operator=(const tvector2<U> &u)
+		{
+			x = (T)u.x;
+			y = (T)u.y;
+			return *this;
+		}
+		template <typename U>
 		const tvector3 &operator=(const tvector3<U> &u)
 		{
 			x = (T)u.x;
@@ -367,14 +378,17 @@
 			z-=v[2];
 		}
 	};
-	template<typename T> struct tvector4
+	template <typename T>
+	struct tvector4
 	{
 		union
 		{
-			struct {
+		struct
+		{
 				T x, y, z, w;
 			};
-			struct {
+		struct
+		{
 				tvector3<T> xyz;
 				T w_;
 			};
@@ -409,7 +423,8 @@
 			this->z = v[2];
 			this->w = v[3];
 		}
-		tvector4(const tvector4<T> &u)
+		tvector4(const tvector4 &u)
+			: xyz()
 		{
 			this->x = u.x;
 			this->y = u.y;
@@ -417,20 +432,21 @@
 			this->w = u.w;
 		}
 		template<typename U>
+		tvector4(const tvector4<U> &u)
+			: xyz()
+		{
+			this->x = T(u.x);
+			this->y = T(u.y);
+			this->z = T(u.z);
+			this->w = T(u.w);
+		}
+		template <typename U>
 		tvector4(const U *v)
 		{
 			this->x=T(v[0]);
 			this->y=T(v[1]);
 			this->z=T(v[2]);
 			this->w=T(v[3]);
-		}
-		template<typename U>
-		tvector4(const tvector4<U> &u)
-		{
-			this->x=T(u.x);
-			this->y=T(u.y);
-			this->z=T(u.z);
-			this->w=T(u.w);
 		}
 		operator const T *() const
 		{
@@ -742,7 +758,6 @@
 		return c;
 	}
 	
-
 	//Mat2 Determinant?
 	template<typename T>
 	T cross(const tvector2<T>& a, const tvector2<T>& b)
@@ -798,13 +813,6 @@
 		return {abs(v.x), abs(v.y), abs(v.z), abs(v.w)};
 	}
 
-	//Very simple 3 vector of doubles.
-	typedef tvector3<double> vec3d;
-
-	inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)
-	{
-		v3 = vec3(float(v.x), float(v.y), float(v.z));
-	}
 
 	//////////////////
 	//Matrices class//
@@ -825,15 +833,20 @@
 		void transpose()
 		{
 			for (int i = 0; i < 2; i++)
+			{
 				for (int j = 0; j < 2; j++)
+				{
 					if (i < j)
 					{
 						float temp = m[i * 2 + j];
 						m[i * 2 + j] = m[j * 2 + i];
 						m[j * 2 + i] = temp;
 					}
+				}
+			}
 		}
 	};
+
 	struct mat3
 	{
 		union
@@ -854,7 +867,8 @@
 			float M[3][3];
 		};
 	};
-	template<typename T> struct tmatrix4
+	template <typename T>
+	struct tmatrix4
 	{
 		union
 		{
@@ -995,7 +1009,7 @@
 			m._11=m._22=m._33=m._44=1.0f;
 			return m;
 		}
-		static inline tmatrix4<T> translationColumnMajor(vec3 tr)
+		static inline tmatrix4<T> translationColumnMajor(tvector3<T> tr)
 		{
 			tmatrix4<T> m=identity();
 			m._14 = tr.x;
@@ -1339,11 +1353,6 @@
 		}
 	};
 	
-	//Commen typedefs
-	
-	typedef tmatrix4<float> mat4;
-	typedef tmatrix4<double> mat4d;
-
 	//Matrix/Vector multiply operators
 
 	template<typename T> 
@@ -1353,9 +1362,10 @@
 		tmatrix4<T>::mul(r, a, b);
 		return r;
 	}
-	inline vec3 operator*(const mat4 &m,const vec3 &v)
+	template <typename T>
+	tvector3<T> operator*(const tmatrix4<T> &m, const tvector3<T> &v)
 	{
-		vec3 r;
+		tvector3<T> r;
 		r.x=m._11*v.x+m._12*v.y+m._13*v.z;
 		r.y=m._21*v.x+m._22*v.y+m._23*v.z;
 		r.z=m._31*v.x+m._32*v.y+m._33*v.z;
@@ -1370,7 +1380,6 @@
 		r.z=m*v.z;
 		return r;
 	}
-	
 	template<typename T>
 	tvector4<T> operator*(T m,const tvector4<T> &v)
 	{
@@ -1392,7 +1401,7 @@
 		return r;
 	}
 	template<typename T>
-	tvector4<T> operator*(const tvector4<T> &v,const mat4 &m)
+tvector4<T> operator*(const tvector4<T> &v, const tmatrix4<T> &m)
 	{
 		tvector4<T> r;
 		r.x=m._11*v.x+m._21*v.y+m._31*v.z+m._41*v.w;
@@ -1402,7 +1411,7 @@
 		return r;
 	}
 	template<typename T>
-	tvector4<T> operator*(const mat4 &m,const tvector4<T> &v)
+tvector4<T> operator*(const tmatrix4<T> &m, const tvector4<T> &v)
 	{
 		tvector4<T> r;
 		r.x=m._11*v.x+m._12*v.y+m._13*v.z+m._14*v.w;
@@ -1496,9 +1505,40 @@
 		P2 = C + (tc * v);
 	}
 
+typedef tvector4<float> vec4;
+typedef tvector2<float> vec2;
+typedef tvector3<float> vec3;
+
+#ifndef EXCLUDE_PLATFORM_TYPEDEFS
+typedef tmatrix4<float> mat4;
+typedef tmatrix4<double> mat4d;
+
+typedef unsigned int uint;
+typedef tvector2<int32_t> int2;
+typedef tvector3<int32_t> int3;
+typedef tvector4<int32_t> int4;
+
+typedef tvector2<uint32_t> uint2;
+typedef tvector3<uint32_t> uint3;
+
+//! Very simple 3 vector of doubles.
+typedef tvector3<double> vec3d;
+inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)
+{
+	v3 = vec3(float(v.x), float(v.y), float(v.z));
+}
+inline vec3d cross(const vec3d &a, const vec3d &b)
+{
+	vec3d r;
+	r.x = a.y * b.z - b.y * a.z;
+	r.y = a.z * b.x - b.z * a.x;
+	r.z = a.x * b.y - b.x * a.y;
+	return r;
+}
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 #endif
-
 #endif

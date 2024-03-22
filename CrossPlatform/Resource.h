@@ -76,6 +76,10 @@ namespace platform
 			{
 				return GetNumResources(readOnlyResourceSlots);
 			}
+			inline uint8_t GetNumResources() const
+			{
+				return GetNumReadOnlyResources() + GetNumConstantBuffers();
+			}
 		};
 	}
 }

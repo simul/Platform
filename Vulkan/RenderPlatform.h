@@ -278,8 +278,12 @@ namespace platform
 			}
 
 		protected:
-			vk::DescriptorPool mDescriptorPool;
-			vk::DescriptorSetLayout descriptorSetLayouts[4];
+			void CreateDescriptorPool(int g, int countPerFrame);
+			vk::DescriptorPool mDescriptorPools[3];
+			vk::DescriptorSetLayout descriptorSetLayouts[3];
+			vk::DescriptorSet *lastDescriptorSet[4][4];
+			int resourceGroupCountPerFrame[4] = {10, 30, 100, 0};
+			const int swapchainImageCount = 4;
 			
 			// TODO: These should probably be per deviceContext:
 			std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;

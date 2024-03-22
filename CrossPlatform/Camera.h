@@ -6,6 +6,7 @@
 #include "Platform/Math/OrientationInterface.h"
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/Shaders/CppSl.sl"
+#include "Platform/CrossPlatform/Frustum.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -19,23 +20,8 @@ namespace platform
 	}
 	namespace crossplatform
 	{
-/// How to interpret the depth texture.
-		enum DepthTextureStyle
-		{
-			/// Depth textures are interpreted as representing the z-output of the projection matrix transformation.
-			PROJECTION
-			/// Depth textures are interpreted as representing a linear distance in the z-direction from the near clipping plane.
-			,DISTANCE_FROM_NEAR_PLANE
-		};
 		vec4 SIMUL_CROSSPLATFORM_EXPORT GetDepthToDistanceParameters(crossplatform::DepthTextureStyle depthTextureStyle, const math::Matrix4x4 &proj, float max_dist_metres);
 		vec4 SIMUL_CROSSPLATFORM_EXPORT GetDepthToDistanceParameters(crossplatform::DepthTextureStyle depthTextureStyle, const crossplatform::ViewStruct &viewStruct, float max_dist_metres);
-		/// A useful class to represent a view frustum.
-		struct SIMUL_CROSSPLATFORM_EXPORT Frustum
-		{
-			vec4 tanHalfFov;		//xy= tangent of half-angle, zw=offset
-			float nearZ, farZ;
-			bool reverseDepth;
-		};
 		/// A struct to represent the state of a mouse-controlled camera.
 		struct SIMUL_CROSSPLATFORM_EXPORT MouseCameraState
 		{
