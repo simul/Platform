@@ -56,6 +56,7 @@ namespace platform
 			void CreateRenderPass();
 			void CreateFramebuffers();
 			void Present();
+			uint32_t frame_index = 0;
 			uint32_t current_buffer;
 			uint32_t graphics_queue_family_index;
 			uint32_t present_queue_family_index;

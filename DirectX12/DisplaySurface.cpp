@@ -428,7 +428,7 @@ void DisplaySurface::Resize()
 		0,						// Use current back buffer count
 		screenWidth, screenHeight,
 		DXGI_FORMAT_UNKNOWN,	// Use current format
-		0
+		mIsVSYNC == false ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0
 	);
 	SIMUL_ASSERT(res == S_OK);
 	#endif

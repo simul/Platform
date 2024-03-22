@@ -1,6 +1,3 @@
-#ifdef _MSC_VER
-	#include <windows.h>
-#endif
 #include "Buffer.h"
 #include "RenderPlatform.h"
 #include "Platform/Vulkan/DeviceManager.h"
@@ -33,10 +30,8 @@ void Buffer::InvalidateDeviceObjects()
 	if(!vulkanDevice)
 		return;
 	vulkan::RenderPlatform *rp=(vulkan::RenderPlatform *)renderPlatform;
-	rp->PushToReleaseManager(mBuffer);
-	rp->PushToReleaseManager(mBufferMemory);
-	rp->PushToReleaseManager(bufferLoad.stagingBuffer);
-	rp->PushToReleaseManager(bufferLoad.stagingBufferMemory);
+	rp->PushToReleaseManager(mBuffer, &mAllocation);
+	rp->PushToReleaseManager(mStagingBuffer, &mStagingAllocation);
 	renderPlatform=nullptr;
 }
 
@@ -51,30 +46,29 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	renderPlatform=r;
 
 	stride = layout->GetStructSize();
-	bufferLoad.size= num_vertices * layout->GetStructSize();
+	size = num_vertices * layout->GetStructSize();
 	count = num_vertices;
 	
-	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
-					,vk::BufferUsageFlagBits::eTransferSrc
-					,vk::MemoryPropertyFlagBits::eHostVisible  | vk::MemoryPropertyFlagBits::eHostCoherent
-					,bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory,"vertex buffer upload");
+	vulkanRenderPlatform->CreateVulkanBuffer(
+		size, vk::BufferUsageFlagBits::eTransferSrc, 
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, 
+		mStagingBuffer, mStagingAllocation, "VertexBuffer Upload");
 
-	void* target_data;
 	if(src_data)
 	{
-		vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-		vk::Result result=vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
-		if(result==vk::Result::eSuccess&&target_data)
+		void* target_data = nullptr;
+		SIMUL_VK_CHECK((vk::Result)vmaMapMemory(mStagingAllocation.allocator, mStagingAllocation.allocation, &target_data));
+		if (target_data)
 		{
-			memcpy(target_data, src_data->data(), (size_t)bufferLoad.size);
-			vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
+			memcpy(target_data, src_data->data(), (size_t)size);
+			vmaUnmapMemory(mStagingAllocation.allocator, mStagingAllocation.allocation);
 		}
 	}
 
-	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
-				, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer
-				, vk::MemoryPropertyFlagBits::eDeviceLocal
-				, mBuffer, mBufferMemory,"vertex buffer");
+	vulkanRenderPlatform->CreateVulkanBuffer(
+		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, mBuffer, mAllocation, "VertexBuffer");
+
 	loadingComplete=false;
 }
 
@@ -82,41 +76,40 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 {
 	InvalidateDeviceObjects();
 	renderPlatform = r;
+
 	bufferType=crossplatform::BufferType::INDEX;
 	stride = index_size_bytes;
-	bufferLoad.size = num_indices * index_size_bytes;
+	size = num_indices * index_size_bytes;
 	count = num_indices;
 
-	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
-		, vk::BufferUsageFlagBits::eTransferSrc
-		, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-		, bufferLoad.stagingBuffer, bufferLoad.stagingBufferMemory, "index buffer upload");
+	vulkanRenderPlatform->CreateVulkanBuffer(
+		size, vk::BufferUsageFlagBits::eTransferSrc, 
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+		mStagingBuffer, mStagingAllocation, "IndexBuffer Upload");
 
-	void* target_data=nullptr;
 	if (src_data)
 	{
-		vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-		SIMUL_VK_CHECK(vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size, vk::MemoryMapFlagBits(), &target_data));
+		void *target_data = nullptr;
+		SIMUL_VK_CHECK((vk::Result)vmaMapMemory(mStagingAllocation.allocator, mStagingAllocation.allocation, &target_data));
 		if (target_data)
 		{
-			memcpy(target_data, src_data->data(), (size_t)bufferLoad.size);
-			vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
+			memcpy(target_data, src_data->data(), (size_t)size);
+			vmaUnmapMemory(mStagingAllocation.allocator, mStagingAllocation.allocation);
 		}
 	}
 
-	vulkanRenderPlatform->CreateVulkanBuffer(bufferLoad.size
-		, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer
-		, vk::MemoryPropertyFlagBits::eDeviceLocal
-		, mBuffer, mBufferMemory, "index buffer");
+	vulkanRenderPlatform->CreateVulkanBuffer(
+		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, mBuffer, mAllocation, "IndexBuffer");
+
 	loadingComplete = false;
 }
 
 void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 {
-	loadingComplete=false;
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	void* target_data= nullptr;
-	vk::Result result=vulkanDevice->mapMemory(bufferLoad.stagingBufferMemory, 0, bufferLoad.size,vk::MemoryMapFlagBits(), &target_data);
+	loadingComplete = false;
+	void *target_data = nullptr;
+	vk::Result result = (vk::Result)vmaMapMemory(mStagingAllocation.allocator, mStagingAllocation.allocation, &target_data);
 	if (result != vk::Result::eSuccess)
 		return nullptr;
 	return target_data;
@@ -124,8 +117,7 @@ void* Buffer::Map(crossplatform::DeviceContext& deviceContext)
 
 void Buffer::Unmap(crossplatform::DeviceContext& deviceContext)
 {
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	vulkanDevice->unmapMemory(bufferLoad.stagingBufferMemory);
+	vmaUnmapMemory(mStagingAllocation.allocator, mStagingAllocation.allocation);
 }
 
 void Buffer::FinishLoading(crossplatform::DeviceContext& deviceContext)
@@ -136,14 +128,13 @@ void Buffer::FinishLoading(crossplatform::DeviceContext& deviceContext)
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
 
 	vk::BufferCopy copyRegion = {};
-	copyRegion.setSize(bufferLoad.size);
+	copyRegion.setSize(size);
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
-	commandBuffer->copyBuffer(bufferLoad.stagingBuffer, mBuffer, 1, &copyRegion);
-	loadingComplete=true;
+	commandBuffer->copyBuffer(mStagingBuffer, mBuffer, 1, &copyRegion);
+	loadingComplete = true;
 }
 
 vk::Buffer Buffer::asVulkanBuffer()
 {
-		
 	return mBuffer;
 }

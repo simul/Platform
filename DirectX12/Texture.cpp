@@ -129,16 +129,15 @@ void Texture::InvalidateDeviceObjects()
 	if (mInitializedFromExternal)
 	{
 		if (mTextureDefault)
-			rPlat->PushToReleaseManager(mTextureDefault, (name + "_Default(External)").c_str());
+			rPlat->PushToReleaseManager(mTextureDefault, nullptr, !mInitializedFromExternal);
 	}
 	else
 	{
-		// Critical resources like textures that could be in use by the GPU will be destroyed by the 
-		// release manager
+		// Critical resources like textures that could be in use by the GPU will be destroyed by the release manager
 		if(mTextureDefault)
-			rPlat->PushToReleaseManager(mTextureDefault, (name + "_Default").c_str());
+			rPlat->PushToReleaseManager(mTextureDefault, &mTextureDefaultAllocationInfo);
 		if(mTextureUpload)
-			rPlat->PushToReleaseManager(mTextureUpload, (name + "_Upload").c_str());
+			rPlat->PushToReleaseManager(mTextureUpload, &mTextureUploadAllocationInfo);
 	}
 
 	mTextureDefault=nullptr;
@@ -267,8 +266,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	renderTarget = true;
 
 	// Clear resources
-	renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" mTextureDefault").c_str());
-	renderPlatformDx12->PushToReleaseManager(mTextureUpload, (name+" mTextureUpload").c_str());
+	renderPlatformDx12->PushToReleaseManager(mTextureDefault, &mTextureDefaultAllocationInfo);
+	renderPlatformDx12->PushToReleaseManager(mTextureUpload, &mTextureUploadAllocationInfo);
 	mTextureDefault = nullptr;
 	mTextureUpload = nullptr;
 	size_t num_loaded=0;
@@ -294,24 +293,21 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 		if(!mTextureDefault)
 		{
 			dxgi_format	= wicContents[0].metadata->format;
-			auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		// Create the texture resource (GPU, with an implicit heap)
-			res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
-				&defaultProperties,
-				D3D12_HEAP_FLAG_NONE,
-				&textureDesc,
+			// Create the texture resource (GPU, with an implicit heap)
+			std::string name2 = "mTextureDefault_" + name;
+			renderPlatformDx12->CreateResource(
+				textureDesc,
 				D3D12_RESOURCE_STATE_GENERIC_READ,
 				nullptr,
-				SIMUL_PPV_ARGS(&mTextureDefault));
-			SIMUL_ASSERT(res == S_OK);
-			//D3D12_GPU_VIRTUAL_ADDRESS va=mTextureDefault->GetGPUVirtualAddress();
-			std::wstring	n = L"mTextureDefault_";
-			n+=std::wstring(name.begin(), name.end());
-			mTextureDefault->SetName(n.c_str());
+				D3D12_HEAP_TYPE_DEFAULT,
+				&mTextureDefault,
+				mTextureDefaultAllocationInfo,
+				name2.c_str());
+
 			size_t texSize = textureDesc.Width * textureDesc.Height  * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
 			SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
 		}
-		num_loaded++; 
+		num_loaded++;
 	}
 	if(num_loaded)
 	{
@@ -943,7 +939,7 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 			SIMUL_BREAK_INTERNAL("The texture is invalid");
 			return;
 		}
-		renderPlat->PushToReleaseManager(mTextureUpload, "TextureSetTexelsUpload");
+		renderPlat->PushToReleaseManager(mTextureUpload, &mTextureUploadAllocationInfo);
 
 		// We neen to know the size of the texture (DEFAULT)
 		UINT64 texSize = 0;
@@ -953,19 +949,20 @@ void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *
 			0, 1, 0,
 			nullptr, nullptr, nullptr,
 			&texSize);
-		auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
 		// Create the upload buffer
+		std::string name2 = name + "_TextureSetTexelsUpload";
 		auto texBufferDesc=CD3DX12_RESOURCE_DESC::Buffer(texSize);
-		res = renderPlat->AsD3D12Device()->CreateCommittedResource(
-			&uploadProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&texBufferDesc,
+		renderPlat->CreateResource(
+			texBufferDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			SIMUL_PPV_ARGS(&mTextureUpload));
-		SIMUL_ASSERT(res == S_OK);
+			D3D12_HEAP_TYPE_UPLOAD,
+			&mTextureUpload,
+			mTextureUploadAllocationInfo,
+			name2.c_str());
+
 		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureUpload, texSize,name.c_str())
-		mTextureUpload->SetName(L"TextureSetTexelsUpload");
 
 		// Parameters
 		int texelSize	= RenderPlatform::ByteSizeOfFormatElement(dxgi_format);
@@ -1063,7 +1060,7 @@ bool Texture::InitFromExternalD3D12Texture2D(crossplatform::RenderPlatform* r, I
 	{
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 		// Pass "owned=false" so we don't try to untrack memory we never tracked.
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" changing mTextureDefault").c_str(),!mInitializedFromExternal);
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, nullptr, !mInitializedFromExternal);
 	}
 	if (!t)
 	{
@@ -1224,25 +1221,23 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform *r,int 
 		InitStateTable(1, m);
 
 		// Find the initial texture state
-		D3D12_RESOURCE_STATES initialState= computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
+		D3D12_RESOURCE_STATES initialState = computable ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
 
 		// Clean resources
-		SAFE_RELEASE_LATER(mTextureDefault); 
+		SAFE_RELEASE_ALLOCATIR_LATER(mTextureDefault, &mTextureDefaultAllocationInfo);
 
-		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		res = r->AsD3D12Device()->CreateCommittedResource(
-			&defaultProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&textureDesc,
+		std::string name2 = "mTextureDefault_" + name;
+		((dx12::RenderPlatform*)r)->CreateResource(
+			textureDesc,
 			initialState,
 			rendertargets? &clearValues : nullptr,
-			SIMUL_PPV_ARGS(&mTextureDefault));
-		SIMUL_ASSERT(res == S_OK);
+			D3D12_HEAP_TYPE_DEFAULT,
+			&mTextureDefault,
+			mTextureDefaultAllocationInfo,
+			name2.c_str());
 		size_t texSize = w * l * d * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
-		std::wstring n = L"mTextureDefault_";
-		n += std::wstring(name.begin(), name.end());
-		mTextureDefault->SetName(n.c_str());
+		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
+
 		AssumeLayout(initialState);
 
 		// Create the main SRV
@@ -1468,7 +1463,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		// Clean resources
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
 		if(mTextureDefault)
-			renderPlatformDx12->PushToReleaseManager(mTextureDefault,  (name+" mTextureDefault").c_str());
+			renderPlatformDx12->PushToReleaseManager(mTextureDefault, &mTextureDefaultAllocationInfo);
 		mTextureDefault = nullptr;
 
 		D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE;
@@ -1477,18 +1472,17 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 			heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_SHARED;
 		}
 		
-		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		// Create the texture resource
-		res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
-			&defaultProperties,
-			heapFlags,
-			&textureDesc,
+		std::string name2 = "mTextureDefault_" + name;
+		((dx12::RenderPlatform *)renderPlatform)->CreateResource(
+			textureDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			(rendertarget || depthstencil) ? &clearValues : nullptr,
-			SIMUL_PPV_ARGS(&mTextureDefault)
-		);
-//		SIMUL_COUT << "Creating texture "<<name.c_str()<<". "<<"\n";
-		SIMUL_ASSERT(res == S_OK);
+			D3D12_HEAP_TYPE_DEFAULT,
+			&mTextureDefault,
+			mTextureDefaultAllocationInfo,
+			name2.c_str());
+
 		auto desc = mTextureDefault->GetDesc();
 		size_t texSize;
 		size_t bytes_per_pixel = 0;
@@ -1507,6 +1501,7 @@ bool Texture::EnsureTexture2DSizeAndFormat(	crossplatform::RenderPlatform *r,
 		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
 		std::wstring n = L"mTextureDefault_";
 		n += std::wstring(name.begin(), name.end());
+
 #if SIMUL_INTERNAL_CHECKS
 		if (name.length() == 0)
 		{
@@ -1628,23 +1623,22 @@ bool Texture::ensureVideoTexture(crossplatform::RenderPlatform* r, int w, int l,
 
 		// Clean resources
 		auto renderPlatformDx12 = (dx12::RenderPlatform*)renderPlatform;
-		renderPlatformDx12->PushToReleaseManager(mTextureDefault, (name+" mTextureDefault").c_str());
+		renderPlatformDx12->PushToReleaseManager(mTextureDefault, &mTextureDefaultAllocationInfo);
 		mTextureDefault = nullptr;
-		auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
 		// Create the texture resource
-		res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
-			&defaultProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&textureDesc,
+		std::string name2 = "mTextureDefault_" + name;
+		renderPlatformDx12->CreateResource(
+			textureDesc,
 			initialState,
 			nullptr,
-			SIMUL_PPV_ARGS(&mTextureDefault));
-		SIMUL_ASSERT(res == S_OK);
+			D3D12_HEAP_TYPE_DEFAULT,
+			&mTextureDefault,
+			mTextureDefaultAllocationInfo,
+			name2.c_str());
+
 		size_t texSize = w * l * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
 		SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize,name.c_str())
-			std::wstring n = L"mTextureDefault_";
-		n += std::wstring(name.begin(), name.end());
-		mTextureDefault->SetName(n.c_str());
 
 		AssumeLayout(initialState);
 		InitStateTable(1, mipLevels);
@@ -1748,7 +1742,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r, 
 	}
 
 	// Clear resources
-	SAFE_RELEASE_LATER(mTextureDefault);
+	SAFE_RELEASE_ALLOCATIR_LATER(mTextureDefault, &mTextureDefaultAllocationInfo);
+
 	// Find the initial texture state
 	if (rendertarget)
 	{
@@ -1766,19 +1761,19 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform *r, 
 	{
 		AssumeLayout(D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
+
+	std::string name2 = "mTextureDefault_" + name;
 	auto defaultProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	res = r->AsD3D12Device()->CreateCommittedResource(
-		&defaultProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&textureDesc,
+	((dx12::RenderPlatform*)r)->CreateResource(
+		textureDesc,
 		mResourceState,
 		(rendertarget || depthstencil) ? &clearValues : nullptr,
-		SIMUL_PPV_ARGS(&mTextureDefault));
-	SIMUL_ASSERT(res == S_OK);
+		D3D12_HEAP_TYPE_DEFAULT,
+		&mTextureDefault,
+		mTextureDefaultAllocationInfo,
+		name2.c_str());
+
 	size_t texSize = w * l * totalNum * (dx12::RenderPlatform::ByteSizeOfFormatElement(textureDesc.Format));
-	std::wstring n = L"mTextureDefault_";
-	n += std::wstring(name.begin(), name.end());
-	mTextureDefault->SetName(n.c_str());
 	SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureDefault, texSize, name.c_str())
 
 	FreeSRVTables();
@@ -1903,6 +1898,7 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceC
 {
 	const int& mip = textureView.elements.subresourceRange.baseMipLevel;
 	const int& array_index = textureView.elements.subresourceRange.baseArrayLayer;
+	const int& array_count = textureView.elements.subresourceRange.arrayLayerCount;
 	if (textureView.elements.type == crossplatform::ShaderResourceType::UNKNOWN)
 		textureView.elements.type = GetShaderResourceTypeForRTVAndDSV();
 
@@ -1913,14 +1909,15 @@ void Texture::activateRenderTarget(crossplatform::GraphicsDeviceContext &deviceC
 		rp->FlushBarriers(deviceContext);
 		auto rtView = AsD3D12RenderTargetView(deviceContext, textureView);
 
-		targetsAndViewport.num				= 1;
-		targetsAndViewport.m_dt				= nullptr;
-		targetsAndViewport.m_rt[0]			= rtView;
-		targetsAndViewport.rtFormats[0]     = pixelFormat;
-		targetsAndViewport.viewport.w		= (int)(std::max(1, (width >> mip)));
-		targetsAndViewport.viewport.h		= (int)(std::max(1, (length >> mip)));
-		targetsAndViewport.viewport.x		= 0;
-		targetsAndViewport.viewport.y		= 0;
+		targetsAndViewport.num					= 1;
+		targetsAndViewport.m_dt					= nullptr;
+		targetsAndViewport.m_rt[0]				= rtView;
+		targetsAndViewport.rtFormats[0]			= pixelFormat;
+		targetsAndViewport.textureTargets[0]	= {this, {crossplatform::TextureAspectFlags::COLOUR, (uint8_t)mip, (uint8_t)array_index, (uint8_t)array_count}};
+		targetsAndViewport.viewport.w			= (int)(std::max(1, (width >> mip)));
+		targetsAndViewport.viewport.h			= (int)(std::max(1, (length >> mip)));
+		targetsAndViewport.viewport.x			= 0;
+		targetsAndViewport.viewport.y			= 0;
 
 		rp->ActivateRenderTargets(deviceContext, &targetsAndViewport);
 		
@@ -2112,42 +2109,46 @@ void Texture::SwitchToContext(crossplatform::DeviceContext& deviceContext)
 
 void Texture::CreateUploadResource(int slices)
 {
-	SAFE_RELEASE_LATER(mTextureUpload);
+	SAFE_RELEASE_ALLOCATIR_LATER(mTextureUpload, &mTextureUploadAllocationInfo);
+
 	D3D12_RESOURCE_DESC textureDesc = mTextureDefault->GetDesc();
 	textureDesc.Alignment = 0;							// Let runtime decide
 	textureDesc.DepthOrArraySize =slices;
 	textureDesc.Width = width;
 	textureDesc.Height = length;
 	textureDesc.MipLevels = mips;
-	DXGI_FORMAT dxgiFormat = dx12::RenderPlatform::ToDxgiFormat(pixelFormat,compressionFormat);
+
+	DXGI_FORMAT dxgiFormat = dx12::RenderPlatform::ToDxgiFormat(pixelFormat, compressionFormat);
 	textureDesc.Format = dxgiFormat;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // Let runtime decide
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;	// Use D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET to generate mips.
+
 	int totalNum = slices;
 	size_t numSub = totalNum * textureDesc.MipLevels;
+
 	std::vector<UINT64> sliceSizes(numSub);
 	UINT64 textureUploadBufferSize = 0;
-	std::vector<UINT>   numRows(numSub);
+	std::vector<UINT> numRows(numSub);
 	pLayouts.resize(numSub);
+
 	renderPlatform->AsD3D12Device()->GetCopyableFootprints(
 		&textureDesc,
 		0, (UINT)numSub, 0,
 		pLayouts.data(), numRows.data(), sliceSizes.data(),
 		&textureUploadBufferSize);
-	auto uploadProperties=CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+	std::string name2 = "UPLOAD_" + name;
 	auto uploadDesc=CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
-	HRESULT res = renderPlatform->AsD3D12Device()->CreateCommittedResource(
-		&uploadProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&uploadDesc,
+	((dx12::RenderPlatform*)renderPlatform)->CreateResource(
+		uploadDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		SIMUL_PPV_ARGS(&mTextureUpload));
-	SIMUL_ASSERT(res == S_OK);
-	std::wstring n = L"UPLOAD_";
-	n += std::wstring(name.begin(), name.end());
-	mTextureUpload->SetName(n.c_str());
+		D3D12_HEAP_TYPE_UPLOAD,
+		&mTextureUpload,
+		mTextureUploadAllocationInfo,
+		name2.c_str());
+
 	SIMUL_GPU_TRACK_MEMORY_NAMED(mTextureUpload, textureUploadBufferSize, name.c_str())
 }

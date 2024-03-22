@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Platform/Vulkan/Export.h"
+#include "Platform/Vulkan/Allocation.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include <vulkan/vulkan.hpp>
 
@@ -19,7 +20,7 @@ namespace platform
 		{
 		public:
 			PlatformConstantBuffer(crossplatform::ResourceUsageFrequency F);
-                ~PlatformConstantBuffer();
+			~PlatformConstantBuffer();
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void* addr) override;
 			void InvalidateDeviceObjects() override;
 			void Apply(crossplatform::DeviceContext& deviceContext,size_t size,void* addr) override;
@@ -30,7 +31,7 @@ namespace platform
 			size_t GetLastOffset();
 			vk::Buffer *GetLastBuffer();
 			size_t GetSize();
-        private:
+		private:
 			//! Total allocated size for each buffer
 			unsigned						mBufferSize = 1024 * 64 * 8;
 			//! Number of ring buffers
@@ -42,7 +43,7 @@ namespace platform
 			unsigned						mCurApplyCount;
 
 			vk::Buffer 						mBuffers[kNumBuffers];
-			vk::DeviceMemory				mMemory[kNumBuffers];
+			AllocationInfo					mAllocationInfo[kNumBuffers];
 
 			const int kBufferAlign			= 256;
 			void *src;

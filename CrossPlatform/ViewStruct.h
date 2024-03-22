@@ -2,6 +2,7 @@
 #include "Platform/Math/Matrix4x4.h"
 #include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Frustum.h"
 #include <stack>
 
 #ifdef _MSC_VER

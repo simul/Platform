@@ -50,6 +50,15 @@ if(PLATFORM_USE_FMT)
 	endif()
 endif()
 
+# Get the "safe" header library for lockable resources
+FetchContent_Declare(
+  safe
+  GIT_REPOSITORY https://github.com/LouisCharlesC/safe.git
+  GIT_TAG        v1.1.0
+  SOURCE_DIR safe
+)
+FetchContent_MakeAvailable(safe)
+
 # FetchContent download timestamp policy:
 cmake_policy(SET CMP0135 NEW)
 cmake_policy(SET CMP0077 NEW)
@@ -106,29 +115,14 @@ if(PLATFORM_WINDOWS)
 	if( PLATFORM_SUPPORT_D3D11 )
 		add_subdirectory(DirectX11)
 	endif()
-endif()
-
-if(XBOXONE AND PLATFORM_SUPPORT_D3D11)
-	add_subdirectory(DirectX11)
-endif()
-
-if(PLATFORM_WINDOWS AND PLATFORM_SUPPORT_D3D12)
-	add_subdirectory(DirectX12)
-endif()
-
-if(XBOXONE AND PLATFORM_SUPPORT_D3D12)
-	add_subdirectory(DirectX12)
-endif()
-
-if(XBOXONE)
-	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
+	if( PLATFORM_SUPPORT_D3D12 )
+		add_subdirectory(DirectX12)
+	endif()
 endif()
 
 if(GDK)
 	add_subdirectory(DirectX12)
 	add_subdirectory(External/DirectX/DirectXTex/DirectXTex)
-	set( ENV{SIMUL_XDK_VERSION} ${REQUIRED_XB1_TOOLCHAIN_VERSION})
 endif()
 
 if(PLATFORM_WINGDK)

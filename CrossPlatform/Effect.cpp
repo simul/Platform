@@ -1456,11 +1456,11 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					uses=line.substr(cm+1,line.length()-cm-1);
 				platform::core::ClipWhitespace(uses);
 				platform::core::ClipWhitespace(type);
-				std::string var_name_regex="[a-z0-9A-Z_]+";
-				std::string var_val_regex = "[a-z0-9A-Z]+";
-				std::string var_combo_regex = "("s+var_name_regex+")\\s*=\\s*("+var_name_regex+")";
+				const std::string var_name_regex = "[a-z0-9A-Z_]+";
+				const std::string var_val_regex = "[a-z0-9A-Z]+";
+				const std::string var_combo_regex = "("s + var_name_regex + ")\\s*=\\s*(" + var_name_regex + ")";
 				const std::string variant_regex = "(?:\\s*variant:\\(" + var_combo_regex + "(?:\\s*,\\s*" + var_combo_regex + ")*\\))?"s; //" + var_combo_regex+"(?:,"+var_combo_regex+")*
-				std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
+				const std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 				std::smatch fe_smatch;
 				
 				std::smatch sm;

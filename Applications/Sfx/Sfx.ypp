@@ -52,6 +52,8 @@
 	PassState buildPassState;
 	RaytraceHitGroup buildRaytraceHitGroup;
 	TechniqueGroup buildGroup;
+	ResourceGroupDeclaration buildResourceGroup;
+	std::set<int> buildNumSet;
 	string currentTechniqueGroup;
 	static int last_linenumber=0;
 	static int current_filenumber=0;
@@ -586,7 +588,7 @@
 %}
 
 %token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SHADER_VARIANTS_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
-%token REGISTER RESOURCE_GROUP NUM INCLUDE SAMPLER P_FLOAT CONST STATIC
+%token REGISTER RESOURCE_GROUP RESOURCE_GROUP_DECLARATION RESOURCE_GROUP_TEXTURE RESOURCE_GROUP_CONSTANTBUFFER RESOURCE_GROUP_STRUCTUREDBUFFER NUM INCLUDE SAMPLER P_FLOAT CONST STATIC
 %token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D NAMED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
@@ -703,6 +705,9 @@ tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 	| gslayout
 	{
 		currentGsLayout=$1.strs[0];
+	}
+	| rglayout
+	{
 	}
 	| DECL_SHADER IDENTIFIER '=' shader_compile_or_instance ';'
 	{
@@ -986,13 +991,57 @@ group_technique_declaration : TECHNIQUE IDENTIFIER '{' tech_def '}'
 	}
 
 cslayout : '[' NUM_THREADS '(' NUM ',' NUM ',' NUM ')' ']'
+{
+	buildFunction.numThreads[0] = atoi($4.strs[0].c_str());
+	buildFunction.numThreads[1] = atoi($6.strs[0].c_str());
+	buildFunction.numThreads[2] = atoi($8.strs[0].c_str());
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+$9.strs[0]+$10.strs[0];
+}
+rglayout: '[' RESOURCE_GROUP_DECLARATION '(' NUM ',' resourcegroup_declaration_list ')' ']'
+{
+	gEffect->DeclareResourceGroup($4.num, buildResourceGroup);
+	buildResourceGroup.clear();
+}
+resourcegroup_declaration_list: resourcegroup_declaration ',' resourcegroup_declaration_list
+{
+}| resourcegroup_declaration
+{
+}
+resourcegroup_declaration : resourcegroup_type '=' '{' num_list '}'
+{
+	switch($1.num)
 	{
-		buildFunction.numThreads[0] = atoi($4.strs[0].c_str());
-		buildFunction.numThreads[1] = atoi($6.strs[0].c_str());
-		buildFunction.numThreads[2] = atoi($8.strs[0].c_str());
-		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+$9.strs[0]+$10.strs[0];
-	}
-
+	case RESOURCE_GROUP_TEXTURE:
+			buildResourceGroup.textures = buildNumSet;
+			break;
+	case RESOURCE_GROUP_CONSTANTBUFFER:
+			buildResourceGroup.constantBuffers = buildNumSet;
+			break;
+	case RESOURCE_GROUP_STRUCTUREDBUFFER:
+			buildResourceGroup.structuredBuffers = buildNumSet;
+			break;
+		default:
+		errSem("Unknown ResourceGroup Type");
+		break;
+	};
+}
+resourcegroup_type: RESOURCE_GROUP_TEXTURE{
+	$$.num = RESOURCE_GROUP_TEXTURE;
+} | RESOURCE_GROUP_CONSTANTBUFFER
+{
+	$$.num = RESOURCE_GROUP_CONSTANTBUFFER;
+} | RESOURCE_GROUP_STRUCTUREDBUFFER
+{
+	$$.num = RESOURCE_GROUP_STRUCTUREDBUFFER;
+}
+num_list: NUM ',' num_list
+{
+	buildNumSet.insert($1.num);
+}| NUM
+{
+	buildNumSet.clear();
+	buildNumSet.insert($1.num);
+}
 gslayout : '[' MAX_VERTEX_COUNT '(' NUM ')' ']'
 	{
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0];

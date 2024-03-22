@@ -434,7 +434,7 @@ namespace platform
 		typedef Quaternion<double> Quaterniond;
 		//! Quaternion with floats.
 		typedef Quaternion<float> Quaternionf;
-		
+		using vec3d=tvector3<double>;
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN AddQuaterniondTimesVector(vec3d& ret,const Quaterniond& q,const vec3d& v);
 		extern void SIMUL_CROSSPLATFORM_EXPORT_FN Multiply(Quaterniond& r,const Quaterniond& q1,const Quaterniond& q2);
 	

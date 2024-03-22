@@ -1529,6 +1529,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	{
 		// This applies the pass, and also any associated state: Blend, Depth and Rasterizer states:
 		pass->Apply(deviceContext);
+		SetTopology(*deviceContext.AsGraphicsDeviceContext(), pass->GetTopology());
 		cs->effectPassValid = true;
 	}
 	{

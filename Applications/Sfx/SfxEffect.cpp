@@ -183,6 +183,48 @@ Function* Effect::DeclareFunction(const std::string &functionName, Function &bui
 	m_declaredFunctions[functionName].push_back(f);
 	return f;
 }
+int SetsClash(const std::set<int> &a,const std::set<int> &b)
+{
+	for(auto A:a)
+	{
+		for(auto B:b)
+		{
+			if(A==B)
+				return A;
+		}
+	}
+	return -1;
+}
+void Effect::DeclareResourceGroup(int num, const ResourceGroupDeclaration &g)
+{
+	for(auto &rg:resourceGroups)
+	{
+		if(rg.first==num)
+		{
+			std::cerr << "Redeclaring resource group "<<num<<".\n";
+			exit(375);
+		}
+		int t=SetsClash(rg.second.textures, g.textures);
+		if(t>=0)
+		{
+			std::cerr << "Texture slot " << t << " declared in two resource groups.\n";
+			exit(376);
+		}
+		int c = SetsClash(rg.second.constantBuffers, g.constantBuffers);
+		if (c>= 0)
+		{
+			std::cerr << "Constant Buffer slot " << c << " declared in two resource groups.\n";
+			exit(377);
+		}
+		int s = SetsClash(rg.second.structuredBuffers, g.structuredBuffers);
+		if (s >= 0)
+		{
+			std::cerr << "Structured Buffer slot " << s << " declared in two resource groups.\n";
+			exit(378);
+		}
+	}
+	resourceGroups[num]=g;
+}
 
 bool ConditionApplies( const std::string &value)
 {
@@ -461,6 +503,7 @@ void Effect::DeclareConstantBuffer(const std::string &name, int slot, int group_
 	cb->name=name;
 	cb->structureType = name;
 	declarations[name]=cb;
+	CheckConstantBufferSlotForResourceGroup(slot,group_num);
 }
 
 void Effect::DeclareVariable(const Variable* v)
@@ -1838,6 +1881,42 @@ NamedConstantBuffer* Effect::DeclareNamedConstantBuffer(const string &name,int s
 	}
 	return t;
 }
+void Effect::CheckTextureSlotForResourceGroup(int slot, int group)
+{
+	auto g = resourceGroups.find(group);
+	if(g!=resourceGroups.end())
+	{
+		if(g->second.textures.find(slot)==g->second.textures.end())
+		{
+			std::cerr << this->Filename().c_str() << ": error: texture slot "<<slot<<" is not in the declared resource group "<<group<< std::endl;
+			exit(984);
+		}
+	}
+}
+void Effect::CheckConstantBufferSlotForResourceGroup(int slot, int group)
+{
+	auto g = resourceGroups.find(group);
+	if (g != resourceGroups.end())
+	{
+		if (g->second.constantBuffers.find(slot) == g->second.constantBuffers.end())
+		{
+			std::cerr << this->Filename().c_str() << ": error: constant buffer slot " << slot << " is not in the declared resource group " << group << std::endl;
+			exit(984);
+		}
+	}
+}
+void Effect::CheckStructuredBufferSlotForResourceGroup(int slot, int group)
+{
+	auto g = resourceGroups.find(group);
+	if (g != resourceGroups.end())
+	{
+		if (g->second.structuredBuffers.find(slot) == g->second.structuredBuffers.end())
+		{
+			std::cerr << this->Filename().c_str() << ": error: structured buffer slot " << slot << " is not in the declared resource group " << group << std::endl;
+			exit(984);
+		}
+	}
+}
 
 DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType shaderResourceType,int slot,int group,int space,const string &structureType,const string &original)
 {
@@ -1851,7 +1930,9 @@ DeclaredTexture* Effect::DeclareTexture(const string &name,ShaderResourceType sh
 	bool write = IsRW(shaderResourceType);
 	bool rw = IsRW(shaderResourceType);
 	int num = 0;
-	if (sfxConfig.generateSlots)
+	CheckTextureSlotForResourceGroup(slot,group);
+	// We only generate slots for the default resource group. Other groups must stick to their assigned slots.
+	if (sfxConfig.generateSlots && group == sfxConfig.defaultResourceGroupIndex)
 	{
 		num	= -1;
 		// scene

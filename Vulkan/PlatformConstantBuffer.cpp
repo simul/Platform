@@ -19,7 +19,7 @@ PlatformConstantBuffer::PlatformConstantBuffer(crossplatform::ResourceUsageFrequ
 
 PlatformConstantBuffer::~PlatformConstantBuffer()
 {
-    InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
 }
 
 void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,size_t sz,void *addr)
@@ -30,11 +30,13 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 		//TODO: is this efficient?
 		mBufferSize = (unsigned)sz + 4*kBufferAlign;
 	}
+
 	SIMUL_ASSERT(sz<=mBufferSize);
 	mSlots = unsigned(((sz + size_t(kBufferAlign - 1)) & ~size_t(kBufferAlign - 1)) / size_t(kBufferAlign));
 	SIMUL_ASSERT(mSlots>0);
 	mMaxAppliesPerFrame = mBufferSize / (kBufferAlign * mSlots);
 	SIMUL_ASSERT(mMaxAppliesPerFrame>0);
+
 	vk::BufferCreateInfo buf_info = vk::BufferCreateInfo()
 		.setSize(mBufferSize)
 		.setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
@@ -43,37 +45,21 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 	vk::Device *vulkanDevice = vrp->AsVulkanDevice();
 	for (unsigned int i = 0; i < kNumBuffers; i++)
 	{
-		vrp->PushToReleaseManager(mBuffers[i]);
-		vrp->PushToReleaseManager(mMemory[i]);
-		auto result = vulkanDevice->createBuffer(&buf_info, nullptr, &mBuffers[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform,mBuffers[i],"Constant buffer");
+		vrp->PushToReleaseManager(mBuffers[i], &(mAllocationInfo[i]));
 
-		vk::MemoryRequirements mem_reqs;
-		vulkanDevice->getBufferMemoryRequirements(mBuffers[i], &mem_reqs);
-
-		auto mem_alloc = vk::MemoryAllocateInfo().setAllocationSize(mem_reqs.size).setMemoryTypeIndex(0);
-
-		bool  pass = ((vulkan::RenderPlatform*)renderPlatform)->MemoryTypeFromProperties(
-			mem_reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-			&mem_alloc.memoryTypeIndex);
-		SIMUL_ASSERT(pass);
-
-		result = vulkanDevice->allocateMemory(&mem_alloc, nullptr, &mMemory[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform,mMemory[i],"Constant buffer memory");
+		std::string name = "ConstantBuffer " + std::to_string(i);
+		vrp->CreateVulkanBuffer(mBufferSize, vk::BufferUsageFlagBits::eUniformBuffer, 
+								vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+								mBuffers[i], mAllocationInfo[i], name.c_str());
 		if(addr)
 		{
-			auto pData = vulkanDevice->mapMemory(mMemory[i], 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());
-			SIMUL_ASSERT(pData!=nullptr);
-
+			void *pData = nullptr;
+			vmaMapMemory(mAllocationInfo[i].allocator, mAllocationInfo[i].allocation, &pData);
+			SIMUL_ASSERT(pData != nullptr);
 			memcpy(pData, addr, sz);
 
-			vulkanDevice->unmapMemory(mMemory[i]);
+			vmaUnmapMemory(mAllocationInfo[i].allocator, mAllocationInfo[i].allocation);
 		}
-
-		vulkanDevice->bindBufferMemory(mBuffers[i], mMemory[i], 0);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 
 	lastBuffer=nullptr;
@@ -92,8 +78,7 @@ void PlatformConstantBuffer::InvalidateDeviceObjects()
 		return;
 	for (uint32_t i = 0; i < kNumBuffers; i++)
 	{
-		r->PushToReleaseManager(mBuffers[i]);
-		r->PushToReleaseManager(mMemory[i]);
+		r->PushToReleaseManager(mBuffers[i], &(mAllocationInfo[i]));
 	}
 	renderPlatform=nullptr;
 }
@@ -144,18 +129,16 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 		currentFrameIndex = currentFrameIndex % (kNumBuffers);
 	}
 
-	// pDest points at the begining of the uploadHeap, we can offset it! (we created 64KB and each Constart buffer
-	// has a minimum size of kBufferAlign)
-	uint8_t* pDest = nullptr;
 	last_offset = (kBufferAlign * mSlots) * mCurApplyCount;	
-	lastBuffer=&mBuffers[currentFrameIndex];
+	lastBuffer = &mBuffers[currentFrameIndex];
+	const AllocationInfo &_allocationInfo = mAllocationInfo[currentFrameIndex];
 
-	auto pData = vulkanDevice->mapMemory(mMemory[currentFrameIndex],last_offset, (kBufferAlign * mSlots),  vk::MemoryMapFlags());
-	
+	uint8_t *pData = nullptr;
+	vmaMapMemory(_allocationInfo.allocator, _allocationInfo.allocation, (void **)&pData);
 	if(pData)
 	{
-		memcpy(pData,src, size);
-		vulkanDevice->unmapMemory(mMemory[currentFrameIndex]);
+		memcpy(pData + last_offset, src, size);
+		vmaUnmapMemory(_allocationInfo.allocator, _allocationInfo.allocation);
 	}
 	
 	mCurApplyCount++;

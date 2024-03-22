@@ -35,7 +35,9 @@ namespace platform
 			D3D12_INDEX_BUFFER_VIEW*	GetIndexBufferView() override;
 		private:
 			ID3D12Resource*				d3d12Buffer;
+			AllocationInfo				mAllocationInfo;
 			ID3D12Resource*				mIntermediateHeap;
+			AllocationInfo				mIntermediateAllocationInfo;
 			UINT32						mBufferSize;
 			UINT8*						mGpuMappedPtr;
 			D3D12_VERTEX_BUFFER_VIEW	mVertexBufferView;

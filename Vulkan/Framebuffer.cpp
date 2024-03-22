@@ -18,7 +18,7 @@ using namespace vulkan;
 Framebuffer::Framebuffer(const char *name) : crossplatform::Framebuffer(name)
 {
 	if (name)
-		this->name = name;
+		this->name.assign(name);
 }
 
 Framebuffer::~Framebuffer()
