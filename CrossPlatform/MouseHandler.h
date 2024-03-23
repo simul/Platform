@@ -61,15 +61,15 @@ namespace platform
 			//! @brief Given the last mouse position, what direction is the mouse pointer in?
 			vec3 getMouseDirection(int x, int y, int viewport_x, int viewport_y) const;
 		protected:
-			int step_rotate_x, step_rotate_y;
+			int step_rotate_x=0, step_rotate_y=0;
 			CameraMode cameraMode;
 			float centre[3];
-			float CameraDamping;
-			float minAlt, maxAlt;
+			float CameraDamping=0.f;
+			float minAlt=-10000.0f, maxAlt=1000000.f;
 			float speed_factor = 1.0f;
 			bool y_vertical = false;
-			float aspect;
-			platform::crossplatform::Camera *camera;
+			float aspect=1.f;
+			platform::crossplatform::Camera *camera=nullptr;
 			bool move_forward, move_backward, move_left, move_right, move_up, move_down, shift_down, alt_down;
 			float up_down_spd;
 			float forward_back_spd;
