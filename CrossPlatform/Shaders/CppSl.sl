@@ -738,6 +738,37 @@
 		return clamp(t, tvector4<T>(1, 1, 1, 1), tvector4<T>(0, 0, 0, 0));
 	}
 
+	//Frac
+
+	template <typename T>
+	T frac(T x)
+	{
+		//https://twitter.com/JarkkoPFC/status/836953879896076293?lang=en-GB
+		int X = (int)x;
+		if (x < 0)
+			X--;
+		x -= (T)X;
+		return x;
+	}
+	
+	template <typename T>
+	tvector2<T> frac(tvector2<T> v)
+	{
+		return tvector2<T>(frac(v.x), frac(v.y));
+	}
+
+	template <typename T>
+	tvector3<T> frac(tvector3<T> v)
+	{
+		return tvector3<T>(frac(v.x), frac(v.y), frac(v.z));
+	}
+
+	template <typename T>
+	tvector4<T> frac(tvector4<T> v)
+	{
+		return tvector4<T>(frac(v.x), frac(v.y), frac(v.z), frac(v.w));
+	}
+
 	//Length
 
 	template<typename T> 
