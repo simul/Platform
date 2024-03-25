@@ -516,8 +516,9 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	vk::PhysicalDevice* gpu = ((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
 
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
-	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
-	
+	vk::ImageTiling tiling=vk::ImageTiling::eOptimal;
+	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, tiling, usageFlags, imageCreateFlags);
+	vk::ImageLayout vkLayout = vk::ImageLayout::eUndefined;
 	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
@@ -525,19 +526,36 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setMipLevels(m)
 		.setArrayLayers(1)
 		.setSamples((vk::SampleCountFlagBits)num_samples) //AJR
-		.setTiling(vk::ImageTiling::eOptimal)
+											  .setTiling(tiling)
 		.setUsage(usageFlags)
 		.setFlags(imageCreateFlags)
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
-		.setPQueueFamilyIndices(nullptr)
-		.setInitialLayout(vk::ImageLayout::ePreinitialized);
+		.setPQueueFamilyIndices(nullptr);
 
 	std::string _name = name + " texture mImage";
+	VkExternalMemoryImageCreateInfo extImageCreateInfo = {};
+	if(shared)
+	{
+		/* Indicate that the memory backing this image will be exported in an
+		 * fd. In some implementations, this may affect the call to
+		 * GetImageMemoryRequirements() with this image.*/
+		extImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+		extImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+		imageCreateInfo.pNext = &extImageCreateInfo;
+
+		//VkExternalImageFormatProperties::externalMemoryProperties.compatibleHandleTypes;
+	}
+	else
+	{
+		vkLayout=vk::ImageLayout::ePreinitialized;
+	}
+	imageCreateInfo.setInitialLayout(vkLayout);
 	vulkanRenderPlatform->CreateVulkanImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	InitViewTable(1, m);
-	AssumeLayout(vk::ImageLayout::ePreinitialized);
+	AssumeLayout(vkLayout);
 
 	pixelFormat=f;
 	width=w;
