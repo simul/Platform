@@ -57,6 +57,8 @@ cmake_policy(SET CMP0077 NEW)
 include(FetchContent)
 
 # Get the "safe" header library for lockable resources
+set(BUILD_TESTING OFF)
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 FetchContent_Declare(
   safe
   GIT_REPOSITORY https://github.com/LouisCharlesC/safe.git
