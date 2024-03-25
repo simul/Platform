@@ -589,40 +589,41 @@ std::ostream &operator<<(std::ostream &os, tvector4<T> v)
 }
 
 // Min/Max
+namespace std
+{
+	template <typename T>
+	tvector2<T> max(tvector2<T> a, tvector2<T> b)
+	{
+		return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
+	};
+	template <typename T>
+	tvector2<T> min(tvector2<T> a, tvector2<T> b)
+	{
+		return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
+	};
 
-template <typename T>
-tvector2<T> max(tvector2<T> a, tvector2<T> b)
-{
-	return tvector2<T>(std::max(a.x, b.x), std::max(a.y, b.y));
-};
-template <typename T>
-tvector2<T> min(tvector2<T> a, tvector2<T> b)
-{
-	return tvector2<T>(std::min(a.x, b.x), std::min(a.y, b.y));
-};
+	template <typename T>
+	tvector3<T> max(tvector3<T> a, tvector3<T> b)
+	{
+		return tvector3<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z));
+	};
+	template <typename T>
+	tvector3<T> min(tvector3<T> a, tvector3<T> b)
+	{
+		return tvector3<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z));
+	};
 
-template <typename T>
-tvector3<T> max(tvector3<T> a, tvector3<T> b)
-{
-	return tvector3<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z));
-};
-template <typename T>
-tvector3<T> min(tvector3<T> a, tvector3<T> b)
-{
-	return tvector3<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z));
-};
-
-template <typename T>
-tvector4<T> max(tvector4<T> a, tvector4<T> b)
-{
-	return tvector4<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
-};
-template <typename T>
-tvector4<T> min(tvector4<T> a, tvector4<T> b)
-{
-	return tvector4<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
-};
-
+	template <typename T>
+	tvector4<T> max(tvector4<T> a, tvector4<T> b)
+	{
+		return tvector4<T>(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
+	};
+	template <typename T>
+	tvector4<T> min(tvector4<T> a, tvector4<T> b)
+	{
+		return tvector4<T>(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
+	};
+}
 // Length
 
 template <typename T>
@@ -1431,18 +1432,20 @@ void closest_approach(const tvector3<T> A, const tvector3<T> B, tvector3<T> C, c
 typedef tvector4<float> vec4;
 typedef tvector2<float> vec2;
 typedef tvector3<float> vec3;
-#ifndef EXCLUDE_PLATFORM_TYPEDEFS
 typedef tmatrix4<float> mat4;
 typedef tmatrix4<double> mat4d;
+//! Very simple 3 vector of doubles.
+typedef tvector3<double> vec3d;
 typedef uint32_t uint;
+typedef tvector2<int32_t> ivec2;
+#ifndef EXCLUDE_PLATFORM_TYPEDEFS
 typedef tvector2<int32_t> int2;
 typedef tvector3<int32_t> int3;
 typedef tvector4<int32_t> int4;
 typedef tvector2<uint32_t> uint2;
 typedef tvector3<uint32_t> uint3;
 typedef tvector4<uint32_t> uint4;
-//! Very simple 3 vector of doubles.
-typedef tvector3<double> vec3d;
+#endif
 inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)
 {
 	v3 = vec3(float(v.x), float(v.y), float(v.z));
@@ -1455,7 +1458,6 @@ inline vec3d cross(const vec3d &a, const vec3d &b)
 	r.z = a.x * b.y - b.x * a.y;
 	return r;
 }
-#endif
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif

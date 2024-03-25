@@ -285,7 +285,7 @@ namespace platform
 			int maxAttributeSize = 0;
 			int maxTraceRecursionDepth = 0;
 			bool multiview = false;
-			int3 numThreads = { 0,0,0 };
+			tvector3<int> numThreads = { 0,0,0 };
 			std::string rtFormatState;
 			EffectPass(RenderPlatform *r,Effect *parent);
 			virtual ~EffectPass();

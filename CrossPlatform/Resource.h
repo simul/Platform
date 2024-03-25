@@ -23,20 +23,20 @@ namespace platform
 		//! You may see this referred to as a "Descriptor Set" layout elsewhere.
 		struct ResourceGroupLayout
 		{
-			inline bool UsesSlot(uint64_t slots,uint8_t s) const
+			inline bool UsesSlot(uint64_t sl,uint8_t s) const
 			{
 				uint64_t b = uint64_t(1) << uint64_t(s);
-				uint64_t present = b & slots;
+				uint64_t present = b & sl;
 				return present != uint64_t(0);
 			}
-			inline uint8_t GetNumResources(uint64_t slots) const
+			inline uint8_t GetNumResources(uint64_t sl) const
 			{
 				uint8_t count = 0;
-				uint64_t slotsRemaining = slots;
+				uint64_t slotsRemaining = sl;
 				for (uint8_t s = 0; s < 64; s++)
 				{
 					uint64_t b = uint64_t(1) << uint64_t(s);
-					uint64_t present = b & slots;
+					uint64_t present = b & sl;
 					if (present != uint64_t(0))
 						count++;
 					slotsRemaining &= (~b);
@@ -45,9 +45,9 @@ namespace platform
 				}
 				return count;
 			}
-			inline void UseSlot(uint64_t &slots,uint8_t s)
+			inline void UseSlot(uint64_t &sl, uint8_t s)
 			{
-				slots |= uint64_t(1) << uint64_t(s);
+				sl |= uint64_t(1) << uint64_t(s);
 			}
 			//! Bitmask for which constant buffer slots are in this group.
 			uint64_t constantBufferSlots=0;

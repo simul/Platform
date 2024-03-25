@@ -316,11 +316,14 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 																add+=c;
 															}
 														}
-														const char *fn=yytext;
-														if(!newfile(fn))
+														if(inActiveBlock())
 														{
-															ClearMacros();
-															yyterminate(); /* no such file */
+															const char *fn=yytext;
+															if(!newfile(fn))
+															{
+																ClearMacros();
+																yyterminate(); /* no such file */
+															}
 														}
 														BEGIN INITIAL;
 													}
