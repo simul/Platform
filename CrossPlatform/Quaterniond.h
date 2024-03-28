@@ -298,7 +298,8 @@ namespace platform
 				ret.y=s1*y+s*y1+z*x1-x*z1;
 				ret.z=s1*z+s*z1+x*y1-y*x1;
 				return ret;
-			}			Quaternion& Rotate(T angle,const tvector3<T>&axis)
+			}
+			Quaternion& Rotate(T angle,const tvector3<T>&axis)
 			{
 				Quaternion dq(angle, axis);
 				*this = dq * (*this);
