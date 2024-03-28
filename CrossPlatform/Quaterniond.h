@@ -108,7 +108,7 @@ namespace platform
 			}
 			template<typename U> void Define(const tvector3<U>& dir_sin)
 			{
-				T mag = T(length(dir_sin));
+				T mag = clamp(T(length(dir_sin)), T(-1), T(1));
 				T a2 = asin(mag) / T(2.0);
 				s = cos(a2);
 				T div = T(1.0) / (T(2.0) * cos(a2));
@@ -298,8 +298,7 @@ namespace platform
 				ret.y=s1*y+s*y1+z*x1-x*z1;
 				ret.z=s1*z+s*z1+x*y1-y*x1;
 				return ret;
-			}             
-			Quaternion& Rotate(T angle,const tvector3<T>&axis)
+			}			Quaternion& Rotate(T angle,const tvector3<T>&axis)
 			{
 				Quaternion dq(angle, axis);
 				*this = dq * (*this);
