@@ -38,6 +38,7 @@ namespace platform
 			
 			void		ActualApply(crossplatform::DeviceContext &,bool) override;
 
+			virtual bool IsValid() const override { return mNumElements>0; }
 			size_t GetLastOffset();
 			vk::Buffer *GetLastBuffer();
 			size_t GetSize();

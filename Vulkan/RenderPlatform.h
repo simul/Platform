@@ -235,7 +235,7 @@ namespace platform
 			static vk::Extent2D						GetTargetAndViewportExtext2D(const crossplatform::TargetsAndViewport* targetsAndViewport);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
-			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const char *name);
+			bool									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const char *name);
 			void									CreateVulkanImage(vk::ImageCreateInfo& imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name);
 			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass
 																			,int num_colour,const crossplatform::PixelFormat *pixelFormats
@@ -334,7 +334,7 @@ namespace platform
 			vk::Device *device = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 			uint64_t objectHandle = *((uint64_t *)&ds);
 
-			if (debugUtilsSupported)
+			if (objectHandle&&debugUtilsSupported)
 			{
 				vk::DispatchLoaderDynamic d;
 				d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");

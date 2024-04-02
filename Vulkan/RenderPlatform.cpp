@@ -940,7 +940,7 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFl
 	 return 0;
 }
 
-void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, AllocationInfo& allocationInfo, const char *name)
+bool RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, AllocationInfo& allocationInfo, const char *name)
 {
 	vk::BufferCreateInfo bufferInfo = {};
 	bufferInfo.size = size;
@@ -965,11 +965,13 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 	SIMUL_VK_CHECK((vk::Result)vmaCreateBuffer(allocationInfo.allocator, &_bufferInfo, &allocationCI, &_buffer, &allocationInfo.allocation, &allocationInfo.allocationInfo));
 	buffer = _buffer;
 
-	if(name)
+	if (buffer&&name)
 	{
 		SetVulkanName(this, buffer, name);
-		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
+		if(allocationInfo.allocation)
+			vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
 	}
+	return (buffer!=nullptr);
 }
 
 void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name)
