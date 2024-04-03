@@ -28,13 +28,17 @@ namespace platform
 			void Render(GraphicsDeviceContext &deviceContext, Mesh *mesh,mat4 model
 						,Texture *diffuseCubemap,Texture *specularCubemap,Texture *screenspaceShadow);
 			void ApplyMaterial(DeviceContext &deviceContext, Material *material);
+		
 		protected:
 			void DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int);
 			void DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh, const Mesh::SubNode& subNode);
-			ConstantBuffer<CameraConstants> cameraConstants;
 			RenderPlatform *renderPlatform;
 			Effect *effect;
+
+		public:
+			ConstantBuffer<CameraConstants> cameraConstants;
 			crossplatform::ConstantBuffer<SolidConstants> solidConstants;
+			crossplatform::ConstantBuffer<PerObjectConstants> perObjectConstants;
 		};
 	}
 }
