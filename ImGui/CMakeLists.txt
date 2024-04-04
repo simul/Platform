@@ -29,8 +29,16 @@ file(GLOB SHADERS  "Shaders/*.sfx")
 file(GLOB SHADER_INCLUDES "Shaders/*.sl") 
 # Setup and build the static library.
 add_static_library( ImGui SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} DEFINITIONS PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} PUBLICINCLUDES ${SIMUL_PLATFORM_DIR}/External/imgui LINK SimulCrossPlatform_MT)
-target_include_directories(ImGui_MT INTERFACE "${SIMUL_PLATFORM_DIR}/External/glfw/include")
-target_include_directories(ImGui_MT INTERFACE "${SIMUL_PLATFORM_DIR}/External")
+
+if(SIMUL_SOURCE_BUILD)
+	target_include_directories(ImGui_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External/glfw/include")
+	target_include_directories(ImGui_MT PUBLIC "${SIMUL_PLATFORM_DIR}/External")
+else()
+	target_include_directories(ImGui_MT INTERFACE "${SIMUL_PLATFORM_DIR}/External/glfw/include")
+	target_include_directories(ImGui_MT INTERFACE "${SIMUL_PLATFORM_DIR}/External")
+endif()
+
+
 add_dependencies(ImGui_MT SimulCrossPlatform_MT)
 add_multiplatform_sfx_shader_project( ImGui_MT INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
 								"${SIMUL_PLATFORM_DIR}/.."
@@ -39,7 +47,7 @@ add_multiplatform_sfx_shader_project( ImGui_MT INCLUDES "${CMAKE_CURRENT_SOURCE_
 if(PLATFORM_BUILD_MD_LIBS)
 # Setup and build the dynamic library.
 add_dynamic_library( ImGui SOURCES ${SOURCES} ${HEADERS} ${SHADERS} DEFINITIONS PLATFORM_IMGUI_DLL=1 PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} "IMGUI_API=__declspec(dllexport)" FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} PUBLICINCLUDES ${SIMUL_PLATFORM_DIR}/External/imgui LINK SimulCrossPlatform_MD)
-target_link_directories( ImGui_MD INTERFACE ${SIMUL_PLATFORM_DIR}/External/glfw/build_md/lib/${CMAKE_BUILD_TYPE})
+target_link_directories( ImGui_MD PUBLIC ${SIMUL_PLATFORM_DIR}/External/glfw/build_md/lib/${CMAKE_BUILD_TYPE})
 target_link_libraries (ImGui_MD glfw)
-target_include_directories(ImGui_MD INTERFACE "${SIMUL_PLATFORM_DIR}/External/glfw/include")
+target_include_directories(ImGui_MD PUBLIC "${SIMUL_PLATFORM_DIR}/External/glfw/include")
 endif()
