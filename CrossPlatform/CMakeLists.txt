@@ -53,5 +53,8 @@ add_multiplatform_sfx_shader_project( SimulCrossPlatform${STATIC_LINK_SUFFIX} IN
 							SOURCES ${SHADERS} ${SHADER_INCLUDES} DEFINES VULKAN_SDK=${VULKAN_SDK_DIR}
 					 		OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" )
 # For parallel_hashmap
-target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
-	
+if(SIMUL_SOURCE_BUILD)
+	target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
+else()
+	target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External")
+endif()

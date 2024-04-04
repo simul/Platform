@@ -90,7 +90,7 @@ namespace platform
 		struct SIMUL_CROSSPLATFORM_EXPORT CameraViewStruct
 		{
 			CameraViewStruct()
-				:exposure(1.f)
+				:exposure(0.44f)
 				,gamma(0.44f)
 				,projection(DEPTH_REVERSE)
 				,nearZ(1.f)

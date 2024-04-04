@@ -13,6 +13,11 @@ endif()
 
 # Setup and build the static library.
 add_static_library( Core SOURCES ${SOURCES} ${HEADERS} ${DOCS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-target_compile_definitions( Core${STATIC_LINK_SUFFIX} PUBLIC FMT_HEADER_ONLY )
+
+if(SIMUL_SOURCE_BUILD)
+	target_compile_definitions( Core${STATIC_LINK_SUFFIX} PUBLIC FMT_HEADER_ONLY )
+else()
+	target_compile_definitions( Core${STATIC_LINK_SUFFIX} INTERFACE FMT_HEADER_ONLY )
+endif()
 
 
