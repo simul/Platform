@@ -26,7 +26,6 @@ file(GLOB SHADER_DEFS
 
 add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
-	add_dependencies( SimulOpenGL${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX} )
 	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../External/stb")
 	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")
 	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/include")
