@@ -971,7 +971,7 @@ bool RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 		if(allocationInfo.allocation)
 			vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
 	}
-	return (buffer!=nullptr);
+	return (buffer.operator VkBuffer()!=nullptr);
 }
 
 void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name)
