@@ -5,6 +5,12 @@
 #include "Platform/CrossPlatform/PlatformStructuredBuffer.h"
 #include "BaseAccelerationStructure.h"
 #include "BottomLevelAccelerationStructure.h"
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace platform
 {
 	namespace crossplatform
@@ -50,3 +56,7 @@ namespace platform
 		};
 	}
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

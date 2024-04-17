@@ -4,6 +4,12 @@
 #include <set>
 #include <string>
 #include "Platform/Core/Export.h"
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace platform
 {
 	namespace core
@@ -72,4 +78,9 @@ namespace platform
 		};
 	}
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #endif

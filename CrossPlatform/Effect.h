@@ -646,7 +646,7 @@ namespace platform
 			std::string defaultName;
 		public:
 			ConstantBufferBase(const char* name);
-			~ConstantBufferBase()
+			virtual ~ConstantBufferBase()
 			{
 				delete platformConstantBuffer;
 			}

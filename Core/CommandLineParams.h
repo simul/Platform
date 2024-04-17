@@ -10,6 +10,11 @@
 	#define strcpy_s(d, n, s) (strncpy(d,s,n));
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace platform
 {
 	namespace core
@@ -159,3 +164,7 @@ namespace platform
 		}
 	}
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
