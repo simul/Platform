@@ -20,4 +20,6 @@ else()
 	target_compile_definitions( Core${STATIC_LINK_SUFFIX} INTERFACE FMT_HEADER_ONLY )
 endif()
 
-
+if (SIMUL_DLL_SDK_LIBRARY)
+	AddDLLCompileDefinitions( Core${STATIC_LINK_SUFFIX} )
+endif()

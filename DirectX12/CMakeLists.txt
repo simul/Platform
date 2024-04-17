@@ -73,6 +73,10 @@ else()
 	target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
 endif()
 
+if (SIMUL_DLL_SDK_LIBRARY)
+	AddDLLCompileDefinitions( SimulDirectX12${STATIC_LINK_SUFFIX} )
+endif()
+
 option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 if(SIMUL_SOURCE_BUILD)
 	if(PLATFORM_SPECTRUM)

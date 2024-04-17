@@ -32,3 +32,7 @@ if(SIMUL_SOURCE_BUILD)
 
 	set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/OpenGL.json" )
 endif()
+
+if (SIMUL_DLL_SDK_LIBRARY)
+	AddDLLCompileDefinitions( SimulOpenGL${STATIC_LINK_SUFFIX} )
+endif()

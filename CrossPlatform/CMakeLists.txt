@@ -58,3 +58,7 @@ if(SIMUL_SOURCE_BUILD)
 else()
 	target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External")
 endif()
+
+if (SIMUL_DLL_SDK_LIBRARY)
+	AddDLLCompileDefinitions( SimulCrossPlatform${STATIC_LINK_SUFFIX} )
+endif()
