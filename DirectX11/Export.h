@@ -18,7 +18,7 @@
 	#pragma warning Unknown dynamic link import/export semantics.
 #endif
 
-#if defined(_MSC_VER) && !defined(SIMUL_DIRECTX11_DLL)
+#if defined(_MSC_VER) && !defined(SIMUL_DIRECTX11_DLL) && !defined(SIMUL_NO_PRAGMA_LINK)
 	#ifdef _DEBUG
 		#ifdef _DLL
 			#pragma comment(lib,"SimulDirectX11_MDd")
