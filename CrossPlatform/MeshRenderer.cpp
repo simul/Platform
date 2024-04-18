@@ -41,7 +41,6 @@ void MeshRenderer::InvalidateDeviceObjects()
 void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int index)
 {
 	cameraConstants.world = deviceContext.viewStruct.model;
-	cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
 	cameraConstants.view = deviceContext.viewStruct.view;
 	cameraConstants.proj = deviceContext.viewStruct.proj;
 	cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;

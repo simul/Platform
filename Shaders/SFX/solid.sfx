@@ -14,11 +14,12 @@ uniform Texture2D emissiveTexture;
 uniform TextureCube diffuseCubemap;
 uniform TextureCube specularCubemap; 
 
+uniform Texture2D shadowTexture;
+uniform Texture2D screenspaceShadowTexture;
+
 //////////////////////////
 uniform TextureCube nearFarTextureCube;
 uniform Texture2D loss2dTexture;
-uniform Texture2D shadowTexture;
-uniform Texture2D screenspaceShadowTexture;
 uniform Texture3D inscatterVolumeTexture;
 //////////////////////////
 
@@ -55,63 +56,62 @@ struct vertexInput
 
 struct vertexInputP
 {
-    vec3 position		: POSITION;
+	vec3 position		: POSITION;
 };
 
 
 struct vertexOutput
 {
-    vec4 hPosition		: SV_POSITION;
-    vec2 texCoords0		: TEXCOORD0;
-    vec2 texCoords1		: TEXCOORD1;
-    vec3 normal			: TEXCOORD2;
+	vec4 hPosition		: SV_POSITION;
+	vec2 texCoords0		: TEXCOORD0;
+	vec2 texCoords1		: TEXCOORD1;
+	vec3 normal			: TEXCOORD2;
 	vec3 tangent		: TEXCOORD3;
-    vec3 wpos			: TEXCOORD4;
-    vec3 view			: TEXCOORD5;
-    vec4 clip_pos		: TEXCOORD6;
+	vec3 wpos			: TEXCOORD4;
+	vec3 view			: TEXCOORD5;
+	vec4 clip_pos		: TEXCOORD6;
 };
 
 shader vertexOutput VS_Solid_PosOnly(vertexInputP IN)
 {
-    vertexOutput OUT;
-	vec4 opos		=vec4(IN.position.xyz,1.0);
-    OUT.wpos		=mul(world, opos).xyz;
-	OUT.view		=normalize(OUT.wpos.xyz- viewPosition);
-    OUT.clip_pos	=mul(opos,worldViewProj);
-	OUT.texCoords0	=vec2(0,0);
-	OUT.texCoords1	=vec2(0,0);
+	vertexOutput OUT;
+	vec4 opos		= vec4(IN.position.xyz, 1.0);
+	OUT.wpos		= mul(world, opos).xyz;
+	OUT.view		= normalize(OUT.wpos.xyz - viewPosition);
+	OUT.clip_pos	= mul(opos, worldViewProj);
+	OUT.texCoords0	= vec2(0, 0);
+	OUT.texCoords1	= vec2(0, 0);
 #ifdef SFX_OPENGL
-    OUT.normal.xyz	=mul(IN.position.xyz, mat3(world));
+	OUT.normal.xyz	= mul(IN.position.xyz, mat3(world));
 	OUT.tangent.xyz = mul(vec3(1.0, 0.0, 0.0), mat3(world));
 #else
-    OUT.normal.xyz	=mul(vec4(IN.position.xyz, 0.0), world).xyz;
-	OUT.tangent		=mul(vec4(1.0, 0.0, 0.0, 0.0), world).xyz;
+	OUT.normal.xyz	= mul(vec4(IN.position.xyz, 0.0), world).xyz;
+	OUT.tangent		= mul(vec4(1.0, 0.0, 0.0, 0.0), world).xyz;
 #endif
-	OUT.hPosition	=OUT.clip_pos;
-    return OUT;
+	OUT.hPosition	= OUT.clip_pos;
+	return OUT;
 }
 
 shader vertexOutput VS_Solid(vertexInput IN)
 {
-    vertexOutput OUT;
-	vec4 opos		=vec4(IN.position.xyz,1.0);
-    vec4 wpos		=mul(opos, world);
-	OUT.view		=normalize(wpos.xyz-viewPosition);
-	vec4 viewspace_pos = mul( view, vec4(wpos.xyz, 1.0));
-	OUT.clip_pos	=mul(proj,vec4(viewspace_pos.xyz,1.0));
-	OUT.wpos		= wpos.xyz;
-	//OUT.clip_pos	=mul( opos, worldViewProj);
-	OUT.texCoords0	=IN.texCoords;
-	OUT.texCoords1	=IN.texCoords;
+	vertexOutput OUT;
+	vec4 opos			= vec4(IN.position.xyz, 1.0);
+	vec4 wpos			= mul(world, opos);
+	OUT.view			= normalize(wpos.xyz - viewPosition);
+	vec4 viewspace_pos	= mul(view, vec4(wpos.xyz, 1.0));
+	OUT.clip_pos		= mul(proj, vec4(viewspace_pos.xyz, 1.0));
+	OUT.wpos			= wpos.xyz;
+	OUT.texCoords0		= IN.texCoords;
+	OUT.texCoords1		= IN.texCoords;
 #ifdef SFX_OPENGL
-	OUT.normal.xyz = mul(IN.normal, mat3(world));
-	OUT.tangent.xyz = mul(IN.tangent.xyz, mat3(world));
+	OUT.normal.xyz		= mul(IN.normal, mat3(world));
+	OUT.tangent.xyz		= mul(IN.tangent.xyz, mat3(world));
 #else
-	OUT.normal = normalize(mul(vec4(IN.normal, 0.0), world).xyz);
-	OUT.tangent = normalize(mul(vec4(IN.tangent.xyz, 0.0), world).xyz);
+	OUT.normal			= normalize(mul(vec4(IN.normal, 0.0), world).xyz);
+	OUT.tangent			= normalize(mul(vec4(IN.tangent.xyz, 0.0), world).xyz);
 #endif
-	OUT.hPosition	=OUT.clip_pos;
-    return OUT;
+	OUT.hPosition		= OUT.clip_pos;
+	return OUT;
 }
 
 vec3 EnvBRDFApprox(vec3 specularColour, float roughness, float n_v)
@@ -171,17 +171,17 @@ struct SurfaceState
 // The instantaneous properties at a specific point on a surface.
 struct SurfaceProperties
 {
-    vec3 albedo;		// diffuse color
-    vec3 normal;
-    vec3 emission;
+	vec3 albedo;		// diffuse color
+	vec3 normal;
+	vec3 emission;
 	vec3 position;
 	float roughness;
 	float roughness2;
 	float metallic;
 	float ao;
-    float specular;		// specular power in 0..1 range
-    float gloss;		// specular intensity
-    float alpha;		// alpha for transparencies
+	float specular;		// specular power in 0..1 range
+	float gloss;		// specular intensity
+	float alpha;		// alpha for transparencies
 };
 
 vec3 Reflect(vec3 i,vec3 n)
@@ -411,9 +411,9 @@ void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
 /// An example shader for rendering transparent objects.
 shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 {
-    vec3 normal	=normalize(IN.normal);
+	vec3 normal	=normalize(IN.normal);
 // Here is whatever colour your shader would normally generate in the absence of atmospherics:
-    vec4 c = Solid(IN);
+	vec4 c = Solid(IN);
 
 // Now we calculate the atmospheric effects:
 	vec4 loss;
@@ -444,27 +444,27 @@ PixelShader ps_debug_normal_unity = CompileShader(ps_4_0, PS_DebugNormal_Unity()
 PixelShader ps_debug_normal_vertexnormals = CompileShader(ps_4_0, PS_DebugNormal_VertexNormals()); //Vertex normals
 technique solid
 {
-    pass base 
-    {
+	pass base 
+	{
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth,0);
 		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(vs_solid);
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetPixelShader(ps_solid);
-    }
+	}
 }
 
 
 technique transparent
 {
-    pass base 
-    {
+	pass base 
+	{
 		SetRasterizerState(RenderBackfaceCull);
 		SetDepthStencilState(TestReverseDepth, 0);
 		SetBlendState(AlphaBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_5_0,PS_Transparent()));
-    }
+	}
 }
