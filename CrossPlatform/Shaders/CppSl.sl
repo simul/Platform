@@ -720,22 +720,22 @@
 	template <typename T>
 	T saturate(const T &t)
 	{
-		return clamp(t, T(1.0), T(0.0));
+		return clamp(t, T(0), T(1));
 	}
 	template <typename T>
 	tvector2<T> saturate(const tvector2<T> &t)
 	{
-		return clamp(t, tvector2<T>(1, 1), tvector2<T>(0, 0));
+		return clamp(t, tvector2<T>(0, 0), tvector2<T>(1, 1));
 	}
 	template <typename T>
 	tvector3<T> saturate(const tvector3<T> &t)
 	{
-		return clamp(t, tvector3<T>(1, 1, 1), tvector3<T>(0, 0, 0));
+		return clamp(t, tvector3<T>(0, 0, 0), tvector3<T>(1, 1, 1));
 	}
 	template <typename T>
 	tvector4<T> saturate(const tvector4<T> &t)
 	{
-		return clamp(t, tvector4<T>(1, 1, 1, 1), tvector4<T>(0, 0, 0, 0));
+		return clamp(t, tvector4<T>(0, 0, 0, 0), tvector4<T>(1, 1, 1, 1));
 	}
 
 	//Frac
