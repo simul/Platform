@@ -18,10 +18,25 @@ if(PLATFORM_USE_FMT)
 endif()
 
 if(PLATFORM_USE_ASSIMP)
-	set( ASSIMP_LIBNAME assimp-vc${MSVC_TOOLSET_VERSION}-mt$<$<CONFIG:Debug>:d> )
-	if(NOT PLATFORM_WINDOWS )
-		add_subdirectory(External/assimp)
-	endif()
+	set(ASSIMP_LIBNAME assimp-vc${MSVC_TOOLSET_VERSION}-mt$<$<CONFIG:Debug>:d>)
+	set(ASSIMP_LIBNAME_DLL assimp-vc${MSVC_TOOLSET_VERSION}-mt.dll)
+	set(ASSIMP_LIBNAME_D_DLL assimp-vc${MSVC_TOOLSET_VERSION}-mtd.dll)
+	set(ASSIMP_INSTALL OFF CACHE INTERNAL  "")
+	set(ASSIMP_INSTALL_PDB OFF CACHE INTERNAL  "")
+	set(ASSIMP_BUILD_TESTS OFF CACHE INTERNAL  "")
+	set(ASSIMP_BUILD_ZLIB ON CACHE INTERNAL  "")
+	SET ( BUILD_SHARED_LIBS ON CACHE BOOL "BUILD_SHARED_LIB" FORCE ) # We want a DLL here.
+	add_subdirectory(External/assimp)
+	SET ( BUILD_SHARED_LIBS OFF CACHE BOOL "BUILD_SHARED_LIB" FORCE ) # Restore off state.
+
+	set_target_properties(assimp PROPERTIES FOLDER "Platform/assimp")
+	set_target_properties(zlibstatic PROPERTIES FOLDER "Platform/assimp")
+	set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "Platform/assimp")
+
+	function(DelayLoadLinkAssimp target)
+		target_link_libraries(${target} PRIVATE assimp)
+		target_link_options(${target} PRIVATE "/DELAYLOAD:$<TARGET_FILE_BASE_NAME:assimp>.dll")
+	endfunction()
 endif()
 
 include("CMake/Variables.cmake")
