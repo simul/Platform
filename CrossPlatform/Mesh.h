@@ -31,18 +31,15 @@ namespace platform
 		protected:
 			mutable bool done_begin;
 			crossplatform::RenderPlatform *renderPlatform;
-			size_t numNodes=0;
+			size_t numNodes = 0;
+
 		public:
-			Mesh(crossplatform::RenderPlatform* r);
+			Mesh(crossplatform::RenderPlatform *r);
 			virtual ~Mesh();
 			void InvalidateDeviceObjects();
-			void Load(const char *filename,float scale=1.0f, AxesStandard fromStandard=AxesStandard::Engineering);
-			void Initialize(crossplatform::RenderPlatform *renderPlatform,crossplatform::MeshType m);
-			bool Initialize(crossplatform::RenderPlatform *renderPlatform
-				,int lPolygonVertexCount,const float *lVertices,const float *lNormals,const float *lUVs
-				,int lPolygonCount
-				,const unsigned int *lIndices
-				,const unsigned short *sIndices);
+			void Load(const char *filename, float scale = 1.0f, AxesStandard fromStandard = AxesStandard::Engineering);
+			void Initialize(crossplatform::RenderPlatform *renderPlatform, crossplatform::MeshType m);
+			bool Initialize(crossplatform::RenderPlatform *renderPlatform, int lPolygonVertexCount, const float *lVertices, const float *lNormals, const float *lUVs, int lPolygonCount, const unsigned int *lIndices, const unsigned short *sIndices);
 			void UpdateVertexPositions(int lVertexCount, float *lVertices) const;
 			size_t NumNodes() const
 			{
@@ -54,7 +51,7 @@ namespace platform
 			/// \deprecated Use MeshRenderer.
 			/// </summary>
 			/// <param name="deviceContext"></param>
-			void Draw(GraphicsDeviceContext& deviceContext) const;
+			void Draw(GraphicsDeviceContext &deviceContext) const;
 			// Draw all the faces with specific material with given shading mode.
 			void Draw(GraphicsDeviceContext &deviceContext, int pMaterialIndex) const;
 			// Unbind buffers, reset vertex arrays, turn off lighting and texture.
@@ -65,14 +62,18 @@ namespace platform
 			struct SubMesh
 			{
 				SubMesh() : IndexOffset(0), TriangleCount(0), drawAs(AS_TRIANGLES), material(nullptr) {}
-				int IndexOffset=0;
-				int TriangleCount=0;
+				int IndexOffset = 0;
+				int TriangleCount = 0;
 
-				int LowestIndex=0;
-				int HighestIndex=0;
-				enum DrawAs { AS_TRIANGLES, AS_TRISTRIP };
+				int LowestIndex = 0;
+				int HighestIndex = 0;
+				enum DrawAs
+				{
+					AS_TRIANGLES,
+					AS_TRISTRIP
+				};
 				DrawAs drawAs;
-				Material* material;
+				Material *material;
 			};
 			struct SubNode
 			{
@@ -80,8 +81,8 @@ namespace platform
 				platform::math::SimulOrientation orientation;
 				std::vector<SubNode> children;
 			};
-			SubMesh *SetSubMesh(int submesh,int index_start,int num_indices,Material *m,int lowest=-1,int highest=-1);
-			
+			SubMesh *SetSubMesh(int submesh, int index_start, int num_indices, Material *m, int lowest = -1, int highest = -1);
+
 			int VERTEX_STRIDE;
 			int NORMAL_STRIDE;
 			int UV_STRIDE;
@@ -93,11 +94,11 @@ namespace platform
 			bool mHasUV;
 			bool mAllByControlPoint; // Save data in VBO by control point or by polygon vertex.
 			// For every material, record the offsets in every VBO and triangle counts
-			std::vector<SubMesh*> mSubMeshes;
+			std::vector<SubMesh *> mSubMeshes;
 			//! The children are meshes with different orientation.
-			std::vector<Mesh*> children;
+			std::vector<Mesh *> children;
 			platform::math::SimulOrientation orientation;
-			unsigned stride;		// number of bytes per vertex.
+			unsigned stride; // number of bytes per vertex.
 			unsigned indexSize;
 			unsigned numVertices;
 			unsigned numIndices;
@@ -105,18 +106,23 @@ namespace platform
 			{
 				return rootNode;
 			}
-			Buffer* GetVertexBuffer()
+			Buffer *GetVertexBuffer()
 			{
 				return vertexBuffer;
 			}
-			Buffer* GetIndexBuffer()
+			Buffer *GetIndexBuffer()
 			{
 				return indexBuffer;
 			}
-			Layout* GetLayout()
+			Layout *GetLayout()
 			{
-			return layout;
+				return layout;
 			}
+			const bool IsValid() const
+			{
+				return !mSubMeshes.empty();
+			}
+
 		protected:
 			void DrawSubNode(GraphicsDeviceContext& deviceContext, const SubNode& subNode) const;
 			SubNode rootNode;
