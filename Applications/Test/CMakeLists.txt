@@ -15,28 +15,27 @@ target_include_directories( Test_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/Direct
 target_compile_definitions( Test_MT PRIVATE DO_PROFILING=0 )
 set_target_properties( Test_MT PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 						VS_DEBUGGER_ENVIRONMENT "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
-target_link_libraries( Test_MT SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT fmt::fmt-header-only )
+target_link_libraries( Test_MT PRIVATE SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT fmt::fmt-header-only )
 target_compile_definitions( Test_MT PRIVATE FMT_HEADER_ONLY )
 
 if(PLATFORM_USE_ASSIMP)
-	target_link_directories( Test_MT PUBLIC ${SIMUL_PLATFORM_DIR}/External/assimp/build_mt/lib/${CMAKE_BUILD_TYPE})
-	target_link_libraries( Test_MT ${ASSIMP_LIBNAME} )
+	DelayLoadLinkAssimp(Test_MT)
 endif()
 
 if(PLATFORM_SUPPORT_D3D11)
 	target_include_directories(Test_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX11")
-	target_link_libraries(Test_MT SimulDirectX11_MT )
+	target_link_libraries(Test_MT PRIVATE SimulDirectX11_MT )
 endif() 
 
 if(PLATFORM_SUPPORT_D3D12)
-	target_link_libraries(Test_MT SimulDirectX12_MT)
+	target_link_libraries(Test_MT PRIVATE SimulDirectX12_MT)
 endif()
 
 if(PLATFORM_SUPPORT_VULKAN)
 	target_include_directories(Test_MT PUBLIC "${Vulkan_INCLUDE_DIR}")
-	target_link_libraries(Test_MT SimulVulkan_MT glfw ${Vulkan_LIBRARY})
+	target_link_libraries(Test_MT PRIVATE SimulVulkan_MT glfw ${Vulkan_LIBRARY})
 endif()
 
 if(PLATFORM_SUPPORT_OPENGL)
-	target_link_libraries(Test_MT SimulOpenGL_MT glfw)
+	target_link_libraries(Test_MT PRIVATE SimulOpenGL_MT glfw)
 endif()
