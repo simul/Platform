@@ -214,7 +214,7 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 	// Dynamic Load called here to check the DLL is valid.
 	static bool valid = false;
 	if (!valid)
-		valid = base::DynamicLibrary(ASSIMP_LIBNAME);
+		valid = platform::core::DynamicLibrary(ASSIMP_LIBNAME);
 	if (!valid)
 		return;
 		

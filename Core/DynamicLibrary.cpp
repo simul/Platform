@@ -14,7 +14,7 @@
 #include <dlfcn.h>
 #endif
 
-using namespace simul::base;
+using namespace platform::core;
 
 DynamicLibrary::DynamicLibrary(const char* libraryFilepath)
 {

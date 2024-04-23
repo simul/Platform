@@ -2,9 +2,9 @@
 
 #include "Platform/Core/Export.h"
 
-namespace simul
+namespace platform
 {
-	namespace base
+	namespace core
 	{
 		class PLATFORM_CORE_EXPORT DynamicLibrary
 		{
