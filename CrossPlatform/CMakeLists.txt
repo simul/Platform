@@ -44,4 +44,7 @@ add_dynamic_library(SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS}
 	
 if(PLATFORM_USE_ASSIMP)
 	DelayLoadLinkAssimp(SimulCrossPlatform_MD)
+
+	add_compile_definitions(SimulCrossPlatform_MT PRIVATE ASSIMP_LIBNAME="${ASSIMP_LIBNAME}.dll")
+	add_compile_definitions(SimulCrossPlatform_MD PRIVATE ASSIMP_LIBNAME="${ASSIMP_LIBNAME}.dll")
 endif()
