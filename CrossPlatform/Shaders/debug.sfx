@@ -154,7 +154,7 @@ shader vec4 PS_ShowCubemap(posTexVertexOutput IN) : SV_TARGET
 	float cs		=cos(az);
 	float ss		=sin(az);
 	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
-	vec4 res		=texture_cube_lod(cubeTexture,view,displayLod);
+	vec4 res		=texture_cube_lod(cubeTexture,view,displayMip);
 	//res.xyz=IN.texCoords.xyy;
 	vec3 v = abs(view);
 	float e = max(max(v.x, v.y), v.z);
@@ -176,7 +176,7 @@ shader vec4 PS_ShowCubemapArray(posTexVertexOutput IN) : SV_TARGET
 	float cs		=cos(az);
 	float ss		=sin(az);
 	vec3 view		=normalize(vec3(ce*ss,ce*cs,se));
-	vec4 res		=texture_cube_lod(cubeTextureArray,vec4(view,displayLevel),displayLod);
+	vec4 res		=texture_cube_lod(cubeTextureArray,vec4(view,float(displayLayer)),displayMip);
 	//res.xyz=IN.texCoords.xyy;
 	vec3 v	= abs(view);
 	float e	= max(max(v.x, v.y), v.z);
@@ -419,7 +419,7 @@ shader vec4 PS_DrawTextureOnSphere(posTexVertexOutput IN) : SV_TARGET
 shader vec4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	vec3 view		=IN.wDirection.xyz;
-	vec4 result		=cubeTexture.SampleLevel(cubeSamplerState,view,displayLod);
+	vec4 result		=cubeTexture.SampleLevel(cubeSamplerState,view,displayMip);
 	result.rgb		*=multiplier.rgb;
 	result.rgb		=pow(result.rgb,vec3(debugGamma,debugGamma,debugGamma));
 	vec4 u			=vec4(saturate(result.rgb),1.0);
@@ -441,7 +441,7 @@ shader vec4 PS_ShowTexture(posTexVertexOutput IN) : SV_TARGET
 
 shader vec4 PS_ShowTextureArray(posTexVertexOutput IN) : SV_TARGET
 {
-	vec3 texc	= vec3(IN.texCoords.xy, displayLevel);
+	vec3 texc	= vec3(IN.texCoords.xy, float(displayLayer));
 	// In DX, texcoords start from top left. In GL, sensibly, it's bottom-left.
 	texc.y		= 1.0 - texc.y;
 	vec4 res	= multiplier * texture_nearest_lod(imageTextureArray,texc.xyz,0);
@@ -517,7 +517,9 @@ shader vec4 PS_ShowVolume(posTexVertexOutput IN) : SV_Target
 
 shader vec4 PS_TraceVolume(posTexVertexOutput IN) : SV_Target
 {
-	vec3 texc = vec3(IN.texCoords.xy, displayLevel);
+	vec3 volumeSize;
+	volumeTexture.GetDimensions(volumeSize.x, volumeSize.y, volumeSize.z);
+	vec3 texc = vec3(IN.texCoords.xy, float(displayLayer)/volumeSize.z);
 	vec4 colour = texture_3d_wrap_lod(volumeTexture, texc, 0);
 	colour *= multiplier;
 	return colour;

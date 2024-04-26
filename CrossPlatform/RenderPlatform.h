@@ -301,9 +301,9 @@ namespace platform
 		
 			virtual void DrawLineLoop		(GraphicsDeviceContext &,const double *,int ,const double *,const float [4]){}
 
-			virtual int2 DrawTexture		(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,vec4 mult,bool blend=false,float gamma=1.0f,bool debug=false,vec2 texc={0,0},vec2 texc_scale={0,0},float mip=0.f,int slice=0);
-            int2 DrawTexture				(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, float mult = 1.f, bool blend = false, float gamma = 1.0f, bool debug = false, vec2 texc = {0, 0}, vec2 texc_scale = {0, 0}, float mip = 0.0f, int slice = 0);
-			int2 DrawDepth					(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Texture *tex,const crossplatform::Viewport *v=NULL,const float *proj=NULL);
+			virtual int2 DrawTexture		(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend = false, float gamma = 1.0f, bool debug = false, vec2 texc = {0, 0}, vec2 texc_scale = {0, 0}, float mip = 0.0f, int layer = 0);
+			int2 DrawTexture				(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, float mult = 1.f, bool blend = false, float gamma = 1.0f, bool debug = false, vec2 texc = {0, 0}, vec2 texc_scale = {0, 0}, float mip = 0.0f, int layer = 0);
+			int2 DrawDepth					(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, const crossplatform::Viewport *v = NULL, const float *proj = NULL);
 			// Draw an onscreen quad without passing vertex positions, but using the "rect" constant from the shader to pass the position and extent of the quad.
 			virtual void DrawQuad			(GraphicsDeviceContext &deviceContext,int x1,int y1,int dx,int dy,crossplatform::Effect *effect,crossplatform::EffectTechnique *technique,const char *pass=NULL);
 			virtual void DrawQuad			(GraphicsDeviceContext &){}
@@ -322,8 +322,8 @@ namespace platform
 			/// Draw a circle in 3D space at pos
 			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
 			/// Draw a cubemap as a sphere at the specified screen position and size.
-			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayLod=0.0f);
-			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod=0.0f);
+			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayMip=0.0f);
+			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayMip=0.0f);
 			void							DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m,float size);
 			virtual void PrintAt3dPos		(GraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr,int offsetx=0,int offsety=0,bool centred=false);
 			virtual void PrintAt3dPos		(MultiviewGraphicsDeviceContext &deviceContext,const float *p,const char *text,const float* colr,const float* bkg=nullptr);
