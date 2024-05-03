@@ -23,7 +23,7 @@ namespace platform
 						PlatformStructuredBuffer();
 			virtual		~PlatformStructuredBuffer();
 
-			void		RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data,const char *name, crossplatform::ResourceUsageFrequency bufferUsageHint) override;
+			void		RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, const void *init_data,const char *name, crossplatform::ResourceUsageFrequency bufferUsageHint) override;
 			void*		GetBuffer(crossplatform::DeviceContext &deviceContext) override;
 			const void* OpenReadBuffer(crossplatform::DeviceContext &deviceContext) override;
 			void		CloseReadBuffer(crossplatform::DeviceContext &deviceContext) override;

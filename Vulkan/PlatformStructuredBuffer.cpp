@@ -21,7 +21,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,const void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
 {
 	bufferUsageHint = h;
 	renderPlatform                          = r;

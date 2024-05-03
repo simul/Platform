@@ -607,7 +607,7 @@ namespace platform
 			}
 		}
 		/// 
-		template<class T, ResourceUsageFrequency bufferUsageHint> bool StructuredBuffer<T, bufferUsageHint>::RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable, bool cpu_read, T* data, const char* n)
+		template<class T, ResourceUsageFrequency bufferUsageHint> bool StructuredBuffer<T, bufferUsageHint>::RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable, bool cpu_read,const T* data, const char* n)
 		{
 			count = ct;
 			if (!platformStructuredBuffer)
