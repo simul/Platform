@@ -43,7 +43,7 @@ namespace platform
 		public:
 			PlatformStructuredBuffer() :renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(ResourceUsageFrequency::MANY_PER_FRAME) {}
 			virtual ~PlatformStructuredBuffer() = default;
-			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, ResourceUsageFrequency usageHint) = 0;
+			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read,const void* init_data, const char* name, ResourceUsageFrequency usageHint) = 0;
 			virtual void InvalidateDeviceObjects() = 0;
 			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
 			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& shaderResource);
@@ -62,6 +62,7 @@ namespace platform
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext&) { return NULL; }
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12UnorderedAccessView(crossplatform::DeviceContext&, int = 0) { return NULL; }
 			virtual ID3D12Resource* AsD3D12Resource(crossplatform::DeviceContext& deviceContext) { return NULL; }
+			virtual bool IsValid() const{ return true;}
 			void ResetCopies()
 			{
 				numCopies = 0;
@@ -94,7 +95,15 @@ namespace platform
 			{
 				InvalidateDeviceObjects();
 			}
-			void RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr);
+			//! @brief Returns false if failed at the API level.
+			//! @param p 
+			//! @param ct 
+			//! @param computable 
+			//! @param cpu_read 
+			//! @param data 
+			//! @param n 
+			//! @return 
+			bool RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable = false, bool cpu_read = true,const T* data = nullptr, const char* n = nullptr);
 			T* GetBuffer(crossplatform::DeviceContext& deviceContext)
 			{
 				if (!platformStructuredBuffer)

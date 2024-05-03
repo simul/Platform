@@ -21,7 +21,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,const void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
 {
 	bufferUsageHint = h;
 	renderPlatform                          = r;
@@ -46,7 +46,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	{
 		AddPerFrameBuffer(init_data);
 	}
-	lastBuffer=perFrameBuffers.end();
+	if(perFrameBuffers.size())	
+		lastBuffer=perFrameBuffers.end();
 	// If this Structured Buffer supports CPU read,
 	// we initialize a set of READ_BACK buffers:
 	if (mCpuRead)
@@ -77,17 +78,22 @@ void PlatformStructuredBuffer::AddPerFrameBuffer(const void *init_data)
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	perFrameBuffers.push_back(PerFrameBuffer());
 	PerFrameBuffer &perFrameBuffer=perFrameBuffers.back();
-	vulkanRenderPlatform->CreateVulkanBuffer(alloc_size
+	if(!vulkanRenderPlatform->CreateVulkanBuffer(alloc_size
 		, usageFlags
 		, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-		, perFrameBuffer.mBuffer, perFrameBuffer.mAllocationInfo,"psb");
-	if(init_data)
+		, perFrameBuffer.mBuffer, perFrameBuffer.mAllocationInfo,"psb"))
+		mNumElements = 0;
+	if (mNumElements>0&&init_data)
 	{
 		void *pData = nullptr;
-		vmaMapMemory(perFrameBuffer.mAllocationInfo.allocator, perFrameBuffer.mAllocationInfo.allocation, &pData);
+		if(perFrameBuffer.mAllocationInfo.allocation)
+			vmaMapMemory(perFrameBuffer.mAllocationInfo.allocator, perFrameBuffer.mAllocationInfo.allocation, &pData);
 		SIMUL_ASSERT(pData!=nullptr);
-		memcpy(pData, init_data, mTotalSize);
-		vmaUnmapMemory(perFrameBuffer.mAllocationInfo.allocator, perFrameBuffer.mAllocationInfo.allocation);
+		if (pData)
+		{
+			memcpy(pData, init_data, mTotalSize);
+			vmaUnmapMemory(perFrameBuffer.mAllocationInfo.allocator, perFrameBuffer.mAllocationInfo.allocation);
+		}
 	}
 }
 
