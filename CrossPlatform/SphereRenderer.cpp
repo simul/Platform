@@ -369,8 +369,8 @@ void SphereRenderer::DrawCircle(GraphicsDeviceContext &deviceContext, vec3 origi
 	sphereConstants.debugWorldViewProj=wvp;
 	vec3 view_dir;
 	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
-	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_circle_on_sphere");
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view, (float *)&cam_pos, (float *)&view_dir);
+	crossplatform::EffectTechnique *tech = effect->GetTechniqueByName("draw_circle_on_sphere");
 
 	sphereConstants.quaternion		=orient_quat;
 	sphereConstants.radius			=sph_rad;
