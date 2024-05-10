@@ -1,6 +1,6 @@
 # Copyright 2020 Simul Software Ltd, All rights reserved.
 
-cmake_minimum_required( VERSION 3.2 )
+cmake_minimum_required( VERSION 3.14 )
 # Grab the includes/source files.
 
 file(GLOB SOURCES "*.cpp" )
