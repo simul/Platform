@@ -9,15 +9,6 @@
 using namespace platform;
 using namespace crossplatform;
 
- double length(vec3d v)
-{
-	return sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
-}
-
-double dot(vec3d& a,vec3d& b)
-{
-	return a.x*b.x+a.y*b.y+a.z*b.z;
-}
 namespace platform
 {
 	namespace crossplatform
@@ -110,8 +101,6 @@ namespace platform
 	}
 }
 
-
-
 double platform::crossplatform::angleBetweenQuaternions(const crossplatform::Quaterniond& q1, const crossplatform::Quaterniond& q2)
 {
 	crossplatform::Quaterniond Q1 = q1;
@@ -130,48 +119,6 @@ double platform::crossplatform::angleBetweenQuaternions(const crossplatform::Qua
 	return 2 * acos(z.s);  //Angle between input quaternions
 }
 
-
-
-Quaterniond platform::crossplatform::rotateByOffsetCartesian(const Quaterniond& input, const vec2& offset, float sph_radius)
-{
-	//Check there's an offset;
-	if (offset.x == 0 || offset.y == 0)
-		return input;
-
-	//Check's if the sph_radius is valid
-	if (sph_radius <= 0)
-		return input;
-
-	double x_rad = offset.x / sph_radius;
-	double y_rad = offset.y / sph_radius;
-	crossplatform::Quaterniond x_rot(x_rad, vec3d(0.0, 1.0, 0.0));
-	crossplatform::Quaterniond y_rot(-y_rad, vec3d(1.0, 0.0, 0.0));
-
-	return x_rot * y_rot * input;
-}
-
-Quaterniond platform::crossplatform::rotateByOffsetPolar(const Quaterniond& input, float polar_radius, float polar_angle, float sph_radius)
-{	
-	//Check there's an offset;
-	if (polar_radius == 0 || polar_angle == 0)
-		return input;
-
-	//Check's if the sph_radius is valid
-	if (sph_radius <= 0)
-		return input;
-
-	//Calculate angle offset from equatorial plane				
-	double phi = polar_angle;							//double phi = atan2(offset.y, offset.x);
-	//Calculate angle of the arclength from the offset 
-	double theta = polar_radius / sph_radius;			//double theta = (double)(length(offset) / sph_radius);
-	
-	crossplatform::Quaterniond x_rot(theta, vec3d(0.0, 1.0, 0.0));
-	crossplatform::Quaterniond z_rot(phi, vec3d(0.0, 0.0, 1.0));
-
-	return z_rot * x_rot * input;
-}
-
-
 crossplatform::Quaterniond platform::crossplatform::LocalToGlobalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& local)
 {
 	// rel is a rotation in local space. Convert it first to global space:
@@ -183,7 +130,7 @@ crossplatform::Quaterniond platform::crossplatform::LocalToGlobalOrientation(con
 crossplatform::Quaterniond platform::crossplatform::GlobalToLocalOrientation(const crossplatform::Quaterniond& origin,const crossplatform::Quaterniond& global)
 {
 	// abso is an orientation in global space. First get the global rotation between the keyframe's origin and abso:
-	crossplatform::Quaterniond dq = global/ origin;
+	crossplatform::Quaterniond dq = global / origin;
 	// Then convert this into the space of the keyframe:
 	crossplatform::Quaterniond rel = ((!origin) * dq) * origin;
 	return rel;
@@ -191,15 +138,21 @@ crossplatform::Quaterniond platform::crossplatform::GlobalToLocalOrientation(con
 
 crossplatform::Quaterniond platform::crossplatform::TransformOrientationByOffsetXY(const crossplatform::Quaterniond &origin,vec2 local_offset_radians)
 {
-		// Now the new quaternion is 
-		crossplatform::Quaterniond local_offset;
-		local_offset.Rotate(local_offset_radians.x,vec3d(0,1.0,0));
-		local_offset.Rotate(local_offset_radians.y,vec3d(-1.0,0,0));
-		// local_offset must now be transformed to a global rotation.
-		crossplatform::Quaterniond new_relative=(origin*(local_offset/origin));
-		// And now we rotate to the new origin:
-		crossplatform::Quaterniond new_quat=new_relative*origin;
-		return new_quat;
+	// Now the new quaternion is 
+	crossplatform::Quaterniond local_offset;
+	local_offset.Rotate(local_offset_radians.x,vec3d(+0.0, +1.0, +0.0));
+	local_offset.Rotate(local_offset_radians.y,vec3d(-1.0, +0.0, +0.0));
+	return LocalToGlobalOrientation(origin, local_offset);
+}
+
+crossplatform::Quaterniond platform::crossplatform::TransformOrientationByOffsetXYZ(const crossplatform::Quaterniond &origin, vec3 local_offset_radians)
+{
+	// Now the new quaternion is
+	crossplatform::Quaterniond local_offset;
+	local_offset.Rotate(local_offset_radians.z, vec3d(+0.0, +0.0, +1.0));
+	local_offset.Rotate(local_offset_radians.x, vec3d(+0.0, +1.0, +0.0));
+	local_offset.Rotate(local_offset_radians.y, vec3d(-1.0, +0.0, +0.0));
+	return LocalToGlobalOrientation(origin, local_offset);
 }
 
 vec3 platform::crossplatform::TransformPosition(Quaterniond old_origin,Quaterniond new_origin,vec3 old_pos,double radius)
