@@ -30,6 +30,7 @@
     {%- endblock %}
     {%- block breadcrumbs_aside %}
       <li class="wy-breadcrumbs-aside">
+        {% include "platforms.html" %}
         {%- if hasdoc(pagename) and display_vcs_links %}
           {%- if display_github %}
             {%- if check_meta and 'github_url' in meta %}
@@ -51,11 +52,7 @@
               <a href="{{ meta['gitlab_url'] }}" class="fa fa-gitlab"> {{ _('Edit on GitLab') }}</a>
             {%- else %}
               <a href="https://{{ gitlab_host|default("gitlab.com") }}/{{ gitlab_user }}/{{ gitlab_repo }}/{{ theme_vcs_pageview_mode or "blob" }}/{{ gitlab_version }}{{ conf_py_path }}{{ pagename }}{{ page_source_suffix }}" class="fa fa-gitlab"> {{ _('Edit on GitLab') }}</a>
-            {%- endif %}
-          {%- elif show_source and source_url_prefix %}
-            <a href="{{ source_url_prefix }}{{ pagename }}{{ page_source_suffix }}">{{ _('View page source') }}</a>
-          {%- elif show_source and has_source and sourcename %}
-            <a href="{{ pathto('_sources/' + sourcename, true)|e }}" rel="nofollow"> {{ _('View page source') }}</a>
+		  {%- endif %}
           {%- endif %}
         {%- endif %}
       </li>
