@@ -1,0 +1,32 @@
+﻿
+<div class="truesky-version-switch">
+    <button id="version-switch-button">Switch Version</button>
+</div>
+
+<script>
+    const switchButton = document.getElementById('version-switch-button');
+
+    // current URL
+    const currentURL = window.location.href;
+
+
+    const isVersion4_3 = currentURL.includes('/4.3');
+    const isVersion4_4 = currentURL.includes('/4.4');
+
+    if (isVersion4_3) {
+        switchButton.textContent = 'Switch to 4.4';
+        switchButton.addEventListener('click', () => {
+            window.location.href = '/4.4';
+        });
+    } else if (isVersion4_4) {
+        switchButton.textContent = 'Switch to 4.3';
+        switchButton.addEventListener('click', () => {
+            window.location.href = '/4.3';
+        });
+    } else {
+        switchButton.textContent = 'Switch to 4.3'; 
+        switchButton.addEventListener('click', () => {
+            window.location.href = '/4.3';
+        });
+    }
+</script>
