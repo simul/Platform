@@ -11,7 +11,7 @@ using namespace crossplatform;
 #include <assimp/Importer.hpp>      // C++ importer interface
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
-#include <assimp/DefaultLogger.hpp>     // Post processing flags
+#include <assimp/DefaultLogger.hpp> // Post processing flags
 #include <assimp/pbrmaterial.h>     // PBR defs
 
 #include <iomanip> // for setw
