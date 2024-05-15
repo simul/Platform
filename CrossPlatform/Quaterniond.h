@@ -175,6 +175,11 @@ namespace platform
 				T halfangle = acos(std::min((T)1.0, std::max((T)-1.0, s)));
 				return halfangle * (T)2.0;
 			}
+			tvector3<T> Axis() const
+			{
+				return normalize(tvector3<T>(x, y, z));
+			}
+
 			// Operations
 			operator const T*() const
 			{
