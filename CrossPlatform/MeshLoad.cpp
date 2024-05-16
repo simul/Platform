@@ -8,6 +8,8 @@
 using namespace platform;
 using namespace crossplatform;
 
+#if PLATFORM_USE_ASSIMP
+
 #include <assimp/Importer.hpp>      // C++ importer interface
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
@@ -377,3 +379,12 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 		return;
 	}
 }
+
+#else
+
+void Mesh::Load(const char* filenameUtf8, float scale, AxesStandard fromStandard)
+{
+	SIMUL_CERR_ONCE << "Can't load " << filenameUtf8 << " - no importer enabled." << std::endl;
+}
+
+#endif
