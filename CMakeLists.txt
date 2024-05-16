@@ -74,7 +74,13 @@ endif()
 
 
 # FetchContent download timestamp policy:
-cmake_policy(SET CMP0135 NEW)
+
+if (POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+else()
+    message(STATUS "CMP0135 policy is not available in this CMake version")
+endif()
+
 cmake_policy(SET CMP0077 NEW)
 include(FetchContent)
 
