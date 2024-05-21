@@ -286,6 +286,7 @@ vec4 Solid(vertexOutput IN)
 	surfaceProperties.normal		=normal;
 	surfaceProperties.albedo		=diffuseColour;
 	surfaceProperties.roughness2	=surfaceProperties.roughness*surfaceProperties.roughness;
+	surfaceProperties.alpha			=transparencyAlpha;
 
 	SurfaceState surfaceState	=PreprocessSurface(view,surfaceProperties);
 	vec3 c						=.3*PBRAmbient(surfaceState, view, surfaceProperties);
@@ -300,7 +301,7 @@ vec4 Solid(vertexOutput IN)
 	vec3 emissive		=emissiveTexture.Sample(wrapSamplerState, IN.texCoords0.xy * emissiveTexCoordsScalar_R).rgb;
 	emissive			*= emissiveOutputScalar.rgb;
 	//	c=1.0-roughMetalOcclusion.a;
-	vec4 u				=vec4(c.rgb + emissive.rgb, 1.0);
+	vec4 u				=vec4(c.rgb + emissive.rgb, surfaceProperties.alpha);
 	//u.rg= frac(screenPos);
 	return u;
 }
