@@ -28,6 +28,7 @@ namespace vk
 namespace nvn
 {
 	class Texture;
+	class TextureView;
 }
 
 struct ID3D11ShaderResourceView;
@@ -293,7 +294,8 @@ namespace simul
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();
-			virtual nvn::Texture* AsNVNTexture() { return 0; };
+			virtual nvn::Texture* AsNVNTexture() { return 0; }
+			virtual nvn::TextureView* AsNVNTextureView(const crossplatform::TextureView& textureView) { return 0; }
 			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
 			virtual sce::Gnm::Texture *AsGnmTexture(const crossplatform::TextureView& textureView){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}

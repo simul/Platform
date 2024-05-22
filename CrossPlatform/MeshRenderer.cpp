@@ -41,7 +41,6 @@ void MeshRenderer::InvalidateDeviceObjects()
 void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int index)
 {
 	cameraConstants.world = deviceContext.viewStruct.model;
-	cameraConstants.worldViewProj = deviceContext.viewStruct.viewProj;
 	cameraConstants.view = deviceContext.viewStruct.view;
 	cameraConstants.proj = deviceContext.viewStruct.proj;
 	cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
@@ -130,7 +129,7 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	solidConstants.combinedTexCoordsScalar_B				=vec2_unit;
 	solidConstants.combinedTexCoordsScalar_A				=vec2_unit;
 
-	solidConstants.emissiveOutputScalar						= material->emissive.value;
+	solidConstants.emissiveOutputScalar						=material->emissive.value;
 	solidConstants.emissiveTexCoordsScalar_R				=vec2_unit;
 	solidConstants.emissiveTexCoordsScalar_G				=vec2_unit;
 	solidConstants.emissiveTexCoordsScalar_B				=vec2_unit;

@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.9)
+cmake_minimum_required(VERSION 3.14)
+
 option(SIMUL_D3D12_ENABLE_PIX "" OFF)
 option(PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 

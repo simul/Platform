@@ -327,6 +327,14 @@
 			y-=v[1];
 			z-=v[2];
 		}
+		bool operator==(const tvector3 &v) const
+		{
+			return (x==v.x&&y==v.y&&z==v.z);
+		}
+		bool operator!=(const tvector3 &v) const
+		{
+			return (x!=v.x||y!=v.y||z!=v.z);
+		}
 	};
 	namespace std
 	{
@@ -607,6 +615,14 @@
 			y*=v[1];
 			z*=v[2];
 			w*=v[3];
+		}
+		bool operator==(const tvector4 &v) const
+		{
+			return (x==v.x&&y==v.y&&z==v.z&&w==v.w);
+		}
+		bool operator!=(const tvector4 &v) const
+		{
+			return (x!=v.x||y!=v.y||z!=v.z||w!=v.w);
 		}
 	};
 	typedef tvector4<float> vec4;
