@@ -28,7 +28,7 @@ DynamicLibrary::DynamicLibrary(const char* libraryFilepath)
 	m_Handle = dlopen(libraryFilepath, RTLD_NOW | RTLD_NOLOAD);
 	if (!m_Handle)
 	{
-		SIMUL_ASSERT_WARN(false, platform::core::QuickFormat("%s does not exist. dlerror: %s", libraryFilepath.c_str(), dlerror()))
+		SIMUL_ASSERT_WARN(false, platform::core::QuickFormat("%s does not exist. dlerror: %s", libraryFilepath, dlerror()))
 	}
 #endif
 }
