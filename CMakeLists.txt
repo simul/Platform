@@ -55,6 +55,9 @@ if(PLATFORM_USE_FMT)
 	set(FMT_DOC false)
 	set(FMT_INSTALL false)
 	set(FMT_TEST false)
+	if(PLATFORM_SWITCH)
+		set(FMT_COMPILER_FEATURE_CHECKS false)
+	endif()
 	add_subdirectory(External/fmt)
 	add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
 	if( PLATFORM_WINDOWS )
@@ -85,7 +88,7 @@ cmake_policy(SET CMP0077 NEW)
 include(FetchContent)
 
 # Get the "safe" header library for lockable resources
-set(BUILD_TESTING OFF)
+set(BUILD_TESTING OFF CACHE BOOL "BUILD_TESTING" FORCE)
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 FetchContent_Declare(
   safe
@@ -106,7 +109,7 @@ FetchContent_MakeAvailable(magic_enum)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
 # GLFW
-#if(PLATFORM_BUILD_SAMPLES)
+if(NOT PLATFORM_SPECTRUM AND NOT PLATFORM_XBOXONE AND NOT PLATFORM_WINGDK AND NOT PLATFORM_COMMODORE AND NOT PLATFORM_PS4 AND NOT PLATFORM_SWITCH)
 	option(GLFW_INSTALL  "" OFF)
 	add_subdirectory(External/glfw)
 	set_target_properties(glfw PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}/External/glfw)
@@ -114,7 +117,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake" ${CMAKE_MODULE_PATH})
 	if( PLATFORM_WINDOWS )
 		set_property(TARGET glfw PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	endif()
-#endif()
+endif()
 
 function(AddDLLCompileDefinitions TargetName)
 	# Export functions for dynamic linking
@@ -192,6 +195,10 @@ endif()
 
 if(PLATFORM_COMMODORE)
 	add_subdirectory(Commodore)
+endif()
+
+if(PLATFORM_SWITCH)
+	add_subdirectory(Switch)
 endif()
 
 if(PLATFORM_IMGUI)

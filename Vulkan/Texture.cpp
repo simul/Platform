@@ -1268,11 +1268,11 @@ void Texture::SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, 
 }
 
 void Texture::ClearLoadedTextures()
-{ 
+{
 	for (auto& i : mLoadedTextures)
-	{ 
-		i.clear(); 
-	} 
+	{
+		i.clear();
+	}
 	mLoadedTextures.clear();
 }
 
