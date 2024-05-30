@@ -442,6 +442,7 @@ PixelShader ps_debug_normal_unswizzled = CompileShader(ps_4_0, PS_DebugNormal_Un
 PixelShader ps_debug_normal_unreal = CompileShader(ps_4_0, PS_DebugNormal_Unreal()); //Unreal-basis normal view
 PixelShader ps_debug_normal_unity = CompileShader(ps_4_0, PS_DebugNormal_Unity()); //Unity-basis normal view
 PixelShader ps_debug_normal_vertexnormals = CompileShader(ps_4_0, PS_DebugNormal_VertexNormals()); //Vertex normals
+
 technique solid
 {
 	pass base 
@@ -454,7 +455,6 @@ technique solid
 		SetPixelShader(ps_solid);
 	}
 }
-
 
 technique transparent
 {
