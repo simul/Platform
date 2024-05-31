@@ -15,20 +15,20 @@ typedef stack<char*> StackPtrChar;
 #ifndef MAX_PATH
 #define MAX_PATH 500
 #endif
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_WIN32)
 	char *strtok_s(char * str, rsize_t * strmax, const char * delim, char ** ptr)
 	{
 		return strtok_s(str,delim,ptr);
 	}
 	#define path_separator "\\"
 	#define path_sep_char  '\\'
-#elif defined(__ORBIS__)||defined(UNIX)||defined(__COMMODORE__)
+#elif defined(__ORBIS__)||defined(UNIX)||defined(__COMMODORE__) || defined(__SWITCH__)
 	#define path_separator "/"
-    #define path_sep_char  '/'
+	#define path_sep_char  '/'
 
 char *strtok_s(char * str, size_t * , const char * delim, char ** )
 {
-    return strtok(str,delim);
+	return strtok(str,delim);
 }
 #else
 	#error define your compiler

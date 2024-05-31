@@ -870,16 +870,8 @@ shader void CS_LatLongToCubemap(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID
 #ifdef GLSL
 	clip_pos.xy*=-1.0;
 #endif
-	mat4 cubeInvViewProj[6] = {
-		{ {0,0,-1,0}	,{0,-1,0,0}	,{1,0,0,0}	,{0,0,0,1}	}
-		, { {0,0,1,0}	,{0,-1,0,0}	,{-1,0,0,0}	,{0,0,0,1} }
-		,{ {-1,0,0,0}	,{0,0,-1,0}	,{0,1,0,0}	,{0,0,0,1}	}
-		,{ {-1,0,0,0}	,{0,0,1,0}	,{0,-1,0,0},{0,0,0,1}	}
-		,{ {-1,0,0,0}	,{0,-1,0,0}	,{0,0,-1,0}	,{0,0,0,1}	}
-		,{ {1,0,0,0}	,{0,-1,0,0}	,{0,0,1,0}	,{0,0,0,1}	}
-	};
-	vec3 view = normalize(mul(cubeInvViewProj[idx.z], clip_pos).xyz);
-//	vec3 view=CubeFaceIndexToView(idx,dims.xx);
+	vec3 view = normalize(mul(GetCubeInvViewProj(idx.z), clip_pos).xyz);
+	//vec3 view=CubeFaceIndexToView(idx,dims.xx);
 	// convert direction to lat long
 	float lat=asin(view.z);
 	float lon=atan2(view.x,view.y);

@@ -213,21 +213,11 @@ void FileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes, const 
 	}
 }
 
-#if defined (_MSC_VER) && !defined(_GAMING_XBOX)
-#include <filesystem>
+#if defined(_MSC_VER) && !defined(_GAMING_XBOX) && !defined(__SWITCH__) && PLATFORM_STD_FILESYSTEM > 0
 std::string FileLoader::FindParentFolder(const char* folder_utf8)
 {
-#ifdef __cpp_lib_filesystem //Test for C++ 17 and filesystem. From https://en.cppreference.com/w/User:D41D8CD98F/feature_testing_macros
-	using namespace std;
-#else
-	using namespace std::experimental;
-#endif
 	std::error_code ec;
-#ifdef __cpp_lib_filesystem
-	std::filesystem::path path = std::filesystem::current_path(ec);
-#else
-	std::experimental::filesystem::path path = std::experimental::filesystem::current_path(ec);
-#endif
+	fs::path path = fs::current_path(ec);
 	std::wstring wspath(path.stem().c_str());
 	std::string utf8path = core::WStringToUtf8(wspath);
 	//std::string utf8path(wspath.begin(), wspath.end());
