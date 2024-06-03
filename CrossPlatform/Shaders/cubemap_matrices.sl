@@ -10,7 +10,7 @@ mat4 cubeInvViewProj[6] = {
 */
 #ifndef __cplusplus
 
-mat4 GetCubeInvViewProj(int cube_face)
+mat4 GetCubeInvViewProj(uint cube_face)
 {
 #ifndef SFX_SWITCH
 	mat4 cubeInvViewProj[6] = {
