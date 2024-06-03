@@ -167,18 +167,6 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
 	if(vulkanDevice)
 	{
-		for(auto i:mFramebuffers)
-		{
-			for(auto j:i)
-			{
-				r->PushToReleaseManager(j);
-			}
-		}
-		mFramebuffers.clear();
-
-		r->PushToReleaseManager(mRenderPass);
-		mRenderPass = nullptr;
-
 		if(!external_texture)
 		{
 			r->PushToReleaseManager(mImage);
@@ -208,7 +196,10 @@ void Texture::FinishLoading(crossplatform::DeviceContext& deviceContext)
 		return;
 	SIMUL_ASSERT(loadedTextures.size() != 0)
 
-		vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
+
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 
 	if (GetSampleCount() > 1)
 	{
@@ -362,20 +353,6 @@ vk::ImageView* Texture::AsVulkanImageView(const crossplatform::TextureView& text
 	return imageView;
 }
 
-vk::Framebuffer *Texture::GetVulkanFramebuffer(int layer , int mip)
-{
-	if(layer<0&&mip<0)
-	{
-		AssumeLayout(vk::ImageLayout::ePresentSrcKHR);
-	}
-
-	if(layer<0)
-		layer=0;
-	if(mip<0)
-		mip=0;
-	return &(mFramebuffers[layer][mip]);
-}
-
 bool Texture::IsSame(int w, int h, int d, int arr, int m, crossplatform::PixelFormat f,int numSamples,bool comp,bool rt,bool ds, bool cubemap)
 {
 	// If we are not created yet...
@@ -473,7 +450,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
 	// include eTransferDst IN CASE this is for a texture file loaded.
-	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst;
+	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst|vk::ImageUsageFlagBits::eTransferSrc;;
 	if(m>1)
 		usageFlags|=vk::ImageUsageFlagBits::eTransferSrc;
 	if(rendertarget)
@@ -540,60 +517,6 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	this->renderTarget=rendertarget;
 	SetVulkanName(renderPlatform,mImage,name.c_str());
 	return true;
-}
-
-vk::RenderPass &Texture::GetRenderPass(crossplatform::DeviceContext &deviceContext)
-{
-	if (!mRenderPass)
-	{
-		auto *r = (vulkan::RenderPlatform*)renderPlatform;
-		if(mCurrentImageLayout==vk::ImageLayout::eUndefined||mCurrentImageLayout==vk::ImageLayout::ePreinitialized)
-		{
-			SetLayout(deviceContext,vk::ImageLayout::eColorAttachmentOptimal,{});
-		}
-		vk::ImageLayout layouts[]={mCurrentImageLayout};
-		vk::ImageLayout end_layouts[]={(mCurrentImageLayout==vk::ImageLayout::eUndefined||mCurrentImageLayout==vk::ImageLayout::ePreinitialized)?vk::ImageLayout::eColorAttachmentOptimal:mCurrentImageLayout};
-		r->CreateVulkanRenderpass(deviceContext,mRenderPass, 1, &pixelFormat, crossplatform::PixelFormat::UNKNOWN,false,GetSampleCount(),layouts,end_layouts);
-		AssumeLayout(end_layouts[0]);
-	}
-	return mRenderPass;
-}
-
-void Texture::InitFramebuffers(crossplatform::DeviceContext &deviceContext)
-{
-	if(mFramebuffers.size())
-		return;
-	vulkan::EffectPass *effectPass=(vulkan::EffectPass*)deviceContext.contextState.currentEffectPass;
-	vk::RenderPass &vkRenderPass = GetRenderPass(deviceContext);
-	
-	vk::ImageView attachments[1]={nullptr};
-
-	vk::FramebufferCreateInfo framebufferCreateInfo = vk::FramebufferCreateInfo();
-	framebufferCreateInfo.renderPass = vkRenderPass;
-	framebufferCreateInfo.attachmentCount = 1;
-	framebufferCreateInfo.width = width;
-	framebufferCreateInfo.height = length;
-	framebufferCreateInfo.layers = 1;
-	
-	vk::Device *vulkanDevice=renderPlatform->AsVulkanDevice();
-	int totalNum	= cubemap ? 6 * arraySize : arraySize;
-	mFramebuffers.resize(totalNum);
-	for (int i = 0; i < totalNum; i++)
-	{
-		mFramebuffers[i].resize(mips);
-		framebufferCreateInfo.width = width;
-		framebufferCreateInfo.height = length;
-		for (int j= 0; j < mips; j++)
-		{
-			attachments[0] = *AsVulkanImageView({ GetShaderResourceTypeForRTVAndDSV(), { j, 1, i, 1 } });
-			framebufferCreateInfo.pAttachments = attachments;
-			SIMUL_VK_CHECK(vulkanDevice->createFramebuffer(&framebufferCreateInfo, nullptr, &mFramebuffers[i][j]));
-			SetVulkanName(renderPlatform,mFramebuffers[i][j],platform::core::QuickFormat("%s FB, layer %d, mip %d", name.c_str(),i,j));
-	
-			framebufferCreateInfo.width=(framebufferCreateInfo.width+1)/2;
-			framebufferCreateInfo.height = (framebufferCreateInfo.height+1)/2;
-		}
-	}
 }
 
 bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, int w, int l, int num, int m, crossplatform::PixelFormat f, bool computable , bool rendertarget , bool ascubemap )
@@ -763,6 +686,7 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	clear_value.depth=depthClear;
 	clear_value.stencil=stencilClear;
 
+	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	commandBuffer->clearDepthStencilImage(mImage, image_layout, &clear_value, (uint32_t)image_subresource_ranges.size(), image_subresource_ranges.data() );
 	SetLayout(deviceContext, prev_image_layout, { 0, 1, 0, 1 });
 }
@@ -923,20 +847,6 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	textureLoadComplete=false;
 }
 
-void Texture::CreateFBOs(int sampleCount)
-{
-	for (int i = 0; i < arraySize; i++)
-	{
-		for (int mip = 0; mip < mips; mip++)
-		{
-		}
-	}
-}
-
-void Texture::SetDefaultSampling(GLuint texId)
-{
-}
-
 void Texture::StoreExternalState(crossplatform::ResourceState resourceState)
 {
 	mExternalLayout=vulkan::RenderPlatform::ToVulkanImageLayout(resourceState);
@@ -1012,7 +922,10 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 			flags = vk::AccessFlagBits::eColorAttachmentWrite;
 			break;
 		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentRead;
+			break;
+		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+			flags = vk::AccessFlagBits::eDepthStencilAttachmentRead;
 			break;
 		case vk::ImageLayout::eShaderReadOnlyOptimal:
 			// Make sure any Copy or CPU writes to image are flushed
@@ -1024,7 +937,10 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 		case vk::ImageLayout::ePresentSrcKHR:
 			flags = vk::AccessFlagBits::eMemoryRead;
 			break;
+		case vk::ImageLayout::eGeneral:
+			break;
 		default:
+			SIMUL_BREAK_ONCE("Unknown layout.");
 			break;
 		}
 
@@ -1063,6 +979,9 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 						continue;
 					barrier.setOldLayout(imageLayout);
 					barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+
+					vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 					commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 					imageLayout = newLayout;
 				}
@@ -1075,6 +994,9 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 				return;
 			barrier.setOldLayout(mCurrentImageLayout);
 			barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, mips, 0, totalNum));
+
+			vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 			commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 			AssumeLayout(newLayout);
 		}
@@ -1090,6 +1012,9 @@ void Texture::SetLayout(crossplatform::DeviceContext& deviceContext, vk::ImageLa
 				vk::ImageLayout& imageLayout = mSubResourcesLayouts[l][m];
 				barrier.setOldLayout(imageLayout);
 				barrier.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, m, 1, l, 1));
+
+				vulkanRenderPlatform->EndRenderPass(deviceContext);
+
 				commandBuffer->pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 				imageLayout = newLayout;
 			}

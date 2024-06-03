@@ -177,6 +177,8 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	HGLRC hglrc	=wglGetCurrentContext();
 	if(!wglMakeCurrent(hDC,hRC))
 		return;
+	if(viewport.w == 0 || viewport.h == 0)
+		InitSwapChain();
 
 	renderPlatform->StoreRenderState(deferredContext);
 

@@ -13,6 +13,7 @@
 	#pragma warning(disable:4275)
 #endif
 
+#define VK_DEBUG_UTILS 0
 
 #ifdef UNIX
 template <typename T, std::size_t N>
@@ -37,7 +38,7 @@ namespace simul
 			vk::Device* device = renderPlatform->AsVulkanDevice();
 			uint64_t objectHandle = *((uint64_t*)&ds);
 
-		#if 0
+		#if VK_DEBUG_UTILS
 			vk::DispatchLoaderDynamic d;
 			d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
 			if (d.vkSetDebugUtilsObjectNameEXT)
@@ -95,8 +96,8 @@ namespace simul
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
 
-			crossplatform::GraphicsDeviceContext& GetImmediateContext() override;
-			void FlushImmediateContext();
+			void ExecuteCommands(crossplatform::DeviceContext& deviceContext) override;
+			void RestartCommands(crossplatform::DeviceContext& deviceContext) override;
 
 			void PushToReleaseManager(vk::Buffer &);
 			void PushToReleaseManager(vk::Pipeline& r);
@@ -172,7 +173,7 @@ namespace simul
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
             void									SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
-			void									SaveTexture(crossplatform::Texture *texture,const char *lFileNameUtf8) override;
+			void									SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			void									RestoreColourTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			void									RestoreDepthTextureState(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			
@@ -193,12 +194,16 @@ namespace simul
 			//static Vulkanenum						DataType(crossplatform::PixelFormat p);
 			static int								FormatTexelBytes(crossplatform::PixelFormat p);
 			static int								FormatCount(crossplatform::PixelFormat p);
+			static vk::Extent2D						GetTextureTargetExtext2D(const crossplatform::TargetsAndViewport::TextureTarget& targetTexture);
+			static vk::Extent2D						GetTargetAndViewportExtext2D(const crossplatform::TargetsAndViewport* targetsAndViewport);
 			bool									memory_type_from_properties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex);
 			
 			//! Makes the handle resident only if its not resident already
 			vulkan::Texture*						GetDummyTextureCube();
 			//! Returns 2DMS dummy texture 1 white texel at 2x MS
 			vulkan::Texture*						GetDummy2DMS();
+			//! Returns 2D Array dummy texture 1 white texel
+			vulkan::Texture*						GetDummy2DArray();
 			//! Returns 2D dummy texture 1 white texel
 			vulkan::Texture*						GetDummy2D();
 			//! Returns 3D dummy texture 1 white texel
@@ -207,18 +212,20 @@ namespace simul
 			vulkan::Texture*						GetDummyTexture(crossplatform::ShaderResourceType);
 			
 			vk::Framebuffer*						GetCurrentVulkanFramebuffer(crossplatform::GraphicsDeviceContext& deviceContext);
-			static crossplatform::PixelFormat				GetActivePixelFormat(crossplatform::GraphicsDeviceContext &deviceContext);
+			static crossplatform::PixelFormat		GetActivePixelFormat(crossplatform::GraphicsDeviceContext &deviceContext);
+			static int								GetActiveNumOfSamples(crossplatform::GraphicsDeviceContext& deviceContext);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
 			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory,const char *name);			
 			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass,int num_colour,const crossplatform::PixelFormat *pixelFormats
 																			,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN
-																			,bool clear=false
+																			,bool clear=false,bool depthTest=false,bool depthWrite=false
 																			,int numOfSamples=1
 																			,const vk::ImageLayout *initial_layouts=nullptr,const vk::ImageLayout *target_layouts=nullptr);
-			vk::RenderPass*							GetActiveVulkanRenderPass(crossplatform::GraphicsDeviceContext &deviceContext);
 			static void								SetDefaultColourFormat(crossplatform::PixelFormat p);
 			virtual void							InvalidCachedFramebuffersAndRenderPasses() override;
+			void									EndRenderPass(crossplatform::DeviceContext& deviceContext) override;
+			static std::string						VulkanResultString(vk::Result res);
 
 			static const std::map<VkDebugReportObjectTypeEXT, std::string> VkObjectTypeMap;
 
@@ -245,6 +252,7 @@ namespace simul
 			std::set<vk::DescriptorPool>					releaseDescriptorPools;
 
 			vulkan::Texture*								mDummy2D=nullptr;
+			vulkan::Texture*								mDummy2DArray=nullptr;
 			vulkan::Texture*								mDummy2DMS=nullptr;
 			vulkan::Texture*								mDummy3D=nullptr;
 			vulkan::Texture*								mDummyTextureCube=nullptr;
@@ -253,7 +261,6 @@ namespace simul
 			static crossplatform::PixelFormat				defaultColourFormat;
 			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
 			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
-			std::map<unsigned long long,vk::RenderPass>		mFramebufferRenderPasses;
 			crossplatform::TargetsAndViewport				mTargets;
 		};
 	}

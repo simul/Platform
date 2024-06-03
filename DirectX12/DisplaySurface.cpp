@@ -16,6 +16,7 @@ DisplaySurface::DisplaySurface():
 	{
 		mBackBuffers[i] = nullptr;
 		mCommandAllocators[i] = nullptr;
+		mWindowEvents[i] = nullptr;
 		mGPUFences[i] = nullptr;
 		mFenceValues[i] = 0;
 	}
@@ -23,7 +24,7 @@ DisplaySurface::DisplaySurface():
 
 DisplaySurface::~DisplaySurface()
 {
-	WaitForAllWorkDone();
+	FlushAllGPUWork();
 	InvalidateDeviceObjects();
 }
 
@@ -146,7 +147,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 {
 	if (mSwapChain)
 	{
-		WaitForAllWorkDone();
+		FlushAllGPUWork();
 	}
 	//SAFE_RELEASE(mCommandList);
 	SAFE_RELEASE(mSwapChain);
@@ -245,9 +246,9 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 
 void DisplaySurface::CreateSyncObjects()
 {
-	mWindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	for (int i = 0; i < FrameCount; i++)
 	{
+		mWindowEvents[i] = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		mFenceValues[i] = 0;
 		mDeviceRef->CreateFence(mFenceValues[i], D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&mGPUFences[i]));
 		mGPUFences[i]->SetName(L"DisplaySurfaceSwapchainSync");
@@ -263,15 +264,16 @@ void DisplaySurface::StartFrame()
 	}
 
 	HRESULT res = S_FALSE;
-	static UINT idx_old=0;
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
 	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
 	{
-		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
-		WaitForSingleObject(mWindowEvent, INFINITE);
+		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvents[idx]);
+		WaitForSingleObject(mWindowEvents[idx], INFINITE);
 	}
+	FlushAllGPUWork();
+
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 
@@ -280,7 +282,6 @@ void DisplaySurface::StartFrame()
 	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;
-	idx_old=idx;
 }
 
 void DisplaySurface::EndFrame()
@@ -298,8 +299,6 @@ void DisplaySurface::EndFrame()
 	auto cc = dx12RenderPlatform->GetCommandQueue();
 	if(cc&& mCommandList)
 		cc->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	// Cache the current idx:
-	int idx = GetCurrentBackBufferIndex();
 
 #ifndef _GAMING_XBOX
 	// Present new frame
@@ -312,20 +311,24 @@ void DisplaySurface::EndFrame()
 		SIMUL_CERR << removedRes << std::endl;
 	}
 	SIMUL_ASSERT(res == S_OK);
-	#endif
-	// Signal at the end of the pipe, note that we use the cached index 
-	// or we will be adding a fence for the next frame!
+#endif
+
+	// Signal at the end of the frame
+	int idx = GetCurrentBackBufferIndex();
 	dx12RenderPlatform->GetCommandQueue()->Signal(mGPUFences[idx], mFenceValues[idx]);
 }
 
-void DisplaySurface::WaitForAllWorkDone()
+void DisplaySurface::FlushAllGPUWork()
 {
 	for (int i = 0; i < FrameCount; i++)
 	{
+		dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
+		dx12RenderPlatform->GetCommandQueue()->Signal(mGPUFences[i], mFenceValues[i]);
+
 		if (mGPUFences[i]->GetCompletedValue() < mFenceValues[i])
 		{
-			mGPUFences[i]->SetEventOnCompletion(mFenceValues[i], mWindowEvent);
-			WaitForSingleObject(mWindowEvent, INFINITE);
+			mGPUFences[i]->SetEventOnCompletion(mFenceValues[i], mWindowEvents[i]);
+			WaitForSingleObject(mWindowEvents[i], INFINITE);
 		}
 	}
 }
@@ -352,13 +355,12 @@ void DisplaySurface::Resize()
 		EndFrame();
 	}
 
-	int idx = (GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
+	UINT idx = GetCurrentBackBufferIndex();
 	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
 	{
-		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
-		WaitForSingleObject(mWindowEvent, INFINITE);
+		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvents[idx]);
+		WaitForSingleObject(mWindowEvents[idx], INFINITE);
 	}
-
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	for (UINT i = 0; i < FrameCount; i++)

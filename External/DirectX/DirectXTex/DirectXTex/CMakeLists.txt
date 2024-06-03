@@ -61,3 +61,8 @@ endif()
 
 # Windows 10 is used here to build the DirectX 12 code paths as well as 11
 add_compile_definitions(_UNICODE UNICODE _WIN32_WINNT=0x0A00)
+if (PLATFORM_SUPPORT_WIN7)
+    add_compile_definitions(SUPPORT_WINDOWS_7=1)
+else()
+    add_compile_definitions(SUPPORT_WINDOWS_7=0)
+endif()

@@ -423,7 +423,7 @@ void Effect::SetUnorderedAccessView(crossplatform::DeviceContext& deviceContext,
 		return;
 
 	opengl::Texture* gTex = (opengl::Texture*)tex;
-	if (gTex)
+	if (gTex && gTex->IsValid())
 	{
 		const crossplatform::SubresourceRange subresourceRange = { subresource.mipLevel, uint32_t(1), subresource.baseArrayLayer, subresource.arrayLayerCount };
 		GLuint imageView = gTex->AsOpenGLView({ name.shaderResourceType, subresourceRange });

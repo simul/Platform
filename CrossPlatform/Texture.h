@@ -21,12 +21,14 @@ namespace sce
 }
 namespace vk
 {
+	class Image;
 	class ImageView;
 	class Sampler;
 }
 namespace nvn
 {
 	class Texture;
+	class TextureView;
 }
 
 struct ID3D11ShaderResourceView;
@@ -202,7 +204,7 @@ namespace simul
 			int default_slot;
 			crossplatform::RenderPlatform *renderPlatform;
 		};
-		enum class ShaderResourceType;
+		enum class ShaderResourceType : uint16_t;
 
 		struct SIMUL_CROSSPLATFORM_EXPORT SubresourceRange
 		{
@@ -292,7 +294,8 @@ namespace simul
 			virtual void LoadTextureArray(RenderPlatform *r,const std::vector<std::string> &texture_files,bool gen_mips=false)=0;
 			virtual bool IsValid() const=0;
 			virtual void InvalidateDeviceObjects();
-			virtual nvn::Texture* AsNVNTexture() { return 0; };
+			virtual nvn::Texture* AsNVNTexture() { return 0; }
+			virtual nvn::TextureView* AsNVNTextureView(const crossplatform::TextureView& textureView) { return 0; }
 			//! Returns the GnmTexture specified by layer,mip. Default values of -1 mean "all".
 			virtual sce::Gnm::Texture *AsGnmTexture(const crossplatform::TextureView& textureView){return 0;}
 			virtual ID3D11Texture2D *AsD3D11Texture2D(){return 0;}
@@ -320,6 +323,7 @@ namespace simul
 			virtual void MoveToSlowRAM() {}
 			virtual void DiscardFromFastRAM() {}
 			virtual GLuint AsGLuint(int =-1, int = -1){return 0;}
+			virtual vk::Image* AsVulkanImage(){return nullptr;}
 			virtual vk::ImageView *AsVulkanImageView(const crossplatform::TextureView& textureView){return nullptr;}
 			//! Get the crossplatform pixel format.
 			PixelFormat GetFormat() const

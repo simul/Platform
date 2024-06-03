@@ -37,7 +37,7 @@ namespace simul
             void StartFrame();
             void EndFrame();
             //! Checks all the fences (eg. after this method its safe to release resources)
-            void WaitForAllWorkDone();
+            void FlushAllGPUWork();
             void Resize();
 
             ID3D12Device*                               mDeviceRef;
@@ -60,14 +60,14 @@ namespace simul
             CD3DX12_CPU_DESCRIPTOR_HANDLE				mRTHandles[FrameCount];
             //! We need one command allocator (storage for commands) for each backbuffer
             ID3D12CommandAllocator*						mCommandAllocators[FrameCount];
-            //! Event used to synchronize
-            HANDLE						                mWindowEvent;
+            //! Events used to synchronize
+            HANDLE						                mWindowEvents[FrameCount];
             //! Fences to syn with the GPU
             ID3D12Fence*				                mGPUFences[FrameCount];
             //! Storage for the values of the fence
             UINT64						                mFenceValues[FrameCount];
             //! Used to record commands
-            ID3D12GraphicsCommandList*	                mCommandList;
+            ID3D12GraphicsCommandList*	                mCommandList=nullptr;
             bool                                        mRecordingCommands;
         };
     }

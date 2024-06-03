@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 namespace simul
 {
 	namespace crossplatform
@@ -25,7 +26,7 @@ namespace simul
 			UNKNOWN=0xFFFF
 		};
 		//! A cross-platform equivalent to the OpenGL and DirectX pixel formats
-		enum PixelFormat
+		enum PixelFormat : uint8_t
 		{
 			UNKNOWN=0
 			,RGBA_32_FLOAT
@@ -86,7 +87,7 @@ namespace simul
 			,NV12
 		};
 		//! Pixel formats for pixel shader output - only relevant for some API's.
-		enum PixelOutputFormat
+		enum PixelOutputFormat : uint8_t
 		{
 			FMT_UNKNOWN
 			,FMT_32_GR
@@ -100,7 +101,7 @@ namespace simul
 			,OUTPUT_FORMAT_COUNT
 		};
 		//! This refers to the type of a shader resource, which should be compatible with the type of any resource assigned to it.
-		enum class ShaderResourceType
+		enum class ShaderResourceType: uint16_t
 		{
 			UNKNOWN=0
 			,RW		=1
@@ -166,6 +167,45 @@ namespace simul
 		{
 			a = static_cast<ShaderResourceType>(static_cast<unsigned int>(a) ^ static_cast<unsigned int>(b));
 			return a;
+		}
+		enum class PixelFormatType { DOUBLE, FLOAT, HALF, UINT, USHORT, UCHAR, INT, SHORT, CHAR };
+		inline PixelFormatType GetElementType(PixelFormat p)
+		{
+			switch (p)
+			{
+			case RGBA_32_FLOAT:
+			case RGB_32_FLOAT:
+			case RG_32_FLOAT:
+			case R_32_FLOAT:
+			case LUM_32_FLOAT:
+			case INT_32_FLOAT:
+			case D_32_FLOAT:
+				return PixelFormatType::FLOAT;
+			case R_32_UINT:
+			case RG_32_UINT:
+			case RGB_32_UINT:
+			case RGBA_32_UINT:
+				return PixelFormatType::UINT;
+			case RGBA_16_FLOAT:
+			case RGB_16_FLOAT:
+			case RG_16_FLOAT:
+			case R_16_FLOAT:
+				return PixelFormatType::HALF;
+			case D_16_UNORM:
+				return PixelFormatType::USHORT;
+			case D_24_UNORM_S_8_UINT:
+				return PixelFormatType::UINT;
+			case RGBA_8_UNORM:
+			case BGRA_8_UNORM:
+			case RGBA_8_UNORM_SRGB:
+			case R_8_UNORM:
+				return PixelFormatType::UCHAR;
+			case RGBA_8_SNORM:
+			case R_8_SNORM:
+				return PixelFormatType::CHAR;
+			default:
+				return PixelFormatType::FLOAT;
+			};
 		}
 		inline int GetElementSize(PixelFormat p)
 		{

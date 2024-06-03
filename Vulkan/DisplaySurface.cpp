@@ -10,7 +10,7 @@
 #include <vulkan/vulkan.hpp>
 // Careless implementation by Vulkan requires this:
 #undef NOMINMAX
-#include <vulkan/vk_sdk_platform.h>
+//#include <vulkan/vk_sdk_platform.h>
 #define NOMINMAX
 
 #ifndef _countof
@@ -20,34 +20,8 @@
 using namespace simul;
 using namespace vulkan;
 
-#ifdef _MSC_VER
-static const char *GetErr()
-{
-	LPVOID lpMsgBuf;
-	DWORD err = GetLastError();
-	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		err,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-		(LPTSTR)&lpMsgBuf,
-		0,
-		NULL
-	);
-	if (lpMsgBuf)
-		return (const char *)lpMsgBuf;
-	else
-		return "";
-}
-#endif
-
 DisplaySurface::DisplaySurface()
 	:pixelFormat(crossplatform::UNKNOWN)
-#ifdef _MSC_VER
-	,hDC(nullptr)
-	,hRC(nullptr)
-	#endif
 	,frame_index(0)
 	,current_buffer(0)
 {
@@ -105,11 +79,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	
 	
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-	hDC = GetDC(mHwnd);
-	if (!(hDC))
-	{
-		return;
-	}
 	auto hInstance=GetModuleHandle(nullptr);
 	vk::Win32SurfaceCreateInfoKHR createInfo = vk::Win32SurfaceCreateInfoKHR()
 		.setHinstance(hInstance)
@@ -137,10 +106,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 void DisplaySurface::InvalidateDeviceObjects()
 {
-#ifdef _MSC_VER
-	if(!hDC)
-		return;
-#endif
 	vk::Device *vulkanDevice=GetVulkanDevice();
 	if(vulkanDevice)
 	{
@@ -173,15 +138,6 @@ void DisplaySurface::InvalidateDeviceObjects()
 		vulkanDevice->destroyDescriptorSetLayout(desc_layout,nullptr);
 	}
 			//vulkanDevice->destroysurface(mSurface,nullptr);
-
-#ifdef _MSC_VER
-	if (hDC && !ReleaseDC(mHwnd, hDC))                    // Are We Able To Release The DC
-	{
- 		SIMUL_CERR << "Release Device Context Failed." << GetErr() << std::endl;
-		hDC = NULL;                           // Set DC To NULL
-	}
-	hDC = nullptr;                           // Set DC To NULL
-#endif
 }
 
 
@@ -249,18 +205,18 @@ void DisplaySurface::GetQueues()
 	graphics_queue_family_index = graphicsQueueFamilyIndex;
 	present_queue_family_index = presentQueueFamilyIndex;
 
-    bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
+	bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
 	
 	vk::Device *vulkanDevice=GetVulkanDevice();
 	vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
-    if (!separate_present_queue) {
-        present_queue = graphics_queue;
-    } else {
-        vulkanDevice->getQueue(present_queue_family_index, 0, &present_queue);
-    }
+	if (!separate_present_queue) {
+		present_queue = graphics_queue;
+	} else {
+		vulkanDevice->getQueue(present_queue_family_index, 0, &present_queue);
+	}
 
 	
-    vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
+	vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
 	if (!separate_present_queue)
 	{
 		present_queue = graphics_queue;
@@ -841,7 +797,7 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 		InitSwapChain();
 
 	auto *vulkanDevice = renderPlatform->AsVulkanDevice();
-// Ensure no more than FRAME_LAG renderings are outstanding
+
 	vk::Result result=vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
 	if (result != vk::Result::eSuccess)
 	{
@@ -852,19 +808,20 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	{
 		SIMUL_CERR << "Vulkan operation failed\n";
 	}
+
 	do
 	{
 		result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
 		if (result == vk::Result::eErrorOutOfDateKHR)
 		{
-// demo->swapchain is out of date (e.g. the window was resized) and
-// must be recreated:
+			// demo->swapchain is out of date (e.g. the window was resized) and
+			// must be recreated:
 			Resize();
 		}
 		else if (result == vk::Result::eSuboptimalKHR)
 		{
-// swapchain is not as optimal as it could be, but the platform's
-// presentation engine will still present the image correctly.
+			// swapchain is not as optimal as it could be, but the platform's
+			// presentation engine will still present the image correctly.
 			break;
 		}
 		else
@@ -872,44 +829,23 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
 		}
 	} while (result != vk::Result::eSuccess);
-	SwapchainImageResources &res=swapchain_image_resources[current_buffer];
-	
-	static vec4 clear = { 0.0f,0.0f,1.0f,1.0f };
-	
-	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-	vk::ClearValue const clearValues[1] = { vk::ClearColorValue(std::array<float, 4>({{clear.x,clear.y,clear.z,clear.w}})) };
-	auto &commandBuffer=res.cmd;
-	auto &fb=swapchain_image_resources[current_buffer].framebuffer;
-	auto const passInfo = vk::RenderPassBeginInfo()
-		.setRenderPass(render_pass)
-		.setFramebuffer(fb)
-		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D((uint32_t)viewport.w, (uint32_t)viewport.h)))
-		.setClearValueCount(1)
-		.setPClearValues(clearValues);
+
 	vulkanDevice->waitIdle();
+
+	SwapchainImageResources &res=swapchain_image_resources[current_buffer];
+	auto& commandBuffer = res.cmd;
+	auto& fb = swapchain_image_resources[current_buffer].framebuffer;
+
+	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 	result = commandBuffer.begin(&commandInfo);
 	SIMUL_VK_CHECK(result);
 
-	crossplatform::DeviceContext &immediateContext = renderPlatform->GetImmediateContext();
 	deferredContext.platform_context = &commandBuffer;
 	deferredContext.renderPlatform = renderPlatform;
 
 	renderPlatform->StoreRenderState(deferredContext);
-
 	EnsureImageLayout();
-	commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
 
-	auto const vkViewport =
-		vk::Viewport().setWidth((float)viewport.w).setHeight((float)viewport.h).setMinDepth((float)0.0f).setMaxDepth((float)1.0f);
-	commandBuffer.setViewport(0, 1, &vkViewport);
-
-	vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(viewport.w, viewport.h));
-	commandBuffer.setScissor(0, 1, &scissor);
-	//commandBuffer.draw(12 * 3, 1, 0, 0);
-	// Note that ending the renderpass changes the image's layout from
-	// COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
-	commandBuffer.endRenderPass();
-	
 	ERRNO_BREAK
 	if (renderer)
 	{
@@ -921,11 +857,12 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 
 	renderPlatform->RestoreRenderState(deferredContext);
 	EnsureImagePresentLayout();
+
 	commandBuffer.end();
+
 	Present();
-	current_buffer++;
-	current_buffer=current_buffer%(swapchain_image_resources.size());
 	Resize();
+
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
 }
@@ -1022,30 +959,30 @@ void DisplaySurface::Present()
 	// otherwise wait for draw complete
 	auto const presentInfo = vk::PresentInfoKHR()
 		.setWaitSemaphoreCount(1)
-		.setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index]
-			: &draw_complete_semaphores[frame_index])
+		.setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index] : &draw_complete_semaphores[frame_index])
 		.setSwapchainCount(1)
 		.setPSwapchains(&swapchain)
 		.setPImageIndices(&current_buffer);
 
 	result = present_queue.presentKHR(&presentInfo);
-	frame_index += 1;
-	frame_index %= swapchain_image_resources.size();
 	if (result == vk::Result::eErrorOutOfDateKHR)
 	{
-// swapchain is out of date (e.g. the window was resized) and
-// must be recreated:
-	//	Resize();
+		// swapchain is out of date (e.g. the window was resized) and
+		// must be recreated:
+		//	Resize();
 	}
 	else if (result == vk::Result::eSuboptimalKHR)
 	{
-// swapchain is not as optimal as it could be, but the platform's
-// presentation engine will still present the image correctly.
+		// swapchain is not as optimal as it could be, but the platform's
+		// presentation engine will still present the image correctly.
 	}
 	else
 	{
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
+
+	frame_index += 1;
+	frame_index %= swapchain_image_resources.size();
 }
 
 

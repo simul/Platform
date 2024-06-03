@@ -19,6 +19,12 @@ namespace simul
 		class SIMUL_VULKAN_EXPORT EffectPass :public simul::crossplatform::EffectPass
 		{
 		public:
+			struct RenderPassPipeline
+			{
+				vk::Pipeline				mPipeline;
+				vk::PipelineCache			mPipelineCache;
+				vk::RenderPass				mRenderPass;
+			};
 			            EffectPass(crossplatform::RenderPlatform *r,crossplatform::Effect *);
                         ~EffectPass();
 			void        InvalidateDeviceObjects();
@@ -26,29 +32,23 @@ namespace simul
 			void        Apply(crossplatform::DeviceContext& deviceContext, bool asCompute) override;
             void        SetTextureHandles(crossplatform::DeviceContext& deviceContext);
 
-			vk::RenderPass &GetVulkanRenderPass(crossplatform::GraphicsDeviceContext & deviceContext);
+			RenderPassPipeline& GetRenderPassPipeline(crossplatform::GraphicsDeviceContext & deviceContext);
 
-			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+			static RenderPassHash MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology
 				, const crossplatform::Layout *layout=nullptr
 				, const crossplatform::RenderState *blendState=nullptr
 				, const crossplatform::RenderState *depthStencilState=nullptr
 				, const crossplatform::RenderState *rasterizerState=nullptr);
-			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology, const crossplatform::Layout* layout);
+			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology, const crossplatform::Layout* layout);
+
         private:
 			void ApplyContextState(crossplatform::DeviceContext& deviceContext,vk::DescriptorSet &descriptorSet);
 			void Initialize();
 			void Initialize(vk::DescriptorSet &descriptorSet);
-            void MapTexturesToUBO(crossplatform::Effect* curEffect);
 			
 			vk::DescriptorSetLayout		mDescLayout;
 			vk::PipelineLayout			mPipelineLayout;
-
-			struct RenderPassPipeline
-			{
-				vk::Pipeline				mPipeline;
-				vk::PipelineCache			mPipelineCache;
-				vk::RenderPass				mRenderPass;
-			};
+	
 			std::map<RenderPassHash,RenderPassPipeline> mRenderPasses;
 			vk::DescriptorPool			mDescriptorPool;
 			
@@ -64,7 +64,7 @@ namespace simul
 			static int GenerateTextureSlot(int s,bool offset=true);
 			static int GenerateTextureWriteSlot(int s,bool offset=true);
 			static int GenerateConstantBufferSlot(int s,bool offset=true);
-			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, crossplatform::Topology topology
+			void InitializePipeline(crossplatform::DeviceContext &deviceContext,RenderPassPipeline *renderPassPipeline,crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology
 				, const crossplatform::RenderState *blendState=nullptr
 				, const crossplatform::RenderState *depthStencilState=nullptr
 				, const crossplatform::RenderState *rasterizerState=nullptr);

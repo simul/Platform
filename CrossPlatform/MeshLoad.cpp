@@ -3,10 +3,13 @@
 #include "Platform/CrossPlatform/Material.h"
 #include "Platform/CrossPlatform/AxesStandard.h"
 #include "Platform/Core/StringFunctions.h"
+#include "Platform/Core/DynamicLibrary.h"
+
 using namespace simul;
 using namespace crossplatform;
 
 #if PLATFORM_USE_ASSIMP
+
 #include <assimp/Importer.hpp>      // C++ importer interface
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
@@ -206,10 +209,20 @@ static void ConvertMaterial(RenderPlatform *renderPlatform,Material* M, const ai
 
 	
 }
-#include "Platform/Core/StringFunctions.h"
+
 void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 {
+	// https://stackoverflow.com/questions/58354699/is-it-safe-to-mix-delayed-dll-loading-and-manual-call-of-loadlibrarya
+	// Dynamic Load called here to check the DLL is valid.
+	static bool valid = false;
+	if (!valid)
+		valid = platform::core::DynamicLibrary(ASSIMP_LIBNAME);
+	if (!valid)
+		return;
+		
 	InvalidateDeviceObjects();
+
+	// Delayload DLL called here.
 	// Create an instance of the Importer class
 	Importer importer;
 
@@ -370,9 +383,10 @@ void Mesh::Load(const char* filenameUtf8,float scale,AxesStandard fromStandard)
 }
 
 #else
+
 void Mesh::Load(const char* filenameUtf8, float scale, AxesStandard fromStandard)
 {
-	SIMUL_CERR_ONCE << "Can't load " << filenameUtf8 <<" - no importer enabled."<< std::endl;
+	SIMUL_CERR_ONCE << "Can't load " << filenameUtf8 << " - no importer enabled." << std::endl;
 }
-#endif
 
+#endif

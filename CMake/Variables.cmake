@@ -33,6 +33,7 @@ endif()
 option(PLATFORM_SUPPORT_WEBGPU "Use WebGPU API with Emscripten?" OFF)
 option(PLATFORM_IMGUI "" OFF)
 
+option(PLATFORM_SUPPORT_WIN7 "" ON )
 option(PLATFORM_LOAD_RENDERDOC "Always load the renderdoc dll?" OFF )
 option(PLATFORM_BUILD_DOCS "Whether to build html documentation with Doxygen and Sphinx" OFF )
  
@@ -43,7 +44,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	option(PLATFORM_SUPPORT_D3D11 "" ON )
 	set(PLATFORM_D3D11_SFX ON )
 	option(PLATFORM_SUPPORT_D3D12 "" ON )
-	option(PLATFORM_USE_ASSIMP "" OFF )
+	option(PLATFORM_USE_ASSIMP "" ON )
 else()
 	set(PLATFORM_WINDOWS OFF)
 	option(PLATFORM_USE_ASSIMP "" OFF )
@@ -78,10 +79,6 @@ set(SIMUL_SUPPORT_D3D11 ${PLATFORM_SUPPORT_D3D11})
 set(SIMUL_SUPPORT_D3D12 ${PLATFORM_SUPPORT_D3D12})
 set(SIMUL_SUPPORT_OPENGL ${PLATFORM_SUPPORT_OPENGL})
 set(SIMUL_SUPPORT_VULKAN ${PLATFORM_SUPPORT_VULKAN})
-
-#Default options for assimp:
-set(BUILD_SHARED_LIBS off)
-set(ASSIMP_BUILD_TESTS off)
 
 find_program(SIMUL_FX_EXECUTABLE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin" "C:/Program Files (x86)/Windows Kits/10/bin/10.0.18362.0" PATH_SUFFIXES x64 )
 

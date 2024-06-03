@@ -7,11 +7,16 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+#include <limits.h> 
 #include <string.h>	// for memset
 
 #ifdef _MSC_VER
 	#pragma warning(push)  
 	#pragma warning(disable : 4251)  
+#endif
+
+#ifndef INT_MAX
+#define INT_MAX 2147483647
 #endif
 
 struct ID3D11DeviceContext;
@@ -40,7 +45,7 @@ namespace simul
 		class SamplerState;
 		class Layout;
 		class TopLevelAccelerationStructure;
-		enum class ShaderResourceType;
+		enum class ShaderResourceType : uint16_t;
 		struct TextureFence
 		{
 			crossplatform::Texture *texture;
@@ -172,6 +177,7 @@ namespace simul
 			{
 			}
 			ContextState& operator=(const ContextState& cs);
+			bool IsDepthActive() const;
 			bool last_action_was_compute = false;
 			Viewport viewports[8];
 			const Buffer *indexBuffer=nullptr;
@@ -193,6 +199,7 @@ namespace simul
 			int test=0;
 			bool contextActive=true;
 			bool externalContext=false;
+			bool vulkanInsideRenderPass = false;
 
 			bool effectPassValid=false;
 			bool vertexBuffersValid=false;
@@ -320,6 +327,7 @@ namespace simul
 			int framePrintX=0;
 			int framePrintY=0;
 			GraphicsDeviceContext();
+			~GraphicsDeviceContext();
 			ViewStruct viewStruct;
 			uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();

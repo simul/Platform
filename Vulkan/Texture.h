@@ -72,17 +72,13 @@ namespace simul
 			bool			IsComputable() const override;
 			bool			HasRenderTargets() const override;
 			void			copyToMemory(crossplatform::DeviceContext &deviceContext,void *target,int start_texel,int num_texels) override;
-			vk::Image		&AsVulkanImage() { return mImage; }
+			vk::Image		*AsVulkanImage() override { return &mImage; }
 			vk::ImageView	*AsVulkanImageView(const crossplatform::TextureView& textureView) override;
-			vk::Framebuffer *GetVulkanFramebuffer(int layer = -1, int mip = -1);
-		//	static vk::ImageView *GetDummyVulkanImageView(crossplatform::ShaderResourceType type);
-			vk::RenderPass &GetRenderPass(crossplatform::DeviceContext &deviceContext);
 			
 			/// We need an active command list to finish loading a texture!
 			void			FinishLoading(crossplatform::DeviceContext &deviceContext) override;
 
 			/// We need a renderpass before we can create any framebuffers!
-			void			InitFramebuffers(crossplatform::DeviceContext &deviceContext);
 			void			StoreExternalState(crossplatform::ResourceState) override;
 			void			RestoreExternalTextureState(crossplatform::DeviceContext &deviceContext) override;
 
@@ -105,10 +101,6 @@ namespace simul
 			
 			void			LoadTextureData(LoadedTexture &lt,const char* path);
 			void			SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f);
-			//! Creates the Framebuffers for this texture
-			void			CreateFBOs(int sampleCount);
-			//! Applies default sampling parameters to the texId texture
-			void			SetDefaultSampling(GLuint texId);
 
 			vk::Image									mImage;
 			vk::Buffer									mBuffer;
@@ -118,27 +110,9 @@ namespace simul
 			//! States of the subresources mSubResourcesLayouts[index][mip]
 			std::vector<std::vector<vk::ImageLayout>>	mSubResourcesLayouts;
 
-			vk::RenderPass								mRenderPass;
-
-			//vk::ImageView								mMainView;
-			//vk::ImageView								mCubeArrayView;
-			//vk::ImageView								mFaceArrayView;
-
-			//std::vector<vk::ImageView>					mLayerViews;
-			//std::vector<vk::ImageView>					mMainMipViews;
-
-			// For cubemaps/cubemap arrays there are two kinds of layer mip view.
-			// we can have a cubemap view that's one layer and mip, but a cubemap.
-			// or we can have a 2d view that's one layer, face and mip.
-			// so we really need two arrays.
-			//std::vector<std::vector<vk::ImageView>>		mCubemapLayerMipViews;
-			//std::vector<std::vector<vk::ImageView>>		mLayerMipViews;
-
 			std::unordered_map<uint64_t, vk::ImageView*> colourImageViews;
 			std::unordered_map<uint64_t, vk::ImageView*> depthImageViews;
 
-			std::vector<std::vector<vk::Framebuffer>>	mFramebuffers;
-		
 			vk::MemoryAllocateInfo mem_alloc;
 			vk::DeviceMemory mMem;
 			std::vector<LoadedTexture>					loadedTextures;

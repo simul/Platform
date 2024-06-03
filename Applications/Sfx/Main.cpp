@@ -212,7 +212,7 @@ int main(int argc, char** argv)
 			{
 				for (auto& el : compiler["commandPaths"].items())
 				{
-					sfxConfig.compilerPaths.push_back( el.value());
+					sfxConfig.compilerPaths.push_back(ProcessEnvironmentVariables(el.value()));
 				}
 			}
 			if (compiler.count("stages") > 0)

@@ -23,7 +23,7 @@
 #ifdef NOMINMAX
 #undef NOMINMAX
 #endif
-#include <vulkan/vk_sdk_platform.h>
+//#include <vulkan/vk_sdk_platform.h>
 #ifndef NOMINMAX
 
 #ifndef _countof
@@ -57,6 +57,16 @@ static void VulkanDebugCallback()
 	SIMUL_BREAK("");
 }
 
+static vk::Bool32 surfaceExtFound = VK_FALSE;
+static vk::Bool32 platformSurfaceExtFound = VK_FALSE;
+static vk::Bool32 debugExtFound = VK_FALSE;
+static vk::Bool32 debugUtilsExtFound = VK_FALSE;
+static vk::Bool32 physicalDeviceProperties2ExtFound = VK_FALSE;
+static vk::Bool32 nameExtFound = VK_FALSE;
+
+static vk::Bool32 swapchainExtFound = VK_FALSE;
+static vk::Bool32 shaderFloat16ExtFound = VK_FALSE;
+
 // Allow a maximum of two outstanding presentation operations.
 
 class simul::vulkan::DeviceManagerInternal
@@ -65,17 +75,20 @@ public:
 	vk::Instance instance;
 	vk::PhysicalDevice gpu;
 	vk::Device device;
+	vk::PhysicalDeviceFeatures gpu_features;
 	vk::PhysicalDeviceProperties gpu_props;
 	vk::PhysicalDeviceMemoryProperties memory_properties;
-	vk::PhysicalDeviceFeatures gpu_features;
+	vk::PhysicalDeviceFeatures2 gpu_features2;
+	vk::PhysicalDeviceProperties2 gpu_props2;
 	
 	DeviceManagerInternal()
 		: instance(vk::Instance()),
 		gpu(vk::PhysicalDevice()),
 		device(vk::Device()),
+		gpu_features(vk::PhysicalDeviceFeatures()),
 		gpu_props(vk::PhysicalDeviceProperties()),
-		memory_properties(vk::PhysicalDeviceMemoryProperties()),
-		gpu_features(vk::PhysicalDeviceFeatures()) {};
+		memory_properties(vk::PhysicalDeviceMemoryProperties())
+	{};
 };
 
 DeviceManager::DeviceManager()
@@ -143,7 +156,35 @@ bool DeviceManager::IsActive() const
 
 void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_driver)
 {
- 	ERRNO_BREAK
+	ERRNO_BREAK
+		uint32_t apiVersion = VK_API_VERSION_1_0;
+	//query the api version in order to use the correct vulkan functionality
+	uint32_t instanceVersion = 0;
+	vk::Result result = vk::enumerateInstanceVersion(&instanceVersion);
+
+	//check what is returned
+	if (result == vk::Result::eSuccess)
+	{
+		SIMUL_INTERNAL_COUT << "RESULT(vkEnumerateInstanceVersion) : Intance version enumeration successful\n" << std::endl;
+
+		if (instanceVersion != 0)
+			apiVersion = instanceVersion;
+
+		SIMUL_INTERNAL_COUT << "Version number returned : "
+			<< VK_VERSION_MAJOR(instanceVersion) << '.'
+			<< VK_VERSION_MINOR(instanceVersion) << '.'
+			<< VK_VERSION_PATCH(instanceVersion) << '\n';
+	}
+	else if (result == vk::Result::eErrorOutOfHostMemory)
+	{
+		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : eErrorOutOfHostMemory\n" << std::endl;
+	}
+	else
+	{
+		SIMUL_CERR << "RESULT(vkEnumerateInstanceVersion) : Something else returned while enumerating instance version\n" << std::endl;
+	}
+	ERRNO_BREAK
+	
 	uint32_t instance_extension_count = 0;
 	uint32_t instance_layer_count = 0;
 	uint32_t validation_layer_count = 0;
@@ -230,16 +271,10 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
  	ERRNO_BREAK
 
-	/* Look for instance extensions */
-	vk::Bool32 surfaceExtFound = VK_FALSE;
-	vk::Bool32 platformSurfaceExtFound = VK_FALSE;
-	vk::Bool32 debugExtFound = VK_FALSE;
-	vk::Bool32 debugUtilsExtFound = VK_FALSE;
 	
-	// naming objects.
-	vk::Bool32 nameExtFound=VK_FALSE;
 
-	auto result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
+	/* Look for instance extensions */
+	result = vk::enumerateInstanceExtensionProperties(nullptr, (uint32_t*)&instance_extension_count, (vk::ExtensionProperties*)nullptr);
 	extension_names.resize(instance_extension_count);
 	SIMUL_VK_ASSERT_RETURN(result);
 	if (result != vk::Result::eSuccess)
@@ -276,6 +311,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			{
 				nameExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
+			}
+			if (!strcmp(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, instance_extensions[i].extensionName))
+			{
+				physicalDeviceProperties2ExtFound = 1;
+				extension_names[enabled_extension_count++] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
 			}
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 			if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
@@ -405,7 +445,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 		.setApplicationVersion(0)
 		.setPEngineName("Simul")
 		.setEngineVersion(0)
-		.setApiVersion(VK_API_VERSION_1_0);
+		.setApiVersion(apiVersion);
 	auto inst_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app)
 		.setEnabledLayerCount(enabled_layer_count)
@@ -466,7 +506,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
  	ERRNO_BREAK
 	/* Look for device extensions */
 	uint32_t device_extension_count = 0;
-	vk::Bool32 swapchainExtFound = VK_FALSE;
 	enabled_extension_count = 0;
 	memset(extension_names.data(), 0, sizeof(extension_names));
 
@@ -486,6 +525,11 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 				swapchainExtFound = 1;
 				extension_names[enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 			}
+			if (!strcmp(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, device_extensions[i].extensionName))
+			{
+				shaderFloat16ExtFound = 1;
+				extension_names[enabled_extension_count++] = VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME;
+			}
 			assert(enabled_extension_count < 64);
 		}
 	}
@@ -500,14 +544,43 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
  	ERRNO_BREAK
 
-	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
-	
-	InitQueueProperties(deviceManagerInternal->gpu,queue_props);
+		InitQueueProperties(deviceManagerInternal->gpu, queue_props);
 
 	// Query fine-grained feature support for this device.
-	//  If app has specific feature requirements it should check supported
-	//  features based on this query
+	//  If app has specific feature requirements it should check supported features based on this query.
 	deviceManagerInternal->gpu.getFeatures(&deviceManagerInternal->gpu_features);
+	deviceManagerInternal->gpu.getProperties(&deviceManagerInternal->gpu_props);
+
+	//Taken from UE4 for setting up chains of structures
+	void** nextFeatsAddr = nullptr;
+	nextFeatsAddr = &deviceManagerInternal->gpu_features2.pNext;
+	void** nextPropsAddr = nullptr;
+	nextPropsAddr = &deviceManagerInternal->gpu_props2.pNext;
+
+	// Query fine-grained feature and properties support for this device with VK_KHR_get_physical_device_properties2.
+	if (shaderFloat16ExtFound)
+	{
+		*nextFeatsAddr = &physicalDeviceShaderFloat16Int8Features;
+		nextFeatsAddr = &physicalDeviceShaderFloat16Int8Features.pNext;
+	}
+
+	//Execute calls into VK_KHR_get_physical_device_properties2
+	if (apiVersion >= VK_API_VERSION_1_1)
+	{
+		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2);
+		deviceManagerInternal->gpu.getProperties2(&deviceManagerInternal->gpu_props2);
+	}
+	else if (physicalDeviceProperties2ExtFound)
+	{
+		vk::DispatchLoaderDynamic d;
+		d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)deviceManagerInternal->instance.getProcAddr("vkGetPhysicalDeviceFeatures2");
+		d.vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)deviceManagerInternal->instance.getProcAddr("vkGetPhysicalDeviceProperties2");
+		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2, d);
+		deviceManagerInternal->gpu.getProperties2(&deviceManagerInternal->gpu_props2, d);
+	}
+
+	SIMUL_ASSERT_WARN((bool)physicalDeviceShaderFloat16Int8Features.shaderFloat16, "Vulkan: No 16 bit float support in shaders.");
+	SIMUL_ASSERT_WARN((bool)deviceManagerInternal->gpu_features.shaderInt16, "Vulkan: No 16 bit int/uint support in shaders.");
  	ERRNO_BREAK
 
 	if(use_debug)
@@ -627,7 +700,7 @@ void DeviceManager::CreateDevice()
 	#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 		gpu_feature_checks = false;
 	#endif
-
+	ERRNO_BREAK
 	if (gpu_feature_checks)
 	{
 		if(!deviceManagerInternal->gpu_features.vertexPipelineStoresAndAtomics)
@@ -641,19 +714,36 @@ void DeviceManager::CreateDevice()
 		if(!deviceManagerInternal->gpu_features.fragmentStoresAndAtomics)
 			SIMUL_BREAK("Simul trueSKY requires the VkPhysicalDeviceFeature: \"fragmentStoresAndAtomics\". Unable to proceed.\n");
 	}
-	auto deviceInfo = vk::DeviceCreateInfo()
-							.setQueueCreateInfoCount(1)
-							.setPQueueCreateInfos(queues.data())
-							.setEnabledLayerCount(0)
-							.setPpEnabledLayerNames(nullptr)
-							.setEnabledExtensionCount(enabled_extension_count)
-							.setPpEnabledExtensionNames((const char *const *)extension_names.data())
-							.setPEnabledFeatures(&deviceManagerInternal->gpu_features)
-							.setQueueCreateInfoCount((uint32_t)queues.size());
+	ERRNO_BREAK
 
-	auto result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
-	device_initialized=result == vk::Result::eSuccess;
+	uint32_t apiVersion = VK_API_VERSION_1_0;
+	uint32_t instanceVersion = 0;
+	vk::Result result = vk::enumerateInstanceVersion(&instanceVersion);
+	if (result == vk::Result::eSuccess && instanceVersion != 0)
+		apiVersion = instanceVersion;
+
+	void* deviceCI_pNext = nullptr;
+	if (physicalDeviceProperties2ExtFound || apiVersion >= VK_API_VERSION_1_1) //Promoted to Vulkan 1.1
+		deviceCI_pNext = &deviceManagerInternal->gpu_features2;
+
+	auto deviceInfo = vk::DeviceCreateInfo()
+		.setQueueCreateInfoCount((uint32_t)queues.size())
+		.setPQueueCreateInfos(queues.data())
+		.setEnabledLayerCount(0)
+		.setPpEnabledLayerNames(nullptr)
+		.setEnabledExtensionCount(enabled_extension_count)
+		.setPpEnabledExtensionNames((const char *const *)extension_names.data())
+		.setPNext(deviceCI_pNext)
+		.setPEnabledFeatures(deviceCI_pNext ? nullptr : &deviceManagerInternal->gpu_features);
+
+	ERRNO_BREAK
+		result = deviceManagerInternal->gpu.createDevice(&deviceInfo, nullptr, &deviceManagerInternal->device);
+	// For unknown reasons, even when successful, Vulkan createDevice sets errno==2: No such file or directory here.
+	// So we reset it to prevent spurious error detection.
+	errno = 0;
+	device_initialized = result == vk::Result::eSuccess;
 	SIMUL_ASSERT(device_initialized);
+	ERRNO_BREAK
 }
 
 std::vector<vk::SurfaceFormatKHR> DeviceManager::GetSurfaceFormats(vk::SurfaceKHR *surface)
