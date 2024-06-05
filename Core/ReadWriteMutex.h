@@ -16,40 +16,49 @@ namespace simul
 	{
 		class ReadWriteMutex
 		{
-			std::condition_variable unlocked;
-			std::mutex mutex;
-			bool writer;
-			int readers;
+			std::mutex mutex = {};
+			bool writer = false;
+			int readers = 0;
+
 		public:
-			ReadWriteMutex():writer(false),readers(0)
+			ReadWriteMutex()
 			{
 			}
+
+			~ReadWriteMutex()
+			{
+			}
+
 			void lock_for_read()
 			{
+#if !defined(_GAMING_XBOX)
 				mutex.lock();
 				readers++;
+#endif
 			}
 
 			void unlock_from_read()
 			{
+#if !defined(_GAMING_XBOX)
 				mutex.unlock();
 				readers--;
+#endif
 			}
 
 			void lock_for_write()
 			{
-				/*while (!mutex.try_lock())
-				{
-					std::this_thread::sleep_for(std::chrono::seconds(1));
-				}*/
+#if !defined(_GAMING_XBOX)
 				mutex.lock();
 				writer=true;
+#endif
 			}
 
 			void unlock_from_write()
 			{
+#if !defined(_GAMING_XBOX)
 				mutex.unlock();
 				writer=false;
+#endif
 			}
 		};
 	}
