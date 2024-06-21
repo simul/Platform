@@ -112,11 +112,11 @@ std::string BaseProfilingInterface::Walk(core::ProfileData *profileData,int tab,
 	std::string str;
 	for(ChildMap::const_iterator i=profileData->children.begin();i!=profileData->children.end();i++)
 	{
+		if (!i->second->updatedThisFrame)
+			continue;
 		for(int j=0;j<tab;j++)
 			str+="  ";
 		float t=i->second->time;
-		if(!i->second->updatedThisFrame)
-			t=0.0f;
 		str += formatLine(i->second->unqualifiedName.c_str(), tab, t, parent_time, style);
 		str += Walk((ProfileData*)i->second, tab + 1, i->second->time, style);
 	}
@@ -214,7 +214,6 @@ void platform::core::DefaultProfiler::Begin(const char *name)
 	profileData->start=t;
 	profileData->name=name;
 	profileData->last_child_updated=0;
-	parentData->updatedThisFrame=true;
 	profileData->parent=parentData;
 }
 
