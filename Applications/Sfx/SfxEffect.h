@@ -14,10 +14,12 @@ namespace sfx
 			textures.clear();
 			constantBuffers.clear();
 			structuredBuffers.clear();
+			samplers.clear();
 		}
 		std::set<int> textures;
 		std::set<int> constantBuffers;
 		std::set<int> structuredBuffers;
+		std::set<int> samplers;
 	};
 	typedef std::map<std::string,std::vector<Function*> > FunctionMap;
 	typedef std::map<std::string,std::shared_ptr<ShaderInstance>> ShaderInstanceMap;
@@ -113,7 +115,7 @@ namespace sfx
 		void AccumulateFunctionsUsed2(const Function *f, std::map<std::string, std::string> &variantValues,std::set<const Function *> &s) const;
 		void AccumulateGlobals(const Function *f,std::set<const Variable *> &s) const;
 		void AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>& s) const;
-		void AccumulateConstantBuffersUsed(const Function *f, std::set<ConstantBuffer*> &s) const;
+		void AccumulateConstantBuffersUsed(const Function *f, ShaderInstance &sh) const;
 		unsigned CompileAllShaders(std::string sfxoFilename,const std::string &sharedCode, std::string& log, BinaryMap &binaryMap);
 
 		/// Adapt slot number in case slots can't be shared.
