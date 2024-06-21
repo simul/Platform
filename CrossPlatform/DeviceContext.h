@@ -352,10 +352,8 @@ namespace platform
 			//uint cur_backbuffer;
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
 			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
-			
 			crossplatform::TargetsAndViewport *GetCurrentTargetsAndViewport();
-			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once,
-			//! as 
+			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once.
 			void setDefaultRenderTargets(const ApiRenderTarget* rt
 				,const ApiDepthRenderTarget* dt
 				,uint32_t viewportLeft

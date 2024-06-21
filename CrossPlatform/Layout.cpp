@@ -3,10 +3,41 @@
 #include <Windows.h>
 #endif
 #include "Platform/Core/RuntimeError.h"
+#include "Platform/Core/StringFunctions.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
 
 using namespace platform;
 using namespace crossplatform;
+
+static bool is_equal(const char *str, const char *tst)
+{
+	return (_stricmp(str, tst) == 0);
+}
+
+FormatAndCount platform::crossplatform::TypeToFormat(const char *txt)
+{
+	if (is_equal(txt, "vec4") || is_equal(txt, "float4"))
+		return {RGBA_32_FLOAT, 1};
+	if (is_equal(txt, "mat4") || is_equal(txt, "float4x4"))
+		return {RGBA_32_FLOAT, 4};
+	if (is_equal(txt, "vec3") || is_equal(txt, "float3"))
+		return { RGB_32_FLOAT,1};
+	if (is_equal(txt, "vec2") || is_equal(txt, "float2"))
+		return {RG_32_FLOAT,1};
+	// return {RG_16_FLOAT ;
+	if (is_equal(txt, "float"))
+		return {R_32_FLOAT,1};
+	if (is_equal(txt, "uint"))
+		return {R_32_UINT,1};
+	if (is_equal(txt, "uint2"))
+		return {RG_32_UINT,1};
+	if (is_equal(txt, "uint3"))
+		return {RGB_32_UINT,1};
+	if (is_equal(txt, "uint4"))
+		return {RGBA_32_UINT,1};
+	SIMUL_CERR << "Unknown or unsupported type string " << txt << "\n";
+	return {UNKNOWN,0};
+};
 
  LayoutSemantic TextToSemantic(const char *txt)
 {
@@ -130,16 +161,6 @@ void Layout::Unapply(DeviceContext &deviceContext)
 {
 	deviceContext.contextState.currentLayout=nullptr;
 }
-		struct LayoutDesc
-		{
-			const char *semanticName;
-			int			semanticIndex;
-			PixelFormat	format;
-			int			inputSlot;
-			int			alignedByteOffset;
-			bool		perInstance;		// otherwise it's per vertex.
-			int			instanceDataStepRate;
-		};
 
 uint64_t GetLayoutPartHash(const SimpleLayoutSpec &s)
 {
@@ -169,8 +190,26 @@ uint64_t platform::crossplatform::GetLayoutHash(const std::vector<SimpleLayoutSp
 	}
 	for(size_t i=0;i<l.size();i++)
 	{
-		hash=hash<<7;
+		hash=hash<<5;
 		hash^=H[i];
+	}
+	return hash;
+}
+
+uint64_t platform::crossplatform::GetLayoutHash(const std::vector<LayoutDesc> &l)
+{
+	uint64_t hash = 0;
+	std::vector<uint64_t> H(l.size(), 0);
+	for (size_t i = 0; i < l.size(); i++)
+	{
+		const LayoutDesc &s = l[i];
+		uint64_t f = (uint64_t)GetLayoutHash(s);
+		H[i] = f;
+	}
+	for (size_t i = 0; i < l.size(); i++)
+	{
+		hash = hash<<5;
+		hash ^= H[i];
 	}
 	return hash;
 }
@@ -186,7 +225,7 @@ void Layout::MakeHash()
 	}
 	for(size_t i=0;i<parts.size();i++)
 	{
-		hash=hash<<7;
+		hash=hash<<5;
 		hash^=H[i];
 	}
 }

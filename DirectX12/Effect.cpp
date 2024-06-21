@@ -582,11 +582,7 @@ ID3D12PipelineState* EffectPass::GetGraphicsPso(crossplatform::GraphicsDeviceCon
 	uint64_t msaaHash = ((uint64_t)msaaDesc.Count + (uint64_t)msaaDesc.Quality) << (uint64_t)32;
 
 	// Get the current targets:
-	const crossplatform::TargetsAndViewport* targets = &deviceContext.defaultTargetsAndViewport;
-	if (!deviceContext.targetStack.empty())
-	{
-		targets = deviceContext.targetStack.top();
-	}
+	const crossplatform::TargetsAndViewport *targets = deviceContext.GetCurrentTargetsAndViewport();
 
 	// Current render target output state:
 	D3D12_RENDER_TARGET_FORMAT_DESC* finalRt = nullptr;

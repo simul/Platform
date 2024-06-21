@@ -1,5 +1,4 @@
-#ifndef VBOMESH_H
-#define VBOMESH_H
+#pragma once
 
 #include <vector>
 #include "Platform/CrossPlatform/Export.h"
@@ -163,4 +162,3 @@ namespace platform
 	#pragma warning(pop)
 #endif
 
-#endif

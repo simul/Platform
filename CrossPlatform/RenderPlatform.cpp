@@ -128,6 +128,7 @@ void RenderPlatform::recompileAsync()
 		// Do next shader compile.
 		if(RecompileEffect(effect_name))
 		{
+			SIMUL_INTERNAL_COUT<<"Built "<<effect_name<<"\n";
 			if(recompileThreadActive)
 			{
 				if(callback)
@@ -1199,8 +1200,9 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 	for(int j=0;j<36;j++)
 	{
 		float angle					=(float(j)/35.0f)*2.0f*3.1415926536f;
-		math::Vector3 p=(x*cos(angle)+y*sin(angle));
-		line_vertices[l].pos		=vec3(pos)+vec3((const float*)&p);
+		vec3 P=(x*cos(angle)+y*sin(angle));
+		//const math::Vector3 &p=*((math::Vector3*)&p);
+		line_vertices[l].pos		=vec3(pos)+P;
 		line_vertices[l++].colour	=colr;
 	}
 	DrawLines(deviceContext,line_vertices,36,true,false,false);
@@ -2178,6 +2180,15 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	ta.uav = true;
 	ta.subresource = { subresource.aspectMask, subresource.mipLevel, (uint32_t)1, subresource.baseArrayLayer, subresource.arrayLayerCount };
 	cs->rwTextureAssignmentMapValid = false;
+}
+
+void RenderPlatform::SetSamplerState(DeviceContext &deviceContext, int slot, SamplerState *s)
+{
+	if (slot > 31 || slot < 0)
+		return;
+	crossplatform::ContextState &cs = deviceContext.contextState;
+	cs.samplerStateOverrides[slot] = s;
+	cs.samplerStateOverridesValid = false;
 }
 
 vec4 platform::crossplatform::ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)

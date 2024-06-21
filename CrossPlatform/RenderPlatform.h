@@ -297,6 +297,7 @@ namespace platform
 			virtual void Draw				(GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)=0;
 			//! Draw the specified number of vertices using the bound index arrays.
 			virtual void DrawIndexed		(GraphicsDeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
+			virtual void DrawIndexedInstanced(GraphicsDeviceContext &deviceContext, int num_instances , int base_instance , int num_indices, int start_index = 0, int base_vertex = 0) = 0;
 			virtual void DrawLine			(GraphicsDeviceContext &deviceContext,vec3 pGlobalBasePosition, vec3 pGlobalEndPosition,vec4 colour,float width);
 		
 			virtual void DrawLineLoop		(GraphicsDeviceContext &,const double *,int ,const double *,const float [4]){}
@@ -416,6 +417,9 @@ namespace platform
 
 			virtual void					SetTexture						(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceRange& subresource = DefaultSubresourceRange);
 			virtual void					SetUnorderedAccessView			(DeviceContext& deviceContext, const ShaderResource& res, Texture* tex, const SubresourceLayers& subresource = DefaultSubresourceLayers);
+
+			//! Set the texture for this effect.
+			void							SetSamplerState(DeviceContext &deviceContext, int slot, SamplerState *s);
 			//! Set the layout for following draw calls - format of the vertex buffer.
 			virtual void					SetLayout						(GraphicsDeviceContext &deviceContext,Layout *l);
 
