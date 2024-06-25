@@ -13,18 +13,6 @@
 using namespace platform;
 using namespace dx12;
 
-inline bool IsPowerOfTwo( UINT64 n )
-{
-	return ( ( n & (n-1) ) == 0 && (n) != 0 );
-}
-
-inline UINT64 NextMultiple( UINT64 value, UINT64 multiple )
-{
-   SIMUL_ASSERT( IsPowerOfTwo(multiple) );
-
-	return (value + multiple - 1) & ~(multiple - 1);
-}
-
 template< class T > UINT64 BytePtrToUint64( _In_ T* ptr )
 {
 	return static_cast< UINT64 >( reinterpret_cast< BYTE* >( ptr ) - static_cast< BYTE* >( nullptr ) );
