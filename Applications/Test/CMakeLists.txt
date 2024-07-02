@@ -16,7 +16,6 @@ target_compile_definitions( Test_MT PRIVATE DO_PROFILING=0 )
 set_target_properties( Test_MT PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 						VS_DEBUGGER_ENVIRONMENT "PATH=${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
 target_link_libraries( Test_MT PRIVATE SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT fmt::fmt-header-only )
-target_compile_definitions( Test_MT PRIVATE FMT_HEADER_ONLY )
 
 if(PLATFORM_USE_ASSIMP)
 	DelayLoadLinkAssimp(Test_MT)

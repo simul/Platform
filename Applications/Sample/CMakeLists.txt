@@ -15,7 +15,6 @@ source_group("Shaders" src FILES ${shaders} )
 add_static_executable(Sample_MT WIN32 SOURCES ${SOURCES} ${HEADERS} ${shaders} DEFINITIONS ${SAMPLE_API} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/External/DirectX/DirectXTex/DirectXTex" )
 target_compile_definitions(Sample_MT PRIVATE DO_PROFILING=0 )
-target_compile_definitions(Sample_MT PRIVATE FMT_HEADER_ONLY )
 set_target_properties(Sample_MT PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 						VS_DEBUGGER_ENVIRONMENT "PATH=${PLATFORM_ANGLE_LIB_DIR};${fx_path};$(PATH)\nSIMUL=${SIMUL_DIR}\nSIMUL_BUILD=${CMAKE_BINARY_DIR}\n${VS_DEBUGGER_ENVIRONMENT}")
 target_link_libraries(Sample_MT PRIVATE SimulCrossPlatform_MT SimulMath_MT Core_MT directxtex_MT fmt::fmt-header-only)
