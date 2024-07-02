@@ -824,7 +824,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 
 		D3D12_DESCRIPTOR_RANGE &srvDescriptorRange = cbvSrvUavDescriptorRanges[1];
 		srvDescriptorRange.BaseShaderRegister = 0;
-		srvDescriptorRange.NumDescriptors = 24;
+		srvDescriptorRange.NumDescriptors = 32;
 		srvDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 		srvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 
@@ -875,7 +875,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 
 		D3D12_DESCRIPTOR_RANGE &srvDescriptorRange = cbvSrvUavDescriptorRanges[1];
 		srvDescriptorRange.BaseShaderRegister = 0;
-		srvDescriptorRange.NumDescriptors = 24;
+		srvDescriptorRange.NumDescriptors = 32;
 		srvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		srvDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 		// srvDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
@@ -908,7 +908,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		memset(rootParameters, 0, sizeof(rootParameters));
 		rootParameters[0].InitAsDescriptorTable(3, cbvSrvUavDescriptorRanges);
 		rootParameters[1].InitAsDescriptorTable(1, &samplerDescriptorRange);
-		rootParameters[2].InitAsShaderResourceView(25);
+		rootParameters[2].InitAsShaderResourceView(33);
 		CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
 		// rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
 		// rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
