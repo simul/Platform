@@ -7,6 +7,8 @@
 #include <thread>
 #include <functional>
 #include <atomic>
+#include <future>
+
 #include "Export.h"
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/CrossPlatform/BaseRenderer.h"
@@ -361,10 +363,7 @@ namespace platform
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
-			virtual Effect					*CreateEffect					(const char *filename_utf8);
-			/// Asynchronously recompile the effects; the callback is called when the last one is complete.
-			void ScheduleRecompileEffects			(std::vector<std::string> effect_names,std::function <void()> f);
-			float GetRecompileStatus(std::string &txt);
+			virtual Effect					*CreateEffect					(const char *filename_utf8, bool checkRecompileShaders = true);
 			/// Get the effect named, or return null if it's not been created.
 			Effect							*GetEffect						(const char *name_utf8);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
@@ -514,23 +513,35 @@ namespace platform
 			// Track resources for debugging:
 			static std::map<unsigned long long,std::string> ResourceMap;
 			
+			float GetRecompileStatus(std::string &txt);
+			/// Asynchronously recompile the effects; the callback is called when the last one is complete.
+			void ScheduleRecompileEffects(const std::vector<std::string>& effect_names,std::function <void()> f);
+			/// Asynchronously recompile the effect; the callback is called when the new effect is complete.
+			void ScheduleRecompileEffect(const std::string &effect_name, std::function<void()> f);
+
 		protected:
-			ResourceGroupLayout resourceGroupLayouts[4];
-			/// Asynchronously recompile the effect.
-			void ScheduleRecompileEffect			(std::string effect_name,std::function <void()> f) ;
 			struct EffectRecompile
 			{
 				std::string effect_name;
-				std::function <void()> callback;
+				std::function<void()> callback;
+				Effect* newEffect = nullptr;
 			};
 			std::thread effectCompileThread;
 			std::vector<EffectRecompile> effectsToCompile;
-			bool recompileThreadActive=true;
-			bool recompiled=false;
-			static std::atomic<int> numPlatforms;
+			std::map<std::string, std::future<EffectRecompile>> effectsToCompileFutures;
+			bool recompileThreadActive = true;
+			bool recompileThreadFinished = false;
+			std::mutex recompileEffectMutex;
+			std::mutex recompileEffectFutureMutex;
 			void recompileAsync();
 			bool RecompileEffect(std::string effect_filename);
+
+			bool recompiled = false;
 			void NotifyEffectRecompiled();
+
+			ResourceGroupLayout resourceGroupLayouts[4];
+
+			static std::atomic<int> numPlatforms;
 			void EnsureContextFrameHasBegun(DeviceContext& deviceContext);
 			// to be called as soon as possible in the frame, for the first available GraphicsDeviceContext.
 			virtual void ContextFrameBegin(GraphicsDeviceContext&);

@@ -11,7 +11,7 @@ using namespace core;
 
 bool platform::core::RunCommandLine(const char *command_utf8,  OutputDelegate outputDelegate)
 {
-	bool pipe_compiler_output=true;
+	bool pipe_compiler_output=false;
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory( &si, sizeof(si) );
@@ -69,28 +69,33 @@ bool platform::core::RunCommandLine(const char *command_utf8,  OutputDelegate ou
 	while (1)
 	{
 		DWORD dwBytesRead, dwBytesAvailable;
-		DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
+		//DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
+		//DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, TRUE, INFINITE);
+		DWORD dwWaitResult = WaitForSingleObject(pi.hProcess, INFINITE);
 
 		// Read from the pipes...
 		if(pipe_compiler_output)
 		{
+			dwWaitResult = WaitForSingleObject(hReadOutPipe, INFINITE);
+			dwWaitResult = WaitForSingleObject(hReadErrorPipe, INFINITE);
+
 			while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
 			{
-			  ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-			  std::string str((char*)buff, (size_t)dwBytesRead);
-			  if(outputDelegate)
-				  outputDelegate(str);
-			  else
-				  std::cout<<str.c_str();
-			}
-			while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
-			{
-				ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-				std::string str((char*)buff, (size_t)dwBytesRead);
-				if(outputDelegate)
+				ReadFile(hReadOutPipe, buff, BUFSIZE - 1, &dwBytesRead, 0);
+				std::string str((char *)buff, (size_t)dwBytesRead);
+				if (outputDelegate)
 					outputDelegate(str);
-			  else
-				  std::cerr<<str.c_str();
+				else
+					std::cout << str.c_str();
+			}
+			while (PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable)
+			{
+				ReadFile(hReadErrorPipe, buff, BUFSIZE - 1, &dwBytesRead, 0);
+				std::string str((char *)buff, (size_t)dwBytesRead);
+				if (outputDelegate)
+					outputDelegate(str);
+				else
+					std::cerr << str.c_str();
 			}
 		}
 		// Process is done, or we timed out:
