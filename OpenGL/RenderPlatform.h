@@ -78,10 +78,9 @@ namespace platform
             crossplatform::Material*                CreateMaterial();
 			crossplatform::Mesh*                    CreateMesh() override;
 			crossplatform::Light*                   CreateLight();
-			crossplatform::Framebuffer*         CreateFramebuffer(const char *name=nullptr) override;
+			crossplatform::Framebuffer*             CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*            CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*                  CreateEffect() override;
-			crossplatform::Effect*                  CreateEffect(const char *filename_utf8) override;
 			crossplatform::PlatformConstantBuffer	*CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency F) override;
 			crossplatform::PlatformStructuredBuffer	*CreatePlatformStructuredBuffer() override;
 			crossplatform::Buffer*                  CreateBuffer() override;
