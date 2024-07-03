@@ -275,7 +275,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			ID3D12GraphicsCommandList4* rtc = (ID3D12GraphicsCommandList4*)cmdList;
 			//commandList->SetComputeRootDescriptorTable(GlobalRootSignatureParams::OutputViewSlot, m_raytracingOutputResourceUAVGpuDescriptor);
 			rtc->SetComputeRootShaderResourceView(2, a->GetGPUVirtualAddress());
-			if (slot < 25)
+			if (slot < 33)
 				mSrvSrcHandles[slot] = nullSrv;
 			//device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), mCbSrcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			//mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
@@ -309,7 +309,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			}
 			mSrvSrcHandles[slot] = *srv;
 		}
-		if (slot < 25)
+		if (slot < 33)
 		{
 			mSrvUsedSlotsArray[slot] = true;
 		}
@@ -319,7 +319,7 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 	for (int i = 0; i < numSbResourceSlots; i++)
 	{
 		int slot = sbResourceSlots[i];
-		if (slot >= 25)
+		if (slot >= 33)
 			continue;
 		if (mSrvUsedSlotsArray[slot])
 		{
