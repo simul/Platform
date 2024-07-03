@@ -2,7 +2,9 @@
 #ifndef SPHERICAL_HARMONICS_SL
 #define SPHERICAL_HARMONICS_SL
 
+#ifndef PI
 #define PI (3.1415926536)
+#endif
 
 float factorial(int j)
 {
