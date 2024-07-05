@@ -56,7 +56,7 @@
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
 	"compilerMessageRegex": [ "(ERROR|WARNING):[\\S]*(.*):[\\S]*([0-9]+)[\\S]*:[ ]*(.*)", "$2($3): $1: $4" ],
 	"preamble": "#version 450\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_int16 : enable\n",
-	"computePreamble": "#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
+	"computePreamble": "#extension GL_ARB_gpu_shader_int64 : enable\n#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n",
 	"vertexSemantics": {
 		"SV_VertexId": "gl_VertexIndex",
 		"SV_VertexID": "gl_VertexIndex",
@@ -212,6 +212,27 @@
 		"flat": "",
 		"ddx": "dFdx",
 		"ddy": "dFdy",
-		"static": ""
+		"static": "",
+		"asfloat": "uintBitsToFloat",
+		"asint": "floatBitsToInt",
+		"asuint": "floatBitsToUint",
+		"f32tof16": "floatBitsToUint",
+		"f16tof32": "uintBitsToFloat",
+		"._m00": "[0][0]",
+		"._m01": "[0][1]",
+		"._m02": "[0][2]",
+		"._m03": "[0][3]",
+		"._m10": "[1][0]",
+		"._m11": "[1][1]",
+		"._m12": "[1][2]",
+		"._m13": "[1][3]",
+		"._m20": "[2][0]",
+		"._m21": "[2][1]",
+		"._m22": "[2][2]",
+		"._m23": "[2][3]",
+		"._m30": "[3][0]",
+		"._m31": "[3][1]",
+		"._m32": "[3][2]",
+		"._m33": "[3][3]"
 	}
 }

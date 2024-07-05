@@ -34,6 +34,7 @@ vec3 mul(mat3 mat, vec3 vec){return mat * vec;}
 vec3 mul(vec3 vec, mat3 mat){return vec * mat;}
 vec2 mul(mat2 mat, vec2 vec){return mat * vec;}
 vec2 mul(vec2 vec, mat2 mat){return vec * mat;}
+mat3 mul(mat3 a, mat3 b){return a * b;}
 
 #define int2 ivec2
 #define int3 ivec3
