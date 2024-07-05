@@ -133,7 +133,7 @@ namespace platform
 			}
 			/// Gets the profiling report as text.
 			///
-			/// \param	Determines if the text should be returned as HTML, including colour formatting.
+			/// \param st Determines if the text should be returned as HTML, including colour formatting.
 			///
 			/// \return	null if it fails, else the debug text.
 			const char *GetDebugText(TextStyle st = PLAINTEXT) const;

@@ -202,8 +202,10 @@ bool Texture::IsValid() const
 
 ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform::TextureView& textureView)
 {
+#if PLATFORM_INTERNAL_CHECKS
 	if (!ValidateTextureView(textureView))
 		return nullptr;
+#endif
 
 	ID3D11ShaderResourceView* srv = nullptr;
 	uint64_t hash = textureView.hash;
@@ -288,8 +290,10 @@ ID3D11ShaderResourceView* Texture::AsD3D11ShaderResourceView(const crossplatform
 
 ID3D11UnorderedAccessView* Texture::AsD3D11UnorderedAccessView(const crossplatform::TextureView& textureView)
 {
+#if PLATFORM_INTERNAL_CHECKS
 	if (!ValidateTextureView(textureView))
 		return nullptr;
+#endif
 
 	if (!computable)
 	{
@@ -350,8 +354,10 @@ ID3D11UnorderedAccessView* Texture::AsD3D11UnorderedAccessView(const crossplatfo
 
 ID3D11DepthStencilView* Texture::AsD3D11DepthStencilView(const crossplatform::TextureView& textureView)
 {
+#if PLATFORM_INTERNAL_CHECKS
 	if (!ValidateTextureView(textureView))
 		return nullptr;
+#endif
 
 	if (!depthStencil)
 	{
@@ -416,8 +422,10 @@ ID3D11DepthStencilView* Texture::AsD3D11DepthStencilView(const crossplatform::Te
 
 ID3D11RenderTargetView* Texture::AsD3D11RenderTargetView(const crossplatform::TextureView& textureView)
 {
+#if PLATFORM_INTERNAL_CHECKS
 	if (!ValidateTextureView(textureView))
 		return nullptr;
+#endif
 
 	if (!renderTarget)
 	{

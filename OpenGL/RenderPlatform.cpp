@@ -277,12 +277,6 @@ crossplatform::Effect* RenderPlatform::CreateEffect()
 	return e;
 }
 
-crossplatform::Effect* RenderPlatform::CreateEffect(const char *filename_utf8)
-{
-	crossplatform::Effect* e=crossplatform::RenderPlatform::CreateEffect(filename_utf8);
-	return e;
-}
-
 crossplatform::PlatformConstantBuffer *RenderPlatform::CreatePlatformConstantBuffer(crossplatform::ResourceUsageFrequency F)
 {
 	return new opengl::PlatformConstantBuffer(F);

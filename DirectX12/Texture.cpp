@@ -497,6 +497,11 @@ void Texture::FinishUploading(crossplatform::DeviceContext& deviceContext)
 
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView, bool setState, bool pixelShader)
 {
+#if PLATFORM_INTERNAL_CHECKS
+	if (!ValidateTextureView(textureView))
+		return nullptr;
+#endif
+
 	if(!textureLoadComplete)
 	{
 		FinishLoading(deviceContext);
@@ -635,8 +640,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12ShaderResourceView(crossplatform::D
 
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView)
 {
+#if PLATFORM_INTERNAL_CHECKS
 	if (!ValidateTextureView(textureView))
 		return nullptr;
+#endif
 
 	if (!computable)
 	{
@@ -728,8 +735,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12UnorderedAccessView(crossplatform::
 
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView(crossplatform::DeviceContext& deviceContext, const crossplatform::TextureView& textureView)
 {
+#if PLATFORM_INTERNAL_CHECKS
 	if (!ValidateTextureView(textureView))
 		return nullptr;
+#endif
 
 	if (!depthStencil)
 	{
@@ -814,8 +823,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12DepthStencilView(crossplatform::Dev
 
 D3D12_CPU_DESCRIPTOR_HANDLE* Texture::AsD3D12RenderTargetView(crossplatform::DeviceContext &deviceContext, const crossplatform::TextureView& textureView)
 {
+#if PLATFORM_INTERNAL_CHECKS
 	if (!ValidateTextureView(textureView))
 		return nullptr;
+#endif
 
 	if (!renderTarget)
 	{

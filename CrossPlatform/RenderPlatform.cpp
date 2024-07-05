@@ -19,6 +19,8 @@
 #include "Platform/CrossPlatform/ShaderBindingTable.h"
 #include "Effect.h"
 
+#include <algorithm>
+
 #if PLATFORM_STD_FILESYSTEM==0
 #define SIMUL_FILESYSTEM 0
 #elif PLATFORM_STD_FILESYSTEM==1
@@ -96,8 +98,13 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 RenderPlatform::~RenderPlatform()
 {
 	numPlatforms--;
+
 	recompileThreadActive=false;
+	while (!(effectCompileThread.joinable() && recompileThreadFinished))
+	{
+	}
 	effectCompileThread.join();
+
 	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
@@ -110,53 +117,149 @@ RenderPlatform::~RenderPlatform()
 	materials.clear();
 }
 
-void RenderPlatform::recompileAsync()
-{
-	while(recompileThreadActive)
-	{
-		if(!effectsToCompile.size())
-		{
-			std::this_thread::sleep_for(1000ms);
-			std::this_thread::yield();
-			continue;
-		}
-		std::string effect_name=effectsToCompile[0].effect_name;
-		auto callback=effectsToCompile[0].callback;
-		effectsToCompile.erase(effectsToCompile.begin());
-		if(!effect_name.length())
-			continue;
-		// Do next shader compile.
-		if(RecompileEffect(effect_name))
-		{
-			if(recompileThreadActive)
-			{
-				if(callback)
-					callback();
-			}
-		}
-	}
-}
-static std::string recompiling_effect_name;
-
-float RenderPlatform::GetRecompileStatus(std::string &txt)
-{
-	if(!effectsToCompile.size())
-		return 0.0f;
-	txt=recompiling_effect_name;
-	return (float)effectsToCompile.size();
-}
-
 static bool RewriteOutput(std::string str)
 {
 	std::cerr<<str.c_str();
 	return true;
 }
 
+static std::string recompiling_effect_names;
+
+void RenderPlatform::recompileAsync()
+{
+	while(recompileThreadActive)
+	{
+		// Deal with effectsToCompileFutures
+		{
+			recompiling_effect_names.clear();
+
+			std::lock_guard guard(recompileEffectFutureMutex);
+			for (auto it = effectsToCompileFutures.begin(); it != effectsToCompileFutures.end();)
+			{
+				const std::string &effect_name = it->first;
+				std::future<EffectRecompile> &future = it->second;
+
+				if (future.valid())
+				{
+					std::future_status status = future.wait_for(10ms);
+					if (status == std::future_status::ready)
+					{
+						EffectRecompile &effectRecompile = future.get();
+						if (effectRecompile.callback)
+							effectRecompile.callback();
+
+						SIMUL_COUT << "Effect " << effectRecompile.effect_name << ".sfx has recompiled." << std::endl;
+					}
+					else if (status == std::future_status::timeout)
+					{
+						if (!recompiling_effect_names.empty())
+							recompiling_effect_names += ", ";
+						recompiling_effect_names += effect_name;
+					}
+
+					it++;
+				}
+				else
+				{
+					it = effectsToCompileFutures.erase(it);
+				}
+			}
+		}
+
+		if(!effectsToCompile.size())
+		{
+			std::this_thread::sleep_for(1000ms);
+			std::this_thread::yield();
+			continue;
+		}
+		
+		//Clear effectsToCompile
+		{
+			std::lock_guard recompileEffectGuard(recompileEffectMutex);
+			for (const auto &effectToCompile : effectsToCompile)
+			{
+				auto RecompileEffectAsync = [&](EffectRecompile effectRecompile) -> EffectRecompile 
+					{
+						if (effectRecompile.effect_name.length())
+						{
+							if(RecompileEffect(effectRecompile.effect_name))
+							{
+								effectRecompile.newEffect = CreateEffect(effectRecompile.effect_name.c_str(), false);
+							}
+						}
+						return effectRecompile;
+					};
+
+				std::lock_guard guard(recompileEffectFutureMutex);
+				effectsToCompileFutures[effectToCompile.effect_name] = std::async(std::launch::async, RecompileEffectAsync, effectToCompile);
+			}
+
+			effectsToCompile.clear();
+		}
+
+	}
+	
+	recompileThreadFinished = true;
+}
+
+float RenderPlatform::GetRecompileStatus(std::string &txt)
+{
+	txt = recompiling_effect_names;
+	std::lock_guard guard(recompileEffectFutureMutex);
+	return (float)effectsToCompileFutures.size();
+}
+
+void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &effect_names, std::function<void()> f)
+{
+	std::lock_guard recompileEffectGuard(recompileEffectMutex);
+	bool pushedBack = false;
+	for (const std::string &effect_name : effect_names)
+	{
+		bool found = false;
+		for (const auto &effectToCompile : effectsToCompile)
+		{
+			if (effectToCompile.effect_name == effect_name)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			effectsToCompile.push_back({effect_name, nullptr});
+			pushedBack = true;
+		}
+	}
+
+	if (pushedBack)
+	{
+		effectsToCompile.back().callback = f;
+	}
+}
+
+void RenderPlatform::ScheduleRecompileEffect(const std::string &effect_name, std::function<void()> f)
+{
+	std::lock_guard recompileEffectGuard(recompileEffectMutex);
+	bool found = false;
+	for (const auto& effectToCompile : effectsToCompile)
+	{
+		if (effectToCompile.effect_name == effect_name)
+		{
+			found = true;
+			break;
+		}
+	}
+
+	if (!found)
+	{
+		effectsToCompile.push_back({effect_name, f});
+	}
+}
 
 bool RenderPlatform::RecompileEffect(std::string effect_filename)
 {
 #if defined(WIN32) && !defined(_GAMING_XBOX)
-	recompiling_effect_name=effect_filename;
 	std::string filename_fx=effect_filename;
 	size_t dot_pos=filename_fx.find(".");
 	size_t len=filename_fx.size();
@@ -171,7 +274,6 @@ bool RenderPlatform::RecompileEffect(std::string effect_filename)
 	{
 		filenameInUseUtf8=filename_fx;
 		SIMUL_CERR<<"Failed to find shader source file "<<effect_filename.c_str()<<std::endl;
-		recompiling_effect_name="";
 		return false;
 	}
 	else if(index<GetShaderPathsUtf8().size())
@@ -211,25 +313,10 @@ bool RenderPlatform::RecompileEffect(std::string effect_filename)
 	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
 	bool result= platform::core::RunCommandLine(command.c_str(),  cc);
 	
-	recompiling_effect_name="";
 	return result;
 #else
 	return false;
 #endif
-}
-
-void RenderPlatform::ScheduleRecompileEffects(std::vector<std::string> effect_names,std::function <void()> f)
-{
-	if(!effect_names.size())
-		return;
-	for(size_t i=0;i<effect_names.size()-1;i++)
-		effectsToCompile.push_back({effect_names[i],nullptr});
-	effectsToCompile.push_back({effect_names.back(),f});
-}
-
-void RenderPlatform::ScheduleRecompileEffect(std::string effect_name,std::function <void()> f) 
-{
-	effectsToCompile.push_back({effect_name,f});
 }
 
 bool RenderPlatform::HasRenderingFeatures(RenderingFeatures r) const
@@ -1922,8 +2009,29 @@ void RenderPlatform::Destroy(Effect *&e)
 	}
 }
 
-crossplatform::Effect *RenderPlatform::CreateEffect(const char *filename_utf8)
+Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecompileShaders)
 {
+	//Check if the effect in being recompiled
+	if (checkRecompileShaders)
+	{
+		std::lock_guard guard(recompileEffectFutureMutex);
+		const auto &it = effectsToCompileFutures.find(std::string(filename_utf8));
+		if (it != effectsToCompileFutures.end())
+		{
+			if (it->second.valid())
+			{
+				Effect *e = it->second.get().newEffect;
+				effectsToCompileFutures.erase(it);
+				return e;
+			}
+			else
+			{
+				effectsToCompileFutures.erase(it);
+			}
+		}
+	}
+
+	//Else, load as normal
 	std::string fn(filename_utf8);
 	crossplatform::Effect *e=CreateEffect();
 	effects[fn] = e;

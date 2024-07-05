@@ -33,7 +33,7 @@ namespace platform
 			virtual ~TrackingAllocator();
 			//! Allocate nbytes bytes of memory, aligned to align and return a pointer to them.
 			virtual void* AllocateTracked(size_t nbytes,size_t align,const char *fn) override;
-			//! De-allocate the memory at \param address (requires that this memory was allocated with Allocate()).
+			//! \param ptr De-allocate the memory, requires that this memory was allocated with Allocate().
 			virtual void Deallocate(void* ptr) override;
 			//! Track (but don't allocate) nbytes bytes of memory.
 			virtual void TrackVideoMemory(const void* ptr,size_t nbytes,const char *fn) override;
