@@ -661,19 +661,19 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													stdReturn(STATIC);
 												}
 <IN_SHADER>"asfloat"							{
-													modReturn(IDENTIFIER,"uintBitsToFloat");
+													modReturn(IDENTIFIER,"asfloat");
 												}
 <IN_SHADER>"asint"								{
-													modReturn(IDENTIFIER,"floatBitsToInt");
+													modReturn(IDENTIFIER,"asint");
 												}
 <IN_SHADER>"asuint"								{
-													modReturn(IDENTIFIER,"floatBitsToUint");
+													modReturn(IDENTIFIER,"asuint");
 												}
 <IN_SHADER>"f32tof16"							{
-													modReturn(IDENTIFIER,"floatBitsToUint");
+													modReturn(IDENTIFIER,"f32tof16");
 												}
 <IN_SHADER>"f16tof32"							{
-													modReturn(IDENTIFIER,"uintBitsToFloat");
+													modReturn(IDENTIFIER,"f16tof32");
 												}
 <IN_SHADER>"lerp"								{
 													modReturn(IDENTIFIER,"lerp");
