@@ -663,79 +663,65 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
  			return;
 		delegatorReadWriteMutex->lock_for_write();
 	}
-	try
+
+	if (!swapchain)
+		InitSwapChain();
+
+	auto *vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
+
+	vk::Result result = vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
+	if (result != vk::Result::eSuccess)
 	{
-		if (!swapchain)
-			InitSwapChain();
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
+	result = vulkanDevice->resetFences(1, &fences[frame_index]);
+	if (result != vk::Result::eSuccess)
+	{
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
 
-		auto *vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
-
-		vk::Result result = vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
-		if (result != vk::Result::eSuccess)
-		{
-			SIMUL_CERR << "Vulkan operation failed\n";
-		}
-		result = vulkanDevice->resetFences(1, &fences[frame_index]);
-		if (result != vk::Result::eSuccess)
-		{
-			SIMUL_CERR << "Vulkan operation failed\n";
-		}
-
-		do
-		{
-			result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
-			if (result == vk::Result::eErrorOutOfDateKHR)
-			{
-				// demo->swapchain is out of date (e.g. the window was resized) and
-				// must be recreated:
-				Resize();
-			}
-			else if (result == vk::Result::eSuboptimalKHR)
-			{
-				// swapchain is not as optimal as it could be, but the platform's
-				// presentation engine will still present the image correctly.
-				break;
-			}
-			else
-			{
-				SIMUL_ASSERT(result == vk::Result::eSuccess);
-			}
-		} while (result != vk::Result::eSuccess);
-
+	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
+	if (result == vk::Result::eErrorOutOfDateKHR)
+	{
+		// demo->swapchain is out of date (e.g. the window was resized) and
+		// must be recreated:
 		vulkanDevice->waitIdle();
-
-		SwapchainImageResources &res = swapchain_image_resources[current_buffer];
-		auto &commandBuffer = res.cmd;
-		auto &fb = res.framebuffer;
-
-		auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-		result = commandBuffer.begin(&commandInfo);
-		SIMUL_VK_CHECK(result);
-
-		deferredContext.platform_context = &commandBuffer;
-		deferredContext.renderPlatform = renderPlatform;
-
-		EnsureImageLayout();
-
-		ERRNO_BREAK
-		if (renderer)
-		{
-			auto *rp = (vulkan::RenderPlatform *)renderPlatform;
-			rp->SetDefaultColourFormat(pixelFormat);
-			renderer->Render(mViewId, deferredContext.platform_context, &fb, viewport.w, viewport.h, frameNumber);
-		}
-
-		EnsureImagePresentLayout();
-
-		commandBuffer.end();
-
-		Present();
 		Resize();
+		if (delegatorReadWriteMutex)
+			delegatorReadWriteMutex->unlock_from_write();
+		return;
 	}
-	catch(...)
+	// swapchain is not as optimal as it could be, but the platform's
+	// presentation engine will still present the image correctly.
+	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
+	
+	vulkanDevice->waitIdle();
+
+	SwapchainImageResources &res = swapchain_image_resources[current_buffer];
+	auto &commandBuffer = res.cmd;
+	auto &fb = res.framebuffer;
+
+	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	result = commandBuffer.begin(&commandInfo);
+	SIMUL_VK_CHECK(result);
+
+	deferredContext.platform_context = &commandBuffer;
+	deferredContext.renderPlatform = renderPlatform;
+
+	EnsureImageLayout();
+
+	ERRNO_BREAK
+	if (renderer && (viewport.w * viewport.h > 0))
 	{
-		SIMUL_BREAK("");
+		auto *rp = (vulkan::RenderPlatform *)renderPlatform;
+		rp->SetDefaultColourFormat(pixelFormat);
+		renderer->Render(mViewId, deferredContext.platform_context, &fb, viewport.w, viewport.h, frameNumber);
 	}
+
+	EnsureImagePresentLayout();
+	commandBuffer.end();
+
+	Present();
 
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
@@ -869,11 +855,19 @@ void DisplaySurface::EndFrame()
 void DisplaySurface::Resize()
 {
 #ifdef _MSC_VER
-	RECT rect;
+	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
+	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
+	{
+		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+
+	RECT rect = {};
 	if (!GetClientRect((HWND)mHwnd, &rect))
 		return;
 	bool regen = false;
-	RECT wrect;
+	RECT wrect = {};
 	if (GetWindowRect((HWND)mHwnd, &wrect))
 	{
 		if (wrect.left != lastWindow.x || wrect.top != lastWindow.y)
