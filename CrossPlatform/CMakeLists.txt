@@ -50,10 +50,10 @@ endif()
 option(PLATFORM_DEBUG_PROFILING_LEVELS "Whether to do the (slow) debugging of profiling levels - for finding mismatched Begin()/End() pairs." OFF)
 option(PLATFORM_IMPLEMENT_STB_IMAGE "Whether to include stb_image and stb_image_write code in CrossPlatform/RenderPlatform.cpp. Disable if included elsewhere to avoid linker errors." ON)
 
-set(SIMUL_TRUESKY TRUE)
-if (NOT CMAKE_PROJECT_NAME STREQUAL "Simul")
+#set(SIMUL_TRUESKY TRUE)
+#if (NOT CMAKE_PROJECT_NAME STREQUAL "Simul")
 	set(SIMUL_TRUESKY FALSE)
-endif()
+#endif()
 
 # Setup and build the static library.
 add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES}
@@ -63,7 +63,7 @@ add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${SHADERS} 
 add_multiplatform_sfx_shader_project( SimulCrossPlatform${STATIC_LINK_SUFFIX} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
 								"${SIMUL_PLATFORM_DIR}/.."
 							SOURCES ${SHADERS} ${SHADER_INCLUDES} DEFINES VULKAN_SDK=${VULKAN_SDK_DIR} CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR} 
-							#OPTIONS -GSIMUL_TRUESKY=$<BOOL:${SIMUL_TRUESKY}>
+							OPTIONS -GSIMUL_TRUESKY=$<BOOL:${SIMUL_TRUESKY}>
 					 		OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" )
 
 # For parallel_hashmap
