@@ -142,6 +142,7 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 	// Setup shader and vertex buffers
 	unsigned int stride = sizeof(ImDrawVert);
 	unsigned int offset = 0;
+	deviceContext.contextState.applyVertexBuffers.clear();
 	bd->renderPlatform->SetVertexBuffers(deviceContext, 0, 1, &bd->pVB, bd->pInputLayout);
 	bd->renderPlatform->SetIndexBuffer(deviceContext, bd->pIB);
 	bd->renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLELIST);

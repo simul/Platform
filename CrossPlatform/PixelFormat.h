@@ -294,6 +294,5 @@ namespace platform
 		{
 			return GetElementSize(p)*GetElementCount(p);
 		}
-		extern PixelFormat TypeToFormat(const char *txt);
 	}
 }

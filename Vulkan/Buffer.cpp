@@ -37,7 +37,7 @@ void Buffer::InvalidateDeviceObjects()
 
 void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 								,int num_vertices
-								,const crossplatform::Layout* layout
+								,int str
 								,std::shared_ptr<std::vector<uint8_t>> src_data
 								,bool cpu_access
 								,bool streamout_target)
@@ -45,8 +45,8 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	InvalidateDeviceObjects();
 	renderPlatform=r;
 
-	stride = layout->GetStructSize();
-	size = num_vertices * layout->GetStructSize();
+	stride = str;
+	size = num_vertices * stride;
 	count = num_vertices;
 	
 	vulkanRenderPlatform->CreateVulkanBuffer(

@@ -354,7 +354,7 @@ EffectVariantPass *EffectTechnique::GetVariantPass(const char *name)
 }
 
 
-					//if (!crossplatform::LayoutMatches(vertexShader->layout.GetDesc(), meshLayout))
+
 EffectPass *EffectVariantPass::GetPass(const char *shader1, uint64_t layoutHash, const char *shader2)
 {
 	for(auto i:passes)
@@ -427,12 +427,7 @@ EffectTechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 
 void Effect::SetSamplerState(DeviceContext &deviceContext,const ShaderResource &shaderResource,SamplerState *s)
 {
-	if(shaderResource.slot>31||shaderResource.slot<0)
-		return;
-	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-
-	cs->samplerStateOverrides[shaderResource.slot] = s;
-	cs->samplerStateOverridesValid = false;
+	renderPlatform->SetSamplerState(deviceContext,shaderResource.slot,s);
 }
 
 void Effect::SetTexture(crossplatform::DeviceContext& deviceContext, const char* name, crossplatform::Texture* tex, SubresourceRange subresource)
@@ -1413,17 +1408,21 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				std::string type=sm.str(1);
 				std::string name=sm.str(2);
-				LayoutDesc &desc=layoutDesc[layoutCount];
-				desc.format				=TypeToFormat(type.c_str());
-				desc.alignedByteOffset	=layoutOffset;
-				desc.inputSlot			=layoutSlot;
-				desc.perInstance		=false;
-				// TODO: add semantic name/index to sfxo layouts.
-				desc.semanticName		="";
-				desc.semanticIndex		=0;
-				layoutCount++;
-				layoutOffset			+=GetByteSize(desc.format);
-				layoutSlot++;
+				platform::crossplatform::FormatAndCount formatAndCount = TypeToFormat(type.c_str());
+				for(int c=0;c<formatAndCount.count;c++)
+				{
+					LayoutDesc &desc=layoutDesc[layoutCount];
+					desc.format				=formatAndCount.pixelFormat;
+					desc.alignedByteOffset	=layoutOffset;
+					desc.inputSlot			=layoutSlot;
+					desc.perInstance		=false;
+					// TODO: add semantic name/index to sfxo layouts.
+					desc.semanticName		="";
+					desc.semanticIndex		=0;
+					layoutCount++;
+					layoutOffset			+=GetByteSize(desc.format);
+					layoutSlot++;
+				}
 			}
 		}
 		else if(level==PASS||level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)
@@ -1751,7 +1750,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					// Set what the shader uses.
 
 					// textures,buffers,samplers
-					std::regex re_resources("([a-z]):\\(([^\\)]*)\\)");
+					std::regex re_resources("(\\b[a-z]):\\(([^\\)]*)\\)");
 					std::smatch res_smatch;
 
 					auto i_begin =std::sregex_iterator(uses.begin(),uses.end(),re_resources);

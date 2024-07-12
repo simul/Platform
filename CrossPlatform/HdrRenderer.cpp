@@ -147,7 +147,7 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 	hdrConstants.Unbind(deviceContext);
 	imageConstants.Unbind(deviceContext);
 	
-	hdr_effect->UnbindTextures(deviceContext);
+	//hdr_effect->UnbindTextures(deviceContext);
 	renderPlatform->UnapplyPass(deviceContext);
 	SIMUL_COMBINED_PROFILE_END(deviceContext)
 }

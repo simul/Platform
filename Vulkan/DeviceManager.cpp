@@ -496,7 +496,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	uint32_t device_extension_count = 0;
 	result = deviceManagerInternal->gpu.enumerateDeviceExtensionProperties(nullptr, &device_extension_count, (vk::ExtensionProperties*)nullptr);
 	SIMUL_VK_ASSERT_RETURN(result);
-	ERRNO_BREAK
+	ERRNO_CHECK
 	if (device_extension_count > 0)
 	{
 		std::vector<bool> found_required_device_extension(required_device_extensions.size(), false);

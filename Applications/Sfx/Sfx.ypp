@@ -453,7 +453,7 @@
 		// Any resource that is not a parameter is therefore a global.
 		for(auto i:f.resources)
 		{
-			string res_name=i;
+			string res_name=i.first;
 			bool found=false;
 			for(auto j:f.parameters)
 			{
@@ -474,7 +474,7 @@
 			}
 			if(!found)
 			{
-				f.globals.insert(i);
+				f.globals[i.first]=i.second;
 			}
 		}
 		// texture load functions
@@ -570,7 +570,7 @@
 			// We should check the globals too
 			for(auto g : f.globals)
 			{
-				Declaration* d=gEffect->GetDeclaration(g);
+				Declaration* d=gEffect->GetDeclaration(g.first);
 				if(d&&d->declarationType == DeclarationType::TEXTURE)
 				{
 					DeclaredTexture* t = (DeclaredTexture*)d;
@@ -587,8 +587,9 @@
 	}
 %}
 
-%token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SHADER_VARIANTS_COMMAND SET_RASTERIZER_COMMAND SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
-%token REGISTER RESOURCE_GROUP RESOURCE_GROUP_DECLARATION RESOURCE_GROUP_TEXTURE RESOURCE_GROUP_CONSTANTBUFFER RESOURCE_GROUP_STRUCTUREDBUFFER NUM INCLUDE SAMPLER P_FLOAT CONST STATIC
+%token SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_COMMAND SHADER_VARIANTS_COMMAND SET_RASTERIZER_COMMAND
+%token SET_TOPOLOGY_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND SET_RTFORMAT_COMMAND
+%token REGISTER RESOURCE_GROUP RESOURCE_GROUP_DECLARATION RESOURCE_GROUP_TEXTURE RESOURCE_GROUP_CONSTANTBUFFER RESOURCE_GROUP_STRUCTUREDBUFFER RESOURCE_GROUP_SAMPLER NUM INCLUDE SAMPLER P_FLOAT CONST STATIC
 %token NUM_THREADS MAX_VERTEX_COUNT LINE TECHNIQUE PASS RAYTRACE_PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER_INSTANCE CONSTRUCT_GS
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 %token TEXTURE1D TEXTURE2D TEXTURE3D TEXTURE2D_ARRAY TEXTURE3D_ARRAY TEXTURECUBE TEXTURECUBE_ARRAY TEXTURE2DMS RW_TEXTURE1D RW_TEXTURE2D NAMED_CONSTANT_BUFFER RAYTRACE_ACCELERATION_STRUCT RW_TEXTURE2D_ARRAY RW_TEXTURE3D RW_TEXTURE3D_ARRAY
@@ -1020,6 +1021,9 @@ resourcegroup_declaration : resourcegroup_type '=' '{' num_list '}'
 	case RESOURCE_GROUP_STRUCTUREDBUFFER:
 			buildResourceGroup.structuredBuffers = buildNumSet;
 			break;
+	case RESOURCE_GROUP_SAMPLER:
+			buildResourceGroup.samplers = buildNumSet;
+			break;
 		default:
 		errSem("Unknown ResourceGroup Type");
 		break;
@@ -1033,6 +1037,9 @@ resourcegroup_type: RESOURCE_GROUP_TEXTURE{
 } | RESOURCE_GROUP_STRUCTUREDBUFFER
 {
 	$$.num = RESOURCE_GROUP_STRUCTUREDBUFFER;
+} | RESOURCE_GROUP_SAMPLER
+{
+	$$.num = RESOURCE_GROUP_SAMPLER;
 }
 num_list: NUM ',' num_list
 {
@@ -1065,15 +1072,15 @@ primary_exp : IDENTIFIER
 		if(gEffect->IsDeclared(varName))
 		{
 			buildFunction.declarations.insert(varName);
-			buildFunction.resources.insert(varName);
+			buildFunction.declareResource(varName);
 			if (cb=gEffect->GetNamedConstantBufferForMember(varName))
-				buildFunction.constantBuffers.insert(cb);
+				buildFunction.declareConstantBuffer(cb);
 		}
 		else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
 		{
-			buildFunction.constantBuffers.insert(cb);
+			buildFunction.declareConstantBuffer(cb);
 			buildFunction.declarations.insert(varName);
-			buildFunction.resources.insert(varName);
+			buildFunction.declareResource(varName);
 		}
 	}
 	| SATURATE
@@ -1932,7 +1939,7 @@ postfix_indexed : postfix_exp '[' expression ']'
 				str << varName << "[" << index << "]";
 			}
 			buildFunction.declarations.insert(varName);
-			buildFunction.resources.insert(varName);
+			buildFunction.declareResource(varName);
 			$$.strs[0]=str.str();
 		}
 	}
@@ -1958,7 +1965,7 @@ postfix_exp : primary_exp
 		
 		$$.strs[0]=GetSizeFunction(textureName, x, y,"");
 		buildFunction.declarations.insert(textureName);
-		buildFunction.resources.insert(textureName);
+		buildFunction.declareResource(textureName);
 	}
 	| get_dims_exp '(' assignment_exp ',' assignment_exp ',' assignment_exp ')'
 	{
@@ -1968,7 +1975,7 @@ postfix_exp : primary_exp
 		string z			=$7.strs[0];
 		$$.strs[0]			=GetSizeFunction( textureName, x, y,z);
 		buildFunction.declarations.insert(textureName);
-		buildFunction.resources.insert(textureName);
+		buildFunction.declareResource(textureName);
 	}
 	| tex_load_exp '(' argument_exp_list ')'
 	{
@@ -2012,7 +2019,7 @@ postfix_exp : primary_exp
 		$$.strs[0] = full_expr.str();
 		buildFunction.rwTexturesLoaded.insert(textureName);
 		buildFunction.declarations.insert(textureName);
-		buildFunction.resources.insert(textureName);
+		buildFunction.declareResource(textureName);
 	}
 	| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 	{
@@ -2076,8 +2083,8 @@ postfix_exp : primary_exp
 			full_expr << textureName << "." << command << "(" << samplerStateName << "," << otherParams << ")";
 		}
 		buildFunction.declarations.insert(textureName);
-		buildFunction.resources.insert(textureName);
-		buildFunction.resources.insert(samplerStateName);						
+		buildFunction.declareResource(textureName);
+		buildFunction.declareResource(samplerStateName);						
 		$$.strs[0] = full_expr.str();
 	}
 	| gather_exp '(' assignment_exp ',' argument_exp_list ')'
@@ -2163,8 +2170,8 @@ postfix_exp : primary_exp
 			full_expr << textureName << "." << command << "(" << samplerStateName << "," << otherParams << ")";
 		}
 		buildFunction.declarations.insert(textureName);
-		buildFunction.resources.insert(textureName);
-		buildFunction.resources.insert(samplerStateName);
+		buildFunction.declareResource(textureName);
+		buildFunction.declareResource(samplerStateName);
 		$$.strs[0] = full_expr.str();
 	}
 	| postfix_exp '(' argument_exp_list ')'
@@ -2231,11 +2238,11 @@ postfix_exp : primary_exp
 							root_identifier=root_identifier.substr(0,first_dot);
 						// This is how OUR function knows this parameter.
 						buildFunction.declarations.insert(root_identifier);
-						buildFunction.resources.insert(root_identifier);
+						buildFunction.declareResource(root_identifier);
 						const Declaration *d=gEffect->GetDeclaration(p.identifier);
 					if(d && d->declarationType == DeclarationType::SAMPLER)
 						{
-							buildFunction.resources.insert(p.identifier);
+							buildFunction.declareResource(p.identifier);
 							if(config->combineTexturesSamplers && !config->combineInShader)
 							{
 								// We pass the index of the array:  uint64 textureXXX[kMaxTextures]; 
@@ -2261,7 +2268,7 @@ postfix_exp : primary_exp
 						}
 					if(param.shaderResourceType!=ShaderResourceType::UNKNOWN)
 						{
-							buildFunction.resources.insert(p.identifier);
+							buildFunction.declareResource(p.identifier);
 						}
 					}
 					else if (index >= 0)
@@ -2294,7 +2301,7 @@ postfix_exp : primary_exp
 	{
 		string expr1=$1.strs[0];
 		if(gEffect->GetDeclaration(expr1)!=nullptr)
-			buildFunction.resources.insert(expr1);
+			buildFunction.declareResource(expr1);
 		string expr3=$3.strs[0];
 		$$.strs[2]=expr3;			//Command
 		$$.strs[0]=expr1+$2.strs[0]+expr3;

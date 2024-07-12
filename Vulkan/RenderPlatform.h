@@ -156,6 +156,7 @@ namespace platform
 			
 			void									Draw(crossplatform::GraphicsDeviceContext& deviceContext, int num_verts, int start_vert) override;
 			void									DrawIndexed(crossplatform::GraphicsDeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
+			void									DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index, int base_vertex) override;
 			void									DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void									GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx = -1)override;
 			//! This should be called after a Draw/Dispatch command that uses

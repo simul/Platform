@@ -679,7 +679,6 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	{
 		SIMUL_CERR << "Vulkan operation failed\n";
 	}
-
 	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
 	if (result == vk::Result::eErrorOutOfDateKHR)
 	{
