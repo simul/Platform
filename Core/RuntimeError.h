@@ -59,14 +59,12 @@ namespace platform
 		template <typename... T>
 		void Warn(const char *txt, const T &...args)
 		{
-			std::string str = fmt::format(txt, args...);
-			std::cerr << fmt::format("{0} ({1}): warning: {2}", __FILE__, __LINE__, str) << "\n";
+			std::cerr << fmt::format(txt,args...) << "\n";
 		}
 		template <typename... T>
 		void Info(const char *txt, const T &...args)
 		{
-			std::string str = fmt::format(txt, args...);
-			std::cerr << fmt::format("{0} ({1}): info: {2}", __FILE__, __LINE__, str) << "\n";
+			std::cout << fmt::format(txt,args...) << "\n";
 		}
 		//! This is a throwable error class derived from std::runtime_error.
 		//! It is used in builds that have C++ exceptions enabled. As it always outputs to std::cerr,
@@ -93,6 +91,11 @@ namespace platform
 		};
 	}
 }
+#define PLATFORM_LOG(txt, ...) \
+	platform::core::Info((fmt::format("{0} ({1}): info: {2} ", __FILE__, __LINE__,__func__) + #txt).c_str(), ##__VA_ARGS__)
+
+#define PLATFORM_WARN(txt, ...) \
+	platform::core::Warn((fmt::format("{0} ({1}): warning: {2} ", __FILE__, __LINE__,__func__) + #txt).c_str(), ##__VA_ARGS__)
 
 #define SIMUL_INTERNAL_COUT                  \
 	if (platform::core::SimulInternalChecks) \

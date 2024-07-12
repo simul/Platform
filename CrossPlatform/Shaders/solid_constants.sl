@@ -13,7 +13,8 @@ SIMUL_CONSTANT_BUFFER(SceneConstants, 12)
 	int lightCount;
 	int reverseDepth;
 	float max_roughness_mip;
-	int padxxx;
+	float maxFadeDistanceKm;
+	float originRadiusKm;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(SolidConstants,13)

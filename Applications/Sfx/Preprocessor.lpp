@@ -256,7 +256,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
 %%		
-<INITIAL>"/*"										{
+<INITIAL,IN_MACRO_DEFINITION>"/*"					{
 														BEGIN IN_MULTILINE_COMMENT;
 														if (inActiveBlock())
 															Write();
@@ -558,6 +558,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 													// We won't use this whitespace though.
 													stdReturn(WHITESPACE);
 												}
+<IN_MACRO_DEFINITION>"//"[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
+																				prepro_lval.str=yytext;
+																				BEGIN INITIAL;
+																				stdReturn(EOL);
+																			}
 <PREPRO,DEFINING,DEFINING2,DEFINING4,IN_MACRO_DEFINITION,IF_STATEMENT>\n	{
 																				prepro_lval.str=yytext;
 																				BEGIN INITIAL;

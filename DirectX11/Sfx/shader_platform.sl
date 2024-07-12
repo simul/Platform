@@ -43,7 +43,7 @@
 	// This is a hack, dx11 effects do not recognise SetRenderTargetFormatState so 
 	// we will pass a dummy SetGeometryShader(a), we should 
 	#if PLATFORM_D3D11_SFX
-		#define SetRenderTargetFormatState(a) //
+		#define SetRenderTargetFormatState(a) SetGeometryShader(NULL)
 	#else
 		#define SetRenderTargetFormatState SetGeometryShader
 	#endif

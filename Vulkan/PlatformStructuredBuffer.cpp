@@ -21,7 +21,7 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool cpur,bool,void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool ,bool cpur,void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
 {
 	bufferUsageHint = h;
 	renderPlatform                          = r;
@@ -122,7 +122,8 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
 	vk::BufferCopy region=vk::BufferCopy().setDstOffset(0).setSize(mTotalSize).setSrcOffset(last_offset);
-	commandBuffer->copyBuffer(lastBuffer->mBuffer,mReadBuffers[mFrameIndex],region);
+	if(lastBuffer->mBuffer)
+		commandBuffer->copyBuffer(lastBuffer->mBuffer,mReadBuffers[mFrameIndex],region);
 }
 
 void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceContext,void* data)
@@ -195,13 +196,6 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 		}
 		mCurApplyCount++;
 	}
-}
-
-
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,const crossplatform::ShaderResource &shaderResource)
-{
-	crossplatform::PlatformStructuredBuffer::ApplyAsUnorderedAccessView(deviceContext,  shaderResource);
-	Apply(deviceContext,shaderResource);
 }
 
 void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceContext)

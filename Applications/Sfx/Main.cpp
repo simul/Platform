@@ -106,6 +106,7 @@ int main(int argc, char** argv)
 
 	std::string SIMUL=GetEnv("SIMUL");
 	std::map<std::string, std::string> environment;
+	std::map<std::string, std::string> define;
 	
 	char log[50000];
 	const char **paths=NULL;
@@ -168,6 +169,12 @@ int main(int argc, char** argv)
 					std::string c=StripQuotes(arg);
 					size_t eq_pos=c.find_first_of("=");
 					environment[c.substr(0, eq_pos)] = c.substr(eq_pos + 1, c.length() - eq_pos - 1);
+				}
+				else if (argtype == 'g' || argtype == 'G')
+				{
+					std::string c = StripQuotes(arg);
+					size_t eq_pos = c.find_first_of("=");
+					define[c.substr(0, eq_pos)] = c.substr(eq_pos + 1, c.length() - eq_pos - 1);
 				}
 				else if (argtype == 'z')
 					optimization = arg;
@@ -237,6 +244,7 @@ int main(int argc, char** argv)
 			sfxOptions.optimizationLevel=atoi(optimization.c_str());
 		}
 		SfxConfig sfxConfig;
+		sfxConfig.define = define;
 		if(sfxOptions.debugInfo)
 			sfxConfig.define["DEBUG"] = "1";
 		sfxConfig.platformFilename=platformFilename;

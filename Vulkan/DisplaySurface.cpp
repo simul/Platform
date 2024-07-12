@@ -663,8 +663,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
  			return;
 		delegatorReadWriteMutex->lock_for_write();
 	}
-	try
-	{
+
 		if (!swapchain)
 			InitSwapChain();
 
@@ -681,27 +680,21 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 			SIMUL_CERR << "Vulkan operation failed\n";
 		}
 		int fail=0;
-		do
-		{
 			fail++;
 			result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
 			if (result == vk::Result::eErrorOutOfDateKHR)
 			{
 				// demo->swapchain is out of date (e.g. the window was resized) and
 				// must be recreated:
+		vulkanDevice->waitIdle();
 				Resize();
+		if (delegatorReadWriteMutex)
+			delegatorReadWriteMutex->unlock_from_write();
+		return;
 			}
-			else if (result == vk::Result::eSuboptimalKHR)
-			{
 				// swapchain is not as optimal as it could be, but the platform's
 				// presentation engine will still present the image correctly.
-				break;
-			}
-			else
-			{
-				SIMUL_ASSERT(result == vk::Result::eSuccess);
-			}
-		} while (result != vk::Result::eSuccess&&fail<10);
+	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
 
 		vulkanDevice->waitIdle();
 
@@ -719,7 +712,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 		EnsureImageLayout();
 
 		ERRNO_BREAK
-		if (renderer)
+	if (renderer && (viewport.w * viewport.h > 0))
 		{
 			auto *rp = (vulkan::RenderPlatform *)renderPlatform;
 			rp->SetDefaultColourFormat(pixelFormat);
@@ -727,16 +720,9 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 		}
 
 		EnsureImagePresentLayout();
-
 		commandBuffer.end();
 
 		Present();
-		Resize();
-	}
-	catch(...)
-	{
-		SIMUL_BREAK("");
-	}
 
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
@@ -870,11 +856,19 @@ void DisplaySurface::EndFrame()
 void DisplaySurface::Resize()
 {
 #ifdef _MSC_VER
-	RECT rect;
+	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
+	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
+	{
+		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	}
+
+	RECT rect = {};
 	if (!GetClientRect((HWND)mHwnd, &rect))
 		return;
 	bool regen = false;
-	RECT wrect;
+	RECT wrect = {};
 	if (GetWindowRect((HWND)mHwnd, &wrect))
 	{
 		if (wrect.left != lastWindow.x || wrect.top != lastWindow.y)

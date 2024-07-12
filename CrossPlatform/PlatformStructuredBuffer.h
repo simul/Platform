@@ -94,7 +94,7 @@ namespace platform
 			{
 				InvalidateDeviceObjects();
 			}
-			void RestoreDeviceObjects(RenderPlatform* p, int ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr);
+			void RestoreDeviceObjects(RenderPlatform* p, uint32_t ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr);
 			T* GetBuffer(crossplatform::DeviceContext& deviceContext)
 			{
 				if (!platformStructuredBuffer)
