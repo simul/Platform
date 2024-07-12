@@ -1200,9 +1200,8 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 	for(int j=0;j<36;j++)
 	{
 		float angle					=(float(j)/35.0f)*2.0f*3.1415926536f;
-		vec3 P=(x*cos(angle)+y*sin(angle));
-		//const math::Vector3 &p=*((math::Vector3*)&p);
-		line_vertices[l].pos		=vec3(pos)+P;
+		math::Vector3 p = math::Vector3((x * cos(angle) + y * sin(angle)));
+		line_vertices[l].pos		=vec3(pos)+vec3((const float*)&p);
 		line_vertices[l++].colour	=colr;
 	}
 	DrawLines(deviceContext,line_vertices,36,true,false,false);
@@ -1315,7 +1314,7 @@ void RenderPlatform::InvalidatingTexture(Texture *t)
 		unfinishedTextures.erase(i);
 }
 
-void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayLod)
+void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayMip)
 {
 	//unsigned int num_v=0;
 	#if SIMUL_INTERNAL_CHECKS
@@ -1358,7 +1357,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	world._34 =offs.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
-	debugConstants.displayLod=displayLod;
+	debugConstants.displayMip=displayMip;
 	SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
 	static float rr=6.f;
 	debugConstants.latitudes		=16;
@@ -1377,7 +1376,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	SetViewports(deviceContext,1,&oldv);
 }
 
-void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayLod)
+void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayMip)
 {
 	//unsigned int num_v=0;
 	#if SIMUL_INTERNAL_CHECKS
@@ -1417,7 +1416,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	world._34 =offs.z;
 	crossplatform::MakeWorldViewProjMatrix(wvp,world,view,proj);
 	debugConstants.debugWorldViewProj=wvp;
-	debugConstants.displayLod=displayLod;
+	debugConstants.displayMip=displayMip;
 	SetTexture(deviceContext,debugEffect_cubeTexture,cubemap);
 	static float rr=6.f;
 	debugConstants.latitudes		=16;
@@ -1536,68 +1535,84 @@ void RenderPlatform::PrintAt3dPos(MultiviewGraphicsDeviceContext& deviceContext,
 	Print(deviceContext, positions[0].data(), positions[1].data(), text, colr, bkg);
 }
 
-int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug, vec2 texc, vec2 texc_scale, float mip, int slice)
+int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, vec4 mult, bool blend, float gamma, bool debug, vec2 texc, vec2 texc_scale, float mip, int layer)
 {
-	static int level=0;
-	static int frames=25;
-	static int count=frames;
-	static unsigned long long framenumber=0;
-	float displayLod=mip;
-	static int lod=0;
+	if (tex && !tex->IsValid())
+		tex = nullptr;
+
 	if (tex!=nullptr&&dy == 0&& tex->width>0)
 	{
 		dy = (dx * tex->length) / tex->width;
 	}
-	if(debug&&mip<0)
+
+	static int frames = 25;
+	static unsigned long long framenumber = 0;
+
+	float displayMip = mip;
+	static int _mip = 0;
+	static int mipFramesCount = frames;
+	if (mip < 0)
 	{
 		if(framenumber!=GetFrameNumber())
 		{
-			count--;
-			if(!count)
+			mipFramesCount--;
+			if (!mipFramesCount)
 			{
-				lod++;
-				count=frames;
+				_mip++;
+				mipFramesCount = frames;
 			}
 			framenumber=GetFrameNumber();
 		}
 		if(tex)
 		{
-			int m=tex->GetMipCount();
-			displayLod=float((lod%(m?m:1)));
+			const int& m = tex->GetMipCount();
+			displayMip = float((_mip % (m ? m : 1)));
 		}
 	}
-	if(tex && !tex->IsValid())
-		tex=nullptr;
+
+	int displayLayer = layer;
+	static int _layer = 0;
+	static int layerFramesCount = frames;
+	auto UpdateDisplayLayer = [&](const int &maxLayers) -> uint {
+		if (framenumber != GetFrameNumber())
+		{
+			layerFramesCount--;
+			if (!layerFramesCount)
+			{
+				_layer++;
+				layerFramesCount = frames;
+			}
+		}
+		displayLayer = _layer % std::max(1, maxLayers);
+		return (uint)displayLayer;
+	};
+	
 	debugConstants.debugGamma=gamma;
 	debugConstants.multiplier=mult;
-	debugConstants.displayLod=displayLod;
-	debugConstants.displayLevel=0;
+	debugConstants.displayMip = displayMip;
+	debugConstants.displayLayer = displayLayer;
 	debugConstants.debugTime = float(this->frameNumber);
+
 	if(texc_scale.x==0||texc_scale.y==0)
 	{
 		texc_scale.x=1.0f;
 		texc_scale.y=1.0f;
 	}
 	debugConstants.viewport={texc.x,texc.y,texc_scale.x,texc_scale.y};
-	crossplatform::EffectTechnique *tech=textured;
+
+	crossplatform::EffectTechnique *tech= nullptr;
+
 	if(tex&&tex->GetDimension()==3)
 	{
 		if (debug)
 		{
 			tech = debugEffect->GetTechniqueByName("trace_volume");
-			
-			static char c = 0;
-			static char cc = 20;
-			c--;
-			if (!c)
-			{
-				level++;
-				c = cc;
+			debugConstants.displayLayer = UpdateDisplayLayer(tex->depth);
 			}
-			debugConstants.displayLevel = (float)(level%std::max(1, tex->depth)) / tex->depth;
-		}
 		else
+		{
 			tech=showVolume;
+		}
 
 		SetTexture(deviceContext,volumeTexture,tex);
 	}
@@ -1606,76 +1621,58 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		if(tex->arraySize>1)
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
-			debugEffect->SetTexture(deviceContext, "cubeTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
+			debugEffect->SetTexture(deviceContext, "cubeTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 			if(debug)
 			{
-				static char c=0;
-				static char cc=20;
-				c--;
-				if(!c)
-				{
-					level++;
-					c=cc;
+				debugConstants.displayLayer = UpdateDisplayLayer(tex->arraySize);
 				}
-				debugConstants.displayLevel=(float)(level%std::max(1,tex->arraySize));
 			}
-		}
 		else
 		{
 			tech=debugEffect->GetTechniqueByName("show_cubemap");
-			debugEffect->SetTexture(deviceContext, "cubeTexture", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
-			debugConstants.displayLevel=0;
+			debugEffect->SetTexture(deviceContext, "cubeTexture", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
+			debugConstants.displayLayer = 0;
 		}
 	}
 	else if(tex&&tex->arraySize>1)
 	{
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
-		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0,(uint8_t)-1});
-		{
-			static char c = 0;
-			static char cc = 20;
-			c--;
-			if (!c)
-			{
-				level++;
-				c = cc;
+		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
+		debugConstants.displayLayer = UpdateDisplayLayer(tex->arraySize);
 			}
-
-			debugConstants.displayLevel = (float)(level%std::max(1, tex->arraySize));
-		}
-	}
 	else if(tex)
 	{
-		SetTexture(deviceContext, imageTexture, tex, {TextureAspectFlags::COLOUR, (uint8_t)displayLod, 1, 0, (uint8_t)-1});
+		tech = textured;
+		SetTexture(deviceContext, imageTexture, tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 	}
 	else
 	{
 		tech=untextured;
 	}
+
 	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
 	debugEffect->UnbindTextures(deviceContext);
+	
 	if(debug)
 	{
-		vec4 white(1.0, 1.0, 1.0, 1.0);
-		vec4 semiblack(0, 0, 0, 0.5);
+		vec4 white(1.0f, 1.0f, 1.0f, 1.0f);
+		vec4 semiblack(0.0f, 0.0f, 0.0f, 0.5f);
 		char mip_txt[]="MIP: 0";
-		char lvl_txt[]="LVL: 0";
-		if(tex&&tex->GetMipCount()>1&&displayLod>0&&displayLod<10)
+		char lyr_txt[] = "LYR: 0";
+		if (tex && tex->GetMipCount() > 1 && displayMip > 0 && displayMip < 10)
 		{
-			mip_txt[5]='0'+(char)displayLod;
+			mip_txt[5] = '0' + (char)displayMip;
 			Print(deviceContext,x1,y1+20,mip_txt,white,semiblack);
 		}
 		if(tex&&tex->arraySize>1)
 		{
-			int l=level%tex->arraySize;
-			if(l<10)
-				lvl_txt[5]='0'+(l);
-			Print(deviceContext,x1+60,y1+20,lvl_txt,white,semiblack);
+			if (displayLayer < 10)
+				lyr_txt[5] = '0' + (displayLayer);
+			Print(deviceContext, x1 + 60, y1 + 20, lyr_txt, white, semiblack);
 		}
 		if (tex&&tex->GetDimension() == 3)
 		{
-			int l=level%tex->depth;
-			Print(deviceContext, x1, y1 + 20, ("Z: " + std::to_string(l)).c_str(), white, semiblack);
+			Print(deviceContext, x1, y1 + 20, ("Z: " + std::to_string(displayLayer)).c_str(), white, semiblack);
 		}
 	}
 	return int2(dx, dy);
@@ -1698,13 +1695,12 @@ void RenderPlatform::DrawQuad(GraphicsDeviceContext &deviceContext,int x1,int y1
 	effect->Unapply(deviceContext);
 }
 
-int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, float mult, bool blend, float gamma, bool debug, vec2 texc, vec2 texc_scale, float mip, int slice)
+int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, float mult, bool blend, float gamma, bool debug, vec2 texc, vec2 texc_scale, float mip, int layer)
 {
-	return DrawTexture(deviceContext,x1,y1,dx,dy,tex,vec4(mult,mult,mult,0.0f),blend,gamma,debug,texc,texc_scale, mip, slice);
+	return DrawTexture(deviceContext, x1, y1, dx, dy, tex, vec4(mult, mult, mult, 0.0f), blend, gamma, debug, texc, texc_scale, mip, layer);
 }
 
-int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, const crossplatform::Viewport *v
-	,const float *proj)
+int2 RenderPlatform::DrawDepth(GraphicsDeviceContext &deviceContext, int x1, int y1, int dx, int dy, crossplatform::Texture *tex, const crossplatform::Viewport *v, const float *proj)
 {
 	crossplatform::EffectTechnique *tech	=debugEffect->GetTechniqueByName("show_depth");
 	if(tex&&tex->GetSampleCount()>0)

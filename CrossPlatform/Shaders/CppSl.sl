@@ -720,22 +720,22 @@
 	template <typename T>
 	T saturate(const T &t)
 	{
-		return clamp(t, T(1.0), T(0.0));
+		return clamp(t, T(0), T(1));
 	}
 	template <typename T>
 	tvector2<T> saturate(const tvector2<T> &t)
 	{
-		return clamp(t, tvector2<T>(1, 1), tvector2<T>(0, 0));
+		return clamp(t, tvector2<T>(0, 0), tvector2<T>(1, 1));
 	}
 	template <typename T>
 	tvector3<T> saturate(const tvector3<T> &t)
 	{
-		return clamp(t, tvector3<T>(1, 1, 1), tvector3<T>(0, 0, 0));
+		return clamp(t, tvector3<T>(0, 0, 0), tvector3<T>(1, 1, 1));
 	}
 	template <typename T>
 	tvector4<T> saturate(const tvector4<T> &t)
 	{
-		return clamp(t, tvector4<T>(1, 1, 1, 1), tvector4<T>(0, 0, 0, 0));
+		return clamp(t, tvector4<T>(0, 0, 0, 0), tvector4<T>(1, 1, 1, 1));
 	}
 
 	//Frac
@@ -1605,21 +1605,14 @@
 	
 	typedef tvector2<uint32_t> uint2;
 	typedef tvector3<uint32_t> uint3;
+	typedef tvector4<uint32_t> uint4;
 	
+	//! Very simple 2 vector of doubles.
+	typedef tvector2<double> vec2d;
 	//! Very simple 3 vector of doubles.
 	typedef tvector3<double> vec3d;
-	inline void vec3d_to_vec3(vec3 &v3, const vec3d &v)
-	{
-		v3 = vec3(float(v.x), float(v.y), float(v.z));
-	}
-	inline vec3d cross(const vec3d &a, const vec3d &b)
-	{
-		vec3d r;
-		r.x = a.y * b.z - b.y * a.z;
-		r.y = a.z * b.x - b.z * a.x;
-		r.z = a.x * b.y - b.x * a.y;
-		return r;
-	}
+	//! Very simple 4 vector of doubles.
+	typedef tvector4<double> vec4d;
 #endif
 
 #ifdef _MSC_VER

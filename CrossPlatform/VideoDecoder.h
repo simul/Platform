@@ -6,6 +6,11 @@
 #include "Platform/CrossPlatform/RenderPlatform.h"
 #include "Platform/CrossPlatform/VideoBuffer.h"
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #define DEC_FAILED(r) \
@@ -102,5 +107,8 @@ namespace platform
 			bool mValidateDecoding;
 		};
 	}
-
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

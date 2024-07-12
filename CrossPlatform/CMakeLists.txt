@@ -6,6 +6,11 @@ file(GLOB HEADERS "*.h" )
 file(GLOB SHADERS  "Shaders/*.sfx") 
 file(GLOB SHADER_INCLUDES "Shaders/*.sl") 
 
+if (PLATFORM_SWITCH)
+	set(EXCLUDE_ITEM "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/texture_compression.sfx")
+	list(REMOVE_ITEM SHADERS ${EXCLUDE_ITEM})
+endif()
+
 if(PLATFORM_LOAD_RENDERDOC)
 	add_definitions(-DPLATFORM_LOAD_RENDERDOC=1)
 endif()
@@ -14,9 +19,7 @@ if(PLATFORM_LOAD_WINPIXGPUCAPTURER)
 endif()
 
 if(PLATFORM_USE_ASSIMP)
-	set(INCLUDE_DIRS "${SIMUL_PLATFORM_DIR}/External/assimp/include" "${CMAKE_BINARY_DIR}/External/assimp/include"
-					 "${SIMUL_PLATFORM_DIR}/External/assimp/build_mt/include" "${CMAKE_BINARY_DIR}/External/assimp/build_mt/include"
-					 "${SIMUL_PLATFORM_DIR}/External/assimp/build_md/include" "${CMAKE_BINARY_DIR}/External/assimp/build_md/include")
+	set(INCLUDE_DIRS "${SIMUL_PLATFORM_DIR}/External/assimp/include" "${CMAKE_BINARY_DIR}/External/assimp/include")
 	set(ADDITIONAL_LIBS "")
 else()
 	set(INCLUDE_DIRS "")
@@ -31,11 +34,15 @@ set(INCLUDE_DIRS ${INCLUDE_DIRS} "${SIMUL_PLATFORM_DIR}/External/stb")
 set(PLATFORM_STD_CHARCONV ON)
 if(PLATFORM_LINUX)
 	set(PLATFORM_STD_CHARCONV OFF)
+elseif(PLATFORM_SWITCH)
+	set(PLATFORM_STD_CHARCONV OFF)
 elseif(PLATFORM_EMSCRIPTEN)
 	set(PLATFORM_STD_CHARCONV OFF)
 endif()
 
 if(PLATFORM_PS4)
+	set(PLATFORM_STD_FILESYSTEM 0)
+elseif(PLATFORM_SWITCH)
 	set(PLATFORM_STD_FILESYSTEM 0)
 endif()
 
@@ -50,8 +57,20 @@ add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${SHADERS} 
 
 add_multiplatform_sfx_shader_project( SimulCrossPlatform${STATIC_LINK_SUFFIX} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
 								"${SIMUL_PLATFORM_DIR}/.."
-							SOURCES ${SHADERS} ${SHADER_INCLUDES} DEFINES VULKAN_SDK=${VULKAN_SDK_DIR}
+							SOURCES ${SHADERS} ${SHADER_INCLUDES} DEFINES VULKAN_SDK=${VULKAN_SDK_DIR} CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
 					 		OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" )
+
 # For parallel_hashmap
-target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
-	
+if(SIMUL_SOURCE_BUILD)
+	target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
+else()
+	target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External")
+endif()
+
+if (SIMUL_DLL_SDK_LIBRARY)
+	AddDLLCompileDefinitions( SimulCrossPlatform${STATIC_LINK_SUFFIX} )
+endif()
+
+if(PLATFORM_USE_ASSIMP)
+	add_compile_definitions(SimulCrossPlatform${STATIC_LINK_SUFFIX} PRIVATE ASSIMP_LIBNAME="${ASSIMP_LIBNAME}.dll")
+endif()

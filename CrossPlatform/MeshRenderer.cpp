@@ -21,6 +21,7 @@ void MeshRenderer::RestoreDeviceObjects(RenderPlatform *r)
 	renderPlatform = r;
 	cameraConstants.RestoreDeviceObjects(r);
 	solidConstants.RestoreDeviceObjects(r);
+	perObjectConstants.RestoreDeviceObjects(r);
 }
 
 void MeshRenderer::LoadShaders()
@@ -33,20 +34,21 @@ void MeshRenderer::InvalidateDeviceObjects()
 {
 	cameraConstants.InvalidateDeviceObjects();
 	solidConstants.InvalidateDeviceObjects();
+	perObjectConstants.InvalidateDeviceObjects();
 	delete effect;
 	effect = nullptr;
 }
 
 void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int index)
 {
-//	perNodeConstants.model = deviceContext.viewStruct.model;
+	perObjectConstants.model = deviceContext.viewStruct.model;
+	renderPlatform->SetConstantBuffer(deviceContext, &perObjectConstants);
 	cameraConstants.viewProj = deviceContext.viewStruct.viewProj;
 	cameraConstants.view = deviceContext.viewStruct.view;
 	cameraConstants.proj = deviceContext.viewStruct.proj;
 	cameraConstants.viewPosition = deviceContext.viewStruct.cam_pos;
 	//mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
 	//mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
-	//renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 	renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 	Mesh::SubMesh* subMesh = mesh->GetSubMesh(index);
 	
@@ -136,6 +138,7 @@ void MeshRenderer::ApplyMaterial(DeviceContext &deviceContext, Material *materia
 	solidConstants.emissiveTexCoordsScalar_A				=vec2_unit;
 
 	solidConstants.u_SpecularColour							=vec3_unit;
+	solidConstants.transparencyAlpha						=material->transparencyAlpha.value;
 
 	solidConstants.u_DiffuseTexCoordIndex=0;
 	solidConstants.u_NormalTexCoordIndex=1;

@@ -2,7 +2,7 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/RuntimeError.h"
 #include <iostream>
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_WIN32)
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <direct.h>
@@ -100,7 +100,7 @@ bool DefaultFileLoader::FileExists(const char *filename_utf8) const
 	{
 		NO_FILE=-1,EXIST=0,WRITE=2,READ=4
 	};
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_WIN32)
 	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	access_mode res=(access_mode)_waccess(wstr.c_str(),READ);
 	bool bExists = (res!=NO_FILE);
@@ -142,7 +142,7 @@ bool DefaultFileLoader::Save(const void* pointer, unsigned int bytes, const char
 		mkpath(filename_utf8);
 	}
 	
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_WIN32)
 	_wfopen_s(&fp,wstr.c_str(),L"wb");//w, ccs=UTF-8
 #else
 	fp = fopen(filename_utf8,"wb");//w, ccs=UTF-8
@@ -176,7 +176,7 @@ void DefaultFileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes,
 	
 	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_WIN32)
 	_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r":L"rb")
 #else
 	fp = fopen(filename_utf8,"rb");//r, ccs=UTF-8
@@ -218,7 +218,7 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 
 	std::wstring wstr=platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = NULL;
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_WIN32)
 	_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r, ccs=UTF-8":
 #else
 	fp = fopen(filename_utf8,"rb");//open_as_text?L"r, ccs=UTF-8":
@@ -229,7 +229,8 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 		return 0.0;
 	}
 	fclose(fp);
-#ifdef _MSC_VER
+
+#if defined(_MSC_VER) && defined(_WIN32)
 	struct _stat buf;
 	_wstat(wstr.c_str(),&buf);
 	buf.st_mtime;
@@ -244,7 +245,7 @@ double DefaultFileLoader::GetFileDate(const char* filename_utf8) const
 	auto write_time=fs::last_write_time(filename_utf8);
 	const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
 	const auto time = std::chrono::system_clock::to_time_t(systemTime);
-    return ((double)ns)/(3600.0*24.0*1000000.0);
+	return ((double)ns)/(3600.0*24.0*1000000.0);
 #else
 	std::wstring filenamew=StringToWString(filename_utf8);
 	struct stat buf;

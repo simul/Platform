@@ -74,20 +74,21 @@ struct vertexOutput
 shader vertexOutput VS_Solid_PosOnly(vertexInputP IN)
 {
 	vertexOutput OUT;
-	vec4 opos		= vec4(IN.position.xyz, 1.0);
-	OUT.wpos		= mul(model, opos).xyz;
-	OUT.view		= normalize(OUT.wpos.xyz - viewPosition);
-	OUT.clip_pos	= mul(opos, worldViewProj);
-	OUT.texCoords0	= vec2(0, 0);
-	OUT.texCoords1	= vec2(0, 0);
+	vec4 opos			= vec4(IN.position.xyz, 1.0);
+	OUT.wpos			= mul(model, opos).xyz;
+	OUT.view			= normalize(OUT.wpos.xyz - viewPosition);
+	vec4 viewspace_pos	= mul(view, vec4(OUT.wpos.xyz, 1.0));
+	OUT.clip_pos		= mul(proj, vec4(viewspace_pos.xyz, 1.0));
+	OUT.texCoords0		= vec2(0, 0);
+	OUT.texCoords1		= vec2(0, 0);
 #ifdef SFX_OPENGL
-	OUT.normal.xyz	= mul(IN.position.xyz, mat3(model));
-	OUT.tangent.xyz = mul(vec3(1.0, 0.0, 0.0), mat3(model));
+	OUT.normal.xyz		= mul(IN.position.xyz, mat3(model));
+	OUT.tangent.xyz		= mul(vec3(1.0, 0.0, 0.0), mat3(model));
 #else
-	OUT.normal.xyz	= mul(vec4(IN.position.xyz, 0.0), model).xyz;
-	OUT.tangent		= mul(vec4(1.0, 0.0, 0.0, 0.0), model).xyz;
+	OUT.normal.xyz		= mul(vec4(IN.position.xyz, 0.0), model).xyz;
+	OUT.tangent			= mul(vec4(1.0, 0.0, 0.0, 0.0), model).xyz;
 #endif
-	OUT.hPosition	= OUT.clip_pos;
+	OUT.hPosition		= OUT.clip_pos;
 	return OUT;
 }
 
@@ -285,6 +286,7 @@ vec4 Solid(vertexOutput IN)
 	surfaceProperties.normal		=normal;
 	surfaceProperties.albedo		=diffuseColour;
 	surfaceProperties.roughness2	=surfaceProperties.roughness*surfaceProperties.roughness;
+	surfaceProperties.alpha			=transparencyAlpha;
 
 	SurfaceState surfaceState	=PreprocessSurface(view,surfaceProperties);
 	vec3 c						=.3*PBRAmbient(surfaceState, view, surfaceProperties);
@@ -298,8 +300,8 @@ vec4 Solid(vertexOutput IN)
 
 	vec3 emissive		=emissiveTexture.Sample(wrapSamplerState, IN.texCoords0.xy * emissiveTexCoordsScalar_R).rgb;
 	emissive			*= emissiveOutputScalar.rgb;
-//	c=1.0-roughMetalOcclusion.a;
-	vec4 u				=vec4(c.rgb + emissive.rgb, 1.0);
+	//	c=1.0-roughMetalOcclusion.a;
+	vec4 u				=vec4(c.rgb + emissive.rgb, surfaceProperties.alpha);
 	//u.rg= frac(screenPos);
 	return u;
 }
@@ -408,7 +410,7 @@ shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
 {
     vec3 normal	=normalize(IN.normal);
 // Here is whatever colour your shader would normally generate in the absence of atmospherics:
-    vec4 c = vec4(0.5,0.5,0.5,0.5);
+    vec4 c = Solid(IN);
 
 // Now we calculate the atmospheric effects:
 	vec4 loss;

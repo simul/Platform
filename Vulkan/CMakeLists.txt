@@ -56,3 +56,7 @@ if(SIMUL_SOURCE_BUILD)
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include")
 
 endif()
+
+if (SIMUL_DLL_SDK_LIBRARY)
+	AddDLLCompileDefinitions( SimulVulkan${STATIC_LINK_SUFFIX} )
+endif()

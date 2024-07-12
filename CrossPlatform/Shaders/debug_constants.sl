@@ -25,8 +25,8 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,7)
 	uniform float debugGamma;
 	uniform float debugDepth;
 
-	uniform float displayLod;
-	uniform float displayLevel;
+	uniform float displayMip;
+	uniform uint displayLayer;
 	uniform float debugTime;
 	uniform float dc_pad1;
 

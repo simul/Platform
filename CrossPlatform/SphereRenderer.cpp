@@ -192,7 +192,7 @@ void SphereRenderer::DrawQuad(GraphicsDeviceContext &deviceContext, vec3 origin,
 	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);
 	if(fill_colour.w>0.0f)
 	{
-        effect->Apply(deviceContext, tech, cheq ? "chequer" : "fill");
+		effect->Apply(deviceContext, tech, cheq ? "chequer" : "fill");
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLESTRIP);
 		renderPlatform->Draw(deviceContext, 4, 0);
 		effect->Unapply(deviceContext);
@@ -369,8 +369,8 @@ void SphereRenderer::DrawCircle(GraphicsDeviceContext &deviceContext, vec3 origi
 	sphereConstants.debugWorldViewProj=wvp;
 	vec3 view_dir;
 	math::Vector3 cam_pos;
-	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
-	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_circle_on_sphere");
+	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view, (float *)&cam_pos, (float *)&view_dir);
+	crossplatform::EffectTechnique *tech = effect->GetTechniqueByName("draw_circle_on_sphere");
 
 	sphereConstants.quaternion		=orient_quat;
 	sphereConstants.radius			=sph_rad;

@@ -64,10 +64,18 @@ set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/incl
 set(SOURCES ${SOURCES} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
 
 add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
-	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12" DEPENDENCIES SimulCrossPlatform${STATIC_LINK_SUFFIX})
+	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12")
 
 # For D3D12MA
-target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
+if(SIMUL_SOURCE_BUILD)
+	target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
+else()
+	target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
+endif()
+
+if (SIMUL_DLL_SDK_LIBRARY)
+	AddDLLCompileDefinitions( SimulDirectX12${STATIC_LINK_SUFFIX} )
+endif()
 
 option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 if(SIMUL_SOURCE_BUILD)

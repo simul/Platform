@@ -1302,9 +1302,9 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	{
 		tv.elements.subresourceRange = {crossplatform::TextureAspectFlags::DEPTH | crossplatform::TextureAspectFlags::STENCIL, 0, uint8_t(mip), 0, uint8_t(layerCount)};
 
-	ID3D11DepthStencilView* dsv = AsD3D11DepthStencilView(tv);
-	deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(dsv, (D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL), depthClear, stencilClear);
-}
+		ID3D11DepthStencilView* dsv = AsD3D11DepthStencilView(tv);
+		deviceContext.asD3D11DeviceContext()->ClearDepthStencilView(dsv, (D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL), depthClear, stencilClear);
+	}
 }
 
 void Texture::GenerateMips(crossplatform::GraphicsDeviceContext &deviceContext)

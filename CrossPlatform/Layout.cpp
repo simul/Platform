@@ -104,7 +104,8 @@ void Layout::SetDesc(const LayoutDesc *d,int num,bool i)
 	for(int i=0;i<num;i++)
 	{
 		parts.push_back(*d);
-		SIMUL_ASSERT(d->alignedByteOffset==struct_size);
+		// need not be the case for instance layouts:
+		//SIMUL_ASSERT(d->alignedByteOffset==struct_size);
 		struct_size+=GetByteSize(d->format);
 		d++;
 	}

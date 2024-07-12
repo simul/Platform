@@ -148,7 +148,7 @@ void Text3DRenderer::PushFontPath(const char *p)
 	#endif
 void Text3DRenderer::RestoreDeviceObjects(crossplatform::RenderPlatform *r)
 {
-	ERRNO_BREAK
+	ERRNO_CHECK
 	renderPlatform=r;
 	
 #if PLATFORM_USE_FREETYPE
@@ -243,9 +243,9 @@ void Text3DRenderer::LoadShaders()
 {
 	recompile = false;
 	SAFE_DELETE(effect);
-	ERRNO_BREAK
+	ERRNO_CHECK
 	effect = renderPlatform->CreateEffect("font");
-	ERRNO_BREAK
+	ERRNO_CHECK
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
 	textureResource	=effect->GetShaderResource("fontTexture");

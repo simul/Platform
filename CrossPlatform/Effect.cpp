@@ -458,7 +458,7 @@ std::string Effect::GetShaderResourceNameAtSlot(int s)
 
 std::string Effect::GetConstantBufferNameAtSlot(int s)
 {
-	for (const auto i : constantBufferSlots)
+	for (const auto& i : constantBufferSlots)
 	{
 		if (i.second == s)
 			return i.first;
