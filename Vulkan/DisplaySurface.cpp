@@ -711,7 +711,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	EnsureImageLayout();
 
 	ERRNO_BREAK
-	if (renderer && (viewport.w * viewport.h > 0))
+	if (renderer)
 	{
 		auto *rp = (vulkan::RenderPlatform *)renderPlatform;
 		rp->SetDefaultColourFormat(pixelFormat);
