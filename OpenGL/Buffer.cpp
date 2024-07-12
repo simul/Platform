@@ -32,16 +32,14 @@ GLuint Buffer::AsGLuint()
 	return mBufferID;
 }
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_vertices,const crossplatform::Layout* layout,std::shared_ptr<std::vector<uint8_t>> data,bool cpu_access,bool streamout_target)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_vertices,int structSize,std::shared_ptr<std::vector<uint8_t>> data,bool cpu_access,bool streamout_target)
 {
     InvalidateDeviceObjects();
 
     glGenBuffers(1, &mBufferID);
     glBindBuffer(GL_ARRAY_BUFFER, mBufferID);
-    glBufferData(GL_ARRAY_BUFFER, layout->GetStructSize() * num_vertices, data?data->data():nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, structSize * num_vertices, data?data->data():nullptr, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    mBufferLayout = (crossplatform::Layout*)layout;
 }
 
 void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* renderPlatform,int num_indices,int index_size_bytes,std::shared_ptr<std::vector<uint8_t>> data, bool cpu_access)
@@ -64,8 +62,10 @@ void Buffer::Unmap(crossplatform::DeviceContext& deviceContext)
     glUnmapNamedBuffer(mBufferID);
 }
 
-void Buffer::BindVBO(crossplatform::DeviceContext & deviceContext)
+void Buffer::BindVBO(crossplatform::DeviceContext & deviceContext, const crossplatform::Layout* layout)
 {
+    mBufferLayout = (crossplatform::Layout*)layout;
+
     glBindBuffer(GL_ARRAY_BUFFER,mBufferID);
     auto bufferDesc     = mBufferLayout->GetDesc();
     size_t off          = 0;

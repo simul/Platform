@@ -1623,6 +1623,14 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 	commandList->DrawIndexedInstanced(num_indices, 1, start_index, base_vert, 0);
 }
 
+void RenderPlatform::DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index, int base_vertex)
+{
+	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();
+
+	ApplyContextState(deviceContext);
+	commandList->DrawIndexedInstanced(num_indices, num_instances, start_index, base_vertex, base_instance);
+}
+
 void RenderPlatform::ApplyDefaultMaterial()
 {
 }

@@ -7,8 +7,8 @@
 #include "Platform/CrossPlatform/Effect.h"
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4251)
+	#pragma warning(push)
+	#pragma warning(disable:4251)
 #endif
 
 typedef int GLint;
@@ -20,25 +20,25 @@ namespace platform
 	namespace opengl
 	{
 		class Material;
-        class Texture;
+		class Texture;
 
-        //! Holds a GL state snapshot
-        struct GLSnapState
-        {
-            GLint                       Vao;       
-            GLint                       Program;
-            GLint                       Framebuffer;
+		//! Holds a GL state snapshot
+		struct GLSnapState
+		{
+			GLint                       Vao;       
+			GLint                       Program;
+			GLint                       Framebuffer;
 
-            crossplatform::RenderState  Blend;
-            crossplatform::RenderState  Depth;
-            crossplatform::RenderState  Raster;
-        };
+			crossplatform::RenderState  Blend;
+			crossplatform::RenderState  Depth;
+			crossplatform::RenderState  Raster;
+		};
 
 		//! OpenGL renderplatform implementation
 		class SIMUL_OPENGL_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
 		public:
-			            RenderPlatform();
+						RenderPlatform();
 			virtual~    RenderPlatform() override;
 			const char* GetName() const override;
 			crossplatform::RenderPlatformType GetType() const override
@@ -53,12 +53,12 @@ namespace platform
 			void        InvalidateDeviceObjects() override;
 			void        BeginFrame() override;
 			void        EndFrame() override;
-            void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
-            void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
-            //! Before starting trueSKY rendering is a good idea to save all the previous state
-            void        StoreGLState();
-            //! Once we are done, we can restore it
-            void        RestoreGLState();
+			void        BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
+			void        EndEvent(crossplatform::DeviceContext& deviceContext)override;
+			//! Before starting trueSKY rendering is a good idea to save all the previous state
+			void        StoreGLState();
+			//! Once we are done, we can restore it
+			void        RestoreGLState();
 			//! Ensures that all UAV read and write operation to the textures are completed.
 			void		ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* texture) override;
 			//! Ensures that all UAV read and write operation to the PlatformStructuredBuffer are completed.
@@ -66,16 +66,18 @@ namespace platform
 			void        DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d) override;
 			void        Draw(crossplatform::GraphicsDeviceContext& deviceContext, int num_verts, int start_vert) override;
 			void        DrawIndexed(crossplatform::GraphicsDeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
+			void        DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index = 0, int base_vertex = 0) override;
+		
 			void        DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			void        GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx = -1)override;
-            //! This should be called after a Draw/Dispatch command that uses
-            //! textures. Here we will apply the textures.
-            void        ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
+			//! This should be called after a Draw/Dispatch command that uses
+			//! textures. Here we will apply the textures.
+			void        ApplyCurrentPass(crossplatform::DeviceContext& deviceContext);
 			void		ApplyPass(crossplatform::DeviceContext& deviceContext, crossplatform::EffectPass* pass) override;
 
-            void        InsertFences(crossplatform::DeviceContext& deviceContext);
+			void        InsertFences(crossplatform::DeviceContext& deviceContext);
 
-            crossplatform::Material*                CreateMaterial();
+			crossplatform::Material*                CreateMaterial();
 			crossplatform::Mesh*                    CreateMesh() override;
 			crossplatform::Light*                   CreateLight();
 			crossplatform::Framebuffer*             CreateFramebuffer(const char *name=nullptr) override;
@@ -106,15 +108,15 @@ namespace platform
 			void									RestoreRenderState(crossplatform::DeviceContext &deviceContext) override;
 			void									PopRenderTargets(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			void									SetRenderState(crossplatform::DeviceContext &deviceContext,const crossplatform::RenderState *s) override;
-            void					                SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
+			void					                SetStandardRenderState(crossplatform::DeviceContext& deviceContext, crossplatform::StandardRenderState s)override;
 			void									Resolve(crossplatform::GraphicsDeviceContext &deviceContext,crossplatform::Texture *destination,crossplatform::Texture *source) override;
 			void									SaveTexture(crossplatform::GraphicsDeviceContext&, crossplatform::Texture *texture,const char *lFileNameUtf8) override;
 			void									SetUnorderedAccessView(crossplatform::DeviceContext &deviceContext, const crossplatform::ShaderResource &name, crossplatform::Texture *tex, const crossplatform::SubresourceLayers &subresource = crossplatform::SubresourceLayers()) override;
 			void									SetConstantBuffer(crossplatform::DeviceContext &deviceContext, crossplatform::ConstantBufferBase *s) override;
 
-            static GLenum                           toGLTopology(crossplatform::Topology t);
-            static GLenum                           toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f);
-            static GLenum                           toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f);
+			static GLenum                           toGLTopology(crossplatform::Topology t);
+			static GLenum                           toGLMinFiltering(crossplatform::SamplerStateDesc::Filtering f);
+			static GLenum                           toGLMaxFiltering(crossplatform::SamplerStateDesc::Filtering f);
 			static GLint							toGLWrapping(crossplatform::SamplerStateDesc::Wrapping w);
 			//! Returns the format that OpenGL stores the texture data internally. e.g. GL_RGBA8
 			static                                  GLuint ToGLInternalFormat(crossplatform::PixelFormat p);
@@ -124,33 +126,33 @@ namespace platform
 			static                                  GLuint ToGLFormat(crossplatform::PixelFormat p);
 			static                                  GLenum DataType(crossplatform::PixelFormat p);
 			static int                              FormatCount(crossplatform::PixelFormat p);
-            
+			
 			void									DeleteGLTextures(const std::set<GLuint> &t);
-            //! Makes the handle resident only if its not resident already
-            void                                    MakeTextureResident(GLuint64 handle);
+			//! Makes the handle resident only if its not resident already
+			void                                    MakeTextureResident(GLuint64 handle);
 
 			//! If ANY texture is deleted, we should probably regard the resident textures list as invalid.
 			void									ClearResidentTextures();
-            //! Returns 2D dummy texture 1 white texel
-            opengl::Texture*                        GetDummy2D();
-            //! Returns 3D dummy texture 1 white texel
-            opengl::Texture*                        GetDummy3D();
+			//! Returns 2D dummy texture 1 white texel
+			opengl::Texture*                        GetDummy2D();
+			//! Returns 3D dummy texture 1 white texel
+			opengl::Texture*                        GetDummy3D();
 
-        protected:
+		protected:
 			crossplatform::Texture* createTexture() override;
-            //! GL forces us to have a VertexArrayObject bound, we bind it but we dont use it
-            GLuint              mNullVAO;
-            GLenum              mCurTopology;
-            //! Used to hold the current resident textures.
-            std::set<GLuint64>  mResidentTextures;
+			//! GL forces us to have a VertexArrayObject bound, we bind it but we dont use it
+			GLuint              mNullVAO;
+			GLenum              mCurTopology;
+			//! Used to hold the current resident textures.
+			std::set<GLuint64>  mResidentTextures;
 
-            GLint               mMaxViewports;
-            GLint               mMaxColorAttatch;
+			GLint               mMaxViewports;
+			GLint               mMaxColorAttatch;
 
-            opengl::Texture*    mDummy2D;
-            opengl::Texture*    mDummy3D;
+			opengl::Texture*    mDummy2D;
+			opengl::Texture*    mDummy3D;
 
-            GLSnapState         mCachedState;
+			GLSnapState         mCachedState;
 
 			static std::set<GLuint>	texturesToDelete[3];
 		};
@@ -158,5 +160,5 @@ namespace platform
 }
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+	#pragma warning(pop)
 #endif

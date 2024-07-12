@@ -205,7 +205,8 @@ namespace platform
 			void									RestartCommands (crossplatform::DeviceContext& deviceContext) override;
 			void									Draw			(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_verts,int start_vert);
 			void									DrawIndexed		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
-			
+			void									DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index = 0, int base_vertex = 0) override;
+		
 			void									DrawQuad		(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext);
 
 			void									ApplyDefaultMaterial();
