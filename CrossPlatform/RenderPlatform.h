@@ -520,8 +520,6 @@ namespace platform
 			float GetRecompileStatus(std::string &txt);
 			/// Asynchronously recompile the effects; the callback is called when the last one is complete.
 			void ScheduleRecompileEffects(const std::vector<std::string>& effect_names,std::function <void()> f);
-			/// Asynchronously recompile the effect; the callback is called when the new effect is complete.
-			void ScheduleRecompileEffect(const std::string &effect_name, std::function<void()> f);
 
 		protected:
 			struct EffectRecompile

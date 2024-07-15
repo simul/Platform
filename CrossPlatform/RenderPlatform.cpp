@@ -133,7 +133,7 @@ void RenderPlatform::recompileAsync()
 		{
 			recompiling_effect_names.clear();
 
-			std::lock_guard guard(recompileEffectFutureMutex);
+			std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 			for (auto it = effectsToCompileFutures.begin(); it != effectsToCompileFutures.end();)
 			{
 				const std::string &effect_name = it->first;
@@ -185,17 +185,17 @@ void RenderPlatform::recompileAsync()
 							if(RecompileEffect(effectRecompile.effect_name))
 							{
 								effectRecompile.newEffect = CreateEffect(effectRecompile.effect_name.c_str(), false);
-			}
-		}
+							}
+						}
 						return effectRecompile;
 					};
 
-				std::lock_guard guard(recompileEffectFutureMutex);
+				std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 				effectsToCompileFutures[effectToCompile.effect_name] = std::async(std::launch::async, RecompileEffectAsync, effectToCompile);
-	}
+			}
 
 			effectsToCompile.clear();
-}
+		}
 
 	}
 	
@@ -205,20 +205,22 @@ void RenderPlatform::recompileAsync()
 float RenderPlatform::GetRecompileStatus(std::string &txt)
 {
 	txt = recompiling_effect_names;
-	std::lock_guard guard(recompileEffectFutureMutex);
+	std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 	return (float)effectsToCompileFutures.size();
 }
 
 void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &effect_names, std::function<void()> f)
 {
 	std::lock_guard recompileEffectGuard(recompileEffectMutex);
+	std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 	bool pushedBack = false;
 	for (const std::string &effect_name : effect_names)
 	{
 		bool found = false;
 		for (const auto &effectToCompile : effectsToCompile)
 		{
-			if (effectToCompile.effect_name == effect_name)
+			if (effectToCompile.effect_name == effect_name 
+				|| effectsToCompileFutures.find(effectToCompile.effect_name) != effectsToCompileFutures.end())
 			{
 				found = true;
 				break;
@@ -235,25 +237,6 @@ void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &ef
 	if (pushedBack)
 	{
 		effectsToCompile.back().callback = f;
-	}
-}
-
-void RenderPlatform::ScheduleRecompileEffect(const std::string &effect_name, std::function<void()> f)
-{
-	std::lock_guard recompileEffectGuard(recompileEffectMutex);
-	bool found = false;
-	for (const auto& effectToCompile : effectsToCompile)
-	{
-		if (effectToCompile.effect_name == effect_name)
-		{
-			found = true;
-			break;
-		}
-	}
-
-	if (!found)
-	{
-		effectsToCompile.push_back({effect_name, f});
 	}
 }
 
@@ -2014,7 +1997,7 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecomp
 	//Check if the effect in being recompiled
 	if (checkRecompileShaders)
 	{
-		std::lock_guard guard(recompileEffectFutureMutex);
+		std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 		const auto &it = effectsToCompileFutures.find(std::string(filename_utf8));
 		if (it != effectsToCompileFutures.end())
 		{
