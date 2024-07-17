@@ -299,6 +299,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		effect->Apply(deviceContext,textTech, 1);
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
+		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 		f.Apply(deviceContext,effect,_fontChars);
 		renderPlatform->Draw(deviceContext,6*n,0);
 		effect->UnbindTextures(deviceContext);
