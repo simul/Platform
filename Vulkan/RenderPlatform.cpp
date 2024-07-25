@@ -717,18 +717,19 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	int8_t maxDescriptorSet = -1;
 	int8_t minDescriptorSet = 127;
 	uint32_t *resourceGroupAppliedCtr = is_compute ? cs->resourceGroupAppliedCounterCompute : cs->resourceGroupAppliedCounter;
-	for(uint8_t g=0;g<crossplatform::PER_PASS_RESOURCE_GROUP;g++)
+	for (uint8_t g = 0; g < crossplatform::PER_PASS_RESOURCE_GROUP; g++)
 	{
 		if (resourceGroupAppliedCtr[g] != cs->resourceGroupApplyCounter[g])
 		{
 			vk::DescriptorSet *d = GetDescriptorSetForResourceGroup(deviceContext, g);
-			if (d)
+			if (d && (*d))
 			{
 				descriptorSets[g] = *d;
 				minDescriptorSet = std::min(int8_t(g), minDescriptorSet);
 				maxDescriptorSet = std::max(int8_t(g), maxDescriptorSet);
 			}
-			else return false;
+			else
+				return false;
 		}
 	}
 
@@ -741,15 +742,13 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		minDescriptorSet = std::min(int8_t(crossplatform::PER_PASS_RESOURCE_GROUP), minDescriptorSet);
 	}
 
-	const vk::PipelineLayout &pipelineLayout = pass->GetLatestPipelineLayout();
 	if (maxDescriptorSet >= minDescriptorSet)
 	{
 		// Set the Descriptor Sets
-		for(uint8_t g=minDescriptorSet;g<=maxDescriptorSet;g++)
-		{
-			if(descriptorSets[g].operator VkDescriptorSet())
-				commandBuffer->bindDescriptorSets(is_compute ? vk::PipelineBindPoint::eCompute: vk::PipelineBindPoint::eGraphics, pipelineLayout, g, 1, &(descriptorSets[g]), 0, nullptr);
-		}
+		const vk::PipelineLayout &pipelineLayout = pass->GetLatestPipelineLayout();
+		commandBuffer->bindDescriptorSets(is_compute ? vk::PipelineBindPoint::eCompute: vk::PipelineBindPoint::eGraphics, pipelineLayout, 
+			minDescriptorSet, (maxDescriptorSet - minDescriptorSet + 1), &(descriptorSets[minDescriptorSet]), 0, nullptr);
+
 		for (int8_t g = minDescriptorSet; g < maxDescriptorSet + 1; g++)
 		{
 			resourceGroupAppliedCtr[g] = cs->resourceGroupApplyCounter[g];
@@ -2142,7 +2141,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 	}
 
 	vk::DescriptorSet &descriptorSet = *(m_DescriptorSets_It[g][descriptorSetFrame]);
-	if (descriptorSet.operator VkDescriptorSet()==nullptr)
+	if (!descriptorSet)
 	{
 		SIMUL_BREAK_ONCE("Null DescriptorSet error.");
 		return nullptr;
@@ -2155,16 +2154,18 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 	int numBuffers = numConstantBuffers;
 	int numImages = numReadOnlyResources + numSamplers;
 	int numDescriptors = numBuffers + numReadOnlyResources + numSamplers;
+
 	if (numDescriptors > m_writeDescriptorSets.size())
 		m_writeDescriptorSets.resize(numDescriptors);
 
 	if (numBuffers > descriptorBufferInfos.size())
 		descriptorBufferInfos.resize(numBuffers);
-
 	vk::DescriptorBufferInfo *descriptorBufferInfo = descriptorBufferInfos.data();
+
 	if (numImages > descriptorImageInfos.size())
 		descriptorImageInfos.resize(numImages);
 	vk::DescriptorImageInfo *descriptorImageInfo = descriptorImageInfos.data();
+
 	int b = 0;
 	int slot = 0;
 	for (int i = 0; i < numConstantBuffers; i++, b++)
@@ -2269,7 +2270,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		{
 			write.setDescriptorType(vk::DescriptorType::eSampledImage);
 		}
-	/*	else
+		/*else
 		{
 			// video texture:
 			write.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
@@ -2349,9 +2350,12 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		}
 		vulkanDevice->updateDescriptorSets(numDescriptors, m_writeDescriptorSets.data(), 0, nullptr);
 	}
+
 	if (m_DescriptorSets_It[g][descriptorSetFrame] != m_DescriptorSets[g][descriptorSetFrame].end())
 		m_DescriptorSets_It[g][descriptorSetFrame]++;
+
 	lastDescriptorSet[descriptorSetFrame][g] = &descriptorSet;
+
 	return &descriptorSet;
 }
 

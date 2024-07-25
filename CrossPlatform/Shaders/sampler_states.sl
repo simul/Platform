@@ -4,10 +4,10 @@
 
 SamplerState cmmSamplerState : register(s0), resource_group(g0)
 {
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Clamp;
-    AddressV = Mirror;
-    AddressW = Mirror;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Mirror;
+	AddressW = Mirror;
 };
 
 

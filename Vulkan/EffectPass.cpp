@@ -521,7 +521,6 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	vk::DescriptorSetLayoutBinding* layoutBindings = nullptr;
 	vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCI;
 
-	//usingResourceLayouts &= ~(1 << crossplatform::PER_PASS_RESOURCE_GROUP);
 	usingResourceLayouts = 0;
 	if (numDescriptors > 0)
 	{
@@ -685,26 +684,24 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			.setBindingCount(1)
 			.setBindings(binding);
 	}
-	// Create a list of the (up to 4) resource groups ("descriptor sets") this pass uses.
-	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+
 	// Create the "Descriptor Set Layout":
 	result = vulkanDevice->createDescriptorSetLayout(&descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout);
 	SIMUL_VK_CHECK(result);
 	SetVulkanName(renderPlatform, m_DescriptorSetLayout, platform::core::QuickFormat("%s Descriptor layout", name.c_str()));
-	//if(descriptorSetLayoutCI.bindingCount>0)
-	// Create the "Pipeline Layout":
 
+	// Create a list of the (up to 4) resource groups ("descriptor sets") this pass uses.
+	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+
+	// Create the "Pipeline Layout":
 	for (uint8_t i = 0; i < crossplatform::PER_PASS_RESOURCE_GROUP; i++)
 	{
-		// if(UsesResourceLayout(i))
-		{
-			descriptorSetLayouts.push_back(rp->GetVulkanDescriptorSetLayoutForResourceGroup(i));
-		}
+		descriptorSetLayouts.push_back(rp->GetVulkanDescriptorSetLayoutForResourceGroup(i));
 	}
 	if (descriptorSetLayoutCI.bindingCount)
 		descriptorSetLayouts.push_back(m_DescriptorSetLayout);
 	vk::PipelineLayoutCreateInfo pipelineLayoutCI = vk::PipelineLayoutCreateInfo()
-														.setSetLayoutCount(crossplatform::PER_PASS_RESOURCE_GROUP+(descriptorSetLayoutCI.bindingCount?1:0))
+														.setSetLayoutCount(static_cast<uint32_t>(descriptorSetLayouts.size()))
 														.setPSetLayouts(descriptorSetLayouts.data());
 	result = vulkanDevice->createPipelineLayout(&pipelineLayoutCI, nullptr, &m_PipelineLayout);
 	SIMUL_VK_CHECK(result);

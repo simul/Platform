@@ -924,11 +924,13 @@ void RenderPlatform::SetResourceGroupLayout(uint8_t group_index, ResourceGroupLa
 	// initially, use all 64 slots.
 	perPassLayout.constantBufferSlots = ~uint64_t(0);
 	perPassLayout.readOnlyResourceSlots = ~uint64_t(0);
+	perPassLayout.samplerSlots = ~uint64_t(0);
 	for (uint8_t i = 0; i < PER_PASS_RESOURCE_GROUP; i++)
 	{
 		auto &layout = resourceGroupLayouts[i];
-		perPassLayout.constantBufferSlots&=(~(layout.constantBufferSlots));
+		perPassLayout.constantBufferSlots &= (~(layout.constantBufferSlots));
 		perPassLayout.readOnlyResourceSlots &= (~(layout.readOnlyResourceSlots));
+		perPassLayout.samplerSlots &= (~(layout.samplerSlots));
 	}
 }
 const ResourceGroupLayout &RenderPlatform::GetResourceGroupLayout(uint8_t group_index) const
