@@ -51,20 +51,22 @@ namespace platform
 		extern PLATFORM_CORE_EXPORT void EnableDebugBreaks(bool b);
 		extern PLATFORM_CORE_EXPORT bool SimulInternalChecks;
 		template <typename... T>
-		void Error(const char *txt, const T &...args)
+		void Error(const char *txt, const char* file, unsigned int line, const T &...args)
 		{
 			std::string str = fmt::format(txt, args...);
-			std::cerr << fmt::format("{0} ({1}): error: {2}", __FILE__, __LINE__, str) << "\n";
+			std::cerr << fmt::format("{0} ({1}): error: {2}", file, line, str) << "\n";
 		}
 		template <typename... T>
-		void Warn(const char *txt, const T &...args)
+		void Warn(const char *txt, const char *file, unsigned int line, const T &...args)
 		{
-			std::cerr << fmt::format(txt,args...) << "\n";
+			std::string str = fmt::format(txt, args...);
+			std::cerr << fmt::format("{0} ({1}): warn: {2}", file, line, str) << "\n";
 		}
 		template <typename... T>
-		void Info(const char *txt, const T &...args)
+		void Info(const char *txt, const char *file, unsigned int line, const T &...args)
 		{
-			std::cout << fmt::format(txt,args...) << "\n";
+			std::string str = fmt::format(txt, args...);
+			std::cout << fmt::format("{0} ({1}): info: {2}", file, line, str) << "\n";
 		}
 		//! This is a throwable error class derived from std::runtime_error.
 		//! It is used in builds that have C++ exceptions enabled. As it always outputs to std::cerr,
@@ -91,11 +93,33 @@ namespace platform
 		};
 	}
 }
-#define PLATFORM_LOG(txt, ...) \
-	platform::core::Info((fmt::format("{0} ({1}): info: {2} ", __FILE__, __LINE__,__func__) + #txt).c_str(), ##__VA_ARGS__)
+
+#ifdef _MSC_VER
+#define BREAK_IF_DEBUGGING                                                               \
+	{                                                                                    \
+		if (platform::core::DebugBreaksEnabled() && platform::core::IsDebuggerPresent()) \
+			platform::core::DebugBreak();                                                \
+	}
+#else
+#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
+#define BREAK_IF_DEBUGGING \
+	if (platform::core::DebugBreaksEnabled() && sceDbgIsDebuggerAttached()) SCE_BREAK();
+#else
+// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
+// Therefore we use this workaround.
+#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
+#endif
+#endif
+
+#define PLATFORM_ERROR(txt, ...) \
+	platform::core::Error(txt, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define PLATFORM_WARN(txt, ...) \
-	platform::core::Warn((fmt::format("{0} ({1}): warning: {2} ", __FILE__, __LINE__,__func__) + #txt).c_str(), ##__VA_ARGS__)
+	platform::core::Warn(txt, __FILE__, __LINE__, ##__VA_ARGS__)
+
+#define PLATFORM_LOG(txt, ...) \
+	platform::core::Info(txt, __FILE__, __LINE__, ##__VA_ARGS__)
+
 
 #define SIMUL_INTERNAL_COUT                  \
 	if (platform::core::SimulInternalChecks) \
@@ -152,21 +176,21 @@ namespace platform
 #define SIMUL_ASSERT(value)
 #endif
 
-#define SIMUL_BREAK(msg, ...)                      \
-	{                                              \
-		platform::core::Error(msg, ##__VA_ARGS__); \
-		BREAK_IF_DEBUGGING                         \
+#define SIMUL_BREAK(msg, ...)                                          \
+	{                                                                  \
+		platform::core::Error(msg, __FILE__, __LINE__, ##__VA_ARGS__); \
+		BREAK_IF_DEBUGGING                                             \
 	}
 
-#define SIMUL_BREAK_ONCE(msg, ...)                     \
-	{                                                  \
-		static bool done = false;                      \
-		if (!done)                                     \
-		{                                              \
-			platform::core::Error(msg, ##__VA_ARGS__); \
-			BREAK_IF_DEBUGGING;                        \
-			done = true;                               \
-		}                                              \
+#define SIMUL_BREAK_ONCE(msg, ...)                                         \
+	{                                                                      \
+		static bool done = false;                                          \
+		if (!done)                                                         \
+		{                                                                  \
+			platform::core::Error(msg, __FILE__, __LINE__, ##__VA_ARGS__); \
+			BREAK_IF_DEBUGGING;                                            \
+			done = true;                                                   \
+		}                                                                  \
 	}
 
 #if SIMUL_INTERNAL_CHECKS
@@ -231,23 +255,6 @@ namespace platform
 	}
 #else
 #define SIMUL_NULL_CHECK_RETURN(val, message)
-#endif
-
-#ifdef _MSC_VER
-#define BREAK_IF_DEBUGGING                                                               \
-	{                                                                                    \
-		if (platform::core::DebugBreaksEnabled() && platform::core::IsDebuggerPresent()) \
-			platform::core::DebugBreak();                                                \
-	}
-#else
-#if (defined(__ORBIS__) || defined(__COMMODORE__)) && (SIMUL_INTERNAL_CHECKS)
-#define BREAK_IF_DEBUGGING \
-	if (platform::core::DebugBreaksEnabled() && sceDbgIsDebuggerAttached()) SCE_BREAK();
-#else
-// None of the __builtin_debugtrap, __debugbreak, raise(SIGTRAP) etc work properly in Linux with LLDB. They stop the program permanently, with no call stack.
-// Therefore we use this workaround.
-#define BREAK_IF_DEBUGGING platform::core::DebugBreak();
-#endif
 #endif
 
 #define BREAK_ONCE_IF_DEBUGGING   \

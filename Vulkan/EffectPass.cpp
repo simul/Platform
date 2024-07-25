@@ -910,7 +910,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 			if (layoutDesc.size())
 				vertexInputs = new vk::VertexInputAttributeDescription[layoutDesc.size()];
 			int slot = 0;
-			size_t instanceStride=0;
+			uint32_t instanceStride=0;
 			for (auto desc : layoutDesc)
 			{
 				vertexInputs[slot].binding = desc.perInstance?1:0;
@@ -921,7 +921,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 				if(desc.perInstance)
 					instanceStride += crossplatform::GetByteSize(desc.format);
 			}
-			size_t vertexStride=layout->GetStructSize()-instanceStride;
+			uint32_t vertexStride = layout->GetStructSize() - instanceStride;
 			bindingDescription[0].setBinding(0);
 			bindingDescription[0].setStride(vertexStride);
 			bindingDescription[0].setInputRate(vk::VertexInputRate::eVertex);
