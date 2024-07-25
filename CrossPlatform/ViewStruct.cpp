@@ -29,7 +29,7 @@ void ViewStruct::PopModelMatrix()
 
 void ViewStruct::Init()
 {
-	ERRNO_BREAK
+	ERRNO_CHECK
 	while(modelStack.size()>1)
 	{
 		modelStack.pop();

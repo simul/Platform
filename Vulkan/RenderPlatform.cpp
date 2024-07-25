@@ -17,6 +17,7 @@
 #include "DeviceManager.h"
 #include "Platform/Core/StringFunctions.h"
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_to_string.hpp>
 #include <cstdint>
 
 #pragma optimize("", off)
@@ -137,6 +138,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 		const crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[i];
 		size_t numConstantBufferResourceSlots = resourceGroupLayout.GetNumConstantBuffers();
 		size_t numReadOnlyResourceSlots = resourceGroupLayout.GetNumReadOnlyResources();
+		size_t numSamplerSlots = resourceGroupLayout.GetNumSamplers();
 		size_t numDescriptors = resourceGroupLayout.GetNumResources();
 
 		vk::Result result;
@@ -181,7 +183,22 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 					.setPImmutableSamplers(nullptr);
 				slot++;
 			}
-
+			slot = 0;
+			for (int j = 0; j < numSamplerSlots; j++, binding_index++)
+			{
+				while (slot < 64 && !resourceGroupLayout.UsesSamplerSlot(slot))
+					slot++;
+				if (slot >= 64)
+					break;
+				vk::DescriptorSetLayoutBinding &binding = layoutBindings[binding_index];
+				vk::ShaderStageFlags stageFlags = (vk::ShaderStageFlags)(VK_SHADER_STAGE_ALL);
+				binding.setBinding(GenerateSamplerSlot(slot))
+					.setDescriptorType(vk::DescriptorType::eSampler)
+					.setDescriptorCount(1)
+					.setStageFlags(stageFlags)
+					.setPImmutableSamplers(nullptr);
+				slot++;
+			}
 			descriptorSetLayoutCI.setBindingCount((uint32_t)numDescriptors).setPBindings(layoutBindings);
 		}
 
@@ -200,6 +217,7 @@ void RenderPlatform::CreateDescriptorPool(int g, int countPerFrame)
 	const crossplatform::ResourceGroupLayout &resourceGroupLayout = resourceGroupLayouts[g];
 	size_t numConstantBufferResourceSlots = resourceGroupLayout.GetNumConstantBuffers();
 	size_t numReadOnlyResourceSlots = resourceGroupLayout.GetNumReadOnlyResources();
+	size_t numSamplerSlots = resourceGroupLayout.GetNumSamplers();
 	size_t numDescriptors = resourceGroupLayout.GetNumResources();
 	if (numDescriptors > 0)
 	{
@@ -213,6 +231,11 @@ void RenderPlatform::CreateDescriptorPool(int g, int countPerFrame)
 		{
 			poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampledImage).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numReadOnlyResourceSlots);
 		}
+		if (numSamplerSlots)
+		{
+			poolSizes[poolSizeIdx++].setType(vk::DescriptorType::eSampler).setDescriptorCount(countPerFrame * swapchainImageCount * (int)numSamplerSlots);
+		}
+		
 		const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
 		vk::Result result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPools[g]);
 		SIMUL_VK_CHECK(result);
@@ -830,6 +853,8 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		for (auto i : cs->applyVertexBuffers)
 		{
 			vulkan::Buffer* buffer = (vulkan::Buffer*)i.second;
+			if(!buffer)
+				continue;
 			vk::Buffer vertexBuffers[] = { buffer->asVulkanBuffer() };
 			vk::DeviceSize offsets[] = { 0 };
 			if (vertexBuffers[0])
@@ -858,11 +883,7 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::G
 	crossplatform::PixelFormat pixelFormat=crossplatform::PixelFormat::UNKNOWN;
 	{
 		pixelFormat=defaultColourFormat;
-		crossplatform::TargetsAndViewport *tv=&deviceContext.defaultTargetsAndViewport;
-		if(deviceContext.targetStack.size())
-		{
-			tv=deviceContext.targetStack.top();
-		}
+		crossplatform::TargetsAndViewport *tv = deviceContext.GetCurrentTargetsAndViewport();
 		if(tv&&tv->textureTargets[0].texture)
 			pixelFormat=tv->textureTargets[0].texture->pixelFormat;
 	}
@@ -877,11 +898,7 @@ int RenderPlatform::GetActiveNumOfSamples(crossplatform::GraphicsDeviceContext& 
 {
 	int numOfSamples = 1;
 	{
-		crossplatform::TargetsAndViewport* tv = &deviceContext.defaultTargetsAndViewport;
-		if (deviceContext.targetStack.size())
-		{
-			tv = deviceContext.targetStack.top();
-		}
+		crossplatform::TargetsAndViewport *tv = deviceContext.GetCurrentTargetsAndViewport();
 		if (tv && tv->textureTargets[0].texture)
 			numOfSamples = tv->textureTargets[0].texture->GetSampleCount();
 	}
@@ -1906,12 +1923,17 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
 	if (!commandBuffer)
 		return;
-
-	//BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
-	// Only actually draw if ApplyContextState() succeeds.
 	if(ApplyContextState(deviceContext))
 		commandBuffer->drawIndexed(num_indices,1,start_index,base_vertex,0);
-	//EndEvent(deviceContext);
+}
+
+void RenderPlatform::DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index, int base_vertex)
+{
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+	if (ApplyContextState(deviceContext))
+		commandBuffer->drawIndexed(num_indices, num_instances,start_index,base_vertex, base_instance);
 }
 
 void RenderPlatform::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)
@@ -2130,9 +2152,10 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 
 	int numConstantBuffers = resourceGroupLayout.GetNumConstantBuffers();
 	int numReadOnlyResources = resourceGroupLayout.GetNumReadOnlyResources();
+	int numSamplers = resourceGroupLayout.GetNumSamplers();
 	int numBuffers = numConstantBuffers;
-	int numImages = numReadOnlyResources;
-	int numDescriptors = numBuffers + numReadOnlyResources;
+	int numImages = numReadOnlyResources + numSamplers;
+	int numDescriptors = numBuffers + numReadOnlyResources + numSamplers;
 	if (numDescriptors > m_writeDescriptorSets.size())
 		m_writeDescriptorSets.resize(numDescriptors);
 
@@ -2140,7 +2163,6 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		descriptorBufferInfos.resize(numBuffers);
 
 	vk::DescriptorBufferInfo *descriptorBufferInfo = descriptorBufferInfos.data();
-
 	if (numImages > descriptorImageInfos.size())
 		descriptorImageInfos.resize(numImages);
 	vk::DescriptorImageInfo *descriptorImageInfo = descriptorImageInfos.data();
@@ -2171,14 +2193,22 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		if (cb)
 		{
 			crossplatform::PlatformConstantBuffer *pcb = (crossplatform::PlatformConstantBuffer *)cb->GetPlatformConstantBuffer();
-		
-			write.setDstSet(descriptorSet);
-			write.setDstBinding(vulkan::RenderPlatform::GenerateConstantBufferSlot(slot));
-			pcb->ActualApply(deviceContext);
-			vulkan::PlatformConstantBuffer *vcb = (vulkan::PlatformConstantBuffer *)pcb;
-			vkBuffer = vcb->GetLastBuffer();
-			vkDeviceSize = vcb->GetSize();
-			offset = vcb->GetLastOffset();
+			if(pcb)
+			{
+				write.setDstSet(descriptorSet);
+				write.setDstBinding(vulkan::RenderPlatform::GenerateConstantBufferSlot(slot));
+				pcb->ActualApply(deviceContext);
+				vulkan::PlatformConstantBuffer *vcb = (vulkan::PlatformConstantBuffer *)pcb;
+				vkBuffer = vcb->GetLastBuffer();
+				vkDeviceSize = vcb->GetSize();
+				offset = vcb->GetLastOffset();
+			}
+			else
+			{
+				SIMUL_INTERNAL_CERR<<"All constant buffers must have valid values in each resource group in-use.\n";
+				b--;
+				continue;
+			}
 		}
 		else
 		{
@@ -2200,7 +2230,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		slot++;
 	}
 	slot=0;
-	for (int i = 0; i < numImages; i++, b++)
+	for (int i = 0; i < numReadOnlyResources; i++, b++)
 	{
 		// Find the slot number.
 		while (slot < 64)
@@ -2260,6 +2290,48 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 		slot++;
 		descriptorImageInfo++;
 	}
+	slot = 0;
+	for (int i = 0; i < numSamplers; i++, b++)
+	{
+		// Find the slot number.
+		while (slot < 64)
+		{
+			if (resourceGroupLayout.UsesSamplerSlot(slot))
+			{
+				break;
+			}
+			slot++;
+		}
+		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
+		write.setDstSet(descriptorSet);
+		write.setDstBinding(vulkan::RenderPlatform::GenerateSamplerSlot(slot));
+		crossplatform::SamplerState *ss = nullptr;
+		if (deviceContext.contextState.samplerStateOverrides.size() > 0 && deviceContext.contextState.samplerStateOverrides.HasValue(slot))
+		{
+			ss = deviceContext.contextState.samplerStateOverrides[slot];
+		}
+		if(!ss)
+		{
+			// TODO: This will cause a Vulkan error. So take the value, even if it's been "cleared".
+			ss = deviceContext.contextState.samplerStateOverrides[slot];
+		}
+		if(!ss)
+		{
+			continue;
+		}
+		vk::Sampler *vkSampler = ss->AsVulkanSampler();
+		write.setDescriptorCount(1);
+		write.setDescriptorType(vk::DescriptorType::eSampler);
+		SIMUL_ASSERT(vkSampler != nullptr);
+		if (vkSampler)
+		{
+			descriptorImageInfo->setSampler(*vkSampler);
+			write.setPImageInfo(descriptorImageInfo);
+			descriptorImageInfo++;
+		}
+		//cs.textureSlots |= 1 << slot;
+		slot++;
+	}
 	numDescriptors=b;
 	if (numDescriptors)
 	{
@@ -2270,7 +2342,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 			no_res|=write.dstSet.operator VkDescriptorSet()==0;
 			if (no_res)
 			{
-				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in group '"
+				SIMUL_CERR << "VkWriteDescriptorSet for "<<to_string(write.descriptorType)<<" (Binding = " << write.dstBinding << ") in group '"
 						   << (uint32_t)g << "' has no valid resource associated with it." << std::endl;
 				SIMUL_BREAK_ONCE("VkWriteDescriptorSet error.");
 				return nullptr;
@@ -2286,15 +2358,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 
 vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::GraphicsDeviceContext& deviceContext)
 {
-	bool dTaV = false;
-	crossplatform::TargetsAndViewport *tv;
-	if(deviceContext.targetStack.size())
-		tv=deviceContext.targetStack.top();
-	else
-	{
-		tv=&(deviceContext.defaultTargetsAndViewport);
-		dTaV = true;
-	}
+	crossplatform::TargetsAndViewport *tv = deviceContext.GetCurrentTargetsAndViewport();
 	// If shader doesn't write depth, do not try to use a framebuffer that includes depth......
 	bool do_depth = (tv->depthTarget.texture != nullptr);
 	if(tv->textureTargets[0].texture!=nullptr)

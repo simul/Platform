@@ -282,7 +282,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"register"								{
 													stdReturn(REGISTER);
 												}
-<INITIAL>"resource_group"						{
+<INITIAL,IN_RENDER_STATE>"resource_group"						{
 													stdReturn(RESOURCE_GROUP);
 												}
 <INITIAL>"interface"							{
@@ -1240,6 +1240,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												}
 <IN_LAYOUT>"structuredbuffer"					{
 													stdReturn(RESOURCE_GROUP_STRUCTUREDBUFFER);
+												}
+<IN_LAYOUT>"sampler"							{
+													stdReturn(RESOURCE_GROUP_SAMPLER);
 												}
 <INITIAL>","									{
 													if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {stdReturn(',');}

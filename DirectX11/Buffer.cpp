@@ -37,25 +37,25 @@ void Buffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(d3d11Buffer);
 }
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const crossplatform::Layout *layout,std::shared_ptr<std::vector<uint8_t>> data,bool cpu_access,bool streamout_target)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int structSize,std::shared_ptr<std::vector<uint8_t>> data,bool cpu_access,bool streamout_target)
 {
     D3D11_SUBRESOURCE_DATA InitData;
     memset( &InitData,0,sizeof(D3D11_SUBRESOURCE_DATA) );
     InitData.pSysMem		=data?data->data():nullptr;
-    InitData.SysMemPitch	=layout->GetPitch();
+    InitData.SysMemPitch	=structSize;
 	D3D11_USAGE usage		=D3D11_USAGE_DYNAMIC;
 	//if(((dx11::RenderPlatform*)renderPlatform)->UsesFastSemantics())
 	//	usage=D3D11_USAGE_DEFAULT;
 	D3D11_BUFFER_DESC desc=
 	{
-		(unsigned)(num_vertices*layout->GetStructSize())
+		(unsigned)(num_vertices*structSize)
 		,cpu_access?usage:D3D11_USAGE_DEFAULT
 		,D3D11_BIND_VERTEX_BUFFER|(streamout_target?D3D11_BIND_STREAM_OUTPUT: (unsigned)0)
 		,(cpu_access?D3D11_CPU_ACCESS_WRITE: (unsigned)0),(unsigned)0
 	};
 	SAFE_RELEASE(d3d11Buffer);
 	V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&desc,data?&InitData:NULL,&d3d11Buffer));
-	stride=layout->GetStructSize();
+	stride=structSize;
 	count = num_vertices;
 }
 

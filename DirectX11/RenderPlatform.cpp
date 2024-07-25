@@ -347,18 +347,25 @@ void RenderPlatform::DispatchCompute	(crossplatform::DeviceContext &deviceContex
 #endif
 }
 
-void RenderPlatform::Draw			(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
+void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)
 {
 	ApplyContextState(deviceContext);
-	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
+	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
 	pContext->Draw(num_verts,start_vert);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
 {
 	ApplyContextState(deviceContext);
-	ID3D11DeviceContext		*pContext	=deviceContext.asD3D11DeviceContext();
+	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
 	pContext->DrawIndexed(num_indices,start_index,base_vert);
+}
+
+void RenderPlatform::DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index, int base_vertex)
+{
+	ApplyContextState(deviceContext);
+	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
+	pContext->DrawIndexedInstanced(num_indices, num_instances, start_index, base_vertex, base_instance);
 }
 
 void RenderPlatform::ApplyDefaultMaterial()

@@ -133,7 +133,7 @@ void RenderPlatform::recompileAsync()
 		{
 			recompiling_effect_names.clear();
 
-			std::lock_guard guard(recompileEffectFutureMutex);
+			std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 			for (auto it = effectsToCompileFutures.begin(); it != effectsToCompileFutures.end();)
 			{
 				const std::string &effect_name = it->first;
@@ -190,7 +190,7 @@ void RenderPlatform::recompileAsync()
 						return effectRecompile;
 					};
 
-				std::lock_guard guard(recompileEffectFutureMutex);
+				std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 				effectsToCompileFutures[effectToCompile.effect_name] = std::async(std::launch::async, RecompileEffectAsync, effectToCompile);
 			}
 
@@ -205,24 +205,26 @@ void RenderPlatform::recompileAsync()
 float RenderPlatform::GetRecompileStatus(std::string &txt)
 {
 	txt = recompiling_effect_names;
-	std::lock_guard guard(recompileEffectFutureMutex);
+	std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 	return (float)effectsToCompileFutures.size();
 }
 
 void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &effect_names, std::function<void()> f)
 {
 	std::lock_guard recompileEffectGuard(recompileEffectMutex);
+	std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 	bool pushedBack = false;
 	for (const std::string &effect_name : effect_names)
 	{
 		bool found = false;
 		for (const auto &effectToCompile : effectsToCompile)
 		{
-			if (effectToCompile.effect_name == effect_name)
+			if (effectToCompile.effect_name == effect_name 
+				|| effectsToCompileFutures.find(effectToCompile.effect_name) != effectsToCompileFutures.end())
 			{
 				found = true;
 				break;
-			}
+}
 		}
 
 		if (!found)
@@ -235,25 +237,6 @@ void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &ef
 	if (pushedBack)
 	{
 		effectsToCompile.back().callback = f;
-	}
-}
-
-void RenderPlatform::ScheduleRecompileEffect(const std::string &effect_name, std::function<void()> f)
-{
-	std::lock_guard recompileEffectGuard(recompileEffectMutex);
-	bool found = false;
-	for (const auto& effectToCompile : effectsToCompile)
-	{
-		if (effectToCompile.effect_name == effect_name)
-		{
-			found = true;
-			break;
-		}
-	}
-
-	if (!found)
-	{
-		effectsToCompile.push_back({effect_name, f});
 	}
 }
 
@@ -1626,7 +1609,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	if (tex && !tex->IsValid())
 		tex = nullptr;
 
-	if (tex != nullptr && dy == 0 && tex->width > 0)
+	if (tex!=nullptr&&dy == 0&& tex->width>0)
 	{
 		dy = (dx * tex->length) / tex->width;
 	}
@@ -1639,7 +1622,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	static int mipFramesCount = frames;
 	if (mip < 0)
 	{
-		if (framenumber != GetFrameNumber())
+		if(framenumber!=GetFrameNumber())
 		{
 			mipFramesCount--;
 			if (!mipFramesCount)
@@ -1647,9 +1630,9 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 				_mip++;
 				mipFramesCount = frames;
 			}
-			framenumber = GetFrameNumber();
+			framenumber=GetFrameNumber();
 		}
-		if (tex)
+		if(tex)
 		{
 			const int& m = tex->GetMipCount();
 			displayMip = float((_mip % (m ? m : 1)));
@@ -1673,8 +1656,8 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		return (uint)displayLayer;
 	};
 	
-	debugConstants.debugGamma = gamma;
-	debugConstants.multiplier = mult;
+	debugConstants.debugGamma=gamma;
+	debugConstants.multiplier=mult;
 	debugConstants.displayMip = displayMip;
 	debugConstants.displayLayer = displayLayer;
 	debugConstants.debugTime = float(this->frameNumber);
@@ -1688,75 +1671,75 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 
 	crossplatform::EffectTechnique *tech= nullptr;
 
-	if (tex && tex->GetDimension() == 3)
+	if(tex&&tex->GetDimension()==3)
 	{
 		if (debug)
 		{
 			tech = debugEffect->GetTechniqueByName("trace_volume");
 			debugConstants.displayLayer = UpdateDisplayLayer(tex->depth);
-		}
+			}
 		else
 		{
-			tech = showVolume;
+			tech=showVolume;
 		}
 
-		SetTexture(deviceContext, volumeTexture, tex);
+		SetTexture(deviceContext,volumeTexture,tex);
 	}
-	else if (tex && tex->IsCubemap())
+	else if(tex&&tex->IsCubemap())
 	{
-		if (tex->arraySize > 1)
+		if(tex->arraySize>1)
 		{
-			tech = debugEffect->GetTechniqueByName("show_cubemap_array");
+			tech=debugEffect->GetTechniqueByName("show_cubemap_array");
 			debugEffect->SetTexture(deviceContext, "cubeTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
-			if (debug)
+			if(debug)
 			{
 				debugConstants.displayLayer = UpdateDisplayLayer(tex->arraySize);
+				}
 			}
-		}
 		else
 		{
-			tech = debugEffect->GetTechniqueByName("show_cubemap");
+			tech=debugEffect->GetTechniqueByName("show_cubemap");
 			debugEffect->SetTexture(deviceContext, "cubeTexture", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 			debugConstants.displayLayer = 0;
 		}
 	}
-	else if (tex && tex->arraySize > 1)
+	else if(tex&&tex->arraySize>1)
 	{
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
 		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 		debugConstants.displayLayer = UpdateDisplayLayer(tex->arraySize);
-	}
-	else if (tex)
+			}
+	else if(tex)
 	{
 		tech = textured;
 		SetTexture(deviceContext, imageTexture, tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 	}
 	else
 	{
-		tech = untextured;
+		tech=untextured;
 	}
 
-	DrawQuad(deviceContext, x1, y1, dx, dy, debugEffect, tech, blend ? "blend" : "noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
 	debugEffect->UnbindTextures(deviceContext);
 	
 	if(debug)
 	{
 		vec4 white(1.0f, 1.0f, 1.0f, 1.0f);
 		vec4 semiblack(0.0f, 0.0f, 0.0f, 0.5f);
-		char mip_txt[] = "MIP: 0";
+		char mip_txt[]="MIP: 0";
 		char lyr_txt[] = "LYR: 0";
 		if (tex && tex->GetMipCount() > 1 && displayMip > 0 && displayMip < 10)
 		{
 			mip_txt[5] = '0' + (char)displayMip;
-			Print(deviceContext, x1, y1 + 20, mip_txt, white, semiblack);
+			Print(deviceContext,x1,y1+20,mip_txt,white,semiblack);
 		}
-		if (tex && tex->arraySize > 1)
+		if(tex&&tex->arraySize>1)
 		{
 			if (displayLayer < 10)
 				lyr_txt[5] = '0' + (displayLayer);
 			Print(deviceContext, x1 + 60, y1 + 20, lyr_txt, white, semiblack);
 		}
-		if (tex && tex->GetDimension() == 3)
+		if (tex&&tex->GetDimension() == 3)
 		{
 			Print(deviceContext, x1, y1 + 20, ("Z: " + std::to_string(displayLayer)).c_str(), white, semiblack);
 		}
@@ -2014,7 +1997,7 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecomp
 	//Check if the effect in being recompiled
 	if (checkRecompileShaders)
 	{
-		std::lock_guard guard(recompileEffectFutureMutex);
+		std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 		const auto &it = effectsToCompileFutures.find(std::string(filename_utf8));
 		if (it != effectsToCompileFutures.end())
 		{
@@ -2283,6 +2266,15 @@ void RenderPlatform::SetUnorderedAccessView(DeviceContext& deviceContext, const 
 	ta.uav = true;
 	ta.subresource = { subresource.aspectMask, subresource.mipLevel, (uint32_t)1, subresource.baseArrayLayer, subresource.arrayLayerCount };
 	cs->rwTextureAssignmentMapValid = false;
+}
+
+void RenderPlatform::SetSamplerState(DeviceContext &deviceContext, int slot, SamplerState *s)
+{
+	if (slot > 31 || slot < 0)
+		return;
+	crossplatform::ContextState &cs = deviceContext.contextState;
+	cs.samplerStateOverrides[slot] = s;
+	cs.samplerStateOverridesValid = false;
 }
 
 vec4 platform::crossplatform::ViewportToTexCoordsXYWH(const Viewport *v,const Texture *t)

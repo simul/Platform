@@ -66,7 +66,7 @@ namespace platform
 			virtual void EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void * data, bool cpu_access = false) final;
 			
 			//! Set up as a vertex buffer. You must pass a pointer to an already-created Layout, and don't destroy the layout until after destroying the vertex buffer.
-			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,const Layout *layout,std::shared_ptr<std::vector<uint8_t>>,bool cpu_access=false,bool streamout_target=false)=0;
+			virtual void EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_vertices,int structSize,std::shared_ptr<std::vector<uint8_t>>,bool cpu_access=false,bool streamout_target=false)=0;
 			//! Set up as an index buffer.
 			virtual void EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,std::shared_ptr<std::vector<uint8_t>>, bool cpu_access = false)=0;
 			

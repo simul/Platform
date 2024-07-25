@@ -59,6 +59,10 @@ namespace platform
 			{
 				return UsesSlot(constantBufferSlots,s);
 			}
+			inline uint8_t GetNumConstantBuffers() const
+			{
+				return GetNumResources(constantBufferSlots);
+			}
 			uint64_t readOnlyResourceSlots = 0;
 			inline void UseReadOnlyResourceSlot(uint8_t s)
 			{
@@ -68,17 +72,26 @@ namespace platform
 			{
 				return UsesSlot(readOnlyResourceSlots, s);
 			}
-			inline uint8_t GetNumConstantBuffers() const
-			{
-				return GetNumResources(constantBufferSlots);
-			}
 			inline uint8_t GetNumReadOnlyResources() const
 			{
 				return GetNumResources(readOnlyResourceSlots);
 			}
+			uint64_t samplerSlots = 0;
+			inline void UseSamplerSlot(uint8_t s)
+			{
+				UseSlot(samplerSlots, s);
+			}
+			inline bool UsesSamplerSlot(uint8_t s) const
+			{
+				return UsesSlot(samplerSlots, s);
+			}
+			inline uint8_t GetNumSamplers() const
+			{
+				return GetNumResources(samplerSlots);
+			}
 			inline uint8_t GetNumResources() const
 			{
-				return GetNumReadOnlyResources() + GetNumConstantBuffers();
+				return GetNumReadOnlyResources() + GetNumConstantBuffers() + GetNumSamplers();
 			}
 		};
 	}

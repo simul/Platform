@@ -157,7 +157,7 @@ Function* Effect::DeclareFunction(const std::string &functionName, Function &bui
 					bool found = false;
 					for (auto& g : f->globals)
 					{
-						if (g == p.identifier)
+						if (g.first == p.identifier)
 						{
 							found = true;
 							break;
@@ -197,32 +197,41 @@ int SetsClash(const std::set<int> &a,const std::set<int> &b)
 }
 void Effect::DeclareResourceGroup(int num, const ResourceGroupDeclaration &g)
 {
+	int bad=0;
 	for(auto &rg:resourceGroups)
 	{
 		if(rg.first==num)
 		{
 			std::cerr << "Redeclaring resource group "<<num<<".\n";
-			exit(375);
+			bad=375;
 		}
 		int t=SetsClash(rg.second.textures, g.textures);
 		if(t>=0)
 		{
 			std::cerr << "Texture slot " << t << " declared in two resource groups.\n";
-			exit(376);
+			bad=376;
 		}
 		int c = SetsClash(rg.second.constantBuffers, g.constantBuffers);
 		if (c>= 0)
 		{
 			std::cerr << "Constant Buffer slot " << c << " declared in two resource groups.\n";
-			exit(377);
+			bad=377;
 		}
 		int s = SetsClash(rg.second.structuredBuffers, g.structuredBuffers);
 		if (s >= 0)
 		{
 			std::cerr << "Structured Buffer slot " << s << " declared in two resource groups.\n";
-			exit(378);
+			bad=378;
+		}
+		int m = SetsClash(rg.second.samplers, g.samplers);
+		if (m >= 0)
+		{
+			std::cerr << "Sampler slot " << s << " declared in two resource groups.\n";
+			bad=379;
 		}
 	}
+	if(bad!=0)
+		exit(bad);
 	resourceGroups[num]=g;
 }
 
@@ -294,9 +303,9 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 		types_used.clear();
 		if(returnType!="void")
 			types_used.insert(returnType);
-		for (auto i : constantBuffers)
+		for (auto &i : constantBuffers)
 		{
-			types_used.insert(i->structureType);
+			types_used.insert(i.first->structureType);
 		}
 		for(auto i:parameters)
 		{
@@ -308,7 +317,7 @@ const std::set<std::string> &sfx::Function::GetTypesUsed() const
 		}
 		for(auto i:globals)
 		{
-			Declaration *d=gEffect->GetDeclaration(i);
+			Declaration *d=gEffect->GetDeclaration(i.first);
 			if(!d)
 				continue;
 			switch(d->declarationType)
@@ -392,7 +401,46 @@ void Effect::AccumulateStructDeclarations(map<string, string> &variantValues,std
 	default:
 		break;
 	}
-	
+}
+
+bool VariantsMatchConditions(const std::vector<VariantState> &variantStates, const std::map<std::string, std::string> &variantValues)
+{
+	// No states specified means always valid.
+	if (!variantStates.size())
+	return true;
+	// But if any state IS specified, we must match at least one.
+	bool ok = true;
+	for (int i = 0; i < variantStates.size(); i++)
+	{
+	const VariantState &variantState = variantStates[i];
+	bool this_matches = true;
+	for (auto state : variantState.states)
+	{
+		// does this state string match the corresponding value?
+		std::string varName = state;
+		bool negate = false;
+		if (state[0] == '!')
+		{
+			negate = true;
+			varName = state.substr(1, state.length() - 1);
+		}
+		auto val = variantValues.find(varName);
+		if (val == variantValues.end())
+		{
+			this_matches = false;
+			break;
+		}
+		bool value = val->second == "true";
+		if (value != (!negate))
+		{
+			this_matches = false;
+			break;
+		}
+	}
+	if (this_matches)
+		return true;
+	}
+	return false;
 }
 
 void Effect::AccumulateDeclarationsUsed(const Function *f, map<string, string> &variantValues, set<const Declaration *> &s, std::set<std::string> &rwLoad) const
@@ -404,9 +452,11 @@ void Effect::AccumulateDeclarationsUsed(const Function *f, map<string, string> &
 	}
 	for (auto u = f->globals.begin(); u != f->globals.end(); u++)
 	{
-		auto v=declarations.find(*u);
+		auto v=declarations.find(u->first);
 		// Probably member of an anonymous constant buffer, so don't fail. Should find which buffer?
 		if(v==declarations.end())
+			continue;
+		if(!VariantsMatchConditions(u->second,variantValues))
 			continue;
 		v->second->name = v->first;
 		const Declaration *d=v->second;
@@ -417,10 +467,6 @@ void Effect::AccumulateDeclarationsUsed(const Function *f, map<string, string> &
 	{
 		AccumulateStructDeclarations(variantValues,s, i);
 	}
-/*	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
-	{
-		AccumulateDeclarationsUsed(u->first, variantValues,s, rwLoad);
-	}*/
 	for (auto u = f->variant_parameters.begin(); u != f->variant_parameters.end(); u++)
 	{
 		if(u->type=="function")
@@ -444,7 +490,9 @@ void Effect::AccumulateGlobalsAsStrings(const Function* f, std::set<std::string>
 		return;
 	for (auto i : f->globals)
 	{
-		s.insert(i);
+		auto d = declarations.find(i.first);
+		if (d != declarations.end() && d->second->declarationType != DeclarationType::NAMED_CONSTANT_BUFFER)
+			s.insert(i.first);
 	}
 }
 
@@ -461,20 +509,26 @@ void Effect::AccumulateGlobals(const Function *f,std::set<const Variable *> &s) 
 	}
 }
 
-void Effect::AccumulateConstantBuffersUsed(const Function *f, std::set<ConstantBuffer*> &s) const
+void Effect::AccumulateConstantBuffersUsed(const Function *f, ShaderInstance &sh) const
 {
 	// the constantBuffers list only contains implicit cb's, referenced by their members.
 	for (auto i : f->constantBuffers)
-		s.insert(i);
+	{
+		if (!VariantsMatchConditions(i.second, sh.variantValues))
+			continue;
+		sh.constantBuffers.insert(i.first);
+	}
 	for (auto i : f->globals)
 	{
-		auto d=declarations.find(i);
+		if(!VariantsMatchConditions(i.second,sh.variantValues))
+			continue;
+		auto d=declarations.find(i.first);
 		if(d!=declarations.end())
 		{
 			if(d->second->declarationType==DeclarationType::NAMED_CONSTANT_BUFFER)
 			{
 				ConstantBuffer *cb = static_cast<ConstantBuffer*>(d->second);
-				s.insert(cb);
+				sh.constantBuffers.insert(cb);
 			}
 		}
 	}
@@ -984,7 +1038,7 @@ std::shared_ptr<ShaderInstance> Effect::AddShaderInstance(const std::string &sha
 	Function *function=gEffect->GetFunction(functionName,0);
 	if(!function)
 		return nullptr;
-	std::set<Declaration *> declarations;
+	//std::set<Declaration *> declarations;
 
 	std::shared_ptr<ShaderInstance> shaderInstance=std::make_shared<ShaderInstance>();
 	m_uniqueShaderInstances.insert(shaderInstance);
@@ -999,10 +1053,10 @@ std::shared_ptr<ShaderInstance> Effect::AddShaderInstance(const std::string &sha
 	shaderInstance->m_profile						=profileName;
 	shaderInstance->global_line_number				=lineno;
 
-	for(auto d:declarations)
+	/*for(auto d:declarations)
 	{
 		d->ref_count++;
-	}
+	}*/
 	return shaderInstance;
 }
 
@@ -2134,7 +2188,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
  {
 	 for (const auto &g : func->globals)
 	 {
-		 if (g == toCheck)
+		 if (g.first == toCheck)
 		 {
 			 return true;
 		 }
@@ -2615,7 +2669,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		decs.insert(dec);
 	}
 	for (auto f : fns)
-		AccumulateConstantBuffersUsed(f, shaderInstance->constantBuffers);
+		AccumulateConstantBuffersUsed(f,*shaderInstance);
 	// for now, add in ALL the constant buffers - except the named ones, we should be able to
 	// distinguish which of those are needed...
 	for(auto i:shaderInstance->constantBuffers)
@@ -2627,6 +2681,7 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	for (auto u = decs.begin(); u != decs.end(); u++)
 	{
 		(*u)->ref_count++;
+		// Check if this declaration is dependent on a variant condition:
 		shaderInstance->declarations.insert(*u);
 		int main_linenumber=(*u)->global_line_number;
 		while (ordered_decs.find(main_linenumber) != ordered_decs.end())

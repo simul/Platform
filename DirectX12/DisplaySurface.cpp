@@ -342,13 +342,12 @@ void DisplaySurface::EndFrame()
 	const DWORD dwFlags = mIsVSYNC ? 0 : DXGI_PRESENT_ALLOW_TEARING;
 	const UINT SyncInterval = mIsVSYNC ? 1 : 0;
 	res = mSwapChain->Present(SyncInterval, dwFlags);
-	if (res != S_OK)
+	if (FAILED(res))
 	{
 		HRESULT removedRes = mDeviceRef->GetDeviceRemovedReason();
 		SIMUL_CERR << removedRes << std::endl;
 	}
-	SIMUL_ASSERT(res == S_OK);
-	#endif
+#endif
 	// Signal at the end of the pipe, note that we use the cached index 
 	// or we will be adding a fence for the next frame!
 	dx12RenderPlatform->GetCommandQueue()->Signal(mGPUFences[idx], mFenceValues[idx]);

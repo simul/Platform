@@ -489,7 +489,7 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 		static bool breakOnWarning = false;
 		if (breakOnWarning)
 		{
-            SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
+			SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
 
 			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
@@ -500,7 +500,7 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, false);
 		}
 	
-		D3D11_MESSAGE_SEVERITY sevs[] = { 	D3D11_MESSAGE_SEVERITY_ERROR
+		D3D11_MESSAGE_SEVERITY sevs[] = {	D3D11_MESSAGE_SEVERITY_ERROR
 											,D3D11_MESSAGE_SEVERITY_WARNING};
 
 		D3D11_INFO_QUEUE_FILTER filter= {};
@@ -519,23 +519,23 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 		filter.DenyList.pIDList=deny_ids;
 		
 		D3D11_MESSAGE_CATEGORY deny_cats[]={
-								D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED	
+								D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
 								,D3D11_MESSAGE_CATEGORY_MISCELLANEOUS
 								,D3D11_MESSAGE_CATEGORY_INITIALIZATION
-								,D3D11_MESSAGE_CATEGORY_CLEANUP	
-								,D3D11_MESSAGE_CATEGORY_COMPILATION	
-								,D3D11_MESSAGE_CATEGORY_STATE_CREATION	
+								,D3D11_MESSAGE_CATEGORY_CLEANUP
+								,D3D11_MESSAGE_CATEGORY_COMPILATION
+								,D3D11_MESSAGE_CATEGORY_STATE_CREATION
 								,D3D11_MESSAGE_CATEGORY_STATE_SETTING
 								,D3D11_MESSAGE_CATEGORY_STATE_GETTING
 								,D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION
-								,D3D11_MESSAGE_CATEGORY_EXECUTION	
-								,D3D11_MESSAGE_CATEGORY_SHADER	
+								,D3D11_MESSAGE_CATEGORY_EXECUTION
+								,D3D11_MESSAGE_CATEGORY_SHADER
 		};
 		filter.DenyList.NumCategories=_countof(deny_cats);
 		filter.DenyList.pCategoryList=deny_cats;
 
 		
-		D3D11_MESSAGE_SEVERITY deny_sevs[] = { 
+		D3D11_MESSAGE_SEVERITY deny_sevs[] = {
 			D3D11_MESSAGE_SEVERITY_INFO
 			,D3D11_MESSAGE_SEVERITY_MESSAGE};
 		filter.DenyList.NumSeverities=_countof(deny_sevs);
@@ -587,20 +587,20 @@ crossplatform::Output DeviceManager::GetOutput(int i)
 	
 #if defined(WINVER) &&!defined(_XBOX_ONE)
 	MONITORINFOEX monitor;
-    monitor.cbSize = sizeof(monitor);
-    if (::GetMonitorInfo(outputDesc.Monitor, &monitor) && monitor.szDevice[0])
-    {
+	monitor.cbSize = sizeof(monitor);
+	if (::GetMonitorInfo(outputDesc.Monitor, &monitor) && monitor.szDevice[0])
+	{
 		DISPLAY_DEVICE dispDev;
-        memset(&dispDev, 0, sizeof(dispDev));
+		memset(&dispDev, 0, sizeof(dispDev));
 		dispDev.cb = sizeof(dispDev);
 
-       if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
-       {
-           o.monitorName=platform::core::WStringToUtf8(dispDev.DeviceName);
-           o.desktopX	=monitor.rcMonitor.left;
-           o.desktopY	=monitor.rcMonitor.top;
-       }
-   }
+		if (::EnumDisplayDevices(monitor.szDevice, 0, &dispDev, 0))
+		{
+			o.monitorName=platform::core::WStringToUtf8(dispDev.DeviceName);
+			o.desktopX	=monitor.rcMonitor.left;
+			o.desktopY	=monitor.rcMonitor.top;
+		}
+	}
 #endif
 	// Create a list to hold all the possible display modes for this monitor/video card combination.
 	DXGI_MODE_DESC* displayModeList;

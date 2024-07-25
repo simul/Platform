@@ -86,6 +86,15 @@ vec4 reverse_y_coord(vec4 a)
 #define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 #endif
 
+uint WaveGetLaneCount()
+{
+	return gl_SubgroupSize;
+}
+uint WaveGetLaneIndex()
+{
+	return gl_SubgroupInvocationID.x;
+}
+
 #endif
 #endif
 

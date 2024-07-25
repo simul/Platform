@@ -679,7 +679,6 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	{
 		SIMUL_CERR << "Vulkan operation failed\n";
 	}
-
 	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
 	if (result == vk::Result::eErrorOutOfDateKHR)
 	{
@@ -711,7 +710,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	EnsureImageLayout();
 
 	ERRNO_BREAK
-	if (renderer && (viewport.w * viewport.h > 0))
+	if (renderer)
 	{
 		auto *rp = (vulkan::RenderPlatform *)renderPlatform;
 		rp->SetDefaultColourFormat(pixelFormat);

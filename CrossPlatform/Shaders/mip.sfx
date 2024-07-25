@@ -14,7 +14,7 @@ shader vec4 PS_Mip(posTexVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-VertexShader vs_simplefullscreen_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
+VertexShader vs_simplefullscreen_6_0=CompileShader(vs_6_0,VS_SimpleFullscreen());
 
 technique mip
 {
@@ -25,7 +25,7 @@ technique mip
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(vs_simplefullscreen_5_0);
-		SetPixelShader(CompileShader(ps_4_0,PS_Mip()));
+		SetVertexShader(vs_simplefullscreen_6_0);
+		SetPixelShader(CompileShader(ps_6_0,PS_Mip()));
     }
 }

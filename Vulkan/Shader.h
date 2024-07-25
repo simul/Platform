@@ -12,16 +12,16 @@ namespace platform
 {
 	namespace vulkan
 	{
-        //! A Vulkan shader
+		//! A Vulkan shader
 		class SIMUL_VULKAN_EXPORT Shader:public platform::crossplatform::Shader
 		{
 		public:
-                    Shader();
-                    ~Shader();
-			bool load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
-            vk::ShaderModule mShader;
-        private: 
-            void    Release() override;
+					Shader();
+					~Shader();
+			bool	load(crossplatform::RenderPlatform *r, const char *filename_utf8, const void *data, size_t len, crossplatform::ShaderType t) override;
+			vk::ShaderModule mShader;
+		private:
+			void	Release() override;
 			//temp:
 			std::string src;
 		};

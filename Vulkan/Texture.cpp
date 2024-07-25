@@ -167,6 +167,7 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 		if(!external_texture)
 		{
 			r->PushToReleaseManager(mImage, &mAllocationInfo);
+			mImage=nullptr;
 		}
 		// don't free defaultImageView, it's a duplicate.
 		for (auto imageView : mImageViews)
@@ -798,6 +799,8 @@ void Texture::setTexels(crossplatform::DeviceContext& deviceContext, const void*
 
 void Texture::setTexels(const void *src,int texel_index,int num_texels)
 {
+	if(!src||!num_texels)
+		return;
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *r=static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	PushLoadedTexturesToReleaseManager();

@@ -23,7 +23,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform *renderPlatform,in
 		upload_data=std::make_shared<std::vector<uint8_t>>(num_vertices*layout->GetStructSize());
 		memcpy(upload_data->data(),data,upload_data->size());
 	}
-	EnsureVertexBuffer(renderPlatform,num_vertices,layout,upload_data,cpu_access,streamout_target);
+	EnsureVertexBuffer(renderPlatform,num_vertices,layout->GetStructSize(),upload_data,cpu_access,streamout_target);
 }
 
  void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform *renderPlatform,int num_indices,int index_size_bytes,const void * data, bool cpu_access)

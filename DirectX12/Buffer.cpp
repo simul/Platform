@@ -28,12 +28,12 @@ void Buffer::InvalidateDeviceObjects()
 	d3d12Buffer=nullptr;
 }
 
-void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertices, const crossplatform::Layout* layout, std::shared_ptr<std::vector<uint8_t>> data, bool cpu_access, bool streamout_target)
+void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r, int num_vertices, int str, std::shared_ptr<std::vector<uint8_t>> data, bool cpu_access, bool streamout_target)
 {
 	HRESULT res = S_FALSE;
 	renderPlatform = r;
-	stride = layout->GetStructSize();
-	mBufferSize = num_vertices * layout->GetStructSize();
+	stride = str;
+	mBufferSize = num_vertices * stride;
 	count = num_vertices;
 	InvalidateDeviceObjects();
 

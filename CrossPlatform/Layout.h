@@ -12,6 +12,12 @@ namespace platform
 {
 	namespace crossplatform
 	{
+		struct FormatAndCount
+		{
+			PixelFormat pixelFormat;
+			uint8_t count;
+		};
+		extern FormatAndCount TypeToFormat(const char *txt);
 		class RenderPlatform;
 		struct DeviceContext;
 		enum class LayoutSemantic
@@ -51,6 +57,7 @@ namespace platform
 		};
 		extern uint64_t GetLayoutHash(const LayoutDesc &d);
 		extern uint64_t GetLayoutHash(const std::vector<SimpleLayoutSpec> &l);
+		extern uint64_t GetLayoutHash(const std::vector<LayoutDesc> &l);
 		extern bool LayoutMatches(const std::vector<LayoutDesc> &desc1,const std::vector<LayoutDesc> &desc2);
 		extern bool LayoutContains(const std::vector<LayoutDesc> &desc,const char *semanticName);
 		//! A cross-platform class representing vertex input layouts. Create with RenderPlatform::CreateLayout.
