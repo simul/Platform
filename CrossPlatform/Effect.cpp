@@ -1680,13 +1680,16 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					Shader *s = nullptr;
 					if(filenamestr.length()>0)
 					{
-						if (bin_ptr)
+						if(!p->multiview||(renderPlatform->GetRenderingFeatures()&crossplatform::RenderingFeatures::Multiview)==crossplatform::RenderingFeatures::Multiview)
 						{
-							s=EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
-						}
-						else 
-						{
-							s =EnsureShader(filenamestr.c_str(), t);
+							if (bin_ptr)
+							{
+								s=EnsureShader(filenamestr.c_str(), bin_ptr, inline_offset, inline_length, t);
+							}
+							else 
+							{
+								s =EnsureShader(filenamestr.c_str(), t);
+							}
 						}
 					}
 					else
@@ -1745,7 +1748,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					else if(filenamestr.length()>0)
 					{
-						SIMUL_BREAK_ONCE(platform::core::QuickFormat("Failed to load shader %s",filenamestr.c_str()));
+						//SIMUL_BREAK_ONCE(platform::core::QuickFormat("Failed to load shader %s",filenamestr.c_str()));
+						// It's ok not to load a shader if it's not compatible with current settings.
 					}
 					// Set what the shader uses.
 

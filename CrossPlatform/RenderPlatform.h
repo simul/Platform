@@ -627,7 +627,8 @@ namespace platform
 				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
 			else
 				platformStructuredBuffer->InvalidateDeviceObjects();
-			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n, bufferUsageHint);
+			if(count>0)
+				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n, bufferUsageHint);
 		}
 	}
 }

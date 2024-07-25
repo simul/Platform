@@ -236,7 +236,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		cs->rwTextureSlots |= 1 << slot;
 		descriptorImageInfo++;
 	}
-	for (int i = 0; i < numSbResourceSlots; i++, b++)
+	for (int i = 0; i < numSbResourceSlots; i++)
 	{
 		int slot = sbResourceSlots[i];
 		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
@@ -245,7 +245,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		crossplatform::PlatformStructuredBuffer* sb = cs->applyStructuredBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_CERR << "No structured buffer found for slot "<<slot<<" in pass "<< name.c_str()<<"\n";
+			//SIMUL_CERR << "No structured buffer found for slot "<<slot<<" in pass "<< name.c_str()<<"\n";
 		}
 		else
 		{
@@ -260,6 +260,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 				descriptorBufferInfo->setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
 				write.setPBufferInfo(descriptorBufferInfo);
 				descriptorBufferInfo++;
+				b++;
 			}
 		}
 	}
@@ -369,6 +370,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		}
 		cs->bufferSlots |= (1 << slot);
 	}
+	numDescriptors=b;
 	if (numDescriptors)
 	{
 #if SIMUL_INTERNAL_CHECKS
@@ -627,17 +629,29 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					.setStageFlags(stageFlags)
 					.setPImmutableSamplers(nullptr);
 			}
-			for (int i = 0; i < numSamplerResourceSlots; i++, bindingIndex++)
+			for (int i = 0; i < numSamplerResourceSlots; i++)
 			{
 				int slot = samplerResourceSlots[i];
-				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
-				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
-				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesSamplerSlot);
-				binding.setBinding(vulkan::RenderPlatform::GenerateSamplerSlot(slot))
-					.setDescriptorType(vk::DescriptorType::eSampler)
-					.setDescriptorCount(1)
-					.setStageFlags(stageFlags)
-					.setPImmutableSamplers(nullptr);
+				if(perPassLayout.UsesSamplerSlot(slot))
+				{
+					usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
+					vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
+					vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesSamplerSlot);
+					binding.setBinding(vulkan::RenderPlatform::GenerateSamplerSlot(slot))
+						.setDescriptorType(vk::DescriptorType::eSampler)
+						.setDescriptorCount(1)
+						.setStageFlags(stageFlags)
+						.setPImmutableSamplers(nullptr);
+					bindingIndex++;
+				}
+				for(uint8_t l=0;l<crossplatform::PER_PASS_RESOURCE_GROUP;l++)
+				{
+					const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(l);
+					if(layout.UsesSamplerSlot(slot))
+					{
+						usingResourceLayouts|=(1<<l);
+					}
+				}
 			}
 			// Only constantBuffers in octave 4 are to be added to the layout. For others, we check which octave they are in
 			// and mark that octave as being in-use for this pass.

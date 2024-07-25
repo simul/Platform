@@ -166,7 +166,7 @@ float safelog(float x)
 }
 
 VertexShader mainvs_4_0=CompileShader(vs_4_0,VS_SimpleFullscreen());
-VertexShader mainvs_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
+VertexShader mainvs_6_0=CompileShader(vs_6_0,VS_SimpleFullscreen());
 
 technique exposure_gamma
 {
@@ -185,8 +185,8 @@ technique exposure_gamma
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,ExposureGammaPS_MSAA()));
+		SetVertexShader(mainvs_6_0);
+		SetPixelShader(CompileShader(ps_6_0,ExposureGammaPS_MSAA()));
     }
 }
 
@@ -198,8 +198,8 @@ technique infra_red
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed()));
+		SetVertexShader(mainvs_6_0);
+		SetPixelShader(CompileShader(ps_6_0,PS_InfraRed()));
 	}
 	pass msaa
 	{
@@ -207,8 +207,8 @@ technique infra_red
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
-		SetVertexShader(mainvs_5_0);
-		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed_MSAA()));
+		SetVertexShader(mainvs_6_0);
+		SetPixelShader(CompileShader(ps_6_0,PS_InfraRed_MSAA()));
 	}
 }
 
@@ -256,7 +256,7 @@ technique cubemap_to_screenspace
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(DontBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
-		SetPixelShader(CompileShader(ps_5_0,PS_CubemapToScreenspace()));
+		SetVertexShader(CompileShader(vs_6_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_6_0,PS_CubemapToScreenspace()));
 	}
 }

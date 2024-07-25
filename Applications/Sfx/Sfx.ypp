@@ -2240,7 +2240,7 @@ postfix_exp : primary_exp
 						buildFunction.declarations.insert(root_identifier);
 						buildFunction.declareResource(root_identifier);
 						const Declaration *d=gEffect->GetDeclaration(p.identifier);
-					if(d && d->declarationType == DeclarationType::SAMPLER)
+						if(d && d->declarationType == DeclarationType::SAMPLER)
 						{
 							buildFunction.declareResource(p.identifier);
 							if(config->combineTexturesSamplers && !config->combineInShader)
@@ -2290,12 +2290,6 @@ postfix_exp : primary_exp
 			}
 		}
 		$$.strs[0]=expr1+expr2+params+expr4;
-	}
-	| postfix_exp '(' ')'
-	{
-		// ok this could be a function call.
-		string command=$1.strs[2];
-		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 	}
 	| postfix_exp '.' IDENTIFIER
 	{
@@ -2438,6 +2432,11 @@ argument_exp_list : argument_exp_list ',' assignment_exp
 		YYSTYPE::variable var;
 		var.identifier	=$1.strs[0];
 		$$.vars->push_back(var);
+	}
+	| %empty
+	{
+		$$.strs[0]="";
+		$$.vars = new vector<YYSTYPE::variable>;
 	}
 
 

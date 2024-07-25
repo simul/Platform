@@ -40,13 +40,6 @@
 
 #ifndef __cplusplus
 	#define layout(a)
-	// This is a hack, dx11 effects do not recognise SetRenderTargetFormatState so 
-	// we will pass a dummy SetGeometryShader(a), we should 
-	#if PLATFORM_D3D11_SFX
-		#define SetRenderTargetFormatState(a) SetGeometryShader(NULL)
-	#else
-		#define SetRenderTargetFormatState SetGeometryShader
-	#endif
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
 	#define BottomUpTextureCoordinates4(texc) vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w)

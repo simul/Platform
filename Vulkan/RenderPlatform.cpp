@@ -17,6 +17,7 @@
 #include "DeviceManager.h"
 #include "Platform/Core/StringFunctions.h"
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_to_string.hpp>
 #include <cstdint>
 
 #pragma optimize("", off)
@@ -2342,7 +2343,7 @@ vk::DescriptorSet *RenderPlatform::GetDescriptorSetForResourceGroup(crossplatfor
 			no_res|=write.dstSet.operator VkDescriptorSet()==0;
 			if (no_res)
 			{
-				SIMUL_CERR << "VkWriteDescriptorSet (Binding = " << write.dstBinding << ") in group '"
+				SIMUL_CERR << "VkWriteDescriptorSet for "<<to_string(write.descriptorType)<<" (Binding = " << write.dstBinding << ") in group '"
 						   << (uint32_t)g << "' has no valid resource associated with it." << std::endl;
 				SIMUL_BREAK_ONCE("VkWriteDescriptorSet error.");
 				return nullptr;

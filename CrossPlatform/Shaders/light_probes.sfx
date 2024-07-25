@@ -325,8 +325,8 @@ technique irradiance_map
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
-		SetPixelShader(CompileShader(ps_5_0,PS_IrradianceMap()));
+		SetVertexShader(CompileShader(vs_6_0,VS_SimpleFullscreenFlipTC()));
+		SetPixelShader(CompileShader(ps_6_0,PS_IrradianceMap()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(ProbeBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
@@ -341,8 +341,8 @@ fxgroup mip_from_roughness
 			SetRasterizerState(RenderNoCull);
 			SetGeometryShader(NULL);
 			SetDepthStencilState(DisableDepth, 0);
-			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreenFlipTC()));
-			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip()));
+			SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreenFlipTC()));
+			SetPixelShader(CompileShader(ps_6_0, PS_RoughnessMip()));
 			SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 		pass rough
@@ -350,8 +350,8 @@ fxgroup mip_from_roughness
 			SetRasterizerState(RenderNoCull);
 			SetGeometryShader(NULL);
 			SetDepthStencilState(DisableDepth, 0);
-			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreenFlipTC()));
-			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Rough()));
+			SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreenFlipTC()));
+			SetPixelShader(CompileShader(ps_6_0, PS_RoughnessMip_Rough()));
 			SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 		pass smooth
@@ -359,8 +359,8 @@ fxgroup mip_from_roughness
 			SetRasterizerState(RenderNoCull);
 			SetGeometryShader(NULL);
 			SetDepthStencilState(DisableDepth, 0);
-			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreenFlipTC()));
-			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Smooth()));
+			SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreenFlipTC()));
+			SetPixelShader(CompileShader(ps_6_0, PS_RoughnessMip_Smooth()));
 			SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 	}
@@ -371,8 +371,8 @@ fxgroup mip_from_roughness
 			SetRasterizerState(RenderNoCull);
 			SetGeometryShader(NULL);
 			SetDepthStencilState(DisableDepth, 0);
-			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreenFlipTC()));
-			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip()));
+			SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreenFlipTC()));
+			SetPixelShader(CompileShader(ps_6_0, PS_RoughnessMip()));
 			SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 		pass rough
@@ -380,8 +380,8 @@ fxgroup mip_from_roughness
 			SetRasterizerState(RenderNoCull);
 			SetGeometryShader(NULL);
 			SetDepthStencilState(DisableDepth, 0);
-			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreenFlipTC()));
-			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Rough()));
+			SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreenFlipTC()));
+			SetPixelShader(CompileShader(ps_6_0, PS_RoughnessMip_Rough()));
 			SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 		pass smooth
@@ -389,8 +389,8 @@ fxgroup mip_from_roughness
 			SetRasterizerState(RenderNoCull);
 			SetGeometryShader(NULL);
 			SetDepthStencilState(DisableDepth, 0);
-			SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreenFlipTC()));
-			SetPixelShader(CompileShader(ps_5_0, PS_RoughnessMip_Smooth()));
+			SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreenFlipTC()));
+			SetPixelShader(CompileShader(ps_6_0, PS_RoughnessMip_Smooth()));
 			SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		}
 	}
@@ -402,8 +402,8 @@ technique blend_mip
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
-		SetPixelShader(CompileShader(ps_5_0,PS_BlendMip()));
+		SetVertexShader(CompileShader(vs_6_0,VS_SimpleFullscreenFlipTC()));
+		SetPixelShader(CompileShader(ps_6_0,PS_BlendMip()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(ProbeBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
@@ -415,8 +415,8 @@ technique overwrite_mip
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
-		SetPixelShader(CompileShader(ps_5_0,PS_BlendMip()));
+		SetVertexShader(CompileShader(vs_6_0,VS_SimpleFullscreenFlipTC()));
+		SetPixelShader(CompileShader(ps_6_0,PS_BlendMip()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
@@ -426,7 +426,7 @@ technique compute_copy_face
 {
     pass p0 
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_CopyFace()));
+		SetComputeShader(CompileShader(cs_6_0,CS_CopyFace()));
     }
 }
 technique copy_face
@@ -435,8 +435,8 @@ technique copy_face
 	{
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
-		SetPixelShader(CompileShader(ps_5_0,PS_CopyFace()));
+		SetVertexShader(CompileShader(vs_6_0,VS_SimpleFullscreenFlipTC()));
+		SetPixelShader(CompileShader(ps_6_0,PS_CopyFace()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 	}
