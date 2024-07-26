@@ -747,8 +747,14 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	{
 		// Set the Descriptor Sets
 		const vk::PipelineLayout &pipelineLayout = pass->GetLatestPipelineLayout();
-		commandBuffer->bindDescriptorSets(is_compute ? vk::PipelineBindPoint::eCompute: vk::PipelineBindPoint::eGraphics, pipelineLayout, 
-			minDescriptorSet, (maxDescriptorSet - minDescriptorSet + 1), &(descriptorSets[minDescriptorSet]), 0, nullptr);
+		for (uint8_t g = minDescriptorSet; g <= maxDescriptorSet; g++)
+		{
+			if (descriptorSets[g])
+			{
+				commandBuffer->bindDescriptorSets(is_compute ? vk::PipelineBindPoint::eCompute : vk::PipelineBindPoint::eGraphics, 
+					pipelineLayout, g, 1, &(descriptorSets[g]), 0, nullptr);
+			}
+		}
 
 		for (int8_t g = minDescriptorSet; g < maxDescriptorSet + 1; g++)
 		{
