@@ -944,7 +944,7 @@ void RenderPlatform::SetVertexBuffers(crossplatform::DeviceContext& deviceContex
 		opengl::Buffer* glBuffer = (opengl::Buffer*)buffers[i];
 		if (glBuffer)
 		{
-			glBuffer->BindVBO(deviceContext);
+			glBuffer->BindVBO(deviceContext, layout);
 		}
 	}
 }
@@ -1067,6 +1067,18 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,in
 
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
+	BeginEvent(deviceContext, ((opengl::EffectPass *)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyCurrentPass(deviceContext);
+	glDrawElementsBaseVertex(mCurTopology, num_indices, GL_UNSIGNED_INT, nullptr, base_vertex);
+	EndEvent(deviceContext);
+}
+
+void RenderPlatform::DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index, int base_vertex)
+{
+	BeginEvent(deviceContext, ((opengl::EffectPass *)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyCurrentPass(deviceContext);
+	glDrawElementsInstancedBaseVertexBaseInstance(mCurTopology, num_indices, GL_UNSIGNED_INT, nullptr, num_instances, base_vertex, base_instance);
+	EndEvent(deviceContext);
 }
 
 void RenderPlatform::GenerateMips(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture* t, bool wrap, int array_idx)

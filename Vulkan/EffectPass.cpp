@@ -236,7 +236,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		cs->rwTextureSlots |= 1 << slot;
 		descriptorImageInfo++;
 	}
-	for (int i = 0; i < numSbResourceSlots; i++, b++)
+	for (int i = 0; i < numSbResourceSlots; i++)
 	{
 		int slot = sbResourceSlots[i];
 		vk::WriteDescriptorSet &write = m_writeDescriptorSets[b];
@@ -245,7 +245,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		crossplatform::PlatformStructuredBuffer* sb = cs->applyStructuredBuffers[slot];
 		if (!sb)
 		{
-			SIMUL_CERR << "No structured buffer found for slot "<<slot<<" in pass "<< name.c_str()<<"\n";
+			//SIMUL_CERR << "No structured buffer found for slot "<<slot<<" in pass "<< name.c_str()<<"\n";
 		}
 		else
 		{
@@ -260,6 +260,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 				descriptorBufferInfo->setOffset(psb->GetLastOffset()).setRange(psb->GetSize()).setBuffer(*vkBuffer);
 				write.setPBufferInfo(descriptorBufferInfo);
 				descriptorBufferInfo++;
+				b++;
 			}
 		}
 	}
@@ -369,6 +370,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		}
 		cs->bufferSlots |= (1 << slot);
 	}
+	numDescriptors=b;
 	if (numDescriptors)
 	{
 #if SIMUL_INTERNAL_CHECKS
@@ -521,7 +523,6 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	vk::DescriptorSetLayoutBinding* layoutBindings = nullptr;
 	vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCI;
 
-	//usingResourceLayouts &= ~(1 << crossplatform::PER_PASS_RESOURCE_GROUP);
 	usingResourceLayouts = 0;
 	if (numDescriptors > 0)
 	{
@@ -628,17 +629,29 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					.setStageFlags(stageFlags)
 					.setPImmutableSamplers(nullptr);
 			}
-			for (int i = 0; i < numSamplerResourceSlots; i++, bindingIndex++)
+			for (int i = 0; i < numSamplerResourceSlots; i++)
 			{
 				int slot = samplerResourceSlots[i];
-				usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
-				vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
-				vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesSamplerSlot);
-				binding.setBinding(vulkan::RenderPlatform::GenerateSamplerSlot(slot))
-					.setDescriptorType(vk::DescriptorType::eSampler)
-					.setDescriptorCount(1)
-					.setStageFlags(stageFlags)
-					.setPImmutableSamplers(nullptr);
+				if(perPassLayout.UsesSamplerSlot(slot))
+				{
+					usingResourceLayouts |= 1 << crossplatform::PER_PASS_RESOURCE_GROUP;
+					vk::DescriptorSetLayoutBinding& binding = layoutBindings[bindingIndex];
+					vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesSamplerSlot);
+					binding.setBinding(vulkan::RenderPlatform::GenerateSamplerSlot(slot))
+						.setDescriptorType(vk::DescriptorType::eSampler)
+						.setDescriptorCount(1)
+						.setStageFlags(stageFlags)
+						.setPImmutableSamplers(nullptr);
+					bindingIndex++;
+				}
+				for(uint8_t l=0;l<crossplatform::PER_PASS_RESOURCE_GROUP;l++)
+				{
+					const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(l);
+					if(layout.UsesSamplerSlot(slot))
+					{
+						usingResourceLayouts|=(1<<l);
+					}
+				}
 			}
 			// Only constantBuffers in octave 4 are to be added to the layout. For others, we check which octave they are in
 			// and mark that octave as being in-use for this pass.
@@ -685,26 +698,24 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 			.setBindingCount(1)
 			.setBindings(binding);
 	}
-	// Create a list of the (up to 4) resource groups ("descriptor sets") this pass uses.
-	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+
 	// Create the "Descriptor Set Layout":
 	result = vulkanDevice->createDescriptorSetLayout(&descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout);
 	SIMUL_VK_CHECK(result);
 	SetVulkanName(renderPlatform, m_DescriptorSetLayout, platform::core::QuickFormat("%s Descriptor layout", name.c_str()));
-	//if(descriptorSetLayoutCI.bindingCount>0)
-	// Create the "Pipeline Layout":
 
+	// Create a list of the (up to 4) resource groups ("descriptor sets") this pass uses.
+	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+
+	// Create the "Pipeline Layout":
 	for (uint8_t i = 0; i < crossplatform::PER_PASS_RESOURCE_GROUP; i++)
 	{
-		// if(UsesResourceLayout(i))
-		{
-			descriptorSetLayouts.push_back(rp->GetVulkanDescriptorSetLayoutForResourceGroup(i));
-		}
+		descriptorSetLayouts.push_back(rp->GetVulkanDescriptorSetLayoutForResourceGroup(i));
 	}
 	if (descriptorSetLayoutCI.bindingCount)
 		descriptorSetLayouts.push_back(m_DescriptorSetLayout);
 	vk::PipelineLayoutCreateInfo pipelineLayoutCI = vk::PipelineLayoutCreateInfo()
-														.setSetLayoutCount(crossplatform::PER_PASS_RESOURCE_GROUP+(descriptorSetLayoutCI.bindingCount?1:0))
+														.setSetLayoutCount(static_cast<uint32_t>(descriptorSetLayouts.size()))
 														.setPSetLayouts(descriptorSetLayouts.data());
 	result = vulkanDevice->createPipelineLayout(&pipelineLayoutCI, nullptr, &m_PipelineLayout);
 	SIMUL_VK_CHECK(result);
@@ -896,7 +907,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 			if (layoutDesc.size())
 				vertexInputs = new vk::VertexInputAttributeDescription[layoutDesc.size()];
 			int slot = 0;
-			size_t instanceStride=0;
+			uint32_t instanceStride=0;
 			for (auto desc : layoutDesc)
 			{
 				vertexInputs[slot].binding = desc.perInstance?1:0;
@@ -907,7 +918,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 				if(desc.perInstance)
 					instanceStride += crossplatform::GetByteSize(desc.format);
 			}
-			size_t vertexStride=layout->GetStructSize()-instanceStride;
+			uint32_t vertexStride = layout->GetStructSize() - instanceStride;
 			bindingDescription[0].setBinding(0);
 			bindingDescription[0].setStride(vertexStride);
 			bindingDescription[0].setInputRate(vk::VertexInputRate::eVertex);

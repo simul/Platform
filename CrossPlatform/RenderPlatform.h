@@ -520,8 +520,6 @@ namespace platform
 			float GetRecompileStatus(std::string &txt);
 			/// Asynchronously recompile the effects; the callback is called when the last one is complete.
 			void ScheduleRecompileEffects(const std::vector<std::string>& effect_names,std::function <void()> f);
-			/// Asynchronously recompile the effect; the callback is called when the new effect is complete.
-			void ScheduleRecompileEffect(const std::string &effect_name, std::function<void()> f);
 
 		protected:
 			struct EffectRecompile
@@ -629,7 +627,8 @@ namespace platform
 				platformStructuredBuffer = p->CreatePlatformStructuredBuffer();
 			else
 				platformStructuredBuffer->InvalidateDeviceObjects();
-			platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n, bufferUsageHint);
+			if(count>0)
+				platformStructuredBuffer->RestoreDeviceObjects(p, count, sizeof(T), computable, cpu_read, data, n, bufferUsageHint);
 		}
 	}
 }

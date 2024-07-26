@@ -21,22 +21,22 @@ PlatformStructuredBuffer::~PlatformStructuredBuffer()
 	InvalidateDeviceObjects();
 }
 
-void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform* r,int ct,int unit_size,bool ,bool cpur,void* init_data,const char *n, crossplatform::ResourceUsageFrequency h)
+void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data, const char *_name, crossplatform::ResourceUsageFrequency _bufferUsageHint)
 {
-	bufferUsageHint = h;
-	renderPlatform                          = r;
-	mNumElements		= ct;
-	mElementByteSize	= unit_size;
-	if(n)
-		name=n;
+	bufferUsageHint = bufferUsageHint;
+	renderPlatform = r;
+	mNumElements = count;
+	mElementByteSize = unit_size;
+	if (_name)
+		name = _name;
 	// Really, if it's cpu-readable, we must have only one copy per-frame.
 	if (mCpuRead)
 		mMaxApplyCount=1;
-	mUnitSize           = mNumElements * mElementByteSize;
-	mTotalSize			= mUnitSize * mMaxApplyMod;
+	mUnitSize = mNumElements * mElementByteSize;
+	mTotalSize = mUnitSize * mMaxApplyMod;
 	delete [] buffer;
 	buffer = nullptr;
-	mCpuRead            =cpur;
+	mCpuRead = cpu_read;
 	mSlots = ((mTotalSize + (kBufferAlign - 1)) & ~ (kBufferAlign - 1)) / kBufferAlign;
 	
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
@@ -184,7 +184,7 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	}
 	last_offset		=(kBufferAlign * mSlots) * mCurApplyCount;	
 
-	if (!as_uav&&buffer)
+	if (!as_uav && buffer)
 	{
 		uint8_t *pData = nullptr;
 		vmaMapMemory(lastBuffer->mAllocationInfo.allocator, lastBuffer->mAllocationInfo.allocation, (void**)&pData);

@@ -321,15 +321,15 @@ BlendState ProbeBlend
 
 technique irradiance_map
 {
-    pass p0 
-    {
+	pass p0 
+	{
 		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
 		SetPixelShader(CompileShader(ps_5_0,PS_IrradianceMap()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(ProbeBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-    }
+	}
 }
 
 fxgroup mip_from_roughness
@@ -398,43 +398,43 @@ fxgroup mip_from_roughness
 
 technique blend_mip
 {
-    pass p0 
-    {
+	pass p0 
+	{
 		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
 		SetPixelShader(CompileShader(ps_5_0,PS_BlendMip()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(ProbeBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-    }
+	}
 }
 
 technique overwrite_mip
 {
-    pass p0 
-    {
+	pass p0 
+	{
 		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
 		SetPixelShader(CompileShader(ps_5_0,PS_BlendMip()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-    }
+	}
 }
 
 technique compute_copy_face
 {
-    pass p0 
-    {
+	pass p0 
+	{
 		SetComputeShader(CompileShader(cs_5_0,CS_CopyFace()));
-    }
+	}
 }
 technique copy_face
 {
 	pass p0 
 	{
 		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreenFlipTC()));
 		SetPixelShader(CompileShader(ps_5_0,PS_CopyFace()));
 		SetDepthStencilState( DisableDepth, 0 );

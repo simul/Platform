@@ -986,7 +986,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 				}
 				if(!if_c.good())
 				{
-					std::cerr << "Error: Failed to create binary" << WStringToUtf8(outputFile).c_str()<< std::endl;
+					std::cerr << "Error: Failed to create binary: " << WStringToUtf8(outputFile).c_str()<< std::endl;
 					repetitions++;
 					if(repetitions<10)
 						continue;
