@@ -2,6 +2,10 @@
 #ifndef STATES_SL
 #define STATES_SL
 
+#ifdef __cplusplus
+const std::string sampler_states_sl_file = R"(
+#endif
+
 SamplerState cmmSamplerState : register(s0), resource_group(g0)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -9,7 +13,6 @@ SamplerState cmmSamplerState : register(s0), resource_group(g0)
 	AddressV = Mirror;
 	AddressW = Mirror;
 };
-
 
 SamplerState wccSamplerState : register(s1), resource_group(g0)
 {
@@ -26,6 +29,7 @@ SamplerState wmcSamplerState : register(s2), resource_group(g0)
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
+
 SamplerState wrapMirrorSamplerState : register(s3), resource_group(g0)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -129,5 +133,9 @@ SamplerState samplerStateNearestClamp : register(s15), resource_group(g0)
 	AddressV = Clamp;
 	AddressW = Clamp;
 };
+
+#ifdef __cplusplus
+)";
+#endif
 
 #endif
