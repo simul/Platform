@@ -487,8 +487,8 @@ shader vec4 PS_DrawChequeredQuadOnSphere(v2f IN) : SV_TARGET
 	return c;
 }
 
-PixelShader debugps_6_0=CompileShader(ps_6_0,DebugPS());
-PixelShader fillps_6_0=CompileShader(ps_6_0,FillPS());
+PixelShader debugps_5_0=CompileShader(ps_5_0,DebugPS());
+PixelShader fillps_5_0=CompileShader(ps_5_0,FillPS());
 
 BlendState DontWriteColour
 {
@@ -531,8 +531,8 @@ technique draw_lat_long_sphere
 	{		
 		SetRasterizerState( RenderBackfaceCull );
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawLatLongSphere()));
-		SetPixelShader(debugps_6_0);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawLatLongSphere()));
+		SetPixelShader(debugps_5_0);
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 	}
@@ -544,8 +544,8 @@ technique draw_quad_on_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawFilledQuadOnSphere()));
-		SetPixelShader(debugps_6_0);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawFilledQuadOnSphere()));
+		SetPixelShader(debugps_5_0);
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}
@@ -553,8 +553,8 @@ technique draw_quad_on_sphere
 	{		
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawQuadOnSphere()));
-		SetPixelShader(debugps_6_0);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawQuadOnSphere()));
+		SetPixelShader(debugps_5_0);
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 	}
@@ -562,8 +562,8 @@ technique draw_quad_on_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0, VS_DrawFilledQuadOnSphere()));
-		SetPixelShader(CompileShader(ps_6_0, PS_DrawChequeredQuadOnSphere()));
+		SetVertexShader(CompileShader(vs_5_0, VS_DrawFilledQuadOnSphere()));
+		SetPixelShader(CompileShader(ps_5_0, PS_DrawChequeredQuadOnSphere()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 	}
@@ -575,8 +575,8 @@ technique draw_axes_on_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0, VS_DrawAxesOnSphere()));
-		SetPixelShader(debugps_6_0);
+		SetVertexShader(CompileShader(vs_5_0, VS_DrawAxesOnSphere()));
+		SetPixelShader(debugps_5_0);
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AlphaBlend, vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 	}
@@ -588,8 +588,8 @@ technique draw_texture_on_sphere
 	{		
 		SetRasterizerState( RenderNoCull );
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawTextureOnSphere()));
-		SetPixelShader(CompileShader(ps_6_0,PS_DrawTextureOnSphere()));
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawTextureOnSphere()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawTextureOnSphere()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 	}
@@ -601,8 +601,8 @@ technique draw_curved_texture_on_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawCurvedTextureOnSphere()));
-		SetPixelShader(CompileShader(ps_6_0,PS_DrawTextureOnSphere()));
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCurvedTextureOnSphere()));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawTextureOnSphere()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}
@@ -614,8 +614,8 @@ technique draw_coloured_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreen));
-		SetPixelShader(CompileShader(ps_6_0,PS_DrawColouredSphere()));
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawColouredSphere()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}
@@ -627,8 +627,8 @@ technique draw_textured_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0, VS_SimpleFullscreen));
-		SetPixelShader(CompileShader(ps_6_0,PS_DrawTexturedSphere()));
+		SetVertexShader(CompileShader(vs_5_0, VS_SimpleFullscreen));
+		SetPixelShader(CompileShader(ps_5_0,PS_DrawTexturedSphere()));
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}
@@ -640,8 +640,8 @@ technique draw_circle_on_sphere
 	{		
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawFilledCircleOnSphere()));
-		SetPixelShader(fillps_6_0);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawFilledCircleOnSphere()));
+		SetPixelShader(fillps_5_0);
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(StencilBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 	}
@@ -649,8 +649,8 @@ technique draw_circle_on_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawCircleOnSphere()));
-		SetPixelShader(debugps_6_0);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawCircleOnSphere()));
+		SetPixelShader(debugps_5_0);
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}
@@ -663,8 +663,8 @@ technique draw_arc_on_sphere
 	{
 		SetRasterizerState(RenderNoCull);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_DrawArcOnSphere()));
-		SetPixelShader(debugps_6_0);
+		SetVertexShader(CompileShader(vs_5_0,VS_DrawArcOnSphere()));
+		SetPixelShader(debugps_5_0);
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(AddBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF);
 	}

@@ -47,7 +47,7 @@ shader vec4 ShowDepthPS_ForwardDepth(posTexVertexOutput IN) : SV_Target
 	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
 	depthInterpretationStruct.reverseDepth=false;
 	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthInterpretationStruct,tanHalfFov);
-    vec4 u=vec4(1,dist,dist,1.0);
+	vec4 u=vec4(1,dist,dist,1.0);
 	return u;
 }
 
@@ -75,30 +75,30 @@ vec3 FilmicTone(vec3 x)
 shader vec4 PS_InfraRed(posTexVertexOutput IN) : SV_Target
 {
 	vec4 c					=texture_clamp(imageTexture,IN.texCoords);
-    c.rgb					*=infraredIntegrationFactors.xyz;
-    float final_radiance	=c.x+c.y+c.z;
+	c.rgb					*=infraredIntegrationFactors.xyz;
+	float final_radiance	=c.x+c.y+c.z;
 	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-    vec4 u=vec4(c.rgb,1.0);
+	vec4 u=vec4(c.rgb,1.0);
 	return u;
 }
 
 shader vec4 PS_InfraRed_MSAA(posTexVertexOutput IN) : SV_Target
 {
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
-    c.rgb					*=infraredIntegrationFactors.xyz;
-    float final_radiance	=c.x+c.y+c.z;
+	c.rgb					*=infraredIntegrationFactors.xyz;
+	float final_radiance	=c.x+c.y+c.z;
 	c=vec4(final_radiance,final_radiance,final_radiance,c.a);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-    vec4 u=vec4(c.rgb,1.0);
+	vec4 u=vec4(c.rgb,1.0);
 	return u;
 }
 
 shader posTexVertexOutput Debug2DVS(idOnly id)
 {
-    return VS_ScreenQuad(id,rect);
+	return VS_ScreenQuad(id,rect);
 }
 
 shader vec4 TexturedPS(posTexVertexOutput IN) : SV_Target
@@ -112,7 +112,7 @@ shader vec4 ExposureGammaPS(posTexVertexOutput IN) : SV_Target
 	vec4 c	=imageTexture.Sample(samplerStateNearest,IN.texCoords);
 	c.rgb	*=exposure;
 	c.rgb	=pow(c.rgb,vec3(gamma,gamma,gamma));
-    vec4 u	=vec4(c.rgb,1.0);
+	vec4 u	=vec4(c.rgb,1.0);
 	return u;
 }
 
@@ -121,7 +121,7 @@ shader vec4 ExposureGammaPS_MSAA(posTexVertexOutput IN) : SV_Target
 	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,vec3(gamma,gamma,gamma));
-    vec4 u=vec4(c.rgb,1.0);
+	vec4 u=vec4(c.rgb,1.0);
 	return u;
 }
 
@@ -166,28 +166,28 @@ float safelog(float x)
 }
 
 VertexShader mainvs_4_0=CompileShader(vs_4_0,VS_SimpleFullscreen());
-VertexShader mainvs_6_0=CompileShader(vs_6_0,VS_SimpleFullscreen());
+VertexShader mainvs_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
 
 technique exposure_gamma
 {
-    pass main
-    {
+	pass main
+	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(mainvs_4_0);
 		SetPixelShader(CompileShader(ps_4_0,ExposureGammaPS()));
-    }
-    pass msaa
-    {
+	}
+	pass msaa
+	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(mainvs_6_0);
-		SetPixelShader(CompileShader(ps_6_0,ExposureGammaPS_MSAA()));
-    }
+		SetGeometryShader(NULL);
+		SetVertexShader(mainvs_5_0);
+		SetPixelShader(CompileShader(ps_5_0,ExposureGammaPS_MSAA()));
+	}
 }
 
 technique infra_red
@@ -198,8 +198,8 @@ technique infra_red
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
-		SetVertexShader(mainvs_6_0);
-		SetPixelShader(CompileShader(ps_6_0,PS_InfraRed()));
+		SetVertexShader(mainvs_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed()));
 	}
 	pass msaa
 	{
@@ -207,20 +207,20 @@ technique infra_red
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, vec4( 0.0, 0.0, 0.0, 0.0 ), 0xFFFFFFFF );
 		SetGeometryShader(NULL);
-		SetVertexShader(mainvs_6_0);
-		SetPixelShader(CompileShader(ps_6_0,PS_InfraRed_MSAA()));
+		SetVertexShader(mainvs_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_InfraRed_MSAA()));
 	}
 }
 
 
 technique show_depth
 {
-    pass reverse_depth
-    {
+	pass reverse_depth
+	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend,vec4( 0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS_ReverseDepth()));
 	}
@@ -237,15 +237,15 @@ technique show_depth
 
 technique textured
 {
-    pass p0
-    {
+	pass p0
+	{
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
+		SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
-    }
+	}
 }
 
 technique cubemap_to_screenspace
@@ -256,7 +256,7 @@ technique cubemap_to_screenspace
 		SetDepthStencilState(DisableDepth, 0);
 		SetBlendState(DontBlend,vec4(0.0, 0.0, 0.0, 0.0), 0xFFFFFFFF);
 		SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_6_0,VS_SimpleFullscreen()));
-		SetPixelShader(CompileShader(ps_6_0,PS_CubemapToScreenspace()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_CubemapToScreenspace()));
 	}
 }
