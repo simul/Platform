@@ -1908,6 +1908,10 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 
 void Effect::LoadDefaultSamplers(crossplatform::DeviceContext& deviceContext)
 {
+	static bool loaded = false;
+	if (loaded)
+		return;
+
 	auto Regex = [](const std::string &token, std::regex regex, size_t matchIndex = 0) -> std::string {
 		std::string result = "";
 		std::smatch match;
@@ -1954,6 +1958,8 @@ void Effect::LoadDefaultSamplers(crossplatform::DeviceContext& deviceContext)
 
 		offset = samplerStateStructEndPos;
 	}
+
+	loaded = true;
 }
 
 void Shader::setUsesTextureSlot(int s)
