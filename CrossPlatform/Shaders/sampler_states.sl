@@ -86,10 +86,10 @@ SamplerState clampSamplerState : register(s9), resource_group(g0)
 	AddressW = Clamp;
 };
 
-SamplerState wrapClampSamplerState : register(s10), resource_group(g0)
+SamplerState samplerStateDummy : register(s10), resource_group(g0)
 {
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
 	AddressV = Clamp;
 	AddressW = Clamp;
 };
