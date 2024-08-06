@@ -1,0 +1,31 @@
+name: Merge main into console
+#https://stackoverflow.com/questions/35445186/can-github-automatically-merge-branches
+
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  # do NOT replace ${{secrets.GITHUB_TOKEN}}, GitHub will take care of it
+  MY_REPO: https://simul-build:${{secrets.GITHUB_TOKEN}}@github.com/simul/Platform.git
+
+  MY_BRANCH: console
+
+  MAIN_REPO: https://github.com/simul/Platform.git
+
+  MAIN_BRANCH: main
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Merge main into console
+      run: |
+        git clone ${{env.MY_REPO}} -b ${{env.MY_BRANCH}} tmp
+        cd tmp
+        git config user.name "Automerge Bot"
+        git config user.email "bot@example.com"
+        git config pull.rebase false
+        git pull ${{env.MAIN_REPO}} ${{env.MAIN_BRANCH}}
+        git push
