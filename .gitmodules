@@ -16,4 +16,18 @@
 [submodule "External/freetype"]
 	path = External/freetype
 	url = https://github.com/freetype/freetype.git
-
+[submodule "Spectrum"]
+	path = Spectrum
+	url = ../Spectrum.git
+[submodule "Commodore"]
+	path = Commodore
+	url = ../Commodore.git
+[submodule "PS4"]
+	path = PS4
+	url = ../PS4.git
+[submodule "XboxOne"]
+	path = XboxOne
+	url = ../XboxOne.git
+[submodule "Switch"]
+	path = Switch
+	url = ../Switch.git
