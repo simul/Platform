@@ -3,6 +3,8 @@ name: Merge main into console
 
 on:
   push:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -27,5 +29,5 @@ jobs:
         git config user.name "Automerge Bot"
         git config user.email "bot@example.com"
         git config pull.rebase false
-        git pull ${{env.MAIN_REPO}} ${{env.MAIN_BRANCH}}
+        git merge ${{env.MAIN_REPO}} ${{env.MAIN_BRANCH}}
         git push
