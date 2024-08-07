@@ -17,7 +17,9 @@
 #include "DeviceManager.h"
 #include "Platform/Core/StringFunctions.h"
 #include <vulkan/vulkan.hpp>
+#if VULKAN_HPP_CPP_VERSION>17
 #include <vulkan/vulkan_to_string.hpp>
+#endif
 #include <cstdint>
 
 #pragma optimize("", off)
@@ -89,6 +91,11 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 
 	allocatorCreateInfo.preferredLargeHeapBlockSize = mGPUPreferredBlockSize = 256 * 1048576;
 	SIMUL_VK_CHECK((vk::Result)vmaCreateAllocator(&allocatorCreateInfo, &mGPUAllocator));
+	
+	// Check feature support. Do this before parent RestoreDeviceObjects(), which loads effects depending on features available.
+	renderingFeatures = crossplatform::RenderingFeatures::None;
+	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
+		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Multiview);
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 
@@ -103,11 +110,6 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 		vkCmdDebugMarkerBeginEXT = (PFN_vkCmdDebugMarkerBeginEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerBeginEXT");
 		vkCmdDebugMarkerEndEXT = (PFN_vkCmdDebugMarkerEndEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerEndEXT");
 	}
-
-	// Check feature support.
-	renderingFeatures = crossplatform::RenderingFeatures::None;
-	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
-		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Multiview);
 
 
 	// Vulkan Video decoding support:
@@ -310,7 +312,9 @@ void RenderPlatform::InvalidateDeviceObjects()
 	ClearReleaseManager(true);
 
 	vmaDestroyAllocator(mGPUAllocator);
+	mGPUAllocator=0;
 	vmaDestroyAllocator(mCPUAllocator);
+	mCPUAllocator=0;
 
 	vulkanDevice = nullptr;
 }
@@ -1713,44 +1717,15 @@ void RenderPlatform::SetRenderState(crossplatform::DeviceContext& deviceContext,
 	auto state = (vulkan::RenderState*)s;
 	if (state->type == crossplatform::RenderStateType::BLEND)
 	{
-		crossplatform::BlendDesc bdesc = state->desc.blend;
-		// We need to iterate over all the rts as we may have some settings
-		// from older passes:
-		const int kBlendMaxRt = 8;
-		for (int i = 0; i < kBlendMaxRt; i++)
-		{
-			if (i >= bdesc.numRTs || bdesc.RenderTarget[i].blendOperation == crossplatform::BlendOperation::BLEND_OP_NONE)
-			{
-			}
-			else
-			{
-			}
-		}
+		deviceContext.contextState.blendState=s;
 	}
 	else if (state->type == crossplatform::RenderStateType::DEPTH)
 	{
-		crossplatform::DepthStencilDesc ddesc = state->desc.depth;
-		if (ddesc.test)
-		{
-		}
-		else
-		{
-		}
+		deviceContext.contextState.depthState=s;
 	}
 	else if (state->type == crossplatform::RenderStateType::RASTERIZER)
 	{
-		crossplatform::RasterizerDesc rdesc = state->desc.rasterizer;
-		if (rdesc.cullFaceMode == crossplatform::CullFaceMode::CULL_FACE_NONE)
-		{
-		 //   glDisable(GL_CULL_FACE);
-		}
-		else
-		{
-		 //   glEnable(GL_CULL_FACE);
-		 //   glCullFace(toGlCullFace(rdesc.cullFaceMode));
-		}
-		// Reversed
-	  //  glFrontFace(rdesc.frontFace == crossplatform::FrontFace::FRONTFACE_CLOCKWISE ? GL_CCW : GL_CW);
+		deviceContext.contextState.rasterizerState=s;
 	}
 	else
 	{

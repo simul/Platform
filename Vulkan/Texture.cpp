@@ -500,7 +500,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 	if(depthstencil)
 #if defined(__ANDROID__)
-		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst; //Overwrite!
+		usageFlags=vk::ImageUsageFlagBits::eDepthStencilAttachment; //Overwrite!
+	usageFlags|=vk::ImageUsageFlagBits::eTransferDst;
 #else
 		usageFlags|=vk::ImageUsageFlagBits::eDepthStencilAttachment;
 #endif

@@ -164,6 +164,7 @@ namespace platform
 		typedef FastMap<Buffer*,4> VertexBufferAssignmentMap;
 		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
 		typedef phmap::flat_hash_map<const Texture*,TextureFence> FenceMap;
+		struct RenderState;
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
@@ -217,6 +218,10 @@ namespace platform
 			uint32_t resourceGroupUploadedCounter[4] = {0, 0, 0, 0};
 			uint32_t resourceGroupAppliedCounter[4] = {0, 0, 0, 0};
 			uint32_t resourceGroupAppliedCounterCompute[4] = {0, 0, 0, 0};
+
+			const crossplatform::RenderState* blendState=nullptr;
+			const crossplatform::RenderState* rasterizerState=nullptr;
+			const crossplatform::RenderState* depthState=nullptr;
 			/// Reset the temporary properties, retain persistent properties.
 			void invalidate()
 			{
@@ -237,6 +242,9 @@ namespace platform
 				viewMask=0;
 				contextActive = true;
 				externalContext = false;
+				blendState=nullptr;
+				rasterizerState=nullptr;
+				depthState=nullptr;
 			}
 			
 			/// Reset the temporary and persistent properties.
@@ -261,6 +269,9 @@ namespace platform
 
 				currentEffectPass = nullptr;
 				currentEffect = nullptr;
+				blendState=nullptr;
+				rasterizerState=nullptr;
+				depthState=nullptr;
 				apply_count = 0;
 				resourceGroupAppliedCounter[0] = resourceGroupAppliedCounter[1] = resourceGroupAppliedCounter[2] = 0;
 				resourceGroupApplyCounter[0] = resourceGroupApplyCounter[1] = resourceGroupApplyCounter[2]=0;

@@ -24,6 +24,7 @@ Buffer::~Buffer()
 
 void Buffer::InvalidateDeviceObjects()
 {
+	this->bufferType=crossplatform::BufferType::UNKNOWN;
 	if(!renderPlatform)
 		return;
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
@@ -43,6 +44,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 								,bool streamout_target)
 {
 	InvalidateDeviceObjects();
+	this->bufferType=crossplatform::BufferType::VERTEX;
 	renderPlatform=r;
 
 	stride = str;

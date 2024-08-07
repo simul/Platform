@@ -3,12 +3,8 @@
 #include <vector>
 #include "Platform/Core/StringToWString.h"
 #include "Platform/Core/Export.h"
+#include "ThisPlatform/StringFunctions.h"
 
-#if defined(UNIX) || defined(__linux__) || defined(__SWITCH__)
-	#include <string.h>
-	#define _strcpy(d,n,s) (strncpy(d,s,n))
-	#define strcpy_s(d, n, s) (strncpy(d,s,n));
-#endif
 
 #ifdef _MSC_VER
 #pragma warning(push)
