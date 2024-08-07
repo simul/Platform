@@ -14,17 +14,17 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Clone Platform
+      uses: actions/checkout@v4
 
     - name: Update Submodules
       run: git submodule update --init --force
 
-    - name: Prepare Vulkan SDK
-      uses: humbletim/setup-vulkan-sdk@v1.2.0
+    - name: Install Vulkan SDK
+      uses: humbletim/install-vulkan-sdk@v1.1.1
       with:
-        vulkan-query-version: latest
-        vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
-        vulkan-use-cache: true
+        version: latest
+        cache: true
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory.
