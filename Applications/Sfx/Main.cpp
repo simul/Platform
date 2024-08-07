@@ -233,10 +233,6 @@ int main(int argc, char** argv)
 			}
 		}
 		std::cout << std::setw(4)<< "info: building "<<sourceName<<" for "<<platformName<<"."<< std::endl;
-		if(platformName=="Vulkan")
-		{
-			std::cout<<"info: VULKAN_SDK is "<<GetEnv("VULKAN_SDK")<<std::endl;
-		}
 		SetEnv("PLATFORM_DIR",platform_dir.c_str());
 		auto pathStrings=genericPathStrings;
 		pathStrings.push_back(json_path);
@@ -580,7 +576,7 @@ int main(int argc, char** argv)
 			return 3;
 		}
 		effect = sfxGenEffect();
-
+		//std::cout<<"Sfx compiling"<<sourcefile<<std::endl;
 		if (!sfxParseEffectFromFile(effect,sourcefile.c_str(),pathStrings,outputFile.c_str(),&sfxConfig,&sfxOptions,args))
 		{
 			std::cerr<<("Error creating effect:\n");

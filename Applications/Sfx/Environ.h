@@ -64,7 +64,6 @@ static std::string ProcessEnvironmentVariables(const std::string &str)
 			std::smatch match = *next;
 			std::string m=match[1].str();
 			std::regex re(std::string("\\$")+m);
-			std::cout<<"info: replacing "<<m<<" with "<<GetEnv(m)<<std::endl;
 			ret=std::regex_replace(ret,re,GetEnv(m));
 			next++;
 		} catch (std::regex_error& )
