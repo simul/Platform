@@ -29,5 +29,5 @@ jobs:
         git config user.name "Automerge Bot"
         git config user.email "bot@example.com"
         git config pull.rebase false
-        git merge ${{env.MAIN_REPO}} ${{env.MAIN_BRANCH}}
+        git merge ${{env.MAIN_BRANCH}}
         git push
