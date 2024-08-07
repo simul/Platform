@@ -1012,7 +1012,9 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		}
 		else
 		{
-			std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shaderInstance->m_functionName.c_str()<<"\nLOG follows:\n" << log.str().c_str() << std::endl;
+			std::cerr << sourceFile.c_str() << "(0): error: failed to build shader " << shaderInstance->m_functionName.c_str()<<" with "<<sfxConfig.compilerPaths.size()<<" paths.\nLOG follows:\n" << log.str().c_str() << std::endl;
+			for(int i=0;i<sfxConfig.compilerPaths.size();i++)
+				std::cerr<<"Path "<<sfxConfig.compilerPaths[i].c_str()<<std::endl;
 			if (sfxOptions.verbose)
 				std::cerr << tempf.c_str() << "(0): info: generated temporary shader source file for " << shaderInstance->m_functionName.c_str()<<std::endl;
 			break;
