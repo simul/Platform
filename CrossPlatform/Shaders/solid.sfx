@@ -22,13 +22,13 @@ uniform Texture2D loss2dTexture;
 uniform Texture3D inscatterVolumeTexture;
 
 #if SIMUL_TRUESKY
-#include "Sky/Shaders/atmospheric_transmittance_constants.sl"
+//#include "Sky/Shaders/atmospheric_transmittance_constants.sl"
 uniform Texture2D transmittanceTexture;
 uniform Texture3D scatteringTexture;
 uniform Texture3D singleMieScattering;
 
-#include "Sky/Shaders/atmospheric_scattering.sl"
-#include "Sky/Shaders/atmospheric_scattering_apply.sl"
+//#include "Sky/Shaders/atmospheric_scattering.sl"
+//#include "Sky/Shaders/atmospheric_scattering_apply.sl"
 #endif
 //////////////////////////
 
