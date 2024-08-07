@@ -28,7 +28,9 @@ set_property(CACHE PLATFORM_STD_FILESYSTEM PROPERTY STRINGS 0 1 2)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	find_package(Vulkan REQUIRED)
-	set( VULKAN_SDK_DIR "{Vulkan_INCLUDE_DIR}/.."  )
+	set(vksdk "${Vulkan_INCLUDE_DIR}/..")
+	cmake_path(ABSOLUTE_PATH vksdk NORMALIZE OUTPUT_VARIABLE VULKAN_SDK_DIR)
+	message("VULKAN_SDK_DIR = ${VULKAN_SDK_DIR}")
 endif()
 
 set( PLATFORM_EMSCRIPTEN_DIR "$ENV{EMSCRIPTEN}" CACHE STRING "Set the location of the Emscripten SDK if compiling for Emscripten." )
