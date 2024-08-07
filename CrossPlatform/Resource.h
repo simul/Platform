@@ -23,6 +23,12 @@ namespace platform
 		//! You may see this referred to as a "Descriptor Set" layout elsewhere.
 		struct ResourceGroupLayout
 		{
+			inline bool Empty() const
+			{
+				if(constantBufferSlots||readOnlyResourceSlots||samplerSlots)
+					return false;
+				return true;
+			}
 			inline bool UsesSlot(uint64_t slots,uint8_t s) const
 			{
 				uint64_t b = uint64_t(1) << uint64_t(s);

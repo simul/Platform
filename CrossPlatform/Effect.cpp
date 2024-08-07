@@ -1076,6 +1076,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	string group_name,tech_name,pass_name;
 	int shaderCount=0;
 	bool platformChecked = false;
+	const std::regex re_resources("(\\b[a-z]):\\(([^\\)]*)\\)");
+	const std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
 	while(next>=0)
 	{
 		#ifdef UNIX
@@ -1402,7 +1404,6 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		}
 		else if(level==LAYOUT)
 		{
-			std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
 			std::smatch sm;
 			if(std::regex_search(line, sm, element_re))
 			{
@@ -1754,7 +1755,6 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					// Set what the shader uses.
 
 					// textures,buffers,samplers
-					std::regex re_resources("(\\b[a-z]):\\(([^\\)]*)\\)");
 					std::smatch res_smatch;
 
 					auto i_begin =std::sregex_iterator(uses.begin(),uses.end(),re_resources);
@@ -1876,7 +1876,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				if(shaderCount==0)
 				{
-					SIMUL_CERR<<"No shaders in pass "<<pass_name.c_str()<<" of effect "<<filename_utf8<<std::endl;
+					SIMUL_CERR<<"No shaders in pass "<<pass_name.c_str()<<" of technique "<<tech->name<<" of effect "<<filename_utf8<<std::endl;
 				}
 			}
 			if(level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)

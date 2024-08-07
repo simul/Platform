@@ -92,18 +92,24 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 	vk::Device *vulkanDevice = rp->AsVulkanDevice();
 
 	// If valid, activate render states:
+	const crossplatform::RenderState *currentBlendState;
+	const crossplatform::RenderState *currentDepthStencilState;
+	const crossplatform::RenderState *currentRasterizerState;
 	if (blendState)
 	{
 		deviceContext.renderPlatform->SetRenderState(deviceContext, blendState);
 	}
+	currentBlendState=deviceContext.contextState.blendState;
 	if (depthStencilState)
 	{
 		deviceContext.renderPlatform->SetRenderState(deviceContext, depthStencilState);
 	}
+	currentDepthStencilState=deviceContext.contextState.depthState;
 	if (rasterizerState)
 	{
 		deviceContext.renderPlatform->SetRenderState(deviceContext, rasterizerState);
 	}
+	currentRasterizerState=deviceContext.contextState.rasterizerState;
 	const crossplatform::ResourceGroupLayout &perPassLayout = renderPlatform->GetResourceGroupLayout(crossplatform::PER_PASS_RESOURCE_GROUP);
 	int numImages = numResourceSlots + numRwResourceSlots + numSamplerResourceSlots;
 	int numBuffers = numSbResourceSlots + numRwSbResourceSlots + numConstantBufferResourceSlots;
@@ -465,12 +471,12 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, 
 		numOfSamples = vulkan::RenderPlatform::GetActiveNumOfSamples(*graphicsDeviceContext);
 		crossplatform::Topology appliedTopology = (cs->topology != crossplatform::Topology::UNDEFINED)?cs->topology:topology;
 
-		hashval = MakeRenderPassHash(pixelFormat, numOfSamples, appliedTopology, cs->currentLayout, blendState, depthStencilState, rasterizerState, multiview);
+		hashval = MakeRenderPassHash(pixelFormat, numOfSamples, appliedTopology, cs->currentLayout, currentBlendState, currentDepthStencilState, currentRasterizerState, multiview);
 		const auto& p = m_RenderPasses.find(hashval);
 		if (p == m_RenderPasses.end())
 		{
 			renderPassPipeline = &m_RenderPasses[hashval];
-			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, pixelFormat, numOfSamples, appliedTopology, blendState, depthStencilState, rasterizerState, multiview);
+			InitializePipeline(*graphicsDeviceContext, renderPassPipeline, pixelFormat, numOfSamples, appliedTopology, currentBlendState, currentDepthStencilState, currentRasterizerState, multiview);
 		}
 		else
 			renderPassPipeline = &(m_RenderPasses[hashval]);
@@ -670,12 +676,12 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 						.setPImmutableSamplers(nullptr);
 					bindingIndex++;
 				}
-				for(uint8_t l=0;l<crossplatform::PER_PASS_RESOURCE_GROUP;l++)
+				else for(uint8_t l=0;l<crossplatform::PER_PASS_RESOURCE_GROUP;l++)
 				{
 					const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(l);
 					if(layout.UsesConstantBufferSlot(slot))
 					{
-						usingResourceLayouts|=(1<<l);
+						usingResourceLayouts|=(1<<l);break;
 					}
 				}
 			}
@@ -708,14 +714,22 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 
 	// Create the "Pipeline Layout":
+	uint8_t max_index=0;
 	for (uint8_t i = 0; i < crossplatform::PER_PASS_RESOURCE_GROUP; i++)
 	{
-		descriptorSetLayouts.push_back(rp->GetVulkanDescriptorSetLayoutForResourceGroup(i));
+		const auto &l=rp->GetVulkanDescriptorSetLayoutForResourceGroup(i);
+		const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(i);
+		if(!layout.Empty())
+			max_index=i;
+		descriptorSetLayouts.push_back(l);
 	}
 	if (descriptorSetLayoutCI.bindingCount)
+	{
 		descriptorSetLayouts.push_back(m_DescriptorSetLayout);
+		max_index=crossplatform::PER_PASS_RESOURCE_GROUP;
+	}
 	vk::PipelineLayoutCreateInfo pipelineLayoutCI = vk::PipelineLayoutCreateInfo()
-														.setSetLayoutCount(static_cast<uint32_t>(descriptorSetLayouts.size()))
+														.setSetLayoutCount(static_cast<uint32_t>(max_index+1))
 														.setPSetLayouts(descriptorSetLayouts.data());
 	result = vulkanDevice->createPipelineLayout(&pipelineLayoutCI, nullptr, &m_PipelineLayout);
 	SIMUL_VK_CHECK(result);
@@ -807,8 +821,8 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext& device
 		int num_RT = tv->num;
 
 		bool colour_write = true;
-		bool depth_write = (tv->depthTarget.texture != nullptr && depthStencilState->desc.depth.write);
-		bool depth_read = (tv->depthTarget.texture != nullptr && depthStencilState->desc.depth.test);
+		bool depth_write = (tv->depthTarget.texture != nullptr && depthStencilState&& depthStencilState->desc.depth.write);
+		bool depth_read = (tv->depthTarget.texture != nullptr && depthStencilState&& depthStencilState->desc.depth.test);
 		crossplatform::PixelFormat depthFormat = (depth_write || depth_read) ? crossplatform::PixelFormat::D_32_FLOAT : crossplatform::PixelFormat::UNKNOWN;
 
 		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext, renderPassPipeline->renderPass, num_RT, &pixelFormat,

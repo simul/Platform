@@ -21,17 +21,7 @@ uniform Texture2D screenspaceShadowTexture;
 uniform Texture2D loss2dTexture;
 uniform Texture3D inscatterVolumeTexture;
 
-#if SIMUL_TRUESKY
-#include "Sky/Shaders/atmospheric_transmittance_constants.sl"
-uniform Texture2D transmittanceTexture;
-uniform Texture3D scatteringTexture;
-uniform Texture3D singleMieScattering;
-
-#include "Sky/Shaders/atmospheric_scattering.sl"
-#include "Sky/Shaders/atmospheric_scattering_apply.sl"
-#endif
-//////////////////////////
-
+#define SIMUL_TRUESKY 0
 uniform StructuredBuffer<Light> lights;
 
 float GetRoughness(vec4 combinedLookup)

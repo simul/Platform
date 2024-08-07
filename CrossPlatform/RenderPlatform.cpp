@@ -144,7 +144,7 @@ void RenderPlatform::recompileAsync()
 					std::future_status status = future.wait_for(10ms);
 					if (status == std::future_status::ready)
 					{
-						EffectRecompile &effectRecompile = future.get();
+						const EffectRecompile &effectRecompile = future.get();
 						if (effectRecompile.callback)
 							effectRecompile.callback();
 
