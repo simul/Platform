@@ -39,6 +39,22 @@ vec3 PcgRand3(uint seed)
 	return r;
 }
 
+
+vec3 PcgSphericalRandom(uint seed)
+{
+	vec3 pcgrand=PcgRand3(seed);
+	float r			=1.f-pow(pcgrand.x,4.0);
+	float az		=pcgrand.y*2*3.1415926536;
+	float sine_el	=pcgrand.z*2.0-1.0;
+	float el		=asin(sine_el);
+	float cos_el	=cos(el);
+	vec3 v;
+	v.x				=r*sin(az)*cos_el;
+	v.y				=r*cos(az)*cos_el;
+	v.z				=r*sine_el;
+	return v;
+}
+
 vec4 PcgRand4(uint seed)
 {
 	uint4 hash;

@@ -1908,51 +1908,66 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 
 void Effect::LoadDefaultSamplers(crossplatform::DeviceContext& deviceContext)
 {
-	auto Regex = [](const std::string &token, std::regex regex, size_t matchIndex = 0) -> std::string {
-		std::string result = "";
-		std::smatch match;
-		if (std::regex_search(token, match, regex))
-			result = match[matchIndex];
-
-		return result;
-	};
-
-	auto ToUpper = [](const std::string &string) -> std::string
+	static std::map<uint32_t, std::string> samplerSlotAndNames;
+	if (!samplerSlotAndNames.empty())
 	{
-		std::string str = string;
-		std::transform(str.begin(), str.end(), str.begin(), 
-			[](unsigned char c) { return std::toupper(c); });
-		return str;
-	};
-
-	#include "Platform/CrossPlatform/Shaders/sampler_states.sl"
-
-	size_t offset = 0;
-	while(true)
+		for (const auto &samplerSlotAndName : samplerSlotAndNames)
+		{
+			deviceContext.renderPlatform->SetSamplerState(deviceContext, samplerSlotAndName.first, deviceContext.renderPlatform->GetOrCreateSamplerStateByName(samplerSlotAndName.second.c_str()));
+		}
+	}
+	else
 	{
-		offset = sampler_states_sl_file.find("SamplerState", offset);
-		if (offset == std::string::npos)
-			break;
+		auto Regex = [](const std::string &token, std::regex regex, size_t matchIndex = 0) -> std::string
+		{
+			std::string result = "";
+			std::smatch match;
+			if (std::regex_search(token, match, regex))
+				result = match[matchIndex];
 
-		size_t samplerStateStructEndPos = sampler_states_sl_file.find("};", offset) + 2;
-		std::string samplerStateStr = sampler_states_sl_file.substr(offset, (samplerStateStructEndPos - offset));
+			return result;
+		};
 
-		std::string name = Regex(samplerStateStr, std::regex("[^SamplerState\\s+][a-zA-Z]+"));
-		int32_t slot = toInt(Regex(samplerStateStr, std::regex("s[0-9]+")).substr(1));
-		crossplatform::SamplerStateDesc::Filtering filter = stringToFilter(Regex(samplerStateStr, std::regex("Filter\\s*=\\s*[a-zA-Z_]+(POINT|LINEAR|ANISOTROPIC)"), 1));
-		crossplatform::SamplerStateDesc::Wrapping addressU = stringToWrapping(ToUpper(Regex(samplerStateStr, std::regex("AddressU\\s*=\\s*([a-zA-Z_]+)"), 1)));
-		crossplatform::SamplerStateDesc::Wrapping addressV = stringToWrapping(ToUpper(Regex(samplerStateStr, std::regex("AddressV\\s*=\\s*([a-zA-Z_]+)"), 1)));
-		crossplatform::SamplerStateDesc::Wrapping addressW = stringToWrapping(ToUpper(Regex(samplerStateStr, std::regex("AddressW\\s*=\\s*([a-zA-Z_]+)"), 1)));
-		
-		crossplatform::SamplerStateDesc samplerDesc;
-		samplerDesc.filtering = filter;
-		samplerDesc.x = addressU;
-		samplerDesc.y = addressV;
-		samplerDesc.z = addressW;
-		samplerDesc.slot = slot;
-		deviceContext.renderPlatform->SetSamplerState(deviceContext, slot, deviceContext.renderPlatform->GetOrCreateSamplerStateByName(name.c_str(), &samplerDesc));
+		auto ToUpper = [](const std::string &string) -> std::string
+		{
+			std::string str = string;
+			std::transform(str.begin(), str.end(), str.begin(),
+						   [](unsigned char c)
+						   { return std::toupper(c); });
+			return str;
+		};
 
-		offset = samplerStateStructEndPos;
+		#include "Platform/CrossPlatform/Shaders/sampler_states.sl"
+
+		size_t offset = 0;
+		while (true)
+		{
+			offset = sampler_states_sl_file.find("SamplerState", offset);
+			if (offset == std::string::npos)
+				break;
+
+			size_t samplerStateStructEndPos = sampler_states_sl_file.find("};", offset) + 2;
+			std::string samplerStateStr = sampler_states_sl_file.substr(offset, (samplerStateStructEndPos - offset));
+
+			std::string name = Regex(samplerStateStr, std::regex("[^SamplerState\\s+][a-zA-Z]+"));
+			int32_t slot = toInt(Regex(samplerStateStr, std::regex("s[0-9]+")).substr(1));
+			crossplatform::SamplerStateDesc::Filtering filter = stringToFilter(Regex(samplerStateStr, std::regex("Filter\\s*=\\s*[a-zA-Z_]+(POINT|LINEAR|ANISOTROPIC)"), 1));
+			crossplatform::SamplerStateDesc::Wrapping addressU = stringToWrapping(ToUpper(Regex(samplerStateStr, std::regex("AddressU\\s*=\\s*([a-zA-Z_]+)"), 1)));
+			crossplatform::SamplerStateDesc::Wrapping addressV = stringToWrapping(ToUpper(Regex(samplerStateStr, std::regex("AddressV\\s*=\\s*([a-zA-Z_]+)"), 1)));
+			crossplatform::SamplerStateDesc::Wrapping addressW = stringToWrapping(ToUpper(Regex(samplerStateStr, std::regex("AddressW\\s*=\\s*([a-zA-Z_]+)"), 1)));
+
+			crossplatform::SamplerStateDesc samplerDesc;
+			samplerDesc.filtering = filter;
+			samplerDesc.x = addressU;
+			samplerDesc.y = addressV;
+			samplerDesc.z = addressW;
+			samplerDesc.slot = slot;
+			deviceContext.renderPlatform->SetSamplerState(deviceContext, slot, deviceContext.renderPlatform->GetOrCreateSamplerStateByName(name.c_str(), &samplerDesc));
+
+			samplerSlotAndNames[slot] = name;
+
+			offset = samplerStateStructEndPos;
+		}
 	}
 }
 

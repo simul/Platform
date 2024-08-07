@@ -816,9 +816,9 @@ void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba
 {
 	if (deviceContext.targetStack.empty() && deviceContext.defaultTargetsAndViewport.m_rt)
 	{
-		crossplatform::EffectTechnique *clearTechnique = clearTechnique = debugEffect->GetTechniqueByName("clear");
+		crossplatform::EffectTechnique *clearTechnique = debugEffect->GetTechniqueByName("clear");
 		if (deviceContext.AsMultiviewGraphicsDeviceContext())
-			clearTechnique = clearTechnique = debugEffect->GetTechniqueByName("clear_multiview");
+			clearTechnique = debugEffect->GetTechniqueByName("clear_multiview");
 
 		debugConstants.debugColour = colour_rgba;
 		SetConstantBuffer(deviceContext, &debugConstants);
@@ -1979,7 +1979,7 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	}
 	else
 	{
-		ss=CreateSamplerState(desc);
+		ss=desc?CreateSamplerState(desc):nullptr;
 		sharedSamplerStates[str]=ss;
 	}
 	return ss;

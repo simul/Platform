@@ -1,0 +1,32 @@
+# This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
+name: CMake Build Windows x64 Debug/Release with Visual Studio 2022
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Update Submodules
+      run: git submodule update --init --force
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory.
+      run: cmake -B ${{github.workspace}}/build
+
+    - name: Build Release
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --target ALL_BUILD --config Release
+    
+    - name: Build Debug
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --target ALL_BUILD --config Debug

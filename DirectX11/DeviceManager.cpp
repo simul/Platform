@@ -432,7 +432,6 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 	// Release the factory.
 	SAFE_RELEASE(factory);
 #endif
-	
 
 	//After setting up the swap chain description we also need to setup one more variable called the feature level.
 	// This variable tells DirectX what version we plan to use. Here we set the feature level to 11.0 which is DirectX 11.
@@ -457,11 +456,11 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 	UINT flags=0;
 	if(use_debug)
 		flags|=D3D11_CREATE_DEVICE_DEBUG;
+
 #ifdef _XBOX_ONE
 	if(instrument)
 		flags|=D3D11_CREATE_DEVICE_INSTRUMENTED;
 #endif
-	//std::cout<<"D3D11CreateDevice "<<std::endl;
 	result=D3D11CreateDevice(NULL,default_driver?D3D_DRIVER_TYPE_REFERENCE:D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
 	REFCT
 	if(result!=S_OK)
@@ -473,6 +472,7 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 	UINT exc=d3dDevice->GetExceptionMode();
 	if(exc>0)
 		std::cout<<"d3dDevice Exception mode is "<<exc<<std::endl;
+
 #ifndef _XBOX_ONE
 	SAFE_RELEASE(d3dDebug);
 #endif
@@ -486,60 +486,26 @@ void DeviceManager::Initialize(bool use_debug,bool instrument,bool default_drive
 			d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&infoQueue );
 	REFCT
 	#endif
-		static bool breakOnWarning = false;
-		if (breakOnWarning)
+		if (infoQueue)
 		{
-			SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
+			static bool breakOnWarning = false;
+			if (breakOnWarning)
+			{
+				SIMUL_COUT << "PIX does not like having breakOnWarning enabled, so disable it if using PIX. \n";
+			}
 
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-		}
-		else
-		{
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, false);
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, false);
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, breakOnWarning);
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, breakOnWarning);
 		}
 	
-		D3D11_MESSAGE_SEVERITY sevs[] = {	D3D11_MESSAGE_SEVERITY_ERROR
-											,D3D11_MESSAGE_SEVERITY_WARNING};
-
 		D3D11_INFO_QUEUE_FILTER filter= {};
-
-		D3D11_MESSAGE_ID deny_ids[]={
-							D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS
-							,D3D11_MESSAGE_ID_DESTROY_BUFFER
-							,D3D11_MESSAGE_ID_DESTROY_CLASSLINKAGE
-							,D3D11_MESSAGE_ID_DESTROY_BLENDSTATE
-							,D3D11_MESSAGE_ID_DESTROY_VERTEXSHADER
-							,D3D11_MESSAGE_ID_DESTROY_PIXELSHADER
-							,D3D11_MESSAGE_ID_DESTROY_COMPUTESHADER
-							,D3D11_MESSAGE_ID_DESTROY_SHADERRESOURCEVIEW
-							,D3D11_MESSAGE_ID_DESTROY_UNORDEREDACCESSVIEW};
-		filter.DenyList.NumIDs=_countof(deny_ids);
-		filter.DenyList.pIDList=deny_ids;
-		
-		D3D11_MESSAGE_CATEGORY deny_cats[]={
-								D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
-								,D3D11_MESSAGE_CATEGORY_MISCELLANEOUS
-								,D3D11_MESSAGE_CATEGORY_INITIALIZATION
-								,D3D11_MESSAGE_CATEGORY_CLEANUP
-								,D3D11_MESSAGE_CATEGORY_COMPILATION
-								,D3D11_MESSAGE_CATEGORY_STATE_CREATION
-								,D3D11_MESSAGE_CATEGORY_STATE_SETTING
-								,D3D11_MESSAGE_CATEGORY_STATE_GETTING
-								,D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION
-								,D3D11_MESSAGE_CATEGORY_EXECUTION
-								,D3D11_MESSAGE_CATEGORY_SHADER
-		};
-		filter.DenyList.NumCategories=_countof(deny_cats);
-		filter.DenyList.pCategoryList=deny_cats;
-
-		
 		D3D11_MESSAGE_SEVERITY deny_sevs[] = {
 			D3D11_MESSAGE_SEVERITY_INFO
-			,D3D11_MESSAGE_SEVERITY_MESSAGE};
+			,D3D11_MESSAGE_SEVERITY_MESSAGE
+		};
 		filter.DenyList.NumSeverities=_countof(deny_sevs);
 		filter.DenyList.pSeverityList=deny_sevs;
+
 		if(infoQueue)
 		{
 			infoQueue->ClearStorageFilter();
@@ -660,7 +626,7 @@ void DeviceManager::Shutdown()
 		d3dDeviceContext->Flush();
 	}
 	SAFE_RELEASE(d3dDeviceContext);
-	ReportMessageFilterState();
+	//ReportMessageFilterState();
 	// Finally, we can destroy the device.
 	if(d3dDevice)
 	{
@@ -668,6 +634,7 @@ void DeviceManager::Shutdown()
 		UINT exc=d3dDevice->GetExceptionMode();
 		if(exc>0)
 			std::cout<<"d3dDevice Exception mode is "<<exc<<std::endl;
+
 		d3dDevice->AddRef();
 		UINT references=d3dDevice->Release();
 		uint acceptable_refs=1+(d3dDebug?1:0)+(infoQueue?1:0);
@@ -676,11 +643,12 @@ void DeviceManager::Shutdown()
 #ifndef _XBOX_ONE
 			if(d3dDebug)
 			{
+				// https://stackoverflow.com/questions/18529077/where-does-reportlivedeviceobjects-report-to
 				// Watch out - this will ALWAYS BREAK, but that doesn't mean there are live objects.
 				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 			}
 #endif
-			SIMUL_BREAK("Unfreed references remain in DirectX 11");
+			PLATFORM_WARN("There are {0} reported unfreed references remain in DirectX 11.", references);
 		}
 #ifndef _XBOX_ONE
 		SAFE_RELEASE(d3dDebug);
