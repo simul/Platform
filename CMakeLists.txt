@@ -18,6 +18,12 @@ if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set(PLATFORM_BUILD_DIR ${PLATFORM_BUILD_DIR} PARENT_SCOPE)
 endif()
 
+# Includes
+include("CMake/Variables.cmake")
+include("CMake/Include.cmake")
+include("CMake/Shader.cmake")
+
+# ASSIMP
 if(PLATFORM_BUILD_ASSIMP)
 	set(ASSIMP_LIBNAME assimp-vc${MSVC_TOOLSET_VERSION}-mt$<$<CONFIG:Debug>:d>)
 	set(ASSIMP_LIBNAME_DLL assimp-vc${MSVC_TOOLSET_VERSION}-mt.dll)
@@ -36,7 +42,7 @@ if(PLATFORM_BUILD_ASSIMP)
 endif()
 
 if(PLATFORM_USE_ASSIMP)
-	function(DelayLoadLinkAssimp target)
+function(DelayLoadLinkAssimp target)
 		if (PLATFORM_BUILD_ASSIMP)
 			target_link_libraries(${target} PRIVATE assimp)
 			target_link_options(${target} PRIVATE "/DELAYLOAD:$<TARGET_FILE_BASE_NAME:assimp>.dll")
@@ -47,10 +53,7 @@ if(PLATFORM_USE_ASSIMP)
 	endfunction()
 endif()
 
-include("CMake/Variables.cmake")
-include("CMake/Include.cmake")
-include("CMake/Shader.cmake")
-
+# FMT
 set(FMT_DOC false)
 set(FMT_INSTALL false)
 set(FMT_TEST false)
