@@ -60,6 +60,7 @@ function ( add_sfx_shader_project targetName configJsonFile )
 					MAIN_DEPENDENCY ${in_f}
 					WORKING_DIRECTORY ${out_folder}
 					DEPENDS ${PLATFORM_SFX_EXECUTABLE}
+					COMMENT "$ENV{VULKAN_SDK} ${PLATFORM_SFX_EXECUTABLE} ${in_f} ${INCLUDE_OPTS} -O\"${out_folder}\" -P\"${configJsonFile}\" ${EXTRA_OPTS_S}"
 					)
 				list(APPEND outputs${targetName} ${out_f})
 			else()
