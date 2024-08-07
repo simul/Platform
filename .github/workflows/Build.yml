@@ -19,6 +19,13 @@ jobs:
     - name: Update Submodules
       run: git submodule update --init --force
 
+    - name: Prepare Vulkan SDK
+      uses: humbletim/setup-vulkan-sdk@v1.2.0
+      with:
+        vulkan-query-version: latest
+        vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+        vulkan-use-cache: true
+
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory.
       run: cmake -B ${{github.workspace}}/build
