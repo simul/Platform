@@ -458,10 +458,15 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 	}
 	for(const auto &p:sfxConfig.compilerPaths)
 	{
-		std::string t=p+"/"s+compiler_exe;
-		//std::cout << "Checking " << t.c_str() << std::endl;
-		if(fs::exists(t))
+		std::filesystem::path pth(p);
+		pth=pth.append(compiler_exe);
+		pth=pth.lexically_normal();
+		if(sfxOptions.verbose)
+			std::cout << "Checking: " << pth.generic_string().c_str() << std::endl;
+		if(fs::exists(pth))
 		{
+			if(sfxOptions.verbose)
+				std::cout << "Using: " << pth.generic_string().c_str() << std::endl;
 			usePath=p;
 			break;
 		}
