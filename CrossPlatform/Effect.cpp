@@ -1133,6 +1133,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				const string &name	=words[1];
 				const string &register_num	=words[4];
+				const string &group_num		=words[5];
 				int slot=atoi(register_num.c_str());
 				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
 				res->slot				=slot;
@@ -1144,6 +1145,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				const string &constant_buffer_name = words[1];
 				const string &constant_buffer_slot = words[2];
+				const string &constant_buffer_group = words[3];
 				int slot = atoi(constant_buffer_slot.c_str());
 				constantBufferSlots[constant_buffer_name]=slot;
 			}
@@ -1153,7 +1155,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				const string &texture_dim	=words[2];
 				const string &read_write	=words[3];
 				const string &register_num	=words[4];
-				string is_array				=words.size()>5?words[5]:"single";
+				const string &group_num		=words[5];
+				string is_array				=words.size()>6?words[6]:"single";
 				int slot=atoi(register_num.c_str());
 				int dim=is_equal(texture_dim,"3d")||is_equal(texture_dim,"3dms")?3:2;
 				bool is_cubemap=is_equal(texture_dim,"cubemap")||is_equal(texture_dim,"cubemapms");
@@ -1334,12 +1337,15 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			}
 			else if(is_equal(word, "SamplerState"))
 			{
-				//SamplerState clampSamplerState 9,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
+				//SamplerState clampSamplerState 9 g0,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
 				size_t sp2=line.find(" ",sp+1);
+				size_t sp3=line.find(" ",sp2+1);
+				size_t comma=(int)std::min(line.length(),line.find(",",sp3+1));
 				string sampler_name = line.substr(sp + 1, sp2 - sp - 1);
-				size_t comma=(int)std::min(line.length(),line.find(",",sp2+1));
-				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
+				string register_num = line.substr(sp2 + 1, sp3 - sp2 - 1);
+				string group_num = line.substr(sp3 + 2, comma - sp3 - 2);
 				int reg=atoi(register_num.c_str());
+				int grp=atoi(group_num.c_str());
 				platform::crossplatform::SamplerStateDesc desc;
 				string state=line.substr(comma+1,line.length()-comma-1);
 				vector<string> st=platform::core::split(state,',');
