@@ -133,10 +133,16 @@ function ( add_multiplatform_sfx_shader_project targetName )
 				string(REPLACE "\"" "" EXTRA_OPTS ${EXTRA_OPTS})
 			endif()
 			set(EXTRA_OPTS "${EXTRA_OPTS} ${SET_DEFINES}")
+			message("EXTRA_OPTS ${EXTRA_OPTS}")
 			separate_arguments(EXTRA_OPTS_S WINDOWS_COMMAND "${EXTRA_OPTS}")
 			if(SIMUL_DEBUG_SHADERS)
-				set(EXTRA_OPTS_S ${EXTRA_OPTS_S} -v -d)
+				set(EXTRA_OPTS_S "${EXTRA_OPTS_S} -v -d")
 			endif()
+			set(EXTRA_OPTS)
+			foreach(extra_opt ${EXTRA_OPTS_S})
+				set(EXTRA_OPTS "${EXTRA_OPTS} ${extra_opt}" )
+			endforeach()
+			message("EXTRA_OPTS ${EXTRA_OPTS}")
 			set(srcs_includes)
 			set(srcs_shaders)
 			set(srcs)
@@ -162,7 +168,7 @@ function ( add_multiplatform_sfx_shader_project targetName )
 					string(REPLACE ".sfxo" ".sfx_summary" main_output_file ${out_f})
 				#message("add_custom_command \"${PLATFORM_SFX_EXECUTABLE}\" ${in_f} ${INCLUDE_OPTS} -O\"${sfx_OUTPUT}\" ${SET_CONFIGS} ${EXTRA_OPTS_S}")
 					add_custom_command(OUTPUT ${main_output_file}
-						COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
+						COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS}
 						MAIN_DEPENDENCY ${in_f}
 						WORKING_DIRECTORY ${out_folder}
 						DEPENDS ${PLATFORM_SFX_EXECUTABLE}
