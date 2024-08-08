@@ -166,7 +166,7 @@ function ( add_multiplatform_sfx_shader_project targetName )
 						MAIN_DEPENDENCY ${in_f}
 						WORKING_DIRECTORY ${out_folder}
 						DEPENDS ${PLATFORM_SFX_EXECUTABLE}
-						COMMENT "info: Sfx compiling ${in_f}"
+						COMMENT "info: \"${PLATFORM_SFX_EXECUTABLE}\" ${in_f} ${INCLUDE_OPTS} -O\"${sfx_OUTPUT}\" ${SET_CONFIGS} ${EXTRA_OPTS_S}"
 						)
 					list(APPEND outputs${targetName} ${out_f})
 				else()
