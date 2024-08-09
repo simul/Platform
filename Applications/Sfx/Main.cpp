@@ -204,6 +204,13 @@ int main(int argc, char** argv)
 		//std::cerr<<log<<std::endl;
 		return 2;
 	}
+	if(platformFilenames.size()==0)
+	{
+		std::cerr<<("No platforms specified, use -P argument.\n");
+		///sfxGetEffectLog(effect, log, sizeof(log));
+		//std::cerr<<log<<std::endl;
+		return 11;
+	}
 	std::filesystem::path sourcePath(sourcefile);
 	std::string sourceName=sourcePath.filename().generic_string();
 	for(auto platformFilename:platformFilenames)
