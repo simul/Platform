@@ -38,7 +38,8 @@ set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/inc
 
 if(SIMUL_SOURCE_BUILD)
 	add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} ${SHADER_INCLUDES} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-
+	
+	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
 	if(PLATFORM_WINDOWS)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
 	endif()
