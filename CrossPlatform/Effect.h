@@ -259,6 +259,7 @@ namespace platform
 			ShaderResourceType  shaderResourceType=ShaderResourceType::UNKNOWN;
 			void*				platform_shader_resource=nullptr;
 			int					slot=-1;
+			int					group=-1;
 			int					dimensions=-1;
 			bool				valid=false;
 		};
@@ -543,7 +544,7 @@ namespace platform
 			phmap::flat_hash_map<std::string,crossplatform::RenderState *> blendStates;
 			phmap::flat_hash_map<std::string,crossplatform::RenderState *> rasterizerStates;
 			phmap::flat_hash_map<std::string, crossplatform::RenderState *> rtFormatStates;
-			phmap::flat_hash_map<std::string, int> constantBufferSlots;
+			phmap::flat_hash_map<std::string, std::pair<int, int>> constantBufferSlots; //name -> {slot, group}
 			SamplerStateAssignmentMap samplerSlots;	// The slots for THIS effect - may not be the sampler's defaults.
 			const ShaderResource *GetTextureDetails(const char *name);
 			virtual void PostLoad(){}
