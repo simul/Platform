@@ -99,6 +99,7 @@ namespace platform
 			Filtering filtering;
 			DepthComparison depthComparison;
 			int slot;			// register slot
+			int group;			// group number
 		};
 
 		enum class VideoTextureType
