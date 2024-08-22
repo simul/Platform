@@ -1,6 +1,6 @@
 #pragma once
 #include "Platform/CrossPlatform/Export.h"
-
+#include "Platform/CrossPlatform/Quaterniond.h"
 #include "Platform/Core/BaseMouseHandler.h"
 #include "Platform/CrossPlatform/Camera.h"
 
@@ -16,9 +16,17 @@ namespace platform
 		///
 		enum CameraMode
 		{
-			FLYING,
-			LOOKAROUND,
-			CENTRED
+			FLYING,		//The camera flies like an aircraft.
+			LOOKAROUND,	//The camera has 6 degrees of freedom for translation and rotation.
+			CENTRED		//The camera orbits about a centred position.
+		};
+
+		enum CameraSpactialCoordinates
+		{
+			EUCLIDEAN,
+			SPHERICAL,
+
+			CARTESIAN = EUCLIDEAN
 		};
 
 		class SIMUL_CROSSPLATFORM_EXPORT MouseHandler : public platform::core::BaseMouseHandler
@@ -31,7 +39,8 @@ namespace platform
 			{
 				shift_multiplier=c;
 			}
-			void setCameraMode(CameraMode c);
+			void setEnginePose(const posed& pose);
+			void setLocalRadiusKmCallback(std::function<float(float)> pfn);
 			void setAltitudeRange(float m, float M);
 			void SetYVertical(bool v)
 			{
@@ -60,9 +69,16 @@ namespace platform
 
 			//! @brief Given the last mouse position, what direction is the mouse pointer in?
 			vec3 getMouseDirection(int x, int y, int viewport_x, int viewport_y) const;
+
+			CameraMode &GetCameraMode() { return cameraMode; }
+			CameraSpactialCoordinates &GetCameraSpactialCoordinates() { return cameraSpatial; }
+
 		protected:
 			int step_rotate_x, step_rotate_y;
 			CameraMode cameraMode;
+			CameraSpactialCoordinates cameraSpatial = CameraSpactialCoordinates::EUCLIDEAN;
+			std::function<float(float)> LocalRadiusKmCallback;
+			posed enginePose;
 			float centre[3];
 			float CameraDamping;
 			float minAlt, maxAlt;
