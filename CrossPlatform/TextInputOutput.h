@@ -124,8 +124,8 @@ namespace platform
 			TextFileInput(platform::core::MemoryInterface *m=NULL);
 			virtual ~TextFileInput();
 			void SetFileLoader(platform::core::FileLoader *f);
-			void Load(const char *filename);
-			void Load(const std::string &text);
+			void LoadFile(const char *filename);
+			void LoadText(const std::string &text);
 			bool Good();
 			//! Is the specified element in the list?
 			virtual bool Has(const char *name) const;
