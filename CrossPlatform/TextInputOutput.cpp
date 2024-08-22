@@ -157,12 +157,12 @@ static void LoadArray(TextInput::Array &array,const string &text,platform::core:
 		std::string sub=text.substr(start_pos,end_pos+1-start_pos);
 		TextFileInput *e=::new(m) TextFileInput;
 		array.push_back(e);
-		e->Load(sub);
+		e->LoadText(sub);
 		pos=end_pos;
 	}
 }
 
-void TextFileInput::Load(const std::string &text)
+void TextFileInput::LoadText(const std::string &text)
 {
 	// if there are multiple elements we expect to see { and } at the start and end.
 	size_t open_pos=text.find("{");
@@ -193,7 +193,7 @@ void TextFileInput::Load(const std::string &text)
 		{
 			size_t end_brace_pos=(size_t)findMatchingBrace(text,(int)brace_pos);
 			std::string sub=text.substr(brace_pos,end_brace_pos+1-brace_pos);
-			subElements[name].Load(sub);
+			subElements[name].LoadText(sub);
 			pos=end_brace_pos;
 		}
 		else if(next_ret<text.length())
@@ -213,7 +213,7 @@ void TextFileInput::SetFileLoader(platform::core::FileLoader *f)
 	fileLoader=f;
 }
 
-void TextFileInput::Load(const char *filename_utf8)
+void TextFileInput::LoadFile(const char *filename_utf8)
 {
 	if(!filename_utf8)
 		return;
@@ -255,7 +255,7 @@ void TextFileInput::Load(const char *filename_utf8)
 			text+="\r\n";
 		}
 	}
-	Load(text);
+	LoadText(text);
 	good=true;
 }
 
