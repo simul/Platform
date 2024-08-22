@@ -5355,7 +5355,19 @@ input[type=checkbox][disabled], input[type=radio][disabled]
 
 .wy-table-responsive table td, .wy-table-responsive table th
 {
-    white-space: nowrap
+    white-space: normal
+}
+
+.wy-table-responsive table td:nth-child(1), .wy-table-responsive table th:nth-child(1) {
+    width: 20%; 
+}
+
+.wy-table-responsive table td:nth-child(2), .wy-table-responsive table th:nth-child(2) {
+    width: 60%; 
+}
+
+.wy-table-responsive table td:nth-child(3), .wy-table-responsive table th:nth-child(3) {
+    width: 20%;
 }
 
 a
