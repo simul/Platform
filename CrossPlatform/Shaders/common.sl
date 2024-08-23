@@ -211,7 +211,7 @@ uint3 UnflattenArrayIndex(uint idx, uint2 size)
 	uint z = idx / (size.x * size.y);
 	idx -= (z * size.x * size.y);
 	uint y = idx / size.x;
-    uint x = idx % size.x;
+	uint x = idx % size.x;
 	return uint3(x, y, z);
 }
 
