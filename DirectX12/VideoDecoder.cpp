@@ -164,7 +164,11 @@ cp::VideoDecoderResult VideoDecoder::DecodeFrame(cp::Texture* outputTexture, con
 			picParams = true;
 			break;
 		case cp::VideoDecodeArgumentType::MaxValid:
+		#if (NTDDI_VERSION <= NTDDI_WIN10_NI)
 			frameArgs.Type = D3D12_VIDEO_DECODE_ARGUMENT_TYPE::D3D12_VIDEO_DECODE_ARGUMENT_TYPE_MAX_VALID;
+		#else
+			frameArgs.Type = D3D12_VIDEO_DECODE_ARGUMENT_TYPE(0);
+		#endif
 			break;
 		case cp::VideoDecodeArgumentType::SliceControl:
 			frameArgs.Type = D3D12_VIDEO_DECODE_ARGUMENT_TYPE::D3D12_VIDEO_DECODE_ARGUMENT_TYPE_SLICE_CONTROL;
