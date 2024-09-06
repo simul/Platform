@@ -7,7 +7,6 @@ using namespace crossplatform;
 MeshRenderer::MeshRenderer()
 	:renderPlatform(nullptr)
 	, effect(nullptr)
-	, recompiled(false)
 {
 }
 
