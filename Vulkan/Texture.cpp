@@ -560,8 +560,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		int mip_width=width;
 		int mip_length=length;
 		ClearLoadedTextures();
-		ResizeLoadedTextures(mips, 1);
-		for (uint32_t i = 0; i < uint32_t(mips); i++)
+		ResizeLoadedTextures(mLoadedTextures.size(), 1);
+		for (uint32_t i = 0; i < uint32_t(mLoadedTextures.size()); i++)
 		{
 			uint32_t n = CalculateSubresourceIndex(i, 0, 0, mips, 1);
 			LoadedTexture& loadedTexture=mLoadedTextures[i][0];
@@ -907,6 +907,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	case crossplatform::CompressionFormat::BC1:
 	case crossplatform::CompressionFormat::BC3:
 	case crossplatform::CompressionFormat::BC5:
+	case crossplatform::CompressionFormat::BC6H:
 	case crossplatform::CompressionFormat::ETC1:
 	case crossplatform::CompressionFormat::ETC2:
 		{
