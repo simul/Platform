@@ -482,7 +482,7 @@ public:
 		crossplatform::EffectTechnique* fibonacci = test->GetTechniqueByName("test_fibonacci");
 		crossplatform::ShaderResource res = test->GetShaderResource("rwSB");
 
-		rwSB.ApplyAsUnorderedAccessView(deviceContext, test, res);
+		rwSB.ApplyAsUnorderedAccessView(deviceContext, res);
 		renderPlatform->ApplyPass(deviceContext, fibonacci->GetPass(0));
 		renderPlatform->DispatchCompute(deviceContext, 1, 1, 1);
 		renderPlatform->UnapplyPass(deviceContext);
