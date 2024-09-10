@@ -430,6 +430,11 @@ namespace platform
 			/// <param name="deviceContext"></param>
 			/// <param name="s"></param>
 			virtual void					SetStructuredBuffer				(DeviceContext& deviceContext, BaseStructuredBuffer* s,  const ShaderResource& shaderResource);
+			template<typename T>
+			void							SetStructuredBuffer				(DeviceContext& deviceContext, StructuredBuffer<T>& s,  const ShaderResource& shaderResource)
+			{
+				SetStructuredBuffer(deviceContext, &s, shaderResource);
+			}
 			///
 			virtual void					SetAccelerationStructure		(DeviceContext& deviceContext, const ShaderResource& res, TopLevelAccelerationStructure* a);
 		

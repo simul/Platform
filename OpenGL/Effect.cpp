@@ -309,17 +309,7 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 
 void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource) 
 {
-	Apply(deviceContext, nullptr, shaderResource);
-}
-
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource) 
-{
-	ApplyAsUnorderedAccessView(deviceContext, nullptr, shaderResource);
-}
-
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
-{
-// mLastIdx is the one we last used to write to.
+	// mLastIdx is the one we last used to write to.
 	int idx = mLastIdx;
 	if (mBinding != shaderResource.slot)
 	{
@@ -336,10 +326,10 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, mBinding, mGPUBuffer[idx]);
 }
 
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext,crossplatform::Effect* effect,const crossplatform::ShaderResource &shaderResource)
+void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource) 
 {
 	mLastIdx = GetIndex(deviceContext);
-	Apply(deviceContext,effect,shaderResource);
+	Apply(deviceContext,shaderResource);
 }
 
 void PlatformStructuredBuffer::AddFence(crossplatform::DeviceContext& deviceContext)
