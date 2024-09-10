@@ -47,10 +47,6 @@ namespace platform
 			virtual void InvalidateDeviceObjects() = 0;
 			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
 			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& shaderResource);
-			// Deprecated
-			virtual void Apply(DeviceContext& deviceContext, Effect* effect, const ShaderResource& shaderResource);
-			// Deprecated
-			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, Effect* effect, const ShaderResource& shaderResource);
 			virtual void Unbind(DeviceContext& deviceContext) = 0;
 			virtual void* GetBuffer(crossplatform::DeviceContext& deviceContext) = 0;
 			virtual const void* OpenReadBuffer(crossplatform::DeviceContext& deviceContext) = 0;
@@ -158,16 +154,16 @@ namespace platform
 				}
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
-			void Apply(crossplatform::DeviceContext& pContext, crossplatform::Effect* , const crossplatform::ShaderResource& shaderResource)
+			void Apply(crossplatform::DeviceContext& pContext, const crossplatform::ShaderResource& shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return;
 				}
-				platformStructuredBuffer->Apply(pContext,  shaderResource);
+				platformStructuredBuffer->Apply(pContext, shaderResource);
 			}
-			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& pContext, crossplatform::Effect* , const crossplatform::ShaderResource& shaderResource)
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& pContext, const crossplatform::ShaderResource& shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
