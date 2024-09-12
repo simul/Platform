@@ -154,6 +154,7 @@ namespace platform
 				}
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
+			//[[deprecated("Preferred usage is now RenderPlatform::SetStructuredBuffer.")]]
 			void Apply(crossplatform::DeviceContext& pContext, const crossplatform::ShaderResource& shaderResource)
 			{
 				if (!platformStructuredBuffer)
@@ -163,6 +164,7 @@ namespace platform
 				}
 				platformStructuredBuffer->Apply(pContext, shaderResource);
 			}
+			//[[deprecated("Preferred usage is now RenderPlatform::SetStructuredBuffer.")]]
 			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& pContext, const crossplatform::ShaderResource& shaderResource)
 			{
 				if (!platformStructuredBuffer)
