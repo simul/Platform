@@ -321,9 +321,13 @@ namespace platform
 			void Draw2dLine					(GraphicsDeviceContext &deviceContext,vec2 pos1,vec2 pos2,vec4 colour);
 			virtual void Draw2dLines		(GraphicsDeviceContext &/*deviceContext*/,PosColourVertex * /*lines*/,int /*vertex_count*/,bool /*strip*/){}
 			/// Draw a circle facing the viewer at the specified direction and angular size.
-			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false);
+			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill=false,bool view_centred=false);
+			/// Draw a circle facing the viewer at the specified direction and angular size.
+			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const double *dir,double rads,const float *colr,bool fill=false,bool view_centred=false);
 			/// Draw a circle in 3D space at pos
-			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false);
+			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill=false,bool view_centred=false);
+			/// Draw a circle in 3D space at pos
+			virtual void DrawCircle			(GraphicsDeviceContext &deviceContext,const double *pos,const double *dir,double radius,const float *colr,bool fill=false,bool view_centred=false);
 			/// Draw a cubemap as a sphere at the specified screen position and size.
 			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayMip=0.0f);
 			virtual void DrawCubemap		(GraphicsDeviceContext &deviceContext,Texture *cubemap,float offsetx,float offsety,float size,float exposure,float gamma,float displayMip=0.0f);

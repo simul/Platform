@@ -1237,25 +1237,29 @@ void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVer
 	posColourLayout->Unapply(deviceContext);
 }
 
-
-static float length(const vec3 &u)
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill,bool view_centred)
 {
-	float size=u.x*u.x+u.y*u.y+u.z*u.z;
-	return sqrt(size);
-}
-void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
-{
-	vec3 pos=GetCameraPosVector(deviceContext.viewStruct.view);
+	vec3 pos = view_centred ? vec3d(0, 0, 0) : GetCameraPosVector(deviceContext.viewStruct.view);
 	vec3 d=dir;
 	d/=length(d);
 	pos += 1.5f * d;
 	float radius = 1.5f * rads;
-	DrawCircle(deviceContext,pos,dir,radius,colr,fill);
+	DrawCircle(deviceContext,pos,dir,radius,colr,fill,view_centred);
 }
 
-void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill)
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const double *dir,double rads,const float *colr,bool fill,bool view_centred)
 {
-	PosColourVertex line_vertices[37];
+	vec3d pos = view_centred ? vec3d(0,0,0) : GetCameraPosVector(deviceContext.viewStruct.view);
+	vec3d d=dir;
+	d/=length(d);
+	pos += 1.5 * d;
+	double radius = 1.5 * rads;
+	DrawCircle(deviceContext,pos,dir,radius,colr,fill,view_centred);
+}
+
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill,bool view_centred)
+{
+	PosColourVertex line_vertices[36];
 	vec3 direction(dir);
 	direction = normalize(direction);
 	vec3 z(0,0,1.f);
@@ -1268,14 +1272,39 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 	x*=radius;
 	y = cross(direction , x);
 	int l=0;
-	for(int j=0;j<36;j++)
+	for(int j=0;j<_countof(line_vertices);j++)
 	{
-		float angle					=(float(j)/35.0f)*2.0f*3.1415926536f;
-		math::Vector3 p = math::Vector3((x * cos(angle) + y * sin(angle)));
-		line_vertices[l].pos		=vec3(pos)+vec3((const float*)&p);
+		float angle					=(float(j)/float(_countof(line_vertices)-1))*2.0f*3.1415926536f;
+		vec3 p						=vec3((x * cos(angle) + y * sin(angle)));
+		line_vertices[l].pos		=vec3(pos)+p;
 		line_vertices[l++].colour	=colr;
 	}
-	DrawLines(deviceContext,line_vertices,36,true,false,false);
+	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
+}
+
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const double *pos, const double *dir, double radius, const float *colr, bool fill, bool view_centred)
+{
+	PosColourVertex line_vertices[36];
+	vec3d direction(dir);
+	direction = normalize(direction);
+	vec3d z(0, 0, 1.0);
+	vec3d y(0, 1.0, 0);
+	vec3d x = cross(z, direction);
+	if (length(x) > 0.1)
+		x = normalize(x);
+	else
+		x = cross(direction, y);
+	x *= radius;
+	y = cross(direction, x);
+	int l = 0;
+	for (int j = 0; j < _countof(line_vertices); j++)
+	{
+		double angle = (double(j) / float(_countof(line_vertices) - 1)) * 2.0 * 3.1415926536;
+		vec3d p = vec3d((x * cos(angle) + y * sin(angle)));
+		line_vertices[l].pos = vec3(vec3d(pos) + p);
+		line_vertices[l++].colour = colr;
+	}
+	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
 }
 
 void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
