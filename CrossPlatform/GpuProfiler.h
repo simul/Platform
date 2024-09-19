@@ -139,7 +139,9 @@ namespace platform
 }
 
 #ifdef PLATFORM_INTERNAL_PROFILING
-		
+		//Debug SIMUL_COMBINED_PROFILE
+		//inline std::stack<std::string> names;
+
 		#define SIMUL_GPU_PROFILE_STARTFRAME(ctx) \
 			{platform::crossplatform::GpuProfilingInterface *gpuProfilingInterface=platform::crossplatform::GetGpuProfilingInterface(ctx); \
 			if(gpuProfilingInterface) \
@@ -160,10 +162,15 @@ namespace platform
 		
 		#define SIMUL_COMBINED_PROFILE_START(ctx,name) \
 			SIMUL_GPU_PROFILE_START(ctx,name) \
-			SIMUL_PROFILE_START(name)
+			SIMUL_PROFILE_START(name) //\
+			//PLATFORM_WARN("Start: {}", name);\
+			//names.push(name);
+
 		#define SIMUL_COMBINED_PROFILE_END(ctx) \
 			SIMUL_PROFILE_END \
-			SIMUL_GPU_PROFILE_END(ctx)
+			SIMUL_GPU_PROFILE_END(ctx) //\
+			//PLATFORM_WARN("End: {}", names.top()); \
+			//names.pop();
 		
 		#define SIMUL_COMBINED_PROFILE_STARTFRAME(ctx) \
 			SIMUL_GPU_PROFILE_STARTFRAME(ctx) \
