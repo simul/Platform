@@ -560,7 +560,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		int mip_width=width;
 		int mip_length=length;
 		ClearLoadedTextures();
-		ResizeLoadedTextures(mLoadedTextures.size(), 1);
+		ResizeLoadedTextures(data->size(), 1);
 		for (uint32_t i = 0; i < uint32_t(mLoadedTextures.size()); i++)
 		{
 			uint32_t n = CalculateSubresourceIndex(i, 0, 0, mips, 1);
