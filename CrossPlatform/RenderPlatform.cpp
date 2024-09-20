@@ -1859,7 +1859,7 @@ void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,v
 
 int RenderPlatform::Print(GraphicsDeviceContext& deviceContext, int x, int y, const char* text, const float* colr, const float* bkg)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
+	SIMUL_COMBINED_PROFILE_START(deviceContext, "Print")
 	static float clr[]={1.f,1.f,0.f,1.f};
 	static float black[]={0.f,0.f,0.f,0.0f};
 	if(!colr)
@@ -1878,7 +1878,7 @@ int RenderPlatform::Print(GraphicsDeviceContext& deviceContext, int x, int y, co
 
 int RenderPlatform::Print(MultiviewGraphicsDeviceContext& deviceContext, float* xs, float* ys, const char* text, const float* colr, const float* bkg)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
+	SIMUL_COMBINED_PROFILE_START(deviceContext, "Print")
 	static float clr[] = { 1.f,1.f,0.f,1.f };
 	static float black[] = { 0.f,0.f,0.f,0.0f };
 	if (!colr)
