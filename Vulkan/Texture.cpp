@@ -560,12 +560,12 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		int mip_width=width;
 		int mip_length=length;
 		ClearLoadedTextures();
-		ResizeLoadedTextures(mLoadedTextures.size(), 1);
+		ResizeLoadedTextures(data->size(), 1);
 		for (uint32_t i = 0; i < uint32_t(mLoadedTextures.size()); i++)
 		{
 			uint32_t n = CalculateSubresourceIndex(i, 0, 0, mips, 1);
 			LoadedTexture& loadedTexture=mLoadedTextures[i][0];
-			SetTextureData(loadedTexture, (*data)[i].data(), mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
+  			SetTextureData(loadedTexture, (*data)[i].data(), mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
 			mip_width=(mip_width+1)/2;
 			mip_length=(mip_length+1)/2;
 		}
@@ -902,29 +902,33 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	size_t SysMemPitch		=x*bytesPerTexel;
 	size_t bufferSize		 = SysMemPitch*y;
 	size_t numRowsToCopy	 = y;
+	size_t block_size_bytes=bytesPerTexel;
 	switch (cf)
 	{
 	case crossplatform::CompressionFormat::BC1:
 	case crossplatform::CompressionFormat::BC3:
 	case crossplatform::CompressionFormat::BC5:
-	case crossplatform::CompressionFormat::BC6H:
 	case crossplatform::CompressionFormat::ETC1:
 	case crossplatform::CompressionFormat::ETC2:
-		{
-		// The memory pitch of a line for uncompressed formats, becomes the memory pitch
-		// of a row of blocks in the case of the compressed.
-			size_t block_width		=std::max(1,(x+3)/4);
-			size_t block_height		=std::max(1,(y+3)/4);
-			size_t block_size_bytes=(bytesPerTexel==4)?16:8;
-			SysMemPitch				= block_size_bytes*block_width;
-			// buffer must be at least one block in size.
-			bufferSize				= std::max(block_size_bytes,SysMemPitch*block_height);
-			numRowsToCopy			=block_height;
-		}
+			 block_size_bytes=(bytesPerTexel==4)?16:8;
+		break;
+	case crossplatform::CompressionFormat::BC6H:
+			 block_size_bytes=16;
 		break;
 	default:
 		break;
 	};
+	if(cf!=crossplatform::CompressionFormat::UNCOMPRESSED)
+	{
+		// The memory pitch of a line for uncompressed formats, becomes the memory pitch
+		// of a row of blocks in the case of the compressed.
+		size_t block_width		=std::max(1,(x+3)/4);
+		size_t block_height		=std::max(1,(y+3)/4);
+		SysMemPitch				= block_size_bytes*block_width;
+		// buffer must be at least one block in size.
+		bufferSize				= std::max(block_size_bytes,SysMemPitch*block_height);
+		numRowsToCopy			=block_height;
+	}
 	//int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
@@ -941,7 +945,6 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	vmaMapMemory(lt.allocationInfo.allocator, lt.allocationInfo.allocation, &mapped_data);
 	SIMUL_ASSERT(mapped_data !=nullptr);
 	
-	//memcpy(data, lt.data, lt.x * lt.y*4);
 	uint8_t *target_data	=(uint8_t*)mapped_data;
 	uint8_t *cPtr			=(uint8_t*)lt.data;
 	size_t totalBytes=0;
