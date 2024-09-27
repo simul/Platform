@@ -16,26 +16,36 @@ namespace platform
 		public:
 			Settings(const char *filename);
 			~Settings();
+
+			bool LoadFile();
+			bool SaveFile();
+
+		protected:
+			bool LoadFileInternal();
+			bool SaveFileInternal();
+
+		public:
 			void BeginGroup(const char *name);
 			void EndGroup();
+
+			const std::string &GetFilename() const { return m_Filename; }
+			const std::string &GetFilename() { return m_Filename; }
 
 			template <typename T>
 			void SetValue(const char *name, T value)
 			{
-				reading = false;
-
 				if (typeid(T) == typeid(double) || typeid(T) == typeid(float))
 				{
-					ini.SetDoubleValue(currentGroup.c_str(), name, (double)value, nullptr, true);
+					m_Ini.SetDoubleValue(m_CurrentGroup.c_str(), name, (double)value, nullptr, true);
 				}
 				else if (typeid(T) == typeid(bool))
 				{
-					ini.SetBoolValue(currentGroup.c_str(), name, value, nullptr, true);
+					m_Ini.SetBoolValue(m_CurrentGroup.c_str(), name, value, nullptr, true);
 				}
 				else if (typeid(T) == typeid(int8_t) || typeid(T) == typeid(int16_t) || typeid(T) == typeid(int32_t) || typeid(T) == typeid(int64_t) 
 					|| typeid(T) == typeid(uint8_t) || typeid(T) == typeid(uint16_t) || typeid(T) == typeid(uint32_t) || typeid(T) == typeid(uint64_t))
 				{
-					ini.SetLongValue(currentGroup.c_str(), name, static_cast<long>(value), nullptr, false, true);
+					m_Ini.SetLongValue(m_CurrentGroup.c_str(), name, static_cast<long>(value), nullptr, false, true);
 				}
 				else
 				{
@@ -44,31 +54,24 @@ namespace platform
 			}
 			void SetValue(const char *name, const char *value)
 			{
-				reading = false;
-
-				ini.SetValue(currentGroup.c_str(), name, value, nullptr, true);
+				m_Ini.SetValue(m_CurrentGroup.c_str(), name, value, nullptr, true);
 			}
 
 			template <typename T>
 			T GetValue(const char *name, T defaultValue)
 			{
-				if (!reading)
-				{
-					LoadFile();
-				}
-
 				if (typeid(T) == typeid(double) || typeid(T) == typeid(float))
 				{
-					return (T)ini.GetDoubleValue(currentGroup.c_str(), name, (double)defaultValue);
+					return (T)m_Ini.GetDoubleValue(m_CurrentGroup.c_str(), name, (double)defaultValue);
 				}
 				else if (typeid(T) == typeid(bool))
 				{
-					return (T)ini.GetBoolValue(currentGroup.c_str(), name, defaultValue);
+					return (T)m_Ini.GetBoolValue(m_CurrentGroup.c_str(), name, defaultValue);
 				}
 				else if (typeid(T) == typeid(int8_t) || typeid(T) == typeid(int16_t) || typeid(T) == typeid(int32_t) || typeid(T) == typeid(int64_t) 
 					|| typeid(T) == typeid(uint8_t) || typeid(T) == typeid(uint16_t) || typeid(T) == typeid(uint32_t) || typeid(T) == typeid(uint64_t))
 				{
-					return (T)ini.GetLongValue(currentGroup.c_str(), name, static_cast<long>(defaultValue));
+					return (T)m_Ini.GetLongValue(m_CurrentGroup.c_str(), name, static_cast<long>(defaultValue));
 				}
 				else
 				{
@@ -78,21 +81,13 @@ namespace platform
 			}
 			const char *GetValue(const char *name, const char *defaultValue)
 			{
-				if (!reading)
-				{
-					LoadFile();
-				}
-
-				return ini.GetValue(currentGroup.c_str(), name, defaultValue);
+				return m_Ini.GetValue(m_CurrentGroup.c_str(), name, defaultValue);
 			}
 
 		protected:
-			void LoadFile();
-			void SaveFile();
-			std::string filename;
-			CSimpleIniA ini;
-			bool reading = false;
-			std::string currentGroup;
+			std::string m_Filename;
+			CSimpleIniA m_Ini;
+			std::string m_CurrentGroup;
 		};
 	}
 }

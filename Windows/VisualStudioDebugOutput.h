@@ -76,7 +76,7 @@ private:
 class VisualStudioDebugOutput : public vsBufferedStringStreamBuf
 {
 public:
-    VisualStudioDebugOutput(bool send_to_output_window=true,
+	VisualStudioDebugOutput(bool send_to_output_window=true,
 							const char *logfilename=NULL,size_t bufsize=(size_t)16
 							,DebugOutputCallback c=NULL)
 		:vsBufferedStringStreamBuf((int)bufsize)
@@ -150,10 +150,10 @@ public:
 			std::copy(str.begin(), str.end(), wstr.begin());
 			OutputDebugString(wstr.c_str());
 #else
-	        OutputDebugString(str.c_str());
+			OutputDebugString(str.c_str());
 #endif
 		}
-    }
+	}
 protected:
 	std::ofstream logFile;
 	bool to_output_window;

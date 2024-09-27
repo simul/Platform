@@ -300,7 +300,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
-		f.Apply(deviceContext,effect,_fontChars);
+		f.Apply(deviceContext,_fontChars);
 		renderPlatform->Draw(deviceContext,6*n,0);
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);
@@ -431,7 +431,7 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 		effect->Apply(deviceContext, textTech, passIndex);
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext, 0, 0, nullptr, nullptr);
-		f.Apply(deviceContext, effect, _fontChars);
+		f.Apply(deviceContext, _fontChars);
 		renderPlatform->Draw(deviceContext, 6 * n, 0);
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);

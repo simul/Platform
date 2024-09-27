@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #ifndef _MSC_VER
-    #ifndef UNIX
+	#ifndef UNIX
 		#ifdef NN_NINTENDO_SDK
 			#include <nn/util/util_FloatFormat.h>
 			#define _isnanf (nn::util::FloatFormat16::IsNan)
@@ -144,7 +144,7 @@ platform::core::DefaultProfiler::DefaultProfiler():overhead(0.0f)
 
 DefaultProfiler::~DefaultProfiler()
 {
-    Clear();
+	Clear();
 }
 
 void platform::core::BaseProfilingInterface::WalkReset(ProfileData *p)
@@ -190,14 +190,14 @@ void platform::core::DefaultProfiler::Begin(const char *name)
 	{
 		SIMUL_CERR << "Profiler level out of whack! Do you have a mismatched begin/end pair?" << std::endl;
 	}
-    Timing *parentData=NULL;
+	Timing *parentData=NULL;
 	if(profileStack.size())
 		parentData=(Timing*)profileStack.back();
 	else
 	{
 		parentData=(Timing*)root;
 	}
-    Timing *profileData = NULL;
+	Timing *profileData = NULL;
 	if(parentData->children.find(name)==parentData->children.end())
 	{
 		parentData->children[name]=profileData=new Timing;
@@ -215,6 +215,8 @@ void platform::core::DefaultProfiler::Begin(const char *name)
 	profileData->name=name;
 	profileData->last_child_updated=0;
 	profileData->parent=parentData;
+
+	parentData->updatedThisFrame=true;
 }
 
 void platform::core::DefaultProfiler::End()

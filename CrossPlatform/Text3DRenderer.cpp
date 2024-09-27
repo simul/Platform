@@ -356,7 +356,7 @@ int Text3DRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y
 		effect->Apply(deviceContext,textTech,passIndex);
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
-		f.Apply(deviceContext,effect,_fontChars);
+		f.Apply(deviceContext,_fontChars);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 		renderPlatform->Draw(deviceContext,6*n,0);
 		effect->UnbindTextures(deviceContext);
@@ -482,7 +482,7 @@ int Text3DRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float*
 		effect->Apply(deviceContext, textTech, passIndex);
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext, 0, 0, nullptr, nullptr);
-		f.Apply(deviceContext, effect, _fontChars);
+		f.Apply(deviceContext, _fontChars);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 		renderPlatform->Draw(deviceContext, 6 * n, 0);
 		effect->UnbindTextures(deviceContext);
