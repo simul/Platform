@@ -535,7 +535,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 	shaders.clear();*/
 	for(auto s:sharedSamplerStates)
 	{
-		s.second->InvalidateDeviceObjects();
+		if(s.second)
+			s.second->InvalidateDeviceObjects();
 		delete s.second;
 	}
 	sharedSamplerStates.clear();
@@ -1710,7 +1711,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
 		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 		debugConstants.displayLayer = UpdateDisplayLayer(tex->arraySize);
-			}
+	}
 	else if(tex)
 	{
 		tech = textured;
