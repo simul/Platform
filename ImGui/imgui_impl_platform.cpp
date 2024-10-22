@@ -8,7 +8,7 @@
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
-
+#pragma optimize("",off)
 using namespace platform;
 using namespace crossplatform;
 
@@ -40,8 +40,10 @@ struct ImGui_ImplPlatform_Data
 {
 	bool					hosted	=false;
 	RenderPlatform*			renderPlatform = nullptr;
-	Buffer*					pVB = nullptr;
-	Buffer*					pIB = nullptr;
+	std::vector<std::shared_ptr<Buffer>> vertexBuffers;
+	std::vector<std::shared_ptr<Buffer>> indexBuffers;
+	//Buffer*					pVB = nullptr;
+	//Buffer*					pIB = nullptr;
 	bool reload_shaders=false;
 	Effect*					effect = nullptr;
 	EffectPass*				effectPass_testDepth=nullptr;
@@ -143,8 +145,6 @@ static void ImGui_ImplPlatform_SetupRenderState(ImDrawData* draw_data, GraphicsD
 	unsigned int stride = sizeof(ImDrawVert);
 	unsigned int offset = 0;
 	deviceContext.contextState.applyVertexBuffers.clear();
-	bd->renderPlatform->SetVertexBuffers(deviceContext, 0, 1, &bd->pVB, bd->pInputLayout);
-	bd->renderPlatform->SetIndexBuffer(deviceContext, bd->pIB);
 	bd->renderPlatform->SetTopology(deviceContext, crossplatform::Topology::TRIANGLELIST);
 	TextureCreate tc;
 	tc.make_rt=true;
@@ -193,54 +193,56 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			bd->framebufferTexture=renderPlatform->CreateTexture("imgui_framebuffer");
 	}
 	int4 old_scissor=renderPlatform->GetScissor(deviceContext);
-	// Create and grow vertex/index buffers if needed
-	if (!bd->pVB || bd->VertexBufferSize < draw_data->TotalVtxCount)
-	{
-		if (bd->pVB)
-		 {
-			delete bd->pVB;
-			bd->pVB = NULL;
-		}
-		bd->VertexBufferSize = draw_data->TotalVtxCount + 5000;
-		bd->pVB=renderPlatform->CreateBuffer();
-		bd->pVB->EnsureVertexBuffer(renderPlatform, bd->VertexBufferSize, bd->pInputLayout, nullptr,true);
-	}
-	if (!bd->pIB || bd->IndexBufferSize < draw_data->TotalIdxCount)
-	{
-		if (bd->pIB)
-		{
-			SAFE_DELETE(bd->pIB);
-		}
-		bd->IndexBufferSize = draw_data->TotalIdxCount + 10000;
-		bd->pIB=renderPlatform->CreateBuffer();
-		bd->pIB->EnsureIndexBuffer(renderPlatform, bd->IndexBufferSize, sizeof(ImDrawIdx),nullptr,true);
-	}
-
-	// Upload vertex/index data into a single contiguous GPU buffer
-	ImDrawVert* vtx_dst= (ImDrawVert*)bd->pVB->Map(deviceContext);
-	if (!vtx_dst)
-	{
-	// Force recreate to find error.
-		SAFE_DELETE(bd->pVB);
-		return;
-	}
-	ImDrawIdx* idx_dst= (ImDrawIdx*)bd->pIB->Map(deviceContext);
-	if (!idx_dst)
-	{
-		bd->pVB->Unmap(deviceContext);
-		SAFE_DELETE(bd->pIB);
-		return;
-	}
+	bd->vertexBuffers.resize(draw_data->CmdListsCount);
+	bd->indexBuffers.resize(draw_data->CmdListsCount);
 	for (int n = 0; n < draw_data->CmdListsCount; n++)
 	{
 		const ImDrawList* cmd_list = draw_data->CmdLists[n];
+		std::shared_ptr<Buffer> &vb=bd->vertexBuffers[n];
+			// Create and grow vertex/index buffers if needed
+		if (!vb || vb->count < cmd_list->VtxBuffer.size())
+		{
+			if (!vb)
+			{
+				vb.reset(renderPlatform->CreateBuffer());
+			}
+			bd->VertexBufferSize = draw_data->TotalVtxCount + 5000;
+			vb->EnsureVertexBuffer(renderPlatform, bd->VertexBufferSize, bd->pInputLayout, nullptr,true);
+		}
+		// Upload vertex/index data into a single contiguous GPU buffer
+		ImDrawVert* vtx_dst= (ImDrawVert*)vb->Map(deviceContext);
+		if (!vtx_dst)
+		{
+		// Force recreate to find error.
+			vb.reset();
+			return;
+		}
 		memcpy(vtx_dst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-		memcpy(idx_dst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
 		vtx_dst += cmd_list->VtxBuffer.Size;
+		vb->Unmap(deviceContext);
+		
+		std::shared_ptr<Buffer> &ib=bd->indexBuffers[n];
+		if (!ib || bd->IndexBufferSize < cmd_list->IdxBuffer.size())
+		{
+			if (!ib)
+			{
+				ib.reset(renderPlatform->CreateBuffer());
+			}
+			bd->IndexBufferSize = draw_data->TotalIdxCount + 10000;
+			ib->EnsureIndexBuffer(renderPlatform, bd->IndexBufferSize, sizeof(ImDrawIdx),nullptr,true);
+		}
+
+		ImDrawIdx* idx_dst= (ImDrawIdx*)ib->Map(deviceContext);
+		if (!idx_dst)
+		{
+			ib.reset();
+			return;
+		}
+
+		memcpy(idx_dst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
 		idx_dst += cmd_list->IdxBuffer.Size;
+		ib->Unmap(deviceContext);
 	}
-	bd->pVB->Unmap(deviceContext);
-	bd->pIB->Unmap(deviceContext);
 	// Setup orthographic projection matrix into our constant buffer
 	// Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
 	
@@ -306,21 +308,6 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			bd->imgui_to_world = mul(bd->local_to_world,bd->imgui_to_local);
 			bd->canvas_to_world=mul(bd->local_to_world,canvas_to_local);
 			bd->world_to_local=mat4::unscaled_inverse_transform(bd->local_to_world);
-		#if 0
-			mat4 check_inverse;
-			((platform::math::Matrix4x4 *)&bd->local_to_world)->SimpleInverseOfTransposeTransform(*((platform::math::Matrix4x4 *)&check_inverse));
-
-			vec3 check_centre=(bd->local_to_world*vec4(0,0,0,1.0f)).xyz;
-			vec3 check_zero=(bd->world_to_local*vec4(bd->centre,1.0f)).xyz;
-
-			mat4 i_test = mul(bd->local_to_world,check_inverse);
-			((platform::math::Matrix4x4 *)&bd->local_to_world)->Inverse(*((platform::math::Matrix4x4 *)&check_inverse));
-		
-			i_test = mul(bd->local_to_world,check_inverse);
-			platform::math::Matrix4x4 *g=(platform::math::Matrix4x4 *)&bd->local_to_world;
-			//g->SimpleInverse(*((platform::math::Matrix4x4 *)&bd->world_to_local));
-			 i_test = mul(bd->local_to_world,bd->world_to_local);
-			#endif
 
 			// store the inverse for mouse clicks:
 			platform::math::Matrix4x4 *m=(platform::math::Matrix4x4 *)&bd->imgui_to_world;
@@ -368,8 +355,13 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 	ImVec2 clip_off = draw_data->DisplayPos;
 	for (int n = 0; n < draw_data->CmdListsCount; n++)
 	{
+		std::shared_ptr<Buffer> &vb=bd->vertexBuffers[n];
+		std::shared_ptr<Buffer> &ib=bd->indexBuffers[n];
 		const ImDrawList* cmd_list = draw_data->CmdLists[n];
 		renderPlatform->BeginEvent(deviceContext, cmd_list->_OwnerName);
+		Buffer * v[]={vb.get()};
+		bd->renderPlatform->SetVertexBuffers(deviceContext, 0, 1, v, bd->pInputLayout);
+		bd->renderPlatform->SetIndexBuffer(deviceContext, ib.get());
 
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 		{
@@ -428,8 +420,8 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 			}
 		}
 		
-		global_idx_offset += cmd_list->IdxBuffer.Size;
-		global_vtx_offset += cmd_list->VtxBuffer.Size;
+		//global_idx_offset += cmd_list->IdxBuffer.Size;
+	//	global_vtx_offset += cmd_list->VtxBuffer.Size;
 
 		renderPlatform->EndEvent(deviceContext);
 	}
@@ -530,8 +522,8 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 		ImGui::GetIO().Fonts->SetTexID(NULL);
 		// We copied data->pFontTextureView to io.Fonts->TexID so let's clear that as well.
 	}
-	SAFE_DELETE(bd->pIB);
-	SAFE_DELETE(bd->pVB);
+	bd->indexBuffers.clear();
+	bd->vertexBuffers.clear();
 	SAFE_DELETE(bd->pBlendState);
 
 	bd->constantBuffer.InvalidateDeviceObjects();

@@ -314,6 +314,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	
 	textureUploadComplete = true;
 }
+#pragma optimize("",off)
+
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::TextureView textureView)
 {
 #if PLATFORM_INTERNAL_CHECKS
@@ -347,14 +349,15 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::TextureView textureView
 	mImageViews[hash] = imageView;
 	return imageView;
 }
+
 vk::ImageView *Texture::CreateVulkanImageView(crossplatform::TextureView textureView)
 {
 	// TODO: Should we override aspect if the texture is a depth stencil? - AJR
 	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.elements.subresourceRange.aspectMask);
 	const uint8_t &startMip = textureView.elements.subresourceRange.baseMipLevel;
-	const uint8_t &numMips = textureView.elements.subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : textureView.elements.subresourceRange.mipLevelCount;
+	const uint8_t numMips = textureView.elements.subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : textureView.elements.subresourceRange.mipLevelCount;
 	const uint8_t &startLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const uint8_t &numLayers = textureView.elements.subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const uint8_t numLayers = textureView.elements.subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	crossplatform::ShaderResourceType type = textureView.elements.type;
 	if(type==crossplatform::ShaderResourceType::UNKNOWN)
@@ -891,6 +894,8 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 
 void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f,crossplatform::CompressionFormat cf)
 {
+	if(!data)
+		return;
 	lt.data=( unsigned char*)data;
 	lt.x=x;
 	lt.y=y;
