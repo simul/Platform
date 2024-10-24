@@ -675,7 +675,7 @@ GLuint Texture::GetGLMainView()
 		return;
 	}
 	void* data = nullptr;
-	TranslateLoadedTextureData(data, buffer, size, x, y, n, 4);
+	TranslateLoadedTextureData(data, buffer, size, x, y, n, 4, path);
 	platform::core::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
 	lt.data = (unsigned char *)data;
 	lt.x = x;
