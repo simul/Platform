@@ -158,11 +158,14 @@ bool Texture::EnsureTexture(crossplatform::RenderPlatform* r, crossplatform::Tex
 	return res;
 }
 
-bool Texture::TranslateLoadedTextureData(void*& target, const void* src, size_t size, int& x, int& y, int& num_channels, int req_num_channels)
+bool Texture::TranslateLoadedTextureData(void *&target, const void *src, size_t size, int &x, int &y, int &num_channels, int req_num_channels, const char *filename)
 {
-	target = stbi_load_from_memory((const unsigned char*)src, (int)size, &x, &y, &num_channels, 4);
+	if (stbi_is_hdr(filename))
+		target = stbi_loadf_from_memory((const unsigned char *)src, (int)size, &x, &y, &num_channels, 4);
+	else
+		target = stbi_load_from_memory((const unsigned char *)src, (int)size, &x, &y, &num_channels, 4);
 	stbi_loaded = true;
-	return(target!=nullptr);
+	return (target != nullptr);
 }
 
 void Texture::FreeTranslatedTextureData(void* data)

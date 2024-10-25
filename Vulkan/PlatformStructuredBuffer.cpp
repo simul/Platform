@@ -11,6 +11,7 @@ PlatformStructuredBuffer::PlatformStructuredBuffer()
 	,last_offset(0)
 	,buffer(nullptr)
 	,mCpuRead(false)
+	,mSetCPUData(false)
 	,mLastFrame(0)
 	,mFrameIndex(0)
 {
@@ -71,9 +72,6 @@ void PlatformStructuredBuffer::AddPerFrameBuffer(const void *init_data)
 		usageFlags|=vk::BufferUsageFlagBits::eTransferSrc;
 	int buffer_aligned_size=mSlots*kBufferAlign;
 	int alloc_size=buffer_aligned_size*mMaxApplyCount;
-	vk::BufferCreateInfo buf_info = vk::BufferCreateInfo()
-		.setSize(alloc_size)
-		.setUsage(vk::BufferUsageFlagBits::eStorageBuffer);
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	perFrameBuffers.push_back(PerFrameBuffer());
 	PerFrameBuffer &perFrameBuffer=perFrameBuffers.back();
@@ -133,6 +131,8 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 		if(!buffer)
 			buffer = new unsigned char[mTotalSize];
 		memcpy(buffer,data,mTotalSize);
+
+		mSetCPUData = true;
 	}
 }
 
@@ -184,7 +184,7 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 	}
 	last_offset		=(kBufferAlign * mSlots) * mCurApplyCount;	
 
-	if (!as_uav && buffer)
+	if ((!as_uav && buffer) || mSetCPUData)
 	{
 		uint8_t *pData = nullptr;
 		vmaMapMemory(lastBuffer->mAllocationInfo.allocator, lastBuffer->mAllocationInfo.allocation, (void**)&pData);
@@ -195,6 +195,8 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 			vmaUnmapMemory(lastBuffer->mAllocationInfo.allocator, lastBuffer->mAllocationInfo.allocation);
 		}
 		mCurApplyCount++;
+
+		mSetCPUData = false;
 	}
 }
 

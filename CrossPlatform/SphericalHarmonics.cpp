@@ -162,7 +162,7 @@ bool SphericalHarmonics::Probe(crossplatform::DeviceContext &deviceContext
 	{
 		probeResultsRW.RestoreDeviceObjects(renderPlatform,size.x*size.y*2,true,false,nullptr,"probeResultsRW");
 	}
-	probeResultsRW.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect,sphericalHarmonicsEffect->GetShaderResource("targetBuffer"));
+	probeResultsRW.ApplyAsUnorderedAccessView(deviceContext,sphericalHarmonicsEffect->GetShaderResource("targetBuffer"));
 
 	sphericalHarmonicsConstants.lookupOffset=uint3(pos.x,pos.y,face_index);
 	sphericalHarmonicsConstants.lookupSize=size;
@@ -219,7 +219,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	{
 		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
 		// We just fill this buffer_texture with random 3d directions.
-		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, sphericalHarmonicsEffect, _samplesBufferRW);
+		sphericalSamples.ApplyAsUnorderedAccessView(deviceContext, _samplesBufferRW);
 		renderPlatform->SetTexture(deviceContext,_cubemapTexture	,buffer_texture);
 		renderPlatform->SetConstantBuffer(deviceContext, &sphericalHarmonicsConstants);
 		sphericalHarmonicsEffect->Apply(deviceContext,jitter,0);
@@ -256,8 +256,8 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
 	{
 		renderPlatform->SetTexture(deviceContext, _cubemapTexture, buffer_texture);
-		sphericalSamples.Apply(deviceContext, sphericalHarmonicsEffect, _samplesBuffer);
-		sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext,sphericalHarmonicsEffect,_targetBuffer);
+		sphericalSamples.Apply(deviceContext, _samplesBuffer);
+		sphericalHarmonics.ApplyAsUnorderedAccessView(deviceContext,_targetBuffer);
 
 		static bool sh_by_samples=false;
 		renderPlatform->SetConstantBuffer(deviceContext, &sphericalHarmonicsConstants);
@@ -326,7 +326,7 @@ void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,cross
 			lightProbeConstants.alpha = 1.0f-blend;
 
 			renderPlatform->SetConstantBuffer(deviceContext, &lightProbeConstants);
-			GetSphericalHarmonics().Apply(deviceContext, lightProbesEffect, _basisBuffer);
+			GetSphericalHarmonics().Apply(deviceContext, _basisBuffer);
 			lightProbesEffect->Apply(deviceContext, tech, 0);
 			if(blend>0.0f)
 				renderPlatform->SetStandardRenderState(deviceContext, crossplatform::StandardRenderState::STANDARD_ALPHA_BLENDING);

@@ -99,6 +99,7 @@ namespace platform
 			Filtering filtering;
 			DepthComparison depthComparison;
 			int slot;			// register slot
+			int group;			// group number
 		};
 
 		enum class VideoTextureType
@@ -500,7 +501,7 @@ namespace platform
 			// For API's that don't track resources:
 			bool unfenceable;
 			// a wrapper around stbi_load_from_memory.
-			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels);
+			bool TranslateLoadedTextureData(void *&target,const void *src,size_t size,int &x,int &y,int &num_channels,int req_num_channels,const char* filename);
 			void FreeTranslatedTextureData(void *data);
 			uint32_t CalculateSubresourceIndex(uint32_t MipSlice, uint32_t ArraySlice, uint32_t PlaneSlice, uint32_t MipLevels, uint32_t ArraySize);
 			tvector3<uint32_t> CalculateSubresourceSlices(uint32_t Index, uint32_t MipSlice, uint32_t ArraySlice); // Returned as { MipSlice, ArraySlice, PlaneSlice }

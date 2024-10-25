@@ -21,7 +21,6 @@ namespace platform
 			~MeshRenderer();
 			//! To be called when a rendering device has been initialized.
 			void RestoreDeviceObjects(RenderPlatform *r);
-			void LoadShaders();
 			//! To be called when the rendering device is no longer valid.
 			void InvalidateDeviceObjects();
 			//! Render the mesh.

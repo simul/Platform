@@ -28,13 +28,3 @@ void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext
 	if (shaderResource.slot >= 0)
 		deviceContext.contextState.applyStructuredBuffers[shaderResource.slot] = this;
 }
-
-void PlatformStructuredBuffer::ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const ShaderResource& shaderResource)
-{
-	ApplyAsUnorderedAccessView(deviceContext,shaderResource);
-}
-
-void PlatformStructuredBuffer::Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const ShaderResource& shaderResource)
-{
-	Apply(deviceContext,shaderResource);
-}

@@ -14,11 +14,13 @@ namespace platform
 		{
 			ID3D11Buffer* buffer;
 			ID3D11Buffer** stagingBuffers;
+			ID3D11Buffer* stagingWriteBuffer;
 			ID3D11ShaderResourceView* shaderResourceView;
 			ID3D11UnorderedAccessView* unorderedAccessView;
 			D3D11_MAPPED_SUBRESOURCE			mapped;
 			int num_elements;
 			int element_bytesize;
+			bool computable;
 			ID3D11DeviceContext* lastContext;
 			unsigned char* read_data;
 #ifdef _XBOX_ONE

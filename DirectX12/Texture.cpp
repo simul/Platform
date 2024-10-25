@@ -200,7 +200,7 @@ bool Texture::LoadFromFile(crossplatform::RenderPlatform *renderPlatform,const c
 		wic.scratchImage=new DirectX::ScratchImage;
 	if(name.find(".hdr")==name.length()-4)
 	{
-		res= DirectX::LoadFromHDRMemory(f.ptr, (size_t)f.bytes, wic.metadata, *wic.scratchImage);
+		res = DirectX::LoadFromHDRMemory(f.ptr, (size_t)f.bytes, wic.metadata, *wic.scratchImage);
 	}
 	else if (name.find(".dds") != std::string::npos)
 	{
