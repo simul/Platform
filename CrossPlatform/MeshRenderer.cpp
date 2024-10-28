@@ -22,6 +22,7 @@ void MeshRenderer::RestoreDeviceObjects(RenderPlatform *r)
 	cameraConstants.RestoreDeviceObjects(r);
 	solidConstants.RestoreDeviceObjects(r);
 	perObjectConstants.RestoreDeviceObjects(r);
+	effect = r->GetEffect("solid");
 }
 
 void MeshRenderer::InvalidateDeviceObjects()
@@ -29,7 +30,6 @@ void MeshRenderer::InvalidateDeviceObjects()
 	cameraConstants.InvalidateDeviceObjects();
 	solidConstants.InvalidateDeviceObjects();
 	perObjectConstants.InvalidateDeviceObjects();
-	delete effect;
 	effect = nullptr;
 }
 
@@ -68,9 +68,6 @@ void MeshRenderer::DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 
 void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap,Texture *screenspaceShadowTexture)
 {
-	if (renderPlatform)
-		effect = renderPlatform->GetEffect("solid");
-
 	if (!effect)
 		return;
 
