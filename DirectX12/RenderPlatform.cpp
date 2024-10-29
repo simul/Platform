@@ -3119,13 +3119,12 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 	// Set the frame descriptor heaps
 	Heap *currentSamplerHeap = dx12Effect->GetEffectSamplerHeap();
-	ID3D12DescriptorHeap *currentHeaps[2] = {mFrameHeap[frameHeapIndex].GetHeap(), currentSamplerHeap->GetHeap()};
 	// If we are overriding samplers, use the override heap instead:
-	if (cs->samplerStateOverrides.size() > 0)
+	if (cs->samplerStateOverrides.size() > 0 || !currentSamplerHeap)
 	{
 		currentSamplerHeap = &mFrameOverrideSamplerHeap[frameHeapIndex];
-		currentHeaps[1] = currentSamplerHeap->GetHeap();
 	}
+	ID3D12DescriptorHeap *currentHeaps[2] = {mFrameHeap[frameHeapIndex].GetHeap(), currentSamplerHeap->GetHeap()};
 	cmdList->SetDescriptorHeaps(2, currentHeaps);
 
 	// Apply the RootDescriptor tables:
