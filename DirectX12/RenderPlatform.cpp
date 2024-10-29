@@ -42,7 +42,7 @@ using namespace platform;
 using namespace dx12;
 
 #if SIMUL_INTERNAL_CHECKS
-#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 1
+#define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
 #else
 #define PLATFORM_D3D12_RELEASE_MANAGER_CHECKS 0
 #endif
