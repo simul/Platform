@@ -88,14 +88,14 @@ void HdrRenderer::RecompileShaders()
 
 void HdrRenderer::NotifyEffectsRecompiled()
 {
-	renderPlatform->Destroy(hdr_effect);
+	SAFE_DELETE(hdr_effect);
 }
 
 void HdrRenderer::LoadShaders()
 {
 	if(!renderPlatform)
 		return;
-	renderPlatform->Destroy(hdr_effect);
+	SAFE_DELETE(hdr_effect);
 	hdr_effect					=renderPlatform->CreateEffect("hdr");
 
 	exposureGammaTechnique		=hdr_effect->GetTechniqueByName("exposure_gamma");
@@ -110,10 +110,7 @@ void HdrRenderer::InvalidateDeviceObjects()
 {
 	hdrConstants.InvalidateDeviceObjects();
 	imageConstants.InvalidateDeviceObjects();
-	if (renderPlatform)
-	{
-		renderPlatform->Destroy(hdr_effect);
-	}
+	SAFE_DELETE(hdr_effect);
 	renderPlatform=NULL;
 }
 void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,float Exposure,float Gamma)

@@ -47,16 +47,16 @@ void SphericalHarmonics::RecompileShaders()
 
 void SphericalHarmonics::NotifyEffectsRecompiled()
 {
-	SAFE_DESTROY(renderPlatform, sphericalHarmonicsEffect);
-	SAFE_DESTROY(renderPlatform, lightProbesEffect);
+	SAFE_DELETE(sphericalHarmonicsEffect);
+	SAFE_DELETE(lightProbesEffect);
 }
 
 void SphericalHarmonics::LoadShaders()
 {
 	if (!renderPlatform)
 		return;
-	SAFE_DESTROY(renderPlatform, sphericalHarmonicsEffect);
-	SAFE_DESTROY(renderPlatform, lightProbesEffect);
+	SAFE_DELETE(sphericalHarmonicsEffect);
+	SAFE_DELETE(lightProbesEffect);
 	sphericalHarmonicsEffect	=renderPlatform->CreateEffect("spherical_harmonics");
 	jitter							=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 	encode							=sphericalHarmonicsEffect->GetTechniqueByName("encode");
@@ -77,8 +77,8 @@ void SphericalHarmonics::InvalidateDeviceObjects()
 	ResetBuffers();
 	lightProbeConstants.InvalidateDeviceObjects();
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
-	SAFE_DESTROY(renderPlatform,sphericalHarmonicsEffect);
-	SAFE_DESTROY(renderPlatform, lightProbesEffect);
+	SAFE_DELETE(sphericalHarmonicsEffect);
+	SAFE_DELETE(lightProbesEffect);
 }
 
 void SphericalHarmonics::ResetBuffers()

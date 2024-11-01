@@ -465,16 +465,16 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		mat->SetEffect(solidEffect);
 	}
 	
-	Destroy(debugEffect);
+	SAFE_DELETE(debugEffect);
 	debugEffect=CreateEffect("debug");
 
-	Destroy(solidEffect);
+	SAFE_DELETE(solidEffect);
 	solidEffect=CreateEffect("solid");
 	
-	Destroy(copyEffect);
+	SAFE_DELETE(copyEffect);
 	copyEffect=CreateEffect("copy");
 	
-	Destroy(mipEffect);
+	SAFE_DELETE(mipEffect);
 	mipEffect=CreateEffect("mip");
 	
 	if(debugEffect)
@@ -493,11 +493,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	if(gpuProfiler)
 		gpuProfiler->InvalidateDeviceObjects();
-	for (auto e : destroyEffects)
-	{
-		SAFE_DELETE(e);
-	}
-	destroyEffects.clear();
 	if(textRenderer)
 		textRenderer->InvalidateDeviceObjects();
 	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
@@ -560,23 +555,16 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::LoadShaders()
 {
-/*	for (auto s : shaders)
-	{
-		s.second->Release();
-		delete s.second;
-	}
-	shaders.clear();*/
-	
-	Destroy(debugEffect);
+	SAFE_DELETE(debugEffect);
 	debugEffect=CreateEffect("debug");
 
-	Destroy(solidEffect);
+	SAFE_DELETE(solidEffect);
 	solidEffect=CreateEffect("solid");
 	
-	Destroy(copyEffect);
+	SAFE_DELETE(copyEffect);
 	copyEffect=CreateEffect("copy");
 	
-	Destroy(mipEffect);
+	SAFE_DELETE(mipEffect);
 	mipEffect=CreateEffect("mip");
 	
 	if(debugEffect)
@@ -2012,15 +2000,6 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 		sharedSamplerStates[str]=ss;
 	}
 	return ss;
-}
-
-void RenderPlatform::Destroy(Effect *&e)
-{
-	if (e)
-	{
-		destroyEffects.insert(e);
-		e = nullptr;
-	}
 }
 
 Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecompileShaders)

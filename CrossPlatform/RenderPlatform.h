@@ -363,8 +363,6 @@ namespace platform
 			/// This is for states that will be shared by multiple shaders. There will be a warning if a description is passed that conflicts with the current definition,
 			/// as the Effects system assumes that SamplerState names are unique.
 			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,platform::crossplatform::SamplerStateDesc *desc=0);
-			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
-			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					()=0;
 			/// Create a platform-specific effect instance.
@@ -597,7 +595,6 @@ namespace platform
 			std::set<crossplatform::Texture*> fencedTextures;
 			virtual void ResetImmediateCommandList() {}
 		public:
-			std::set< Effect*> destroyEffects;
 			std::map<std::string, Effect*> effects;
 			// all shaders are stored here and referenced by techniques.
 			//std::map<std::string, Shader*> shaders;
