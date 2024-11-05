@@ -224,7 +224,7 @@ void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &ef
 			{
 				found = true;
 				break;
-}
+			}
 		}
 
 		if (!found)
@@ -2026,17 +2026,20 @@ void RenderPlatform::Destroy(Effect *&e)
 
 Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecompileShaders)
 {
+	std::string fn(filename_utf8);
+
 	//Check if the effect in being recompiled
 	if (checkRecompileShaders)
 	{
 		std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
-		const auto &it = effectsToCompileFutures.find(std::string(filename_utf8));
+		const auto &it = effectsToCompileFutures.find(fn);
 		if (it != effectsToCompileFutures.end())
 		{
 			if (it->second.valid())
 			{
 				Effect *e = it->second.get().newEffect;
 				effectsToCompileFutures.erase(it);
+				effects[fn] = e;
 				return e;
 			}
 			else
@@ -2047,7 +2050,6 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecomp
 	}
 
 	//Else, load as normal
-	std::string fn(filename_utf8);
 	crossplatform::Effect *e=CreateEffect();
 	effects[fn] = e;
 	e->SetName(filename_utf8);
@@ -2062,6 +2064,26 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecomp
 
 Effect* RenderPlatform::GetEffect(const char* filename_utf8)
 {
+	std::string fn(filename_utf8);
+
+	// Check if the effect in being recompiled
+	std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
+	const auto &it = effectsToCompileFutures.find(fn);
+	if (it != effectsToCompileFutures.end())
+	{
+		if (it->second.valid())
+		{
+			Effect *e = it->second.get().newEffect;
+			effectsToCompileFutures.erase(it);
+			effects[fn] = e;
+			return e;
+		}
+		else
+		{
+			effectsToCompileFutures.erase(it);
+		}
+	}
+
 	auto i = effects.find(filename_utf8);
 	if (i == effects.end())
 		return nullptr;
