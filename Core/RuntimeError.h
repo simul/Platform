@@ -35,6 +35,15 @@
 #endif
 #include <stdexcept> // for runtime_error
 
+// C++ Versions
+#if defined(_WIN64)
+#define PLATFORM_CXX20 _HAS_CXX20
+#define PLATFORM_CXX17 _HAS_CXX17
+#elif defined(__linux__)
+#define PLATFORM_CXX20 (__cplusplus == 202002L)
+#define PLATFORM_CXX17 (__cplusplus == 201703L)
+#endif
+
 #define SIMUL_COUT \
 	std::cout << __FILE__ << "(" << std::dec << __LINE__ << "): info: "
 

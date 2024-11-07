@@ -223,7 +223,7 @@ void Text3DRenderer::InvalidateDeviceObjects()
 	}
 	fontChars.clear();
 	constantBuffer.InvalidateDeviceObjects();
-	SAFE_DELETE(effect);
+	effect = nullptr;
 	SAFE_DELETE(font_texture);
 	renderPlatform=NULL;
 	if (fontWidth)
@@ -242,9 +242,8 @@ void Text3DRenderer::RecompileShaders()
 void Text3DRenderer::LoadShaders()
 {
 	recompile = false;
-	SAFE_DELETE(effect);
 	ERRNO_CHECK
-	effect = renderPlatform->CreateEffect("font");
+	effect = renderPlatform->GetOrCreateEffect("font");
 	ERRNO_CHECK
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
