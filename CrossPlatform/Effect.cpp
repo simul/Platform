@@ -1044,6 +1044,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	std::string sfxbFilenameUtf8 = binFilenameUtf8;
 	platform::core::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
+	#if 0
 	uint64_t timestamp = platform::core::FileLoader::GetFileLoader()->GetFileDate(sfxbFilenameUtf8.c_str());
 	struct tm timeDate;
 	gmtime_s(&timeDate, (time_t *)&timestamp);
@@ -1054,6 +1055,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		(timeDate.tm_hour) << ":" <<
 		(timeDate.tm_min) << ":" <<
 		(timeDate.tm_sec) << std::endl;
+	#endif
 
 	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
 	filenameInUseUtf8=binFilenameUtf8;
