@@ -108,13 +108,6 @@ RenderPlatform::~RenderPlatform()
 	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
-
-	for (auto i = materials.begin(); i != materials.end(); i++)
-	{
-		Material *mat = i->second;
-		delete mat;
-	}
-	materials.clear();
 }
 
 static bool RewriteOutput(std::string str)
@@ -184,7 +177,7 @@ void RenderPlatform::recompileAsync()
 						{
 							if(RecompileEffect(effectRecompile.effect_name))
 							{
-								effectRecompile.newEffect = CreateEffect(effectRecompile.effect_name.c_str(), false);
+								GetOrCreateEffect(effectRecompile.effect_name.c_str(), true);
 							}
 						}
 						return effectRecompile;
@@ -465,17 +458,10 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		mat->SetEffect(solidEffect);
 	}
 	
-	SAFE_DELETE(debugEffect);
-	debugEffect=CreateEffect("debug");
-
-	SAFE_DELETE(solidEffect);
-	solidEffect=CreateEffect("solid");
-	
-	SAFE_DELETE(copyEffect);
-	copyEffect=CreateEffect("copy");
-	
-	SAFE_DELETE(mipEffect);
-	mipEffect=CreateEffect("mip");
+	debugEffect=GetOrCreateEffect("debug");
+	solidEffect=GetOrCreateEffect("solid");
+	copyEffect=GetOrCreateEffect("copy");
+	mipEffect=GetOrCreateEffect("mip");
 	
 	if(debugEffect)
 	{
@@ -500,12 +486,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	standardRenderStates.clear();
 	SAFE_DELETE(textRenderer);
 	debugConstants.InvalidateDeviceObjects();
-	SAFE_DELETE(debugEffect);
-	
-	SAFE_DELETE(solidEffect);
-	
-	SAFE_DELETE(copyEffect);
-	SAFE_DELETE(mipEffect);
+
+	debugEffect = nullptr;
+	solidEffect = nullptr;
+	copyEffect = nullptr;
+	mipEffect = nullptr;
 	
 	textured=nullptr;
 	untextured=nullptr;
@@ -516,18 +501,14 @@ void RenderPlatform::InvalidateDeviceObjects()
 	{
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
+		delete mat;
 	}
+	materials.clear();
 	for (auto &debugVertexBuffer : debugVertexBuffers)
 	{
 		debugVertexBuffer->InvalidateDeviceObjects();
 	}
 	debugVertexBuffers.clear();
-	/*for(auto s:shaders)
-	{
-		s.second->Release();
-		delete s.second;
-	}
-	shaders.clear();*/
 	for(auto s:sharedSamplerStates)
 	{
 		s.second->InvalidateDeviceObjects();
@@ -539,6 +520,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 		SAFE_DELETE(t.second);
 	}
 	textures.clear();
+	for (auto &effect : effects)
+	{
+		effect.second = nullptr;
+	}
+	effects.clear();
 	last_begin_frame_number=0;
 }
 
@@ -555,17 +541,10 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::LoadShaders()
 {
-	SAFE_DELETE(debugEffect);
-	debugEffect=CreateEffect("debug");
-
-	SAFE_DELETE(solidEffect);
-	solidEffect=CreateEffect("solid");
-	
-	SAFE_DELETE(copyEffect);
-	copyEffect=CreateEffect("copy");
-	
-	SAFE_DELETE(mipEffect);
-	mipEffect=CreateEffect("mip");
+	debugEffect=GetOrCreateEffect("debug");
+	solidEffect=GetOrCreateEffect("solid");
+	copyEffect=GetOrCreateEffect("copy");
+	mipEffect=GetOrCreateEffect("mip");
 	
 	if(debugEffect)
 	{
@@ -966,12 +945,12 @@ void RenderPlatform::SetMemoryInterface(platform::core::MemoryInterface *m)
 	allocator.SetExternalAllocator(m);
 }
 
-crossplatform::Effect *RenderPlatform::GetDebugEffect()
+std::shared_ptr<crossplatform::Effect> RenderPlatform::GetDebugEffect()
 {
 	return debugEffect;
 }
 
-crossplatform::Effect* RenderPlatform::GetCopyEffect()
+std::shared_ptr<crossplatform::Effect> RenderPlatform::GetCopyEffect()
 {
 	return copyEffect;
 }
@@ -1738,7 +1717,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		tech=untextured;
 	}
 
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect.get(),tech,blend?"blend":"noblend");
 	debugEffect->UnbindTextures(deviceContext);
 	
 	if(debug)
@@ -2002,35 +1981,39 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	return ss;
 }
 
-Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecompileShaders)
+std::shared_ptr<Effect> RenderPlatform::GetOrCreateEffect(const char *filename_utf8, bool createOnly)
 {
 	std::string fn(filename_utf8);
 
-	//Check if the effect in being recompiled
-	if (checkRecompileShaders)
+	if (!createOnly)
 	{
+		//Check if the effect in being recompiled
 		std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
 		const auto &it = effectsToCompileFutures.find(fn);
 		if (it != effectsToCompileFutures.end())
 		{
 			if (it->second.valid())
 			{
-				Effect *e = it->second.get().newEffect;
 				effectsToCompileFutures.erase(it);
-				effects[fn] = e;
-				return e;
+				return effects[fn];
 			}
 			else
 			{
 				effectsToCompileFutures.erase(it);
 			}
 		}
+
+		//Else, check if the effect is already loaded.
+		auto i = effects.find(filename_utf8);
+		if (i != effects.end())
+			return i->second;
 	}
 
 	//Else, load as normal
-	crossplatform::Effect *e=CreateEffect();
-	effects[fn] = e;
+	std::shared_ptr<Effect> e;
+	e.reset(CreateEffect());
 	e->SetName(filename_utf8);
+	effects[fn] = e;
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
@@ -2038,34 +2021,6 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecomp
 		return e;
 	}
 	return e;
-}
-
-Effect* RenderPlatform::GetEffect(const char* filename_utf8)
-{
-	std::string fn(filename_utf8);
-
-	// Check if the effect in being recompiled
-	std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
-	const auto &it = effectsToCompileFutures.find(fn);
-	if (it != effectsToCompileFutures.end())
-	{
-		if (it->second.valid())
-		{
-			Effect *e = it->second.get().newEffect;
-			effectsToCompileFutures.erase(it);
-			effects[fn] = e;
-			return e;
-		}
-		else
-		{
-			effectsToCompileFutures.erase(it);
-		}
-	}
-
-	auto i = effects.find(filename_utf8);
-	if (i == effects.end())
-		return nullptr;
-	return i->second;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc,bool interleaved)

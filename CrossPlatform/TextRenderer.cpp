@@ -164,7 +164,7 @@ void TextRenderer::InvalidateDeviceObjects()
 	}
 	fontChars.clear();
 	constantBuffer.InvalidateDeviceObjects();
-	SAFE_DELETE(effect);
+	effect=nullptr;
 	SAFE_DELETE(font_texture);
 	renderPlatform=NULL;
 	if (fontWidth)
@@ -175,10 +175,10 @@ void TextRenderer::InvalidateDeviceObjects()
 
 void TextRenderer::LoadShaders()
 {
-	SAFE_DELETE(effect);
+	effect = nullptr;
 	if (!renderPlatform)
 		return;
-	effect=renderPlatform->CreateEffect("font");
+	effect=renderPlatform->GetOrCreateEffect("font");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
 	textureResource	=effect->GetShaderResource("fontTexture");
@@ -189,8 +189,7 @@ void TextRenderer::LoadShaders()
 void TextRenderer::RecompileShaders()
 {
 	if(renderPlatform)
-        renderPlatform->ScheduleRecompileEffects({"font"}, [this]
-                                          { recompiled=true; });
+		renderPlatform->ScheduleRecompileEffects({"font"}, [this]{ recompiled=true; });
 }
 
 int TextRenderer::GetDefaultTextHeight() const

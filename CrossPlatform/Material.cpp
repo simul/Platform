@@ -25,11 +25,11 @@ void Material::InvalidateDeviceObjects()
 	effect= nullptr;
 }
 
-void Material::SetEffect(crossplatform::Effect *e)
+void Material::SetEffect(const std::shared_ptr<crossplatform::Effect> &e)
 {
 	effect=e;
 }
-crossplatform::Effect *Material::GetEffect()
+std::shared_ptr<crossplatform::Effect> Material::GetEffect()
 {
 	return effect;
 }

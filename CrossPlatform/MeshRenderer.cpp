@@ -22,7 +22,7 @@ void MeshRenderer::RestoreDeviceObjects(RenderPlatform *r)
 	cameraConstants.RestoreDeviceObjects(r);
 	solidConstants.RestoreDeviceObjects(r);
 	perObjectConstants.RestoreDeviceObjects(r);
-	effect = r->GetEffect("solid");
+	effect = r->GetOrCreateEffect("solid");
 }
 
 void MeshRenderer::InvalidateDeviceObjects()

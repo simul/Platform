@@ -47,17 +47,17 @@ void SphericalHarmonics::RecompileShaders()
 
 void SphericalHarmonics::NotifyEffectsRecompiled()
 {
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	SAFE_DELETE(lightProbesEffect);
+	sphericalHarmonicsEffect=nullptr;
+	lightProbesEffect=nullptr;
 }
 
 void SphericalHarmonics::LoadShaders()
 {
 	if (!renderPlatform)
 		return;
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	SAFE_DELETE(lightProbesEffect);
-	sphericalHarmonicsEffect	=renderPlatform->CreateEffect("spherical_harmonics");
+	sphericalHarmonicsEffect=nullptr;
+	lightProbesEffect=nullptr;
+	sphericalHarmonicsEffect		=renderPlatform->GetOrCreateEffect("spherical_harmonics");
 	jitter							=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 	encode							=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	_samplesBuffer					=sphericalHarmonicsEffect->GetShaderResource("samplesBuffer");
@@ -65,7 +65,7 @@ void SphericalHarmonics::LoadShaders()
 	_samplesBufferRW				=sphericalHarmonicsEffect->GetShaderResource("samplesBufferRW");
 	_cubemapTexture					=sphericalHarmonicsEffect->GetShaderResource("cubemapTexture");
 
-	lightProbesEffect				=renderPlatform->CreateEffect("light_probes");
+	lightProbesEffect				=renderPlatform->GetOrCreateEffect("light_probes");
 	auto group						=lightProbesEffect->GetTechniqueGroupByName("mip_from_roughness");
 	mip_from_roughness_blend		=group->GetTechniqueByName("mip_from_roughness_blend");
 	mip_from_roughness_no_blend		=group->GetTechniqueByName("mip_from_roughness_no_blend");	
@@ -77,8 +77,8 @@ void SphericalHarmonics::InvalidateDeviceObjects()
 	ResetBuffers();
 	lightProbeConstants.InvalidateDeviceObjects();
 	sphericalHarmonicsConstants.InvalidateDeviceObjects();
-	SAFE_DELETE(sphericalHarmonicsEffect);
-	SAFE_DELETE(lightProbesEffect);
+	sphericalHarmonicsEffect = nullptr;
+	lightProbesEffect = nullptr;
 }
 
 void SphericalHarmonics::ResetBuffers()
