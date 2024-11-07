@@ -39,7 +39,6 @@ vec3 PcgRand3(uint seed)
 	return r;
 }
 
-
 vec3 PcgSphericalRandom(uint seed)
 {
 	vec3 pcgrand=PcgRand3(seed);
