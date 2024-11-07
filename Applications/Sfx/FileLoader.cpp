@@ -196,17 +196,8 @@ void FileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes, const 
 	
 	fclose(fp);
 }
-static double GetDayNumberFromDateTime(int year,int month,int day,int hour,int min,int sec)
-{
-	int D = 367*year - (7*(year + ((month+9)/12)))/4 + (275*month)/9 + day - 730531;//was +2451545
-	double d=(double)D;
-	d+=(double)hour/24.0;
-	d+=(double)min/24.0/60.0;
-	d+=(double)sec/24.0/3600.0;
-	return d;
-}
 
-double FileLoader::GetFileDate(const char* filename_utf8)
+uint64_t FileLoader::GetFileDate(const char *filename_utf8)
 {
 	std::wstring filenamew=StringToWString(filename_utf8);
 	#ifdef _MSC_VER
@@ -218,14 +209,7 @@ double FileLoader::GetFileDate(const char* filename_utf8)
 	#endif
 	buf.st_mtime;
 	time_t t = buf.st_mtime;
-	struct tm lt;
-	#ifdef _MSC_VER
-	gmtime_s(&lt,&t);
-	#else
-	gmtime_r(&t,&lt);
-	#endif
-	double datetime=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
-	return datetime;
+	return static_cast<uint64_t>(t);
 }		
 
 void FileLoader::ReleaseFileContents(void* pointer)
