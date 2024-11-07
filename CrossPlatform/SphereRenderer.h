@@ -41,7 +41,7 @@ namespace platform
 
 		protected:
 			crossplatform::ConstantBuffer<SphereConstants> sphereConstants;
-			crossplatform::Effect *effect = nullptr;
+			std::shared_ptr<crossplatform::Effect> effect = nullptr;
 			bool reload_shaders = true;
 		};
 	}

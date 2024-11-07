@@ -37,7 +37,7 @@
 	vector<bool> activeBlockStack;
 	vector<string> blockTestStack;
 	extern int preproBracket;
-	double latest_datetime = 0.0;
+	uint64_t latest_datetime = 0;
 	std::string latest_file;
 	void ClearParserState()
 	{

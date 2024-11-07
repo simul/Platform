@@ -43,7 +43,7 @@ namespace platform
 			};
 		private:
 			std::vector<std::string> fontPaths;
-			crossplatform::Effect						*effect=nullptr;
+			std::shared_ptr<crossplatform::Effect>		effect=nullptr;
 			crossplatform::EffectTechnique				*backgTech=nullptr;
 			crossplatform::EffectTechnique				*textTech=nullptr;
 			crossplatform::ShaderResource				textureResource;

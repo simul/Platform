@@ -121,8 +121,8 @@ public:
 	crossplatform::Texture* depthTexture = nullptr;
 	crossplatform::HdrRenderer* hdrRenderer = nullptr;
 	crossplatform::Framebuffer* hdrFramebuffer = nullptr;
-	crossplatform::Effect* effect = nullptr;
-	crossplatform::Effect* test = nullptr;
+	std::shared_ptr<crossplatform::Effect> effect = nullptr;
+	std::shared_ptr<crossplatform::Effect> test = nullptr;
 	crossplatform::Texture* texture = nullptr;
 	crossplatform::ConstantBuffer<SceneConstants>	sceneConstants;
 	crossplatform::ConstantBuffer<CameraConstants>	cameraConstants;
@@ -272,8 +272,8 @@ public:
 		rwSB.~StructuredBuffer();
 		roSB.~StructuredBuffer();
 		delete texture;
-		delete test;
-		delete effect;
+		test = nullptr;
+		effect = nullptr;
 		delete hdrFramebuffer;
 		delete hdrRenderer;
 		delete depthTexture;
@@ -288,11 +288,10 @@ public:
 
 		hdrRenderer->RestoreDeviceObjects(renderPlatform);
 		hdrFramebuffer->RestoreDeviceObjects(renderPlatform);
-		effect = renderPlatform->CreateEffect();
-		effect->Load(renderPlatform, "solid");
+		effect = renderPlatform->GetOrCreateEffect("solid");
 		sceneConstants.RestoreDeviceObjects(renderPlatform);
 		cameraConstants.RestoreDeviceObjects(renderPlatform);
-		test = renderPlatform->CreateEffect("Test");
+		test = renderPlatform->GetOrCreateEffect("Test");
 		texture = renderPlatform->CreateTexture();
 	}
 
@@ -301,7 +300,6 @@ public:
 		if (effect)
 		{
 			effect->InvalidateDeviceObjects();
-			delete effect;
 			effect = nullptr;
 		}
 		sceneConstants.InvalidateDeviceObjects();
@@ -423,7 +421,7 @@ public:
 		hdrFramebuffer->Clear(deviceContext, 0.00f, 0.31f, 0.57f, 1.00f, reverseDepth ? 0.0f : 1.0f);
 		renderPlatform->GetDebugConstantBuffer().multiplier = vec4(0.0f, 0.33f, 1.0f, 1.0f);
 		renderPlatform->SetConstantBuffer(deviceContext, &(renderPlatform->GetDebugConstantBuffer()));
-		renderPlatform->DrawQuad(deviceContext, w / 4, h / 4, w / 2, h / 2, renderPlatform->GetDebugEffect(), renderPlatform->GetDebugEffect()->GetTechniqueByName("untextured"), "noblend");
+		renderPlatform->DrawQuad(deviceContext, w / 4, h / 4, w / 2, h / 2, renderPlatform->GetDebugEffect().get(), renderPlatform->GetDebugEffect()->GetTechniqueByName("untextured"), "noblend");
 	}
 
 	void Test_Text(crossplatform::GraphicsDeviceContext& deviceContext, int w, int h)

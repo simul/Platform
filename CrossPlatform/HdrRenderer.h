@@ -40,7 +40,7 @@ namespace platform
 			crossplatform::RenderPlatform		*renderPlatform;
 			int Width,Height;
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			crossplatform::Effect*				hdr_effect;
+			std::shared_ptr<crossplatform::Effect> hdr_effect;
 			crossplatform::EffectTechnique*		exposureGammaTechnique;
 			crossplatform::EffectPass*			exposureGammaMainPass;
 			crossplatform::EffectPass*			exposureGammaMSAAPass;
