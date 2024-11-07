@@ -49,7 +49,7 @@
 	extern void prepro_warning(const char *s);
 	extern void prepro_warning(const char *s,const char *file,int line);
 	extern int prepro_get_lineno ();
-	FILE* (*prepro_open)(const char *filename_utf8,string &fullPathName,double &filedate)=NULL;
+	FILE* (*prepro_open)(const char *filename_utf8,string &fullPathName,uint64_t &filedate)=NULL;
 
 	void (*prepro_close)(FILE *f)=NULL;
 	std::ostringstream preproOutput;
@@ -621,7 +621,7 @@ void Preprocess(int argc, char **argv)
 int newfile(const char *fn)
 {
 	std::string fullPathName;
-	double datetime=0.0;
+	uint64_t datetime=0;
 	FILE *f = prepro_open(fn,fullPathName,datetime);
 
 	/* die if no file or no room */
