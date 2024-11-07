@@ -34,12 +34,12 @@ namespace platform
 		class DetectChangesIncludeHandler : public ID3DInclude
 		{
 		public:
-			DetectChangesIncludeHandler(const char* shaderDirUtf8,const std::vector<std::string> &shaderPathsUtf8, double binaryTime = 0.0);
+			DetectChangesIncludeHandler(const char* shaderDirUtf8,const std::vector<std::string> &shaderPathsUtf8, uint64_t binaryTime = 0);
 			HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
 			HRESULT __stdcall Close(LPCVOID pData);
 
 			/// The newest file. If the d3d process fails and this is 0, it means we had a missing file.
-			double GetNewestIncludeDateJDN() const
+			uint64_t GetNewestIncludeTimestamp() const
 			{
 				return newest;
 			}
@@ -47,8 +47,8 @@ namespace platform
 			std::vector<std::string> m_pathsUtf8;
 			std::string m_ShaderDirUtf8;
 			std::string m_SystemDirUtf8;
-			double lastCompileTime;
-			double newest;
+			uint64_t lastCompileTime;
+			uint64_t newest;
 		};
 	}
 }

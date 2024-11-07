@@ -43,7 +43,7 @@ struct ImGui_ImplPlatform_Data
 	Buffer*					pVB = nullptr;
 	Buffer*					pIB = nullptr;
 	bool reload_shaders=false;
-	Effect*					effect = nullptr;
+	std::shared_ptr<Effect> effect = nullptr;
 	EffectPass*				effectPass_testDepth=nullptr;
 	EffectPass*				effectPass_noDepth=nullptr;
 	EffectPass*				effectPass_placeIn3D_testDepth=nullptr;
@@ -499,7 +499,7 @@ bool	ImGui_ImplPlatform_CreateDeviceObjects()
 		bd->pInputLayout=bd->renderPlatform->CreateLayout(3,local_layout,true);
 	
 	if (!bd->effect)
-		bd->effect = bd->renderPlatform->CreateEffect("imgui");
+		bd->effect = bd->renderPlatform->GetOrCreateEffect("imgui");
 
 	bd->effectPass_testDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
 	bd->effectPass_noDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
@@ -536,7 +536,7 @@ void	ImGui_ImplPlatform_InvalidateDeviceObjects()
 
 	bd->constantBuffer.InvalidateDeviceObjects();
 	SAFE_DELETE(bd->pInputLayout);
-	SAFE_DELETE(bd->effect);
+	bd->effect = nullptr;
 	SAFE_DELETE(bd->framebufferTexture);
 }
 void ImGui_ImplPlatform_RecompileShaders()
@@ -549,17 +549,17 @@ void ImGui_ImplPlatform_RecompileShaders()
 	bd->renderPlatform->ScheduleRecompileEffects({"imgui"},[bd](){bd->reload_shaders=true;});
 }
 
-void	ImGui_ImplPlatform_LoadShaders()
+void ImGui_ImplPlatform_LoadShaders()
 {
 	ImGui_ImplPlatform_Data* bd = ImGui_ImplPlatform_GetBackendData();
 	if (!bd)
 		return;
-	delete bd->effect;
+
 	bd->effect =nullptr;
 	if(!bd->renderPlatform)
 		return;
 
-	bd->effect = bd->renderPlatform->CreateEffect("imgui");
+	bd->effect = bd->renderPlatform->GetOrCreateEffect("imgui");
 	bd->effectPass_testDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("test_depth");
 	bd->effectPass_noDepth = bd->effect->GetTechniqueByName("layout_in_2d")->GetPass("no_depth");
 	bd->effectPass_placeIn3D_testDepth = bd->effect->GetTechniqueByName("place_in_3d")->GetPass("test_depth");

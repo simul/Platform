@@ -363,14 +363,10 @@ namespace platform
 			/// This is for states that will be shared by multiple shaders. There will be a warning if a description is passed that conflicts with the current definition,
 			/// as the Effects system assumes that SamplerState names are unique.
 			SamplerState					*GetOrCreateSamplerStateByName	(const char *name_utf8,platform::crossplatform::SamplerStateDesc *desc=0);
-			/// Destroy the effect when it is safe to do so. The pointer can now be reassigned or nulled.
-			void							Destroy(Effect *&e);
 			/// Create a platform-specific effect instance.
 			virtual Effect					*CreateEffect					()=0;
-			/// Create a platform-specific effect instance.
-			virtual Effect					*CreateEffect					(const char *filename_utf8, bool checkRecompileShaders = true);
-			/// Get the effect named, or return null if it's not been created.
-			Effect							*GetEffect						(const char *name_utf8);
+			/// Get or create a platform-specific effect instance.
+			std::shared_ptr<Effect>			GetOrCreateEffect(const char *filename_utf8, bool createOnly = false);
 			/// Create a platform-specific constant buffer instance. This is not usually used directly, instead, create a
 			/// platform::crossplatform::ConstantBuffer, and pass this RenderPlatform's pointer to it in RestoreDeviceObjects().
 			virtual PlatformConstantBuffer	*CreatePlatformConstantBuffer	(ResourceUsageFrequency F)	=0;
@@ -506,15 +502,15 @@ namespace platform
 			}
 			//! This was introduced because Unity's deferred renderer flips the image vertically sometime after we render.
 			bool mirrorY, mirrorY2, mirrorYText;
-			crossplatform::Effect *solidEffect = nullptr;
-			crossplatform::Effect *copyEffect = nullptr;
+			std::shared_ptr<crossplatform::Effect> solidEffect = nullptr;
+			std::shared_ptr<crossplatform::Effect> copyEffect = nullptr;
 			std::map<std::string,crossplatform::Material*> materials;
 			std::map<std::string, crossplatform::Texture*> textures;
 			std::vector<std::string> GetTexturePathsUtf8(); 
 			platform::core::MemoryInterface *GetMemoryInterface();
 			void SetMemoryInterface(platform::core::MemoryInterface *m);
-			crossplatform::Effect *GetDebugEffect();
-			crossplatform::Effect *GetCopyEffect();
+			std::shared_ptr<crossplatform::Effect> GetDebugEffect();
+			std::shared_ptr<crossplatform::Effect> GetCopyEffect();
 			ConstantBuffer<DebugConstants> &GetDebugConstantBuffer();
 			// Does the format use stencil?
 			static PixelFormat ToColourFormat(PixelFormat f);
@@ -535,7 +531,6 @@ namespace platform
 			{
 				std::string effect_name;
 				std::function<void()> callback;
-				Effect* newEffect = nullptr;
 			};
 			std::thread effectCompileThread;
 			std::vector<EffectRecompile> effectsToCompile;
@@ -573,8 +568,8 @@ namespace platform
 			GraphicsDeviceContext			immediateContext;
 			ComputeDeviceContext			computeContext;
 			// All for debug Effect
-			crossplatform::Effect			*debugEffect=nullptr;
-			crossplatform::Effect			*mipEffect=nullptr;
+			std::shared_ptr<crossplatform::Effect> debugEffect=nullptr;
+			std::shared_ptr<crossplatform::Effect> mipEffect=nullptr;
 			crossplatform::EffectTechnique	*textured=nullptr;
 			crossplatform::EffectTechnique	*untextured=nullptr;
 			crossplatform::EffectTechnique	*showVolume=nullptr;
@@ -597,8 +592,7 @@ namespace platform
 			std::set<crossplatform::Texture*> fencedTextures;
 			virtual void ResetImmediateCommandList() {}
 		public:
-			std::set< Effect*> destroyEffects;
-			std::map<std::string, Effect*> effects;
+			std::map<std::string, std::shared_ptr<Effect>> effects;
 			// all shaders are stored here and referenced by techniques.
 			//std::map<std::string, Shader*> shaders;
 			phmap::flat_hash_map<const void *,ContextState *> contextState;

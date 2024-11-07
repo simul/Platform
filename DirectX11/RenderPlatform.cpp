@@ -228,7 +228,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_RELEASE(pUserDefinedAnnotation);
 #endif
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
-	SAFE_DELETE(debugEffect);
 	ID3D11DeviceContext* c=immediateContext.asD3D11DeviceContext();
 	SAFE_RELEASE(c);
 	immediateContext.platform_context=NULL;

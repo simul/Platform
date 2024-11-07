@@ -32,7 +32,7 @@ namespace platform
 			void DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh, int);
 			void DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh, const Mesh::SubNode& subNode);
 			RenderPlatform *renderPlatform;
-			Effect *effect;
+			std::shared_ptr<Effect> effect;
 
 		public:
 			ConstantBuffer<CameraConstants> cameraConstants;

@@ -153,10 +153,10 @@ void DefaultFileLoader::AcquireFileContents(void *&pointer, unsigned int &bytes,
 		filesLoaded.insert(filename_utf8);
 }
 
-double DefaultFileLoader::GetFileDate(const char *filename_utf8) const
+uint64_t DefaultFileLoader::GetFileDate(const char *filename_utf8) const
 {
 	if (!FileExists(filename_utf8))
-		return 0.0;
+		return 0;
 
 	std::wstring wstr = platform::core::Utf8ToWString(filename_utf8);
 	FILE *fp = nullptr;
@@ -168,44 +168,37 @@ double DefaultFileLoader::GetFileDate(const char *filename_utf8) const
 	if (!fp)
 	{
 		// std::cerr<<"Failed to find file "<<filename_utf8<<std::endl;
-		return 0.0;
+		return 0;
 	}
 	fclose(fp);
+
+#if 0//PLATFORM_STD_FILESYSTEM
+	// https://stackoverflow.com/questions/61030383/how-to-convert-stdfilesystemfile-time-type-to-time-t
+	// https://stackoverflow.com/questions/51273205/how-to-compare-time-t-and-stdfilesystemfile-time-type
+	fs::file_time_type fileTime = fs::last_write_time(filename_utf8);
+#if PLATFORM_CXX20
+	const std::chrono::system_clock systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
+	const time_t time = std::chrono::system_clock::to_time_t(systemTime);
+#else
+	std::chrono::system_clock::time_point systemTime = std::chrono::time_point_cast<std::chrono::system_clock::duration>(fileTime - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
+	const time_t time = std::chrono::system_clock::to_time_t(systemTime);
+#endif
+	return time;
+#endif
 
 #if defined(_MSC_VER) && defined(_WIN32)
 	struct _stat buf;
 	_wstat(wstr.c_str(), &buf);
-	buf.st_mtime;
 	time_t t = buf.st_mtime;
-	struct tm lt;
-	gmtime_s(&lt, &t);
-	// Note: bizarrely, the tm structure has MONTHS starting at ZERO, but DAYS start at 1.
-	double daynum = GetDayNumberFromDateTime(1900 + lt.tm_year, lt.tm_mon + 1, lt.tm_mday, lt.tm_hour, lt.tm_min, lt.tm_sec);
-	return daynum;
-#elif PLATFORM_STD_FILESYSTEM
-#ifdef CPP20
-	auto write_time = fs::last_write_time(filename_utf8);
-	const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
-	const auto time = std::chrono::system_clock::to_time_t(systemTime);
-	return ((double)ns) / (3600.0 * 24.0 * 1000000.0);
+	return t;
 #else
 	std::wstring filenamew = StringToWString(filename_utf8);
 	struct stat buf;
 	stat(filename_utf8, &buf);
-	buf.st_mtime;
 	time_t t = buf.st_mtime;
-	struct tm lt;
-#if __COMMODORE__
-	gmtime_s(&t, &lt);
-#else
-	gmtime_r(&t, &lt);
+	return t;
 #endif
-	double datetime = GetDayNumberFromDateTime(1900 + lt.tm_year, lt.tm_mon, lt.tm_mday, lt.tm_hour, lt.tm_min, lt.tm_sec);
-	return datetime;
-#endif
-#else
 	return 0;
-#endif
 }
 
 bool DefaultFileLoader::Save(const void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text)

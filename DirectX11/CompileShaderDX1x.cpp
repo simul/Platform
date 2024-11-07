@@ -78,8 +78,8 @@ HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 	return S_OK;
 }
 
-DetectChangesIncludeHandler::DetectChangesIncludeHandler(const char* shaderDirUtf8,const std::vector<std::string> &shaderPathsUtf8, double binaryTime )
-	: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(binaryTime), newest(0.0)
+DetectChangesIncludeHandler::DetectChangesIncludeHandler(const char* shaderDirUtf8,const std::vector<std::string> &shaderPathsUtf8, uint64_t binaryTime )
+	: m_ShaderDirUtf8(shaderDirUtf8), lastCompileTime(binaryTime), newest(0)
 {
 	m_pathsUtf8 = shaderPathsUtf8;
 	m_pathsUtf8.push_back(shaderDirUtf8);
@@ -110,16 +110,16 @@ ERRNO_CHECK
 		}
 		if(finalPathUtf8.length()==0)
 		{
-			newest=0.0;
+			newest=0;
 			SIMUL_CERR<<"Can't find include file "<<pFileNameUtf8<<std::endl;
 			return E_FAIL;
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;
-		double dateTimeJdn= platform::core::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
-		if(dateTimeJdn>newest)
-			newest=dateTimeJdn;
-		if(dateTimeJdn>lastCompileTime)
+		uint64_t timestamp= platform::core::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
+		if(timestamp>newest)
+			newest=timestamp;
+		if(timestamp>lastCompileTime)
 		{
 			// Early-out if we're testing against a specific compile time.
 			return E_FAIL;
