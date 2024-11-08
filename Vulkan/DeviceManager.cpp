@@ -314,9 +314,10 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	platformSurfaceExt = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 #endif 
 
-#define PLATFORM_VULKAN_FORCE_DEBUG 1
 #define PLATFORM_VULKAN_USE_RENDERDOC_META 0
-#if (PLATFORM_VULKAN_USE_RENDERDOC_META == 0 && defined(__ANDROID__)) || PLATFORM_VULKAN_FORCE_DEBUG
+#define PLATFORM_VULKAN_USE_RENDERDOC_META_ANDROID (PLATFORM_VULKAN_USE_RENDERDOC_META == 0 && defined(__ANDROID__))
+
+#if PLATFORM_VULKAN_USE_RENDERDOC_META_ANDROID || PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
