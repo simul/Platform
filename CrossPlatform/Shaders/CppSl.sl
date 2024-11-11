@@ -822,23 +822,36 @@
 	template <typename T>
 	T lerp(const T& a, const T& b, const T& x)
 	{
-		return b * x + a * (T(1.0) - x);
+		if (a == b)
+			return a;
+
+		T c = b * x + a * (T(1.0) - x);
+		return c; 
 	}
 	template <typename T>
 	tvector2<T> lerp(const tvector2<T>& a, const tvector2<T>& b, const T& x)
 	{
+		if (a == b)
+			return a;
+
 		tvector2 c = b * x + a * (T(1.0) - x);
 		return c;
 	}
 	template<typename T>
 	tvector3<T> lerp(const tvector3<T>& a, const tvector3<T>& b, const T& x)
 	{
+		if (a == b)
+			return a;
+
 		tvector3 c = b * x + a * (T(1.0) - x);
 		return c;
 	}
 	template <typename T>
 	tvector4<T> lerp(const tvector4<T>& a, const tvector4<T>& b, const T& x)
 	{
+		if (a == b)
+			return a;
+
 		tvector4 c = b * x + a * (T(1.0) - x);
 		return c;
 	}

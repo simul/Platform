@@ -460,7 +460,7 @@ std::string Effect::GetConstantBufferNameAtSlot(int s)
 {
 	for (const auto& i : constantBufferSlots)
 	{
-		if (i.second == s)
+		if (i.second.first == s)
 			return i.first;
 	}
 	return "";
@@ -1044,6 +1044,19 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	std::string sfxbFilenameUtf8 = binFilenameUtf8;
 	platform::core::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
+	#if 0
+	uint64_t timestamp = platform::core::FileLoader::GetFileLoader()->GetFileDate(sfxbFilenameUtf8.c_str());
+	struct tm timeDate;
+	gmtime_s(&timeDate, (time_t *)&timestamp);
+	std::cout << sfxbFilenameUtf8 << " write time " <<
+		(timeDate.tm_year + 1900) << "-" <<
+		(timeDate.tm_mon + 1) << "-" <<
+		(timeDate.tm_mday) << " " <<
+		(timeDate.tm_hour) << ":" <<
+		(timeDate.tm_min) << ":" <<
+		(timeDate.tm_sec) << std::endl;
+	#endif
+
 	platform::core::FileLoader::GetFileLoader()->AcquireFileContents(ptr,num_bytes, binFilenameUtf8.c_str(),true);
 	filenameInUseUtf8=binFilenameUtf8;
 	void *bin_ptr=nullptr;
@@ -1133,9 +1146,12 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				const string &name	=words[1];
 				const string &register_num	=words[4];
+				const string &group_num		=words[5];
 				int slot=atoi(register_num.c_str());
+				int group=atoi(group_num.c_str());
 				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
 				res->slot				=slot;
+				res->group				=group;
 				res->shaderResourceType=crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE;
 				textureDetailsMap[name]=res;
 				textureResources[slot]=res;
@@ -1144,8 +1160,10 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				const string &constant_buffer_name = words[1];
 				const string &constant_buffer_slot = words[2];
+				const string &constant_buffer_group = words[3];
 				int slot = atoi(constant_buffer_slot.c_str());
-				constantBufferSlots[constant_buffer_name]=slot;
+				int group = atoi(constant_buffer_group.c_str());
+				constantBufferSlots[constant_buffer_name]={slot,group};
 			}
 			else if(is_equal(word,"texture"))
 			{
@@ -1153,8 +1171,10 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				const string &texture_dim	=words[2];
 				const string &read_write	=words[3];
 				const string &register_num	=words[4];
-				string is_array				=words.size()>5?words[5]:"single";
+				const string &group_num		=words[5];
+				string is_array				=words.size()>6?words[6]:"single";
 				int slot=atoi(register_num.c_str());
+				int group=atoi(group_num.c_str());
 				int dim=is_equal(texture_dim,"3d")||is_equal(texture_dim,"3dms")?3:2;
 				bool is_cubemap=is_equal(texture_dim,"cubemap")||is_equal(texture_dim,"cubemapms");
 				bool is_msaa=texture_dim.find("ms")!=string::npos;
@@ -1162,6 +1182,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				bool ar=is_equal(is_array,"array");
 				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
 				res->slot				=slot;
+				res->group				=group;
 				res->dimensions			=dim;
 				crossplatform::ShaderResourceType rt=crossplatform::ShaderResourceType::UNKNOWN;
 				if(!rw)
@@ -1334,12 +1355,15 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			}
 			else if(is_equal(word, "SamplerState"))
 			{
-				//SamplerState clampSamplerState 9,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
+				//SamplerState clampSamplerState 9 g0,MIN_MAG_MIP_LINEAR,CLAMP,CLAMP,CLAMP,
 				size_t sp2=line.find(" ",sp+1);
+				size_t sp3=line.find(" ",sp2+1);
+				size_t comma=(int)std::min(line.length(),line.find(",",sp3+1));
 				string sampler_name = line.substr(sp + 1, sp2 - sp - 1);
-				size_t comma=(int)std::min(line.length(),line.find(",",sp2+1));
-				string register_num = line.substr(sp2 + 1, comma - sp2 - 1);
+				string register_num = line.substr(sp2 + 1, sp3 - sp2 - 1);
+				string group_num = line.substr(sp3 + 2, comma - sp3 - 2);
 				int reg=atoi(register_num.c_str());
+				int grp=atoi(group_num.c_str());
 				platform::crossplatform::SamplerStateDesc desc;
 				string state=line.substr(comma+1,line.length()-comma-1);
 				vector<string> st=platform::core::split(state,',');
@@ -1350,11 +1374,13 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				if(st.size()>4)
 					desc.depthComparison=(crossplatform::DepthComparison)toInt(st[4]);
 				desc.slot=reg;
+				desc.group=grp;
 				crossplatform::SamplerState *ss=renderPlatform->GetOrCreateSamplerStateByName(sampler_name.c_str(),&desc);
 				samplerStates[sampler_name]=ss;
 				samplerSlots[reg]=ss;
 				crossplatform::ShaderResource *res=new crossplatform::ShaderResource;
 				res->slot				=reg;
+				res->group				=grp;
 				res->shaderResourceType	=ShaderResourceType::SAMPLER;
 				textureDetailsMap[sampler_name]=res;
 			}

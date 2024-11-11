@@ -223,7 +223,7 @@ void Text3DRenderer::InvalidateDeviceObjects()
 	}
 	fontChars.clear();
 	constantBuffer.InvalidateDeviceObjects();
-	SAFE_DELETE(effect);
+	effect = nullptr;
 	SAFE_DELETE(font_texture);
 	renderPlatform=NULL;
 	if (fontWidth)
@@ -242,9 +242,8 @@ void Text3DRenderer::RecompileShaders()
 void Text3DRenderer::LoadShaders()
 {
 	recompile = false;
-	SAFE_DELETE(effect);
 	ERRNO_CHECK
-	effect = renderPlatform->CreateEffect("font");
+	effect = renderPlatform->GetOrCreateEffect("font");
 	ERRNO_CHECK
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
@@ -356,7 +355,7 @@ int Text3DRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y
 		effect->Apply(deviceContext,textTech,passIndex);
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
-		f.Apply(deviceContext,effect,_fontChars);
+		f.Apply(deviceContext,_fontChars);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 		renderPlatform->Draw(deviceContext,6*n,0);
 		effect->UnbindTextures(deviceContext);
@@ -482,7 +481,7 @@ int Text3DRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float*
 		effect->Apply(deviceContext, textTech, passIndex);
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext, 0, 0, nullptr, nullptr);
-		f.Apply(deviceContext, effect, _fontChars);
+		f.Apply(deviceContext, _fontChars);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
 		renderPlatform->Draw(deviceContext, 6 * n, 0);
 		effect->UnbindTextures(deviceContext);

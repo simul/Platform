@@ -108,13 +108,6 @@ RenderPlatform::~RenderPlatform()
 	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
-
-	for (auto i = materials.begin(); i != materials.end(); i++)
-	{
-		Material *mat = i->second;
-		delete mat;
-	}
-	materials.clear();
 }
 
 static bool RewriteOutput(std::string str)
@@ -184,7 +177,7 @@ void RenderPlatform::recompileAsync()
 						{
 							if(RecompileEffect(effectRecompile.effect_name))
 							{
-								effectRecompile.newEffect = CreateEffect(effectRecompile.effect_name.c_str(), false);
+								GetOrCreateEffect(effectRecompile.effect_name.c_str(), true);
 							}
 						}
 						return effectRecompile;
@@ -224,7 +217,7 @@ void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &ef
 			{
 				found = true;
 				break;
-}
+			}
 		}
 
 		if (!found)
@@ -465,17 +458,10 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		mat->SetEffect(solidEffect);
 	}
 	
-	Destroy(debugEffect);
-	debugEffect=CreateEffect("debug");
-
-	Destroy(solidEffect);
-	solidEffect=CreateEffect("solid");
-	
-	Destroy(copyEffect);
-	copyEffect=CreateEffect("copy");
-	
-	Destroy(mipEffect);
-	mipEffect=CreateEffect("mip");
+	debugEffect=GetOrCreateEffect("debug");
+	solidEffect=GetOrCreateEffect("solid");
+	copyEffect=GetOrCreateEffect("copy");
+	mipEffect=GetOrCreateEffect("mip");
 	
 	if(debugEffect)
 	{
@@ -493,11 +479,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	if(gpuProfiler)
 		gpuProfiler->InvalidateDeviceObjects();
-	for (auto e : destroyEffects)
-	{
-		SAFE_DELETE(e);
-	}
-	destroyEffects.clear();
 	if(textRenderer)
 		textRenderer->InvalidateDeviceObjects();
 	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
@@ -505,12 +486,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	standardRenderStates.clear();
 	SAFE_DELETE(textRenderer);
 	debugConstants.InvalidateDeviceObjects();
-	SAFE_DELETE(debugEffect);
-	
-	SAFE_DELETE(solidEffect);
-	
-	SAFE_DELETE(copyEffect);
-	SAFE_DELETE(mipEffect);
+
+	debugEffect = nullptr;
+	solidEffect = nullptr;
+	copyEffect = nullptr;
+	mipEffect = nullptr;
 	
 	textured=nullptr;
 	untextured=nullptr;
@@ -521,21 +501,18 @@ void RenderPlatform::InvalidateDeviceObjects()
 	{
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
+		delete mat;
 	}
+	materials.clear();
 	for (auto &debugVertexBuffer : debugVertexBuffers)
 	{
 		debugVertexBuffer->InvalidateDeviceObjects();
 	}
 	debugVertexBuffers.clear();
-	/*for(auto s:shaders)
-	{
-		s.second->Release();
-		delete s.second;
-	}
-	shaders.clear();*/
 	for(auto s:sharedSamplerStates)
 	{
-		s.second->InvalidateDeviceObjects();
+		if(s.second)
+			s.second->InvalidateDeviceObjects();
 		delete s.second;
 	}
 	sharedSamplerStates.clear();
@@ -544,6 +521,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 		SAFE_DELETE(t.second);
 	}
 	textures.clear();
+	for (auto &effect : effects)
+	{
+		effect.second = nullptr;
+	}
+	effects.clear();
 	last_begin_frame_number=0;
 }
 
@@ -560,24 +542,10 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::LoadShaders()
 {
-/*	for (auto s : shaders)
-	{
-		s.second->Release();
-		delete s.second;
-	}
-	shaders.clear();*/
-	
-	Destroy(debugEffect);
-	debugEffect=CreateEffect("debug");
-
-	Destroy(solidEffect);
-	solidEffect=CreateEffect("solid");
-	
-	Destroy(copyEffect);
-	copyEffect=CreateEffect("copy");
-	
-	Destroy(mipEffect);
-	mipEffect=CreateEffect("mip");
+	debugEffect=GetOrCreateEffect("debug");
+	solidEffect=GetOrCreateEffect("solid");
+	copyEffect=GetOrCreateEffect("copy");
+	mipEffect=GetOrCreateEffect("mip");
 	
 	if(debugEffect)
 	{
@@ -892,7 +860,7 @@ vec4 RenderPlatform::TexelQuery(DeviceContext &deviceContext,int query_id,uint2 
 	}
 	debugConstants.queryPos=pos;
 	SetConstantBuffer(deviceContext,&debugConstants);
-	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext,debugEffect,debugEffect->GetShaderResource("textureQueryResults"));
+	textureQueryResult.ApplyAsUnorderedAccessView(deviceContext,debugEffect->GetShaderResource("textureQueryResults"));
 	debugEffect->SetTexture(deviceContext,"imageTexture",texture);
 	debugEffect->Apply(deviceContext,"texel_query",0);
 	DispatchCompute(deviceContext,textureQueryResult.count,1,1);
@@ -978,12 +946,12 @@ void RenderPlatform::SetMemoryInterface(platform::core::MemoryInterface *m)
 	allocator.SetExternalAllocator(m);
 }
 
-crossplatform::Effect *RenderPlatform::GetDebugEffect()
+std::shared_ptr<crossplatform::Effect> RenderPlatform::GetDebugEffect()
 {
 	return debugEffect;
 }
 
-crossplatform::Effect* RenderPlatform::GetCopyEffect()
+std::shared_ptr<crossplatform::Effect> RenderPlatform::GetCopyEffect()
 {
 	return copyEffect;
 }
@@ -1237,25 +1205,29 @@ void RenderPlatform::DrawLines(GraphicsDeviceContext &deviceContext,PosColourVer
 	posColourLayout->Unapply(deviceContext);
 }
 
-
-static float length(const vec3 &u)
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill,bool view_centred)
 {
-	float size=u.x*u.x+u.y*u.y+u.z*u.z;
-	return sqrt(size);
-}
-void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *dir,float rads,const float *colr,bool fill)
-{
-	vec3 pos=GetCameraPosVector(deviceContext.viewStruct.view);
+	vec3 pos = view_centred ? vec3d(0, 0, 0) : GetCameraPosVector(deviceContext.viewStruct.view);
 	vec3 d=dir;
 	d/=length(d);
 	pos += 1.5f * d;
 	float radius = 1.5f * rads;
-	DrawCircle(deviceContext,pos,dir,radius,colr,fill);
+	DrawCircle(deviceContext,pos,dir,radius,colr,fill,view_centred);
 }
 
-void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill)
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const double *dir,double rads,const float *colr,bool fill,bool view_centred)
 {
-	PosColourVertex line_vertices[37];
+	vec3d pos = view_centred ? vec3d(0,0,0) : GetCameraPosVector(deviceContext.viewStruct.view);
+	vec3d d=dir;
+	d/=length(d);
+	pos += 1.5 * d;
+	double radius = 1.5 * rads;
+	DrawCircle(deviceContext,pos,dir,radius,colr,fill,view_centred);
+}
+
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill,bool view_centred)
+{
+	PosColourVertex line_vertices[36];
 	vec3 direction(dir);
 	direction = normalize(direction);
 	vec3 z(0,0,1.f);
@@ -1268,14 +1240,39 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 	x*=radius;
 	y = cross(direction , x);
 	int l=0;
-	for(int j=0;j<36;j++)
+	for(int j=0;j<_countof(line_vertices);j++)
 	{
-		float angle					=(float(j)/35.0f)*2.0f*3.1415926536f;
-		math::Vector3 p = math::Vector3((x * cos(angle) + y * sin(angle)));
-		line_vertices[l].pos		=vec3(pos)+vec3((const float*)&p);
+		float angle					=(float(j)/float(_countof(line_vertices)-1))*2.0f*3.1415926536f;
+		vec3 p						=vec3((x * cos(angle) + y * sin(angle)));
+		line_vertices[l].pos		=vec3(pos)+p;
 		line_vertices[l++].colour	=colr;
 	}
-	DrawLines(deviceContext,line_vertices,36,true,false,false);
+	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
+}
+
+void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const double *pos, const double *dir, double radius, const float *colr, bool fill, bool view_centred)
+{
+	PosColourVertex line_vertices[36];
+	vec3d direction(dir);
+	direction = normalize(direction);
+	vec3d z(0, 0, 1.0);
+	vec3d y(0, 1.0, 0);
+	vec3d x = cross(z, direction);
+	if (length(x) > 0.1)
+		x = normalize(x);
+	else
+		x = cross(direction, y);
+	x *= radius;
+	y = cross(direction, x);
+	int l = 0;
+	for (int j = 0; j < _countof(line_vertices); j++)
+	{
+		double angle = (double(j) / float(_countof(line_vertices) - 1)) * 2.0 * 3.1415926536;
+		vec3d p = vec3d((x * cos(angle) + y * sin(angle)));
+		line_vertices[l].pos = vec3(vec3d(pos) + p);
+		line_vertices[l++].colour = colr;
+	}
+	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
 }
 
 void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
@@ -1710,7 +1707,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
 		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 		debugConstants.displayLayer = UpdateDisplayLayer(tex->arraySize);
-			}
+	}
 	else if(tex)
 	{
 		tech = textured;
@@ -1721,7 +1718,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		tech=untextured;
 	}
 
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect.get(),tech,blend?"blend":"noblend");
 	debugEffect->UnbindTextures(deviceContext);
 	
 	if(debug)
@@ -1830,7 +1827,7 @@ void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,v
 
 int RenderPlatform::Print(GraphicsDeviceContext& deviceContext, int x, int y, const char* text, const float* colr, const float* bkg)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
+	SIMUL_COMBINED_PROFILE_START(deviceContext, "Print")
 	static float clr[]={1.f,1.f,0.f,1.f};
 	static float black[]={0.f,0.f,0.f,0.0f};
 	if(!colr)
@@ -1849,7 +1846,7 @@ int RenderPlatform::Print(GraphicsDeviceContext& deviceContext, int x, int y, co
 
 int RenderPlatform::Print(MultiviewGraphicsDeviceContext& deviceContext, float* xs, float* ys, const char* text, const float* colr, const float* bkg)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext, "text")
+	SIMUL_COMBINED_PROFILE_START(deviceContext, "Print")
 	static float clr[] = { 1.f,1.f,0.f,1.f };
 	static float black[] = { 0.f,0.f,0.f,0.0f };
 	if (!colr)
@@ -1985,42 +1982,39 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	return ss;
 }
 
-void RenderPlatform::Destroy(Effect *&e)
+std::shared_ptr<Effect> RenderPlatform::GetOrCreateEffect(const char *filename_utf8, bool createOnly)
 {
-	if (e)
-	{
-		destroyEffects.insert(e);
-		e = nullptr;
-	}
-}
+	std::string fn(filename_utf8);
 
-Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecompileShaders)
-{
-	//Check if the effect in being recompiled
-	if (checkRecompileShaders)
+	if (!createOnly)
 	{
+		//Check if the effect in being recompiled
 		std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
-		const auto &it = effectsToCompileFutures.find(std::string(filename_utf8));
+		const auto &it = effectsToCompileFutures.find(fn);
 		if (it != effectsToCompileFutures.end())
 		{
 			if (it->second.valid())
 			{
-				Effect *e = it->second.get().newEffect;
 				effectsToCompileFutures.erase(it);
-				return e;
+				return effects[fn];
 			}
 			else
 			{
 				effectsToCompileFutures.erase(it);
 			}
 		}
+
+		//Else, check if the effect is already loaded.
+		auto i = effects.find(filename_utf8);
+		if (i != effects.end())
+			return i->second;
 	}
 
 	//Else, load as normal
-	std::string fn(filename_utf8);
-	crossplatform::Effect *e=CreateEffect();
-	effects[fn] = e;
+	std::shared_ptr<Effect> e;
+	e.reset(CreateEffect());
 	e->SetName(filename_utf8);
+	effects[fn] = e;
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
@@ -2028,14 +2022,6 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecomp
 		return e;
 	}
 	return e;
-}
-
-Effect* RenderPlatform::GetEffect(const char* filename_utf8)
-{
-	auto i = effects.find(filename_utf8);
-	if (i == effects.end())
-		return nullptr;
-	return i->second;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc,bool interleaved)

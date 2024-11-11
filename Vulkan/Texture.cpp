@@ -887,7 +887,7 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 		return;
 	}
 	void* data = nullptr;
-	TranslateLoadedTextureData(data,buffer,size,x,y,n,4);
+	TranslateLoadedTextureData(data,buffer,size,x,y,n,4,path);
 	core::FileLoader::GetFileLoader()->ReleaseFileContents(buffer);
 	SetTextureData(lt,data,x,y,1,n,crossplatform::PixelFormat::RGBA_8_UNORM);
 }

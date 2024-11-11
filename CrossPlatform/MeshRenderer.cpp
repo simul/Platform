@@ -22,12 +22,7 @@ void MeshRenderer::RestoreDeviceObjects(RenderPlatform *r)
 	cameraConstants.RestoreDeviceObjects(r);
 	solidConstants.RestoreDeviceObjects(r);
 	perObjectConstants.RestoreDeviceObjects(r);
-}
-
-void MeshRenderer::LoadShaders()
-{
-	delete effect;
-	effect = renderPlatform->CreateEffect("solid");
+	effect = r->GetOrCreateEffect("solid");
 }
 
 void MeshRenderer::InvalidateDeviceObjects()
@@ -35,7 +30,6 @@ void MeshRenderer::InvalidateDeviceObjects()
 	cameraConstants.InvalidateDeviceObjects();
 	solidConstants.InvalidateDeviceObjects();
 	perObjectConstants.InvalidateDeviceObjects();
-	delete effect;
 	effect = nullptr;
 }
 
@@ -75,9 +69,8 @@ void MeshRenderer::DrawSubNode(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 void MeshRenderer::Render(GraphicsDeviceContext &deviceContext, Mesh *mesh, mat4 model, Texture *diffuseCubemap,Texture *specularCubemap,Texture *screenspaceShadowTexture)
 {
 	if (!effect)
-		LoadShaders();
-	if (!effect)
 		return;
+
 	deviceContext.viewStruct.PushModelMatrix(*((math::Matrix4x4*)&model));
 	effect->SetTexture(deviceContext, "diffuseCubemap", diffuseCubemap);
 	effect->SetTexture(deviceContext, "specularCubemap", specularCubemap);

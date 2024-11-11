@@ -26,7 +26,7 @@ MouseHandler::MouseHandler(bool yv)
 	,forward_back_spd(0.f)
 	,right_left_spd(0.f)
 {
-	camera=new platform::crossplatform::Camera();
+	camera=new Camera();
 	vec3 cameraPos(0,0,0);
 	camera->SetPosition(cameraPos);
 	vec3 lookAtPos(-1.0f, cameraPos.y, cameraPos.z);
@@ -65,9 +65,16 @@ void MouseHandler::setCentre(const float *c)
 		std::swap(centre[1],centre[2]);
 }
 
-void MouseHandler::setCameraMode(CameraMode c)
+void MouseHandler::setEnginePose(const posed& pose)
 {
-	cameraMode=c;
+	enginePose=pose;
+	enginePose.orientation.MakeUnit();
+	enginePose.position *= 1000.0;
+}
+
+void MouseHandler::setLocalRadiusKmCallback(std::function<float(float)> pfn)
+{
+	LocalRadiusKmCallback=pfn;
 }
 
 void MouseHandler::setAltitudeRange(float m,float M)
@@ -172,19 +179,18 @@ float MouseHandler::GetSpeed() const
 }
 void MouseHandler::Update(float time_step)
 {
-	platform::math::Vector3 offset_camspace;
+	math::Vector3 offset_camspace;
 	if(cameraMode==CENTRED)
 	{
-		platform::math::Vector3 pos=camera->GetPosition();
-		platform::math::Vector3 dir=pos;
+		math::Vector3 pos=camera->GetPosition();
+		math::Vector3 dir=pos;
 		dir-=centre;
 		camera->Orientation.GlobalToLocalDirection(offset_camspace,dir);
 	}
-	platform::math::Vector3 view_dir = camera->Orientation.Tz();
-	view_dir.Normalize();
+	if (cameraSpatial == EUCLIDEAN)
 	{
 		float cam_spd=speed_factor*(shift_down?shift_multiplier:1.f);
-		platform::math::Vector3 pos=camera->GetPosition();
+		math::Vector3 pos=camera->GetPosition();
 
 		float retain=1.f/(1.f+CameraDamping*time_step);
 		float introduce=1.f-retain;
@@ -213,20 +219,13 @@ void MouseHandler::Update(float time_step)
 			up_down_spd		-=slide_spd*fDeltaY*cam_spd*introduce;
 		}
 
-		if(y_vertical)
-			pos -= forward_back_spd * time_step * view_dir;
-		else
-			pos -= forward_back_spd * time_step * view_dir;
-		pos+=right_left_spd*time_step*camera->Orientation.Tx();
-		if(y_vertical)
-			pos.y+=up_down_spd*time_step;
-		else
-			pos.z+=up_down_spd*time_step;
+		math::Vector3 view_dir = camera->Orientation.Tz();
+		view_dir.Normalize();
 
-		if((y_vertical?pos.y:pos.z)<minAlt)
-			(y_vertical?pos.y:pos.z)=minAlt;
-		if((y_vertical?pos.y:pos.z)>maxAlt)
-			(y_vertical?pos.y:pos.z)=maxAlt;
+		pos -= forward_back_spd * time_step * view_dir;
+		pos += right_left_spd * time_step * camera->Orientation.Tx();
+		(y_vertical ? pos.y : pos.z) += up_down_spd * time_step;
+		(y_vertical ? pos.y : pos.z) = std::clamp((y_vertical ? pos.y : pos.z), minAlt, maxAlt);
 
 		camera->SetPosition(pos);
 
@@ -236,11 +235,7 @@ void MouseHandler::Update(float time_step)
 		x_rotate*=retain;
 		y_rotate*=retain;
 		z_rotate*=retain;
-		float tilt=0;
-		if(y_vertical)
-			tilt=asin(camera->Orientation.Tx().y);
-		else
-			tilt=asin(camera->Orientation.Tx().z);
+		float tilt = y_vertical ? asin(camera->Orientation.Tx().y) : asin(camera->Orientation.Tx().z);
 		if(mouseButtons==core::RightButton)
 		{
 			if(!alt_down)
@@ -273,13 +268,14 @@ void MouseHandler::Update(float time_step)
 		fDeltaX=0.f;
 		fDeltaY=0.f;
 
-		platform::math::Vector3 vertical(0,0,-1.f);
+		math::Vector3 vertical(0.0f, 0.0f, 1.0f);
 		if(y_vertical)
-			vertical.Define(0,-1.f,0);
+			vertical.Define(vertical.x, vertical.z, vertical.y);
+
 		static float sr=0.1f;
-		platform::math::Vector3 del=vertical*(x_rotate+sr*step_rotate_x);
+		math::Vector3 del=vertical*(x_rotate+sr*step_rotate_x)*(-1.f);
 		step_rotate_x=0;
-		platform::math::Vector3 dir=del;
+		math::Vector3 dir=del;
 		dir.Normalize();
 		camera->Rotate(del.Magnitude(),dir);
 
@@ -289,7 +285,7 @@ void MouseHandler::Update(float time_step)
 		dir.Normalize();
 		camera->Rotate(del.Magnitude(),dir);
 
-		del=platform::math::Vector3(0.f,0.f,z_rotate);
+		del=math::Vector3(0.f,0.f,z_rotate);
 		camera->LocalRotate(del);
 
 		static float correct_tilt=0.005f;
@@ -299,10 +295,166 @@ void MouseHandler::Update(float time_step)
 			camera->Rotate(-correct_tilt * tilt, view_dir);
 
 	}
+	else if (cameraSpatial == SPHERICAL)
+	{
+		float cam_spd = speed_factor * (shift_down ? shift_multiplier : 1.f);
+		math::Vector3 pos = camera->GetPosition();
+		{
+			// Global spherical to local Euclidean.
+			vec3d position;
+			position.x = pos.x;
+			position.y = y_vertical ? pos.z : pos.y;
+			position.z = y_vertical ? pos.y : pos.z;
+			position = enginePose.orientation.RotateVector(position);
+			position += enginePose.position;
+
+			float r = (float)length(position);
+			float Lat_Rad = asinf((float)position.z / r);
+			float Lon_Rad = atan2f((float)position.y, (float)position.x);
+			//r = LocalRadiusKmCallback(Lat_Rad) * 1000.0f + y_vertical ? pos.y : pos.z;
+
+			position.x = Lon_Rad * r;
+			position.y = Lat_Rad * r;
+			position.z = r - (float)length(enginePose.position);
+
+			pos.x = (float)position.x;
+			y_vertical ? pos.z : pos.y = (float)position.y;
+			y_vertical ? pos.y : pos.z = (float)position.z;
+
+			//camera->Orientation.DefineFromCameraEuler(0.0f, -Lat_Rad, Lon_Rad);
+		}
+
+		float retain = 1.f / (1.f + CameraDamping * time_step);
+		float introduce = 1.f - retain;
+
+		forward_back_spd *= retain;
+		right_left_spd *= retain;
+		up_down_spd *= retain;
+		if (move_forward || wheel_forward)
+			forward_back_spd += cam_spd * introduce;
+		if (move_backward || wheel_backward)
+			forward_back_spd -= cam_spd * introduce;
+		forward_back_spd += cam_spd * introduce * float(wheel_forward - wheel_backward);
+		wheel_forward = wheel_backward = 0;
+		if (move_left)
+			right_left_spd -= cam_spd * introduce;
+		if (move_right)
+			right_left_spd += cam_spd * introduce;
+		if (move_up)
+			up_down_spd += cam_spd * introduce;
+		if (move_down)
+			up_down_spd -= cam_spd * introduce;
+		if ((mouseButtons & core::MiddleButton) || mouseButtons == (core::LeftButton | core::RightButton))
+		{
+			static float slide_spd = 100.f;
+			right_left_spd += slide_spd * fDeltaX * cam_spd * introduce;
+			up_down_spd -= slide_spd * fDeltaY * cam_spd * introduce;
+		}
+
+		math::Vector3 view_dir = camera->Orientation.Tz();
+		view_dir.Normalize();
+
+		pos -= forward_back_spd * time_step * view_dir;
+		pos += right_left_spd * time_step * camera->Orientation.Tx();
+		(y_vertical ? pos.y : pos.z) += up_down_spd * time_step;
+		(y_vertical ? pos.y : pos.z) = std::clamp((y_vertical ? pos.y : pos.z), minAlt, maxAlt);
+
+		vec3d _vertical;
+		{
+			// Local Euclidean to global spherical.
+			vec3d position;
+			position.x = pos.x;
+			position.y = y_vertical ? pos.z : pos.y;
+			position.z = y_vertical ? pos.y : pos.z;
+			position.z += length(enginePose.position);
+
+			float Lat_Rad = float(position.y / position.z);
+			float Lon_Rad = float(position.x / position.z);
+
+			position.x = position.z * cos(Lat_Rad) * cos(Lon_Rad);
+			position.y = position.z * cos(Lat_Rad) * sin(Lon_Rad);
+			position.z = position.z * sin(Lat_Rad);
+			_vertical = normalize(position);
+
+			position -= enginePose.position;
+			position = enginePose.orientation.conjugate().RotateVector(position);
+			_vertical = enginePose.orientation.conjugate().RotateVector(_vertical);
+
+			pos.x = (float)position.x;
+			y_vertical ? pos.z : pos.y = (float)position.y;
+			y_vertical ? pos.y : pos.z = (float)position.z;
+		}
+		camera->SetPosition(pos);
+
+		static float x_rotate = 0.f;
+		static float y_rotate = 0.f;
+		static float z_rotate = 0.f;
+		x_rotate *= retain;
+		y_rotate *= retain;
+		z_rotate *= retain;
+		float tilt = y_vertical ? asin(camera->Orientation.Tx().y) : asin(camera->Orientation.Tx().z);
+		if (mouseButtons == core::RightButton)
+		{
+			if (!alt_down)
+			{
+				if (cameraMode == FLYING)
+					y_rotate -= fDeltaY * introduce;
+				else
+					y_rotate += fDeltaY * introduce;
+				if (cameraMode == FLYING)
+				{
+					static float rr = 0.5f;
+					z_rotate -= fDeltaX * introduce * rr;
+				}
+				else
+				{
+					static float xx = 1.5f;
+					x_rotate += fDeltaX * introduce * xx;
+				}
+			}
+		}
+		if (mouseButtons == core::MiddleButton)
+		{
+			// z_rotate-=fDeltaX*introduce;
+		}
+		static float cc = 0.01f;
+		if (cameraMode == FLYING)
+		{
+			x_rotate -= tilt * cc * introduce;
+		}
+		fDeltaX = 0.f;
+		fDeltaY = 0.f;
+
+		math::Vector3 vertical(0.0f, 0.0f, 1.0f);
+		if (y_vertical)
+			vertical.Define(vertical.x, vertical.z, vertical.y);
+
+		static float sr = 0.1f;
+		math::Vector3 del = vertical * (x_rotate + sr * step_rotate_x) * (-1.f);
+		step_rotate_x = 0;
+		math::Vector3 dir = del;
+		dir.Normalize();
+		camera->Rotate(del.Magnitude(), dir);
+
+		del = camera->Orientation.Tx() * (y_rotate + sr * step_rotate_y) * (-1.f);
+		step_rotate_y = 0;
+		dir = del;
+		dir.Normalize();
+		camera->Rotate(del.Magnitude(), dir);
+
+		del = math::Vector3(0.f, 0.f, z_rotate);
+		camera->LocalRotate(del);
+
+		static float correct_tilt = 0.005f;
+		dir = camera->Orientation.Tz();
+		dir.Normalize();
+		if (!alt_down)
+			camera->Rotate(-correct_tilt * tilt, view_dir);
+	}
 	if(cameraMode==CENTRED)
 	{
-		platform::math::Vector3 pos=camera->GetPosition();
-		platform::math::Vector3 dir;
+		math::Vector3 pos=camera->GetPosition();
+		math::Vector3 dir;
 		camera->Orientation.LocalToGlobalDirection(dir,offset_camspace);
 		pos=centre;
 		pos+=dir;

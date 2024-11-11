@@ -33,7 +33,7 @@ namespace platform
 		void DebugBreak()
 		{
 #ifdef _MSC_VER
-			::DebugBreak();
+		::DebugBreak();
 #else
 			if (debugBreaksEnabled)
 			{

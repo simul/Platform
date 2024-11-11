@@ -424,7 +424,7 @@ void EffectPass::SetUAVs(crossplatform::TextureAssignmentMap& rwTextures, crossp
 		renderPlatform->ResourceBarrierUAV(deviceContext, sb);
 	}
 	// Iterate over all the slots and fill them:
-	for (int s = 0; s < ResourceBindingLimits::NumSRV; s++)
+	for (int s = 0; s < ResourceBindingLimits::NumUAV; s++)
 	{
 		// All UAV must have valid descriptors for hardware tier 2 and bellow:
 		if (!usesRwTextureSlot(s) && !usesRwTextureSlotForSB(s))

@@ -11,10 +11,12 @@ using namespace dx11;
 static const int NUM_STAGING_BUFFERS = 6;
 PlatformStructuredBuffer::PlatformStructuredBuffer()
 	:buffer(0)
+	,stagingWriteBuffer(0)
 	,shaderResourceView(0)
 	,unorderedAccessView(0)
 	,num_elements(0)
 	,element_bytesize(0)
+	,computable(false)
 	,lastContext(NULL)
 	,read_data(0)
 #if _XBOX_ONE
@@ -45,6 +47,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	cpu_read = cpu_r;
 	num_elements = ct;
 	element_bytesize = unit_size;
+	this->computable = computable;
 	D3D11_BUFFER_DESC sbDesc;
 	memset(&sbDesc, 0, sizeof(sbDesc));
 	if (computable)
@@ -114,6 +117,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		if (renderPlatform && renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->TrackVideoMemory(buffer, sbDesc.ByteWidth, "dx11::PlatformStructuredBuffer main buffer");
 	}
+
 	if (cpu_read)
 		for (int i = 0; i < NUM_STAGING_BUFFERS; i++)
 		{
@@ -134,6 +138,21 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 			if (renderPlatform && renderPlatform->GetMemoryInterface())
 				renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingBuffers[i], sbDesc.ByteWidth, "dx11::PlatformStructuredBuffer staging");
 		}
+	}
+
+	// Needed for SetData on computable structured buffers:
+	if (computable)
+	{
+		sbDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		sbDesc.Usage = D3D11_USAGE_DYNAMIC;
+		sbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		sbDesc.MiscFlags = 0;
+		if (renderPlatform && renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingWriteBuffer);
+		V_CHECK(renderPlatform->AsD3D11Device()->CreateBuffer(&sbDesc, init_data != NULL ? &sbInit : NULL, &stagingWriteBuffer));
+		if (renderPlatform && renderPlatform->GetMemoryInterface())
+			renderPlatform->GetMemoryInterface()->TrackVideoMemory(stagingWriteBuffer, sbDesc.ByteWidth, "dx11::PlatformStructuredBuffer stagingWrite");
+
 	}
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -260,19 +279,40 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 	if (lastContext)
 	{
 		lastContext = deviceContext.asD3D11DeviceContext();
-		D3D11_MAP map_type = D3D11_MAP_WRITE_DISCARD;
-		if (((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())
-			map_type = D3D11_MAP_WRITE;
-		HRESULT hr = lastContext->Map(buffer, 0, map_type, SIMUL_D3D11_MAP_FLAGS, &mapped);
-		if (hr == S_OK)
+
+		if (computable)
 		{
-			memcpy(mapped.pData, data, num_elements * element_bytesize);
-			mapped.RowPitch = 0;
-			mapped.DepthPitch = 0;
-			lastContext->Unmap(buffer, 0);
+			D3D11_MAP map_type = D3D11_MAP_WRITE_DISCARD;
+			if (((dx11::RenderPlatform *)deviceContext.renderPlatform)->UsesFastSemantics())
+				map_type = D3D11_MAP_WRITE;
+			HRESULT hr = lastContext->Map(stagingWriteBuffer, 0, map_type, SIMUL_D3D11_MAP_FLAGS, &mapped);
+			if (hr == S_OK)
+			{
+				memcpy(mapped.pData, data, num_elements * element_bytesize);
+				mapped.RowPitch = 0;
+				mapped.DepthPitch = 0;
+				lastContext->Unmap(stagingWriteBuffer, 0);
+				lastContext->CopyResource(buffer, stagingWriteBuffer);
+			}
+			else
+				SIMUL_BREAK_ONCE("Map failed");
 		}
 		else
-			SIMUL_BREAK_ONCE("Map failed");
+		{
+			D3D11_MAP map_type = D3D11_MAP_WRITE_DISCARD;
+			if (((dx11::RenderPlatform *)deviceContext.renderPlatform)->UsesFastSemantics())
+				map_type = D3D11_MAP_WRITE;
+			HRESULT hr = lastContext->Map(buffer, 0, map_type, SIMUL_D3D11_MAP_FLAGS, &mapped);
+			if (hr == S_OK)
+			{
+				memcpy(mapped.pData, data, num_elements * element_bytesize);
+				mapped.RowPitch = 0;
+				mapped.DepthPitch = 0;
+				lastContext->Unmap(buffer, 0);
+			}
+			else
+				SIMUL_BREAK_ONCE("Map failed");
+		}
 	}
 	else
 		SIMUL_BREAK_ONCE("Uninitialized device context");
@@ -307,14 +347,21 @@ void PlatformStructuredBuffer::InvalidateDeviceObjects()
 	if (lastContext && mapped.pData && buffer)
 		lastContext->Unmap(buffer, 0);
 	mapped.pData = NULL;
+
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(shaderResourceView);
+
+	if (renderPlatform && renderPlatform->GetMemoryInterface())
+		renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingWriteBuffer);
+	SAFE_RELEASE(stagingWriteBuffer);
+
 	for (int i = 0; i < NUM_STAGING_BUFFERS; i++)
 	{
 		if (renderPlatform && renderPlatform->GetMemoryInterface())
 			renderPlatform->GetMemoryInterface()->UntrackVideoMemory(stagingBuffers[i]);
 		SAFE_RELEASE(stagingBuffers[i]);
 	}
+
 	num_elements = 0;
 #if SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
 	if (renderPlatform && renderPlatform->GetMemoryInterface())

@@ -74,11 +74,6 @@ namespace simul
 			void		Apply(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource);
 			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, const crossplatform::ShaderResource& shaderResource);
 
-			// Deprecated
-			void		Apply(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource);
-			// Deprecated
-			void		ApplyAsUnorderedAccessView(crossplatform::DeviceContext& deviceContext, crossplatform::Effect* effect, const crossplatform::ShaderResource& shaderResource);
-			
 			void		AddFence(crossplatform::DeviceContext& deviceContext);
 
 			void		Unbind(crossplatform::DeviceContext& deviceContext);

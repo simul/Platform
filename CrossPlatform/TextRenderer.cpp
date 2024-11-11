@@ -164,7 +164,7 @@ void TextRenderer::InvalidateDeviceObjects()
 	}
 	fontChars.clear();
 	constantBuffer.InvalidateDeviceObjects();
-	SAFE_DELETE(effect);
+	effect=nullptr;
 	SAFE_DELETE(font_texture);
 	renderPlatform=NULL;
 	if (fontWidth)
@@ -175,10 +175,10 @@ void TextRenderer::InvalidateDeviceObjects()
 
 void TextRenderer::LoadShaders()
 {
-	SAFE_DELETE(effect);
+	effect = nullptr;
 	if (!renderPlatform)
 		return;
-	effect=renderPlatform->CreateEffect("font");
+	effect=renderPlatform->GetOrCreateEffect("font");
 	backgTech	=effect->GetTechniqueByName("backg");
 	textTech	=effect->GetTechniqueByName("text");
 	textureResource	=effect->GetShaderResource("fontTexture");
@@ -189,8 +189,7 @@ void TextRenderer::LoadShaders()
 void TextRenderer::RecompileShaders()
 {
 	if(renderPlatform)
-        renderPlatform->ScheduleRecompileEffects({"font"}, [this]
-                                          { recompiled=true; });
+		renderPlatform->ScheduleRecompileEffects({"font"}, [this]{ recompiled=true; });
 }
 
 int TextRenderer::GetDefaultTextHeight() const
@@ -300,7 +299,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext,0,0,nullptr,nullptr);
 		renderPlatform->SetTopology(deviceContext, Topology::TRIANGLELIST);
-		f.Apply(deviceContext,effect,_fontChars);
+		f.Apply(deviceContext,_fontChars);
 		renderPlatform->Draw(deviceContext,6*n,0);
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);
@@ -431,7 +430,7 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 		effect->Apply(deviceContext, textTech, passIndex);
 		renderPlatform->SetConstantBuffer(deviceContext, &constantBuffer);
 		renderPlatform->SetVertexBuffers(deviceContext, 0, 0, nullptr, nullptr);
-		f.Apply(deviceContext, effect, _fontChars);
+		f.Apply(deviceContext, _fontChars);
 		renderPlatform->Draw(deviceContext, 6 * n, 0);
 		effect->UnbindTextures(deviceContext);
 		effect->Unapply(deviceContext);

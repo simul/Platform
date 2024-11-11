@@ -42,7 +42,7 @@ namespace platform
 		private:
 			void NotifyEffectRecompiled(Effect *e);
 			void Recompile();
-			crossplatform::Effect						*effect;
+			std::shared_ptr<crossplatform::Effect>		effect;
 			crossplatform::EffectTechnique				*backgTech;
 			crossplatform::EffectTechnique				*textTech;
 			crossplatform::ShaderResource				textureResource;

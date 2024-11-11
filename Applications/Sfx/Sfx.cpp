@@ -79,45 +79,14 @@ typedef int errno_t;
 using namespace std;
 
 // These are the callback functions for file handling that we will send to the preprocessor.
-//extern FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName,double &time);
+//extern FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName,uint64_t &time);
 //extern void (*prepro_close)(FILE *f);
+
 vector<string> shaderPathsUtf8;
 FileLoader fileLoader;
 extern std::ostringstream preproOutput;
 
-static double GetDayNumberFromDateTime(int year,int month,int day,int hour,int min,int sec)
-{
-	int D = 367*year - (7*(year + ((month+9)/12)))/4 + (275*month)/9 + day - 730531;//was +2451545
-	double d=(double)D;
-	d+=(double)hour/24.0;
-	d+=(double)min/24.0/60.0;
-	d+=(double)sec/24.0/3600.0;
-	return d;
-}
-
-double GetFileDate(const std::string &fullPathNameUtf8)
-{
-	wstring filenamew=StringToWString(fullPathNameUtf8);
-	#ifdef _MSC_VER
-	struct _stat64i32 buf;
-	_wstat(filenamew.c_str(), &buf);
-	#else
-	struct stat buf;
-	stat(fullPathNameUtf8.c_str(), &buf);
-	#endif
-	buf.st_mtime;
-	time_t t = buf.st_mtime;
-	struct tm lt;
-	#ifdef _MSC_VER
-	gmtime_s(&lt,&t);
-	#else
-	gmtime_r(&t,&lt);
-	#endif
-	double datetime=GetDayNumberFromDateTime(1900+lt.tm_year,lt.tm_mon,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
-	return datetime;
-}				
-				
-FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8,double &datetime)
+FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8,uint64_t &datetime)
 {				
 	fullPathNameUtf8	=fileLoader.FindFileInPathStack(filename_utf8,shaderPathsUtf8);
 	if(!fullPathNameUtf8.length())
@@ -137,7 +106,7 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8,double &d
 	if(last_slash>0)
 		path=path.substr(0,last_slash);
 	shaderPathsUtf8.push_back(path);
-	datetime=GetFileDate(fullPathNameUtf8);
+	datetime=FileLoader::GetFileDate(fullPathNameUtf8.c_str());
 	return f;
 }
 
@@ -633,13 +602,13 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		readlink("/proc/self/exe",exeNameUtf8,_MAX_PATH);
 		#endif
 		// start with the date that this exe was made, so new exe's rebuild the shaders.
-		double exe_datetime=GetFileDate(exeNameUtf8);
-		double platformfile_datetime=GetFileDate(config->platformFilename);
+		uint64_t exe_datetime=FileLoader::GetFileDate(exeNameUtf8);
+		uint64_t platformfile_datetime=FileLoader::GetFileDate(config->platformFilename.c_str());
 		latest_datetime= std::max(exe_datetime,platformfile_datetime);
 		latest_file=file;
 		if (!preprocess(file, config->define, sfxOptions->disableLineWrites))
 			return false;
-		double output_filedatetime=GetFileDate(sfxoFilename);
+		uint64_t output_filedatetime = FileLoader::GetFileDate(sfxoFilename.c_str());
 		bool recompile=false;
 		if(sfxOptions->force)
 		{

@@ -69,9 +69,9 @@ namespace platform
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			ConstantBuffer<SphericalHarmonicsConstants>	sphericalHarmonicsConstants;
 			StructuredBuffer<vec4>						sphericalHarmonics;
-			Effect										*sphericalHarmonicsEffect;
+			std::shared_ptr<crossplatform::Effect>		sphericalHarmonicsEffect;
 			int											shSeed;
-			crossplatform::Effect						*lightProbesEffect;
+			std::shared_ptr<crossplatform::Effect>		lightProbesEffect;
 			crossplatform::EffectTechnique				*mip_from_roughness_blend;
 			crossplatform::EffectTechnique				*mip_from_roughness_no_blend;
 			crossplatform::EffectTechnique				*jitter;

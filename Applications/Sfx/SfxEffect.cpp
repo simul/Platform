@@ -1315,7 +1315,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 
 	for (auto b : m_constantBuffers)
 	{
-		outstr << "constant_buffer " << b.first << " "<<GenerateConstantBufferSlot(b.second->slot,false)<<std::endl;
+		outstr << "constant_buffer " << b.first << " " << GenerateConstantBufferSlot(b.second->slot, false) << " g" << b.second->group_num << std::endl;
 		usedConstantBufferSlots.insert(b.second->slot);
 	}
 
@@ -1352,7 +1352,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			if (is_msaa)
 				outstr << "ms";
 		
-			outstr << " " << rw << " " << (writeable?GenerateTextureWriteSlot(dt->slot,false):GenerateTextureSlot(dt->slot,false))<< " " << ar << std::endl;
+			outstr << " " << rw << " " << (writeable ? GenerateTextureWriteSlot(dt->slot, false) : GenerateTextureSlot(dt->slot, false)) << " g" << t->second->group_num << " " << ar << std::endl;
 			if (dt->slot >= 32)
 			{
 				std::cerr << sfxFilename.c_str() << "(0): error: by default, only 16 texture slots are enabled in Gnmx." << std::endl;
@@ -1370,7 +1370,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			continue;
 		NamedConstantBuffer *dt = static_cast<NamedConstantBuffer*>(t->second);
 		outstr << "namedconstantbuffer " << t->first << " ";
-		outstr << " " <<dt->slot<< std::endl;
+		outstr << " " << dt->slot << " g" << t->second->group_num << std::endl;
 	}
 	// Add samplers to the effect file
 	for (auto t = declarations.begin(); t != declarations.end(); ++t)
@@ -1382,6 +1382,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 		SamplerState *ss = (SamplerState *)t->second;
 		outstr << "SamplerState " << t->first << " "
 			<< GenerateSamplerSlot(ss->register_number,false)
+			<< " g" << t->second->group_num
 			<< "," << ToString(ss->Filter)
 			<< "," << ToString(ss->AddressU)
 			<< "," << ToString(ss->AddressV)
