@@ -138,7 +138,6 @@ void PlatformStructuredBuffer::SetData(crossplatform::DeviceContext& deviceConte
 
 void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceContext,bool as_uav) 
 {
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if (mCurApplyCount >= mMaxApplyCount)
 	{
 		mMaxApplyCount*=mCountMultiplier;
@@ -157,8 +156,6 @@ void PlatformStructuredBuffer::ActualApply(crossplatform::DeviceContext &deviceC
 		// Force restart of the frame:
 		mLastFrame=(int64_t)-1;
 	}
-
-	auto rPlat = (vulkan::RenderPlatform*)deviceContext.renderPlatform;
 
 	// If new frame, update current frame index and reset the apply count
 	if (bufferUsageHint != crossplatform::ResourceUsageFrequency::ONCE)

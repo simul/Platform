@@ -108,13 +108,6 @@ RenderPlatform::~RenderPlatform()
 	allocator.Shutdown();
 	InvalidateDeviceObjects();
 	delete gpuProfiler;
-
-	for (auto i = materials.begin(); i != materials.end(); i++)
-	{
-		Material *mat = i->second;
-		delete mat;
-	}
-	materials.clear();
 }
 
 static bool RewriteOutput(std::string str)
@@ -184,7 +177,7 @@ void RenderPlatform::recompileAsync()
 						{
 							if(RecompileEffect(effectRecompile.effect_name))
 							{
-								effectRecompile.newEffect = CreateEffect(effectRecompile.effect_name.c_str(), false);
+								GetOrCreateEffect(effectRecompile.effect_name.c_str(), true);
 							}
 						}
 						return effectRecompile;
@@ -224,7 +217,7 @@ void RenderPlatform::ScheduleRecompileEffects(const std::vector<std::string> &ef
 			{
 				found = true;
 				break;
-}
+			}
 		}
 
 		if (!found)
@@ -465,17 +458,10 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 		mat->SetEffect(solidEffect);
 	}
 	
-	Destroy(debugEffect);
-	debugEffect=CreateEffect("debug");
-
-	Destroy(solidEffect);
-	solidEffect=CreateEffect("solid");
-	
-	Destroy(copyEffect);
-	copyEffect=CreateEffect("copy");
-	
-	Destroy(mipEffect);
-	mipEffect=CreateEffect("mip");
+	debugEffect=GetOrCreateEffect("debug");
+	solidEffect=GetOrCreateEffect("solid");
+	copyEffect=GetOrCreateEffect("copy");
+	mipEffect=GetOrCreateEffect("mip");
 	
 	if(debugEffect)
 	{
@@ -493,11 +479,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 {
 	if(gpuProfiler)
 		gpuProfiler->InvalidateDeviceObjects();
-	for (auto e : destroyEffects)
-	{
-		SAFE_DELETE(e);
-	}
-	destroyEffects.clear();
 	if(textRenderer)
 		textRenderer->InvalidateDeviceObjects();
 	for(std::map<StandardRenderState,RenderState*>::iterator i=standardRenderStates.begin();i!=standardRenderStates.end();i++)
@@ -505,12 +486,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	standardRenderStates.clear();
 	SAFE_DELETE(textRenderer);
 	debugConstants.InvalidateDeviceObjects();
-	SAFE_DELETE(debugEffect);
-	
-	SAFE_DELETE(solidEffect);
-	
-	SAFE_DELETE(copyEffect);
-	SAFE_DELETE(mipEffect);
+
+	debugEffect = nullptr;
+	solidEffect = nullptr;
+	copyEffect = nullptr;
+	mipEffect = nullptr;
 	
 	textured=nullptr;
 	untextured=nullptr;
@@ -521,21 +501,18 @@ void RenderPlatform::InvalidateDeviceObjects()
 	{
 		Material *mat = i->second;
 		mat->InvalidateDeviceObjects();
+		delete mat;
 	}
+	materials.clear();
 	for (auto &debugVertexBuffer : debugVertexBuffers)
 	{
 		debugVertexBuffer->InvalidateDeviceObjects();
 	}
 	debugVertexBuffers.clear();
-	/*for(auto s:shaders)
-	{
-		s.second->Release();
-		delete s.second;
-	}
-	shaders.clear();*/
 	for(auto s:sharedSamplerStates)
 	{
-		s.second->InvalidateDeviceObjects();
+		if(s.second)
+			s.second->InvalidateDeviceObjects();
 		delete s.second;
 	}
 	sharedSamplerStates.clear();
@@ -544,6 +521,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 		SAFE_DELETE(t.second);
 	}
 	textures.clear();
+	for (auto &effect : effects)
+	{
+		effect.second = nullptr;
+	}
+	effects.clear();
 	last_begin_frame_number=0;
 }
 
@@ -560,24 +542,10 @@ void RenderPlatform::RecompileShaders()
 
 void RenderPlatform::LoadShaders()
 {
-/*	for (auto s : shaders)
-	{
-		s.second->Release();
-		delete s.second;
-	}
-	shaders.clear();*/
-	
-	Destroy(debugEffect);
-	debugEffect=CreateEffect("debug");
-
-	Destroy(solidEffect);
-	solidEffect=CreateEffect("solid");
-	
-	Destroy(copyEffect);
-	copyEffect=CreateEffect("copy");
-	
-	Destroy(mipEffect);
-	mipEffect=CreateEffect("mip");
+	debugEffect=GetOrCreateEffect("debug");
+	solidEffect=GetOrCreateEffect("solid");
+	copyEffect=GetOrCreateEffect("copy");
+	mipEffect=GetOrCreateEffect("mip");
 	
 	if(debugEffect)
 	{
@@ -978,12 +946,12 @@ void RenderPlatform::SetMemoryInterface(platform::core::MemoryInterface *m)
 	allocator.SetExternalAllocator(m);
 }
 
-crossplatform::Effect *RenderPlatform::GetDebugEffect()
+std::shared_ptr<crossplatform::Effect> RenderPlatform::GetDebugEffect()
 {
 	return debugEffect;
 }
 
-crossplatform::Effect* RenderPlatform::GetCopyEffect()
+std::shared_ptr<crossplatform::Effect> RenderPlatform::GetCopyEffect()
 {
 	return copyEffect;
 }
@@ -1739,7 +1707,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		tech = debugEffect->GetTechniqueByName("show_texture_array");
 		debugEffect->SetTexture(deviceContext, "imageTextureArray", tex, {TextureAspectFlags::COLOUR, (uint8_t)displayMip, 1, 0, (uint8_t)-1});
 		debugConstants.displayLayer = UpdateDisplayLayer(tex->arraySize);
-			}
+	}
 	else if(tex)
 	{
 		tech = textured;
@@ -1750,7 +1718,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 		tech=untextured;
 	}
 
-	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect,tech,blend?"blend":"noblend");
+	DrawQuad(deviceContext,x1,y1,dx,dy,debugEffect.get(),tech,blend?"blend":"noblend");
 	debugEffect->UnbindTextures(deviceContext);
 	
 	if(debug)
@@ -2014,42 +1982,39 @@ SamplerState *RenderPlatform::GetOrCreateSamplerStateByName	(const char *name_ut
 	return ss;
 }
 
-void RenderPlatform::Destroy(Effect *&e)
+std::shared_ptr<Effect> RenderPlatform::GetOrCreateEffect(const char *filename_utf8, bool createOnly)
 {
-	if (e)
-	{
-		destroyEffects.insert(e);
-		e = nullptr;
-	}
-}
+	std::string fn(filename_utf8);
 
-Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecompileShaders)
-{
-	//Check if the effect in being recompiled
-	if (checkRecompileShaders)
+	if (!createOnly)
 	{
+		//Check if the effect in being recompiled
 		std::lock_guard recompileEffectFutureGuard(recompileEffectFutureMutex);
-		const auto &it = effectsToCompileFutures.find(std::string(filename_utf8));
+		const auto &it = effectsToCompileFutures.find(fn);
 		if (it != effectsToCompileFutures.end())
 		{
 			if (it->second.valid())
 			{
-				Effect *e = it->second.get().newEffect;
 				effectsToCompileFutures.erase(it);
-				return e;
+				return effects[fn];
 			}
 			else
 			{
 				effectsToCompileFutures.erase(it);
 			}
 		}
+
+		//Else, check if the effect is already loaded.
+		auto i = effects.find(filename_utf8);
+		if (i != effects.end())
+			return i->second;
 	}
 
 	//Else, load as normal
-	std::string fn(filename_utf8);
-	crossplatform::Effect *e=CreateEffect();
-	effects[fn] = e;
+	std::shared_ptr<Effect> e;
+	e.reset(CreateEffect());
 	e->SetName(filename_utf8);
+	effects[fn] = e;
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
@@ -2057,14 +2022,6 @@ Effect *RenderPlatform::CreateEffect(const char *filename_utf8, bool checkRecomp
 		return e;
 	}
 	return e;
-}
-
-Effect* RenderPlatform::GetEffect(const char* filename_utf8)
-{
-	auto i = effects.find(filename_utf8);
-	if (i == effects.end())
-		return nullptr;
-	return i->second;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const LayoutDesc *layoutDesc,bool interleaved)

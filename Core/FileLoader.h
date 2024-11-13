@@ -31,8 +31,6 @@ namespace platform
 
 			//! Get the position of the next slash in the string from the current position.
 			static int NextSlash(const std::string &str, int pos = 0);
-			//! Get the Day Number (decimal Julian) from DateTime. Useful for file time stamps.
-			static double GetDayNumberFromDateTime(int year, int month, int day, int hour, int min, int sec);
 
 			//! Get the parent folder of the current directory.
 			static std::string FindParentFolder(const char *folder_utf8);
@@ -43,8 +41,8 @@ namespace platform
 			//! The memory should later be freed by a call to ReleaseFileContents.
 			//! The filename should be unicode UTF8-encoded.
 			virtual void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text)=0;
-			//! Get the file date as a julian day number. Return zero if the file doesn't exist.
-			virtual double GetFileDate(const char* filename_utf8) const=0;
+			//! Get the unix timestamp. Return zero if the file doesn't exist.
+			virtual uint64_t GetFileDate(const char* filename_utf8) const=0;
 			//! Free the memory allocated by AcquireFileContents.		
 			virtual void ReleaseFileContents(void* pointer)=0;
 			//! Save the chunk of memory to storage.

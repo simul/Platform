@@ -208,7 +208,7 @@ struct d3dMacro
 };
 
 static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std::vector<std::string> &shaderPathsUtf8
-	,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,double binary_date_jdn,bool &missing)
+	,void *textData,size_t textSize,D3D_SHADER_MACRO *macros,uint64_t binary_date,bool &missing)
 {
 	ID3DBlob *binaryBlob=NULL;
 	ID3DBlob *errorMsgs=NULL;
@@ -217,7 +217,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
-	DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),shaderPathsUtf8,binary_date_jdn);
+	DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),shaderPathsUtf8,binary_date);
 	HRESULT hr=D3DPreprocess(	textData	
 						,textSize
 						,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
@@ -227,12 +227,12 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 						,&errorMsgs						//ID3DBlob **ppErrorMsgs
 						);
 	// Don't V_CHECK here as we'll often expect a S_FAIL result for early-out.
-	double newestFileTime=detectChangesIncludeHandler.GetNewestIncludeDateJDN();
+	uint64_t newestFileTime=detectChangesIncludeHandler.GetNewestIncludeTimestamp();
 	if(binaryBlob)
 		binaryBlob->Release();
 	if(errorMsgs)
 		errorMsgs->Release();
-	missing=(newestFileTime==0.0&&hr!=S_OK);
+	missing=(newestFileTime==0&&hr!=S_OK);
 	return newestFileTime;
 }
 

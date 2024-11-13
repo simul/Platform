@@ -28,7 +28,6 @@ void SphereRenderer::InvalidateDeviceObjects()
 {
 	sphereConstants.InvalidateDeviceObjects();
 	renderPlatform=nullptr;
-	delete effect;
 	effect=nullptr;
 }
 
@@ -45,8 +44,7 @@ void SphereRenderer::RecompileShaders()
 void SphereRenderer::LoadShaders()
 {
 	reload_shaders = false;
-	delete effect;
-	effect=renderPlatform->CreateEffect("sphere");
+	effect=renderPlatform->GetOrCreateEffect("sphere");
 }
 
 void SphereRenderer::DrawCrossSection(GraphicsDeviceContext &deviceContext,crossplatform::Effect *effect, crossplatform::Texture *t, vec3 texcOffset, vec3 origin, vec4 orient_quat, float qsize, float sph_rad, vec4 colour, int pass)

@@ -91,16 +91,6 @@ int FileLoader::NextSlash(const std::string &str, int pos)
 	return slash;
 }
 
-double FileLoader::GetDayNumberFromDateTime(int year, int month, int day, int hour, int min, int sec)
-{
-	int D = 367 * year - (7 * (year + ((month + 9) / 12))) / 4 + (275 * month) / 9 + day - 730531; // was +2451545
-	double d = (double)D;
-	d += (double)hour / 24.0;
-	d += (double)min / 24.0 / 60.0;
-	d += (double)sec / 24.0 / 3600.0;
-	return d;
-}
-
 #if defined(_MSC_VER) && !defined(_GAMING_XBOX) && !defined(__SWITCH__) && PLATFORM_STD_FILESYSTEM > 0
 std::string FileLoader::FindParentFolder(const char *folder_utf8)
 {
@@ -252,8 +242,8 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 			break;
 		}
 	}
-	double newest_date = 0.0;
 
+	uint64_t newest_date = 0;
 	int index = 0;
 	for (; i >= 0; i--)
 	{
@@ -268,7 +258,7 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 		f += filename_utf8;
 		if (FileExists(f.c_str()))
 		{
-			double filedate = GetFileDate(f.c_str());
+			uint64_t filedate = GetFileDate(f.c_str());
 			if (filedate >= newest_date)
 			{
 				fn = f;
