@@ -439,12 +439,13 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 	}
 }
 
-wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
-							wstring tempFilename,ShaderType t, PixelOutputFormat pixelOutputFormat)
+static bool checkedCompilerPath=false;
+static std::string useCompilerPath;
+
+extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig,const SfxOptions &sfxOptions)
 {
-	if (sfxConfig.compiler.empty())
-		return L"";
-	std::string usePath="";
+	checkedCompilerPath=true;
+	useCompilerPath="";
 	std::string compiler_exe = sfxConfig.compiler;
 	size_t space_pos=compiler_exe.find(" ");
 	if(space_pos<compiler_exe.size())
@@ -467,11 +468,22 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 		{
 			if(sfxOptions.verbose)
 				std::cout << "Using: " << pth.generic_string().c_str() << std::endl;
-			usePath=p;
+			useCompilerPath=p;
 			break;
 		}
 	}
-//	std::cout<< "Using path " << usePath.c_str() << std::endl;
+}
+
+wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
+							wstring generatedSourceFilename,ShaderType t, PixelOutputFormat pixelOutputFormat)
+{
+	if (sfxConfig.compiler.empty())
+		return L"";
+	if(!checkedCompilerPath)
+	{
+		CalcCompilerPathToUse(sfxConfig,sfxOptions);
+	}
+//	std::cout<< "Using path " << useCompilerPath.c_str() << std::endl;
 	wstring command;
 	
 	string stageName = "NO_STAGES_IN_JSON";
@@ -486,8 +498,8 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 			return L"";
 	}
 	std::string currentCompiler = FillInVariable(sfxConfig.compiler,"stage",stageName);
-	if(usePath.length())
-		currentCompiler=usePath+"/"s+currentCompiler;
+	if(useCompilerPath.length())
+		currentCompiler=useCompilerPath+"/"s+currentCompiler;
 	command +=  Utf8ToWString(currentCompiler) ;
 
 	// Add additional options (requested from the XX.json)
@@ -525,7 +537,7 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shaderInstance->entryPoint)) + L" ";
 	}
 	string filename_root=WStringToString(outputFile);
-	dot_pos = filename_root.rfind(".");
+	size_t dot_pos = filename_root.rfind(".");
 	if(dot_pos<filename_root.size())
 		filename_root=filename_root.substr(0,dot_pos);
 	if(sfxOptions.debugInfo)
@@ -579,7 +591,7 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 		}
 	}*/
 	command += L"\"";
-	command += tempFilename.c_str();
+	command += generatedSourceFilename.c_str();
 	command += L"\"";
 	
 	return command;
@@ -648,6 +660,25 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	(*log)<< str.c_str();
 	return has_errors;
 }
+#pragma optimize("",off)
+bool IsShaderUnchanged(std::string sourceFilename,std::string outputFilename,const std::string &src)
+{
+	if(!std::filesystem::exists(outputFilename))
+		return false;
+	if(!std::filesystem::exists(sourceFilename))
+		return false;
+    std::filesystem::file_time_type binary_time = std::filesystem::last_write_time(outputFilename);
+    std::filesystem::file_time_type source_time = std::filesystem::last_write_time(sourceFilename);
+	if(binary_time<=source_time)
+		return false;
+    std::ostringstream sstr;
+	ifstream ifs(sourceFilename.c_str());;
+    sstr << ifs.rdbuf();
+    if(src!=sstr.str())
+		return false;
+	return true;
+}
+
 
 int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		,const string &sourceFile
@@ -790,11 +821,11 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		std::string rootSrc((std::istreambuf_iterator<char>(rootSrcFile)), (std::istreambuf_iterator<char>()));
 		preamble += rootSrc;
 	}
-	wstring tempFilename ;
+	wstring generatedSourceFilename ;
 	if(sfxOptions.intermediateDirectory.length())
-		tempFilename+= StringToWString(sfxOptions.intermediateDirectory+ "/");
+		generatedSourceFilename+= StringToWString(sfxOptions.intermediateDirectory+ "/");
 
-	tempFilename+=targetFilename+wstring(L".")+Utf8ToWString(sfxConfig.sourceExtension);
+	generatedSourceFilename+=targetFilename+wstring(L".")+Utf8ToWString(sfxConfig.sourceExtension);
 	
 	char buffer[_MAX_PATH];
 	string wd="";
@@ -804,7 +835,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	if(getcwd(buffer,_MAX_PATH))
 	#endif
 		 wd=string(buffer)+"/";
-	string tempf=WStringToUtf8(tempFilename);
+	string tempf=WStringToUtf8(generatedSourceFilename);
 	if(tempf.find(":")>=tempf.length())
 		tempf=wd+"/"+tempf;
 	find_and_replace(tempf,"\\","/");
@@ -849,18 +880,27 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		targetDir+=L"/";
 	mkpath(targetDir);
 	mkpath(StringToWString(sfxOptions.intermediateDirectory)+L"/");
+	wstring outputFile = ((sfxOptions.wrapOutput ? StringToWString(sfxOptions.intermediateDirectory) : targetDir) + L"/") + (targetFilename + L".") + Utf8ToWString(sfxConfig.outputExtension);
 	
+	// Now: if the source we want to save is the same as the file that's there,
+	//    AND the date of the target file is AFTER the date of the source, that means
+	//    that this shader hasn't changed, even if the sfx file has.
+
+	// Therefore we don't compile it.
+	if(IsShaderUnchanged(WStringToUtf8(generatedSourceFilename),WStringToUtf8(outputFile),src))
+		return true;
+
 #ifdef _MSC_VER
-	ofstream ofs(tempFilename.c_str());
+	ofstream ofs(generatedSourceFilename.c_str());
 #else
-	ofstream ofs(WStringToUtf8(tempFilename).c_str());
+	ofstream ofs(WStringToUtf8(generatedSourceFilename).c_str());
 #endif
 	ofs.write(strSrc, strlen(strSrc));
 	ofs.close();
 
 #ifdef _MSC_VER
-	// Nowe delete the corresponding sdb's
-	wstring sdbFile=tempFilename.substr(0,tempFilename.length()-5);
+	// Now delete the corresponding sdb's
+	wstring sdbFile=generatedSourceFilename.substr(0,generatedSourceFilename.length()-5);
 	WIN32_FIND_DATAW fd;
 	HANDLE hFind = FindFirstFileW((sdbFile+L"*.sdb").c_str(), &fd);
 	if (hFind != INVALID_HANDLE_VALUE)
@@ -872,7 +912,6 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		FindClose(hFind);
 	}
 #endif
-	wstring outputFile = ((sfxOptions.wrapOutput ? StringToWString(sfxOptions.intermediateDirectory) : targetDir) + L"/") + (targetFilename + L".") + Utf8ToWString(sfxConfig.outputExtension);
 	// Add the output filename
 	int slash = (int)outputFile.rfind(L"/");
 	int backslash = (int)outputFile.rfind(L"\\");
@@ -897,7 +936,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		sfxOptions,
 		targetDir,
 		outputFile,
-		tempFilename,
+		generatedSourceFilename,
 		t,
 		pixelOutputFormat
 	);
@@ -907,15 +946,15 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	if (compile_command.empty())
 	{
 		if(sfxOptions.verbose)
-			std::cout<<WStringToUtf8(tempFilename).c_str()<<"\n";
+			std::cout<<WStringToUtf8(generatedSourceFilename).c_str()<<"\n";
 		// But let's in that case, wrap up the GENERATED SOURCE in sfxb:
 		if (sfxOptions.wrapOutput)
 		{
 			//concatenate
 #ifdef _MSC_VER
-			std::ifstream if_c(tempFilename.c_str(), std::ios_base::binary);
+			std::ifstream if_c(generatedSourceFilename.c_str(), std::ios_base::binary);
 #else
-			std::ifstream if_c(WStringToUtf8(tempFilename).c_str(), std::ios_base::binary);
+			std::ifstream if_c(WStringToUtf8(generatedSourceFilename).c_str(), std::ios_base::binary);
 #endif
 			if(!if_c.good())
 			{
@@ -929,7 +968,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 			if(!sz)
 			{
 				SFX_BREAK("Empty output shader ");
-				std::cerr<<"Empty output shader "<<WStringToUtf8(tempFilename)<<"\n";
+				std::cerr<<"Empty output shader "<<WStringToUtf8(generatedSourceFilename)<<"\n";
 				exit(1001);
 			}
 			binaryMap[sbf] = std::make_tuple(startp, sz);
