@@ -352,9 +352,9 @@ vk::ImageView *Texture::CreateVulkanImageView(crossplatform::TextureView texture
 	// TODO: Should we override aspect if the texture is a depth stencil? - AJR
 	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.elements.subresourceRange.aspectMask);
 	const uint8_t &startMip = textureView.elements.subresourceRange.baseMipLevel;
-	const uint8_t &numMips = textureView.elements.subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : textureView.elements.subresourceRange.mipLevelCount;
+	const uint8_t numMips = textureView.elements.subresourceRange.mipLevelCount == uint8_t(0xFF) ? mips - startMip : textureView.elements.subresourceRange.mipLevelCount;
 	const uint8_t &startLayer = textureView.elements.subresourceRange.baseArrayLayer;
-	const uint8_t &numLayers = textureView.elements.subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : textureView.elements.subresourceRange.arrayLayerCount;
+	const uint8_t numLayers = textureView.elements.subresourceRange.arrayLayerCount == uint8_t(0xFF) ? NumFaces() - startLayer : textureView.elements.subresourceRange.arrayLayerCount;
 
 	crossplatform::ShaderResourceType type = textureView.elements.type;
 	if(type==crossplatform::ShaderResourceType::UNKNOWN)
@@ -560,8 +560,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		int mip_width=width;
 		int mip_length=length;
 		ClearLoadedTextures();
-		ResizeLoadedTextures(mips, 1);
-		for (uint32_t i = 0; i < uint32_t(mips); i++)
+		ResizeLoadedTextures(data->size(), 1);
+		for (uint32_t i = 0; i < uint32_t(mLoadedTextures.size()); i++)
 		{
 			uint32_t n = CalculateSubresourceIndex(i, 0, 0, mips, 1);
 			LoadedTexture& loadedTexture=mLoadedTextures[i][0];
@@ -891,6 +891,8 @@ void Texture::LoadTextureData(LoadedTexture &lt,const char* path)
 
 void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int z,int n,crossplatform::PixelFormat f,crossplatform::CompressionFormat cf)
 {
+	if(!data)
+		return;
 	lt.data=( unsigned char*)data;
 	lt.x=x;
 	lt.y=y;
@@ -902,6 +904,7 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	size_t SysMemPitch		=x*bytesPerTexel;
 	size_t bufferSize		 = SysMemPitch*y;
 	size_t numRowsToCopy	 = y;
+	size_t block_size_bytes=bytesPerTexel;
 	switch (cf)
 	{
 	case crossplatform::CompressionFormat::BC1:
@@ -909,21 +912,25 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	case crossplatform::CompressionFormat::BC5:
 	case crossplatform::CompressionFormat::ETC1:
 	case crossplatform::CompressionFormat::ETC2:
+			 block_size_bytes=(bytesPerTexel==4)?16:8;
+		break;
+	case crossplatform::CompressionFormat::BC6H:
+			 block_size_bytes=16;
+		break;
+	default:
+		break;
+	};
+	if(cf!=crossplatform::CompressionFormat::UNCOMPRESSED)
 		{
 		// The memory pitch of a line for uncompressed formats, becomes the memory pitch
 		// of a row of blocks in the case of the compressed.
 			size_t block_width		=std::max(1,(x+3)/4);
 			size_t block_height		=std::max(1,(y+3)/4);
-			size_t block_size_bytes=(bytesPerTexel==4)?16:8;
 			SysMemPitch				= block_size_bytes*block_width;
 			// buffer must be at least one block in size.
 			bufferSize				= std::max(block_size_bytes,SysMemPitch*block_height);
 			numRowsToCopy			=block_height;
 		}
-		break;
-	default:
-		break;
-	};
 	//int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
@@ -940,7 +947,6 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 	vmaMapMemory(lt.allocationInfo.allocator, lt.allocationInfo.allocation, &mapped_data);
 	SIMUL_ASSERT(mapped_data !=nullptr);
 	
-	//memcpy(data, lt.data, lt.x * lt.y*4);
 	uint8_t *target_data	=(uint8_t*)mapped_data;
 	uint8_t *cPtr			=(uint8_t*)lt.data;
 	size_t totalBytes=0;

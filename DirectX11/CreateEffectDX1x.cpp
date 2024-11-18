@@ -233,7 +233,7 @@ static double GetNewestIncludeFileDate(std::string text_filename_utf8,const std:
 	if(errorMsgs)
 		errorMsgs->Release();
 	missing=(newestFileTime==0&&hr!=S_OK);
-	return newestFileTime;
+	return (double)newestFileTime;
 }
 
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
