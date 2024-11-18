@@ -545,6 +545,13 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 	if(outputfile!=NULL&&strlen(outputfile)>0)
 	{
 		string outf=outputfile;
+		std::filesystem::path outputPath(outf);
+		try{
+			std::filesystem::create_directories(outputPath);
+		}catch(...)
+		{
+			std::cerr<<"Could not create path "<<outputPath.generic_string()<<"\n";
+		}
 		// Always assume it's a directory.
 		if(outf.rfind(".sfxo")!=outf.length()-6)
 		{

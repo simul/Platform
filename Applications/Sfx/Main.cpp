@@ -204,6 +204,13 @@ int main(int argc, char** argv)
 		//std::cerr<<log<<std::endl;
 		return 2;
 	}
+	if(platformFilenames.size()==0)
+	{
+		std::cerr<<("No platforms specified, use -P argument.\n");
+		///sfxGetEffectLog(effect, log, sizeof(log));
+		//std::cerr<<log<<std::endl;
+		return 11;
+	}
 	std::filesystem::path sourcePath(sourcefile);
 	std::string sourceName=sourcePath.filename().generic_string();
 	for(auto platformFilename:platformFilenames)
@@ -266,12 +273,8 @@ int main(int argc, char** argv)
 				{
 					for (auto& el : compiler["commandPaths"].items())
 					{
-						if(sfxOptions.verbose)
-							std::cout<<"Compiler Path in: "<<el.value()<<"\n";
 						std::string compilerPath=ProcessEnvironmentVariables(el.value());
 						sfxConfig.compilerPaths.push_back(compilerPath);
-						if(sfxOptions.verbose)
-							std::cout<<"Compiler Path: "<<compilerPath.c_str()<<"\n";
 					}
 				}
 				if (compiler.count("stages") > 0)
