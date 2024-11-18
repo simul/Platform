@@ -337,7 +337,7 @@ namespace platform
 			virtual void SetModelMatrix		(GraphicsDeviceContext &deviceContext,const double *mat,const crossplatform::PhysicalLightRenderData &physicalLightRenderData);
 			virtual void					ApplyDefaultMaterial			(){}
 			/// Create a platform-specific material instance.
-			Material						*GetOrCreateMaterial(const char *name);
+			std::shared_ptr<Material>		GetOrCreateMaterial(const char *name);
 			/// Create a platform specific raytracing acceleration structure.
 			virtual BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure();
 			/// Create a platform specific raytracing acceleration structure.
@@ -356,7 +356,7 @@ namespace platform
 			/// called automatically from invalidate to clear the texture from e.g. the unfinishedTextures list. Do not call this directly.
 			void							InvalidatingTexture(Texture *t);
 			/// Create a platform-specific framebuffer instance - i.e. an optional colour and an optional depth rendertarget. Optionally takes a name string.
-			virtual Framebuffer			*CreateFramebuffer				(const char * =nullptr)	=0;
+			virtual Framebuffer				*CreateFramebuffer				(const char * =nullptr)	=0;
 			/// Create a platform-specific sampler state instance.
 			virtual SamplerState			*CreateSamplerState				(SamplerStateDesc *)	=0;
 			/// Look for a sampler state of the stated name, and create one if it does not exist. The resulting state will be owned by the RenderPlatform, so do not destroy it.
@@ -492,7 +492,7 @@ namespace platform
 			{
 				return &allocator;
 			}
-			std::map<std::string, crossplatform::Material*> &GetMaterials()
+			std::map<std::string, std::shared_ptr<crossplatform::Material>> &GetMaterials()
 			{
 				return materials;
 			}
@@ -504,7 +504,7 @@ namespace platform
 			bool mirrorY, mirrorY2, mirrorYText;
 			std::shared_ptr<crossplatform::Effect> solidEffect = nullptr;
 			std::shared_ptr<crossplatform::Effect> copyEffect = nullptr;
-			std::map<std::string,crossplatform::Material*> materials;
+			std::map<std::string, std::shared_ptr<crossplatform::Material>> materials;
 			std::map<std::string, crossplatform::Texture*> textures;
 			std::vector<std::string> GetTexturePathsUtf8(); 
 			platform::core::MemoryInterface *GetMemoryInterface();

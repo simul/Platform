@@ -46,7 +46,7 @@ void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 	renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
 	Mesh::SubMesh* subMesh = mesh->GetSubMesh(index);
 	
-	Material* mat = subMesh->material;
+	Material* mat = subMesh->material.get();
 	ApplyMaterial(deviceContext, mat);
 	auto *vb= mesh->GetVertexBuffer();
 	renderPlatform->SetVertexBuffers(deviceContext, 0, 1, &vb, mesh->GetLayout());

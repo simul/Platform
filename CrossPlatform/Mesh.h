@@ -72,7 +72,7 @@ namespace platform
 					AS_TRISTRIP
 				};
 				DrawAs drawAs;
-				Material *material;
+				std::shared_ptr<Material> material;
 			};
 			struct SubNode
 			{
@@ -80,7 +80,7 @@ namespace platform
 				platform::math::SimulOrientation orientation;
 				std::vector<SubNode> children;
 			};
-			SubMesh *SetSubMesh(int submesh, int index_start, int num_indices, Material *m, int lowest = -1, int highest = -1);
+			SubMesh *SetSubMesh(int submesh, int index_start, int num_indices, std::shared_ptr<Material> m, int lowest = -1, int highest = -1);
 
 			int VERTEX_STRIDE;
 			int NORMAL_STRIDE;

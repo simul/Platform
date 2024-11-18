@@ -454,8 +454,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
-		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
-		mat->SetEffect(solidEffect);
+		i->second->SetEffect(solidEffect);
 	}
 	
 	debugEffect=GetOrCreateEffect("debug");
@@ -499,9 +498,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 	
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
-		Material *mat = i->second;
-		mat->InvalidateDeviceObjects();
-		delete mat;
+		i->second->InvalidateDeviceObjects();
+		i->second = nullptr;
 	}
 	materials.clear();
 	for (auto &debugVertexBuffer : debugVertexBuffers)
@@ -1320,12 +1318,13 @@ crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,
 	return t;
 }
 
-Material *RenderPlatform::GetOrCreateMaterial(const char *name)
+std::shared_ptr<Material> RenderPlatform::GetOrCreateMaterial(const char *name)
 {
 	auto i = materials.find(name);
 	if (i != materials.end())
 		return i->second;
-	crossplatform::Material *mat = new crossplatform::Material(name);
+
+	std::shared_ptr<Material> mat = std::make_shared<Material>(name);
 	mat->SetEffect(solidEffect);
 	materials[name]=mat;
 	return mat;
@@ -1354,9 +1353,9 @@ ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
 Mesh *RenderPlatform::CreateMesh()
 {
 	return new Mesh(this);
-}			
+}
 
-Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
+Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8, bool gen_mips)
 {
 	crossplatform::Texture* tex = createTexture();
 	if (fileNameUtf8 && strlen(fileNameUtf8) > 0)
@@ -1378,7 +1377,7 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 	return tex;
 }
 
-void RenderPlatform::InvalidatingTexture(Texture *t)
+void RenderPlatform::InvalidatingTexture(Texture* t)
 {
 	auto i=unfinishedTextures.find(t);
 	if(i!=unfinishedTextures.end())
