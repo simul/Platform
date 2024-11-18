@@ -454,8 +454,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
-		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
-		mat->SetEffect(solidEffect);
+		i->second->SetEffect(solidEffect);
 	}
 	
 	debugEffect=GetOrCreateEffect("debug");
@@ -499,9 +498,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 	
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
-		Material *mat = i->second;
-		mat->InvalidateDeviceObjects();
-		delete mat;
+		i->second->InvalidateDeviceObjects();
+		i->second = nullptr;
 	}
 	materials.clear();
 	for (auto &debugVertexBuffer : debugVertexBuffers)
@@ -1293,36 +1291,40 @@ crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,
 	auto i = textures.find(filename);
 	if (i != textures.end())
 		return i->second;
-	crossplatform::Texture* t=CreateTexture(filename, gen_mips);
+
+	crossplatform::Texture* t = CreateTexture(filename, gen_mips);
 	textures[filename] = t;
+
 	// special textures:
 	if (std::string(filename) == "white")
 	{
-		t->ensureTexture2DSizeAndFormat(this,1,1, 1,PixelFormat::RGBA_8_UNORM,false,false,false,1,0,true,vec4(1.f,1.f,1.f,1.f));
-		unsigned white_rgba8=0xFFFFFFFF;
-		t->setTexels(GetImmediateContext(),&white_rgba8,0,1);
+		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
+		uint8_t dataWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+		t->setTexels(GetImmediateContext(), &dataWhite, 0, 1);
 	}
 	else if (std::string(filename) == "black")
 	{
 		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
-		unsigned black_rgba8 = 0;
-		t->setTexels(GetImmediateContext(), &black_rgba8, 0, 1);
+		uint8_t dataBlack[4] = {0x00, 0x00, 0x00, 0xFF};
+		t->setTexels(GetImmediateContext(), &dataBlack, 0, 1);
 	}
 	else if (std::string(filename) == "blue")
 	{
 		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
-		unsigned blue_rgba8 = 0x7FFF7F7F;
-		t->setTexels(GetImmediateContext(), &blue_rgba8, 0, 1);
+		uint8_t dataBlue[4] = {0x7F, 0x7F, 0xFF, 0xFF};
+		t->setTexels(GetImmediateContext(), &dataBlue, 0, 1);
 	}
+
 	return t;
 }
 
-Material *RenderPlatform::GetOrCreateMaterial(const char *name)
+std::shared_ptr<Material> RenderPlatform::GetOrCreateMaterial(const char *name)
 {
 	auto i = materials.find(name);
 	if (i != materials.end())
 		return i->second;
-	crossplatform::Material *mat = new crossplatform::Material(name);
+
+	std::shared_ptr<Material> mat = std::make_shared<Material>(name);
 	mat->SetEffect(solidEffect);
 	materials[name]=mat;
 	return mat;
@@ -1351,9 +1353,9 @@ ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
 Mesh *RenderPlatform::CreateMesh()
 {
 	return new Mesh(this);
-}			
+}
 
-Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
+Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8, bool gen_mips)
 {
 	crossplatform::Texture* tex = createTexture();
 	if (fileNameUtf8 && strlen(fileNameUtf8) > 0)
@@ -1375,7 +1377,7 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 	return tex;
 }
 
-void RenderPlatform::InvalidatingTexture(Texture *t)
+void RenderPlatform::InvalidatingTexture(Texture* t)
 {
 	auto i=unfinishedTextures.find(t);
 	if(i!=unfinishedTextures.end())
