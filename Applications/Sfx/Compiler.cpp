@@ -438,14 +438,11 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 		src = std::regex_replace(src, param_re, i.second);
 	}
 }
-
-static bool checkedCompilerPath=false;
-static std::string useCompilerPath;
+static std::map<std::string,std::string> useCompilerPath;
 
 extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig,const SfxOptions &sfxOptions)
 {
-	checkedCompilerPath=true;
-	useCompilerPath="";
+	std::string usePath="";
 	std::string compiler_exe = sfxConfig.compiler;
 	size_t space_pos=compiler_exe.find(" ");
 	if(space_pos<compiler_exe.size())
@@ -468,7 +465,7 @@ extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig,const SfxOptions &s
 		{
 			if(sfxOptions.verbose)
 				std::cout << "Using: " << pth.generic_string().c_str() << std::endl;
-			useCompilerPath=p;
+			useCompilerPath[sfxConfig.api]=usePath=p;
 			break;
 		}
 	}
@@ -479,7 +476,8 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 {
 	if (sfxConfig.compiler.empty())
 		return L"";
-	if(!checkedCompilerPath)
+
+	if(useCompilerPath.find(sfxConfig.api)==useCompilerPath.end())
 	{
 		CalcCompilerPathToUse(sfxConfig,sfxOptions);
 	}
@@ -498,8 +496,8 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const
 			return L"";
 	}
 	std::string currentCompiler = FillInVariable(sfxConfig.compiler,"stage",stageName);
-	if(useCompilerPath.length())
-		currentCompiler=useCompilerPath+"/"s+currentCompiler;
+	if(useCompilerPath[sfxConfig.api].length())
+		currentCompiler=useCompilerPath[sfxConfig.api]+"/"s+currentCompiler;
 	command +=  Utf8ToWString(currentCompiler) ;
 
 	// Add additional options (requested from the XX.json)
@@ -660,7 +658,7 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	(*log)<< str.c_str();
 	return has_errors;
 }
-#pragma optimize("",off)
+
 bool IsShaderUnchanged(std::string sourceFilename,std::string outputFilename,const std::string &src)
 {
 	if(!std::filesystem::exists(outputFilename))
@@ -887,9 +885,10 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	//    that this shader hasn't changed, even if the sfx file has.
 
 	// Therefore we don't compile it.
-	if(IsShaderUnchanged(WStringToUtf8(generatedSourceFilename),WStringToUtf8(outputFile),src))
-		return true;
+	bool unchanged=IsShaderUnchanged(WStringToUtf8(generatedSourceFilename),WStringToUtf8(outputFile),src);		
 
+	if(!unchanged)
+	{
 #ifdef _MSC_VER
 	ofstream ofs(generatedSourceFilename.c_str());
 #else
@@ -897,7 +896,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 #endif
 	ofs.write(strSrc, strlen(strSrc));
 	ofs.close();
-
+	}
 #ifdef _MSC_VER
 	// Now delete the corresponding sdb's
 	wstring sdbFile=generatedSourceFilename.substr(0,generatedSourceFilename.length()-5);
@@ -928,8 +927,13 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	}
 	else
 		shaderInstance->sbFilenames[0] = sbf;
+	ostringstream log;
 	// Get the compile command
-	wstring compile_command = BuildCompileCommand
+	wstring compile_command;
+	
+	if(!unchanged)
+	{
+		compile_command=BuildCompileCommand
 	(
 		shaderInstance,
 		sfxConfig,
@@ -940,7 +944,6 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		t,
 		pixelOutputFormat
 	);
-	ostringstream log;
 	// If no compiler provided, we can return now (perhaps we are only interested in
 	// the shader source)
 	if (compile_command.empty())
@@ -977,6 +980,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	}
 	if(sfxOptions.verbose)
 		std::cout<<WStringToUtf8(compile_command).c_str()<<std::endl;
+	}
 
 	// Run the provided .exe! 
 	OutputDelegate cc=std::bind(&RewriteOutput,sfxConfig,sfxOptions,wd,fileList,&log,std::placeholders::_1);
@@ -986,9 +990,10 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	int repetitions=0;
 	while(!created_output)
 	{
-		res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
-		if (res)
+		bool write_log=false;
+		if(!unchanged)
 		{
+		res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
 			bool write_log=false;
 			const string &log_str=log.str();
 			if (sfxOptions.verbose)
@@ -1014,6 +1019,13 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 				std::cerr << log.str() << std::endl;
 				res = 0;
 			}
+		}
+		else
+		{
+			res=true;
+		}
+		if (res)
+		{
 			if (sfxOptions.wrapOutput)
 			{
 				//concatenate

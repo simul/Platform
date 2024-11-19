@@ -48,7 +48,6 @@ if(SIMUL_SOURCE_BUILD)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
 	endif()
 	
-	message("target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC \"${Vulkan_INCLUDE_DIR}\"")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 	# For parallel_hashmap

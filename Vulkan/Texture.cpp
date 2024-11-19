@@ -314,8 +314,6 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	
 	textureUploadComplete = true;
 }
-#pragma optimize("",off)
-
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::TextureView textureView)
 {
 #if PLATFORM_INTERNAL_CHECKS

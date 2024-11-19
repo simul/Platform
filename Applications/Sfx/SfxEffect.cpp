@@ -755,7 +755,7 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 		combinedBinary.open(sfxbFilename, std::ios_base::binary);
 		if(!combinedBinary.is_open())
 		{
-			std::cerr << "Failed to open " << sfxbFilename << " for writing."<<std::endl;
+			std::cerr << "Failed to open " << sfxbFilename << " for writing.\n";
 			exit(3);
 		}
 	}

@@ -273,12 +273,8 @@ int main(int argc, char** argv)
 				{
 					for (auto& el : compiler["commandPaths"].items())
 					{
-						if(sfxOptions.verbose)
-							std::cout<<"Compiler Path in: "<<el.value()<<"\n";
 						std::string compilerPath=ProcessEnvironmentVariables(el.value());
 						sfxConfig.compilerPaths.push_back(compilerPath);
-						if(sfxOptions.verbose)
-							std::cout<<"Compiler Path: "<<compilerPath.c_str()<<"\n";
 					}
 				}
 				if (compiler.count("stages") > 0)
