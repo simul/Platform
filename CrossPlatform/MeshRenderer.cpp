@@ -44,8 +44,9 @@ void MeshRenderer::DrawSubMesh(GraphicsDeviceContext& deviceContext, Mesh* mesh,
 	//mat4::mul(cameraConstants.worldViewProj, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.viewProj)));
 	//mat4::mul(cameraConstants.modelView, cameraConstants.world, *((mat4*)(&deviceContext.viewStruct.view)));
 	renderPlatform->SetConstantBuffer(deviceContext, &cameraConstants);
+	renderPlatform->ApplyResourceGroup(deviceContext, 0);
+
 	Mesh::SubMesh* subMesh = mesh->GetSubMesh(index);
-	
 	Material* mat = subMesh->material.get();
 	ApplyMaterial(deviceContext, mat);
 	auto *vb= mesh->GetVertexBuffer();
