@@ -1406,7 +1406,13 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 	case RGB_11_11_10_FLOAT:
 		return vk::Format::eB10G11R11UfloatPack32;
 	case RGBA_16_FLOAT:
+		switch (c)
+		{
+		case crossplatform::CompressionFormat::BC6H:
+			return vk::Format::eBc6HUfloatBlock;
+		default:
 		return vk::Format::eR16G16B16A16Sfloat;
+		};
 	case RGBA_32_FLOAT:
 		return vk::Format::eR32G32B32A32Sfloat;
 	case RGBA_32_UINT:
@@ -1432,6 +1438,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 			return vk::Format::eBc1RgbaUnormBlock;
 		case crossplatform::CompressionFormat::BC3:
 			return vk::Format::eBc3UnormBlock;
+		case crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY:
+			return vk::Format::eBc7UnormBlock;
 		default:
 			return vk::Format::eR8G8B8A8Unorm;
 		};
@@ -1444,6 +1452,8 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 			return vk::Format::eBc1RgbaUnormBlock;
 		case crossplatform::CompressionFormat::BC3:
 			return vk::Format::eBc3UnormBlock;
+		case crossplatform::CompressionFormat::BC7_M6_OPAQUE_ONLY:
+			return vk::Format::eBc7UnormBlock;
 		default:
 			return vk::Format::eB8G8R8A8Unorm;
 		};
