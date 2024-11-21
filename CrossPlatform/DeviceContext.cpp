@@ -123,14 +123,14 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 	{
 		for(int i=0;i<num_targets;i++)
 		{
-			defaultTargetsAndViewport.textureTargets[i].texture=texture_targets[i];
-			defaultTargetsAndViewport.textureTargets[i].subresource={};
+			defaultTargetsAndViewport.textureTargets[i].texture = texture_targets[i];
+			defaultTargetsAndViewport.textureTargets[i].subresource = crossplatform::DefaultSubresourceLayers;
 			if (texture_targets[i])
 				defaultTargetsAndViewport.rtFormats[i] = texture_targets[i]->GetFormat();
 		}
-		defaultTargetsAndViewport.depthTarget.texture=depth_target;
+		defaultTargetsAndViewport.depthTarget.texture = depth_target;
 		defaultTargetsAndViewport.depthTarget.subresource = crossplatform::DefaultSubresourceLayers;
-		defaultTargetsAndViewport.depthTarget.subresource.aspectMask=TextureAspectFlags::DEPTH;
+		defaultTargetsAndViewport.depthTarget.subresource.aspectMask = TextureAspectFlags::DEPTH;
 		if (depth_target)
 			defaultTargetsAndViewport.depthFormat = depth_target->GetFormat();
 	}
