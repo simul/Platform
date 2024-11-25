@@ -260,7 +260,7 @@ struct tvector4
 	// Left hand arithmetics operators
 	friend tvector4 operator*(const T &m, const tvector4 &v)
 	{
-		tvector r;
+		tvector4 r;
 		r = v * m;
 		return r;
 	}
