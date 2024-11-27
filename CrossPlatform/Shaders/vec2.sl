@@ -18,6 +18,11 @@ struct tvector2
 		this->x = x;
 		this->y = y;
 	}
+	tvector2(T v)
+	{
+		x = v;
+		y = v;
+	}
 	tvector2(const T *v)
 	{
 		x = v[0];
@@ -49,6 +54,24 @@ struct tvector2
 	bool operator!=(const tvector2 &v) const
 	{
 		return (x != v.x || y != v.y);
+	}
+
+	// Comparison operators
+	bool operator<(const tvector2 &v) const
+	{
+		return (x < v.x && y < v.y);
+	}
+	bool operator>(const tvector2 &v) const
+	{
+		return (x > v.x && y > v.y);
+	}
+	bool operator<=(const tvector2 &v) const
+	{
+		return (x <= v.x && y <= v.y);
+	}
+	bool operator>=(const tvector2 &v) const
+	{
+		return (x >= v.x && y >= v.y);
 	}
 
 	// Implicit conversions
