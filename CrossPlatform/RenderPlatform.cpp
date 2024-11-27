@@ -1225,32 +1225,48 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const doubl
 
 void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill,bool view_centred)
 {
-	PosColourVertex line_vertices[36];
 	vec3 direction(dir);
 	direction = normalize(direction);
-	vec3 z(0,0,1.f);
-	vec3 y(0,1.f,0);
-	vec3 x=cross(z,direction);
-	if(length(x)>.1f)
-		x=normalize(x);
+	vec3 z(0, 0, 1.f);
+	vec3 y(0, 1.f, 0);
+	vec3 x = cross(z, direction);
+	if (length(x) > .1f)
+		x = normalize(x);
 	else
-		x=cross(direction,y);
-	x*=radius;
-	y = cross(direction , x);
-	int l=0;
-	for(int j=0;j<_countof(line_vertices);j++)
+		x = cross(direction, y);
+	x *= radius;
+	y = cross(direction, x);
+
+	mat4 wvp;
+	if (view_centred)
+		crossplatform::MakeCentredViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	else
+		crossplatform::MakeViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj = wvp;
+	debugConstants.debugWorldViewProj.transpose();
+	debugConstants.debugColour = colr;
+	debugConstants.centre_position = pos;
+	debugConstants.x_axis = x;
+	debugConstants.y_axis = y;
+	SetConstantBuffer(deviceContext, &debugConstants);
+
+	EffectTechniqueGroup *group = debugEffect->GetTechniqueGroupByName("circle");
+	if (fill)
 	{
-		float angle					=(float(j)/float(_countof(line_vertices)-1))*2.0f*3.1415926536f;
-		vec3 p						=vec3((x * cos(angle) + y * sin(angle)));
-		line_vertices[l].pos		=vec3(pos)+p;
-		line_vertices[l++].colour	=colr;
+		debugEffect->Apply(deviceContext, group->GetTechniqueByName("filled"));
+		SetTopology(deviceContext, Topology::TRIANGLESTRIP);
+		Draw(deviceContext, 64, 0);
+		debugEffect->Unapply(deviceContext);
 	}
-	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
+
+	debugEffect->Apply(deviceContext, group->GetTechniqueByName("outline"));
+	SetTopology(deviceContext, Topology::LINESTRIP);
+	Draw(deviceContext, 32, 0);
+	debugEffect->Unapply(deviceContext);
 }
 
 void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const double *pos, const double *dir, double radius, const float *colr, bool fill, bool view_centred)
 {
-	PosColourVertex line_vertices[36];
 	vec3d direction(dir);
 	direction = normalize(direction);
 	vec3d z(0, 0, 1.0);
@@ -1262,15 +1278,33 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const doub
 		x = cross(direction, y);
 	x *= radius;
 	y = cross(direction, x);
-	int l = 0;
-	for (int j = 0; j < _countof(line_vertices); j++)
+
+	mat4 wvp;
+	if (view_centred)
+		crossplatform::MakeCentredViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	else
+		crossplatform::MakeViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj = wvp;
+	debugConstants.debugWorldViewProj.transpose();
+	debugConstants.debugColour = colr;
+	debugConstants.centre_position = pos;
+	debugConstants.x_axis = x;
+	debugConstants.y_axis = y;
+	SetConstantBuffer(deviceContext, &debugConstants);
+
+	EffectTechniqueGroup *group = debugEffect->GetTechniqueGroupByName("circle");
+	if (fill)
 	{
-		double angle = (double(j) / float(_countof(line_vertices) - 1)) * 2.0 * 3.1415926536;
-		vec3d p = vec3d((x * cos(angle) + y * sin(angle)));
-		line_vertices[l].pos = vec3(vec3d(pos) + p);
-		line_vertices[l++].colour = colr;
+		debugEffect->Apply(deviceContext, group->GetTechniqueByName("filled"));
+		SetTopology(deviceContext, Topology::TRIANGLESTRIP);
+		Draw(deviceContext, 64, 0);
+		debugEffect->Unapply(deviceContext);
 	}
-	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
+
+	debugEffect->Apply(deviceContext, group->GetTechniqueByName("outline"));
+	SetTopology(deviceContext, Topology::LINESTRIP);
+	Draw(deviceContext, 32, 0);
+	debugEffect->Unapply(deviceContext);
 }
 
 void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)

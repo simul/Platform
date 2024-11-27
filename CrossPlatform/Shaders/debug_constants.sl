@@ -35,5 +35,12 @@ SIMUL_CONSTANT_BUFFER(DebugConstants,7)
 
 	uniform vec3 line_end;
 	uniform float dc_pad3;
+	
+	uniform vec3 centre_position;
+	uniform float dc_pad4;
+	uniform vec3 x_axis;
+	uniform float dc_pad5;
+	uniform vec3 y_axis;
+	uniform float dc_pad6;
 SIMUL_CONSTANT_BUFFER_END
 #endif
