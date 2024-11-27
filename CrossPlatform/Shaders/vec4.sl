@@ -40,6 +40,13 @@ struct tvector4
 		this->z = v.z;
 		this->w = w;
 	}
+	tvector4(T v)
+	{
+		x = v;
+		y = v;
+		z = v;
+		w = v;
+	}
 	tvector4(const T *v)
 	{
 		x = v[0];
@@ -79,6 +86,24 @@ struct tvector4
 	bool operator!=(const tvector4 &v) const
 	{
 		return (x != v.x || y != v.y || z != v.z || w != v.w);
+	}
+
+	// Comparison operators
+	bool operator<(const tvector4 &v) const 
+	{
+		return (x < v.x && y < v.y && z < v.z && z < v.w);
+	}
+	bool operator>(const tvector4 &v) const
+	{
+		return (x > v.x && y > v.y && z > v.z && z > v.w);
+	}
+	bool operator<=(const tvector4 &v) const
+	{
+		return (x <= v.x && y <= v.y && z <= v.z && z <= v.w);
+	}
+	bool operator>=(const tvector4 &v) const
+	{
+		return (x >= v.x && y >= v.y && z >= v.z && z >= v.w);
 	}
 
 	// Implicit conversions
