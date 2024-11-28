@@ -301,6 +301,14 @@ const float *platform::crossplatform::GetCameraPosVector(const float *v)
 	return cam_pos;
 }
 
+const float *platform::crossplatform::GetCameraViewVector(const float *v)
+{
+	platform::math::Matrix4x4 view(v);
+	static float cam_pos[4], view_dir[4];
+	GetCameraPosVector(view, (float *)cam_pos, (float *)view_dir);
+	return view_dir;
+}
+
 using namespace platform::math;
 Matrix4x4 platform::crossplatform::MatrixLookInDirection(const float *dir,const float *view_up,bool lefthanded)
 { 

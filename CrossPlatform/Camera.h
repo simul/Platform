@@ -127,6 +127,8 @@ namespace platform
 		extern SIMUL_CROSSPLATFORM_EXPORT void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,float *up=0);
 		//! Get the camera position from a view matrix.
 		extern SIMUL_CROSSPLATFORM_EXPORT const float *GetCameraPosVector(const float *v);
+		//! Get the camera view direction from a view matrix.
+		extern SIMUL_CROSSPLATFORM_EXPORT const float *GetCameraViewVector(const float *v);
 
 		extern SIMUL_CROSSPLATFORM_EXPORT void UpdateMouseCamera(	class Camera *cam
 															,float time_step
