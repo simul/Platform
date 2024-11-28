@@ -331,7 +331,7 @@ void DisplaySurface::InitSwapChain()
 		case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:
 		case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:
 		case vk::ColorSpaceKHR::eHdr10St2084EXT:
-		case vk::ColorSpaceKHR::eDolbyvisionEXT:
+		//case vk::ColorSpaceKHR::eDolbyvisionEXT:
 		case vk::ColorSpaceKHR::eHdr10HlgEXT:
 			swapChainIsGammaEncoded = true;
 			break;
