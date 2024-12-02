@@ -835,6 +835,7 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 	#pragma warning(pop)
 #endif
 
+#if 0
 #define SIMUL_BIT_FLAG(Enum,T)															\
 inline Enum operator|(const Enum &a, const Enum &b)										\
 {																						\
@@ -859,4 +860,8 @@ inline Enum operator~(const Enum &a)													\
 	Enum b = static_cast<Enum>(~static_cast<T>(a));										\
 	return b;																			\
 }
+#else
+#define SIMUL_BIT_FLAG(Enum, T)
+#endif
 
+#include "Platform/Core/EnumClassBitwiseOperators.h"
