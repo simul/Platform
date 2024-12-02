@@ -554,8 +554,8 @@ namespace platform
 			Allocator allocator;
 			void FinishLoadingTextures(DeviceContext& deviceContext);
 			void FinishGeneratingTextureMips(DeviceContext& deviceContext);
-			std::set<Texture*> unfinishedTextures;
-			std::set<Texture*> unMippedTextures;
+			std::map<std::string,Texture*> unfinishedTextures;
+			std::map<std::string,Texture*> unMippedTextures;
 			/// Create a platform-specific texture instance. Textures created with this function are owned by the caller.
 			virtual Texture* createTexture() = 0;
 			platform::core::MemoryInterface *memoryInterface;

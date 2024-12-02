@@ -1398,7 +1398,7 @@ Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8, bool gen_mips)
 		{
 			if(tex->LoadFromFile(this, fileNameUtf8, gen_mips))
 			{
-				unfinishedTextures.insert(tex);
+				unfinishedTextures[fileNameUtf8]=tex;
 				SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
 			}
 			else
@@ -1413,9 +1413,14 @@ Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8, bool gen_mips)
 
 void RenderPlatform::InvalidatingTexture(Texture* t)
 {
-	auto i=unfinishedTextures.find(t);
-	if(i!=unfinishedTextures.end())
-		unfinishedTextures.erase(i);
+	for(auto i:unfinishedTextures)
+	{
+		if(i.second==t)
+		{
+			unfinishedTextures.erase(i.first);
+			break;
+		}
+	}
 }
 
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayMip)
@@ -2185,9 +2190,9 @@ void RenderPlatform::FinishLoadingTextures(DeviceContext& deviceContext)
 {
 	for(auto t:unfinishedTextures)
 	{
-		t->FinishLoading(deviceContext);
-		if(t->ShouldGenerateMips())
-			unMippedTextures.insert(t);
+		t.second->FinishLoading(deviceContext);
+		if(t.second->ShouldGenerateMips())
+			unMippedTextures[t.first]=t.second;
 	}
 	unfinishedTextures.clear();
 }
@@ -2198,7 +2203,7 @@ void RenderPlatform::FinishGeneratingTextureMips(DeviceContext& deviceContext)
 		return;
 	for(auto t:unMippedTextures)
 	{
-		GenerateMips(*deviceContext.AsGraphicsDeviceContext(),t,true);
+		GenerateMips(*deviceContext.AsGraphicsDeviceContext(),t.second,true);
 	}
 	unMippedTextures.clear();
 }
