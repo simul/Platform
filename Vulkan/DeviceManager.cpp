@@ -1,14 +1,12 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
 #endif
-#include "DeviceManager.h"
 
-#include "Platform/CrossPlatform/Camera.h"
+#include "DeviceManager.h"
 #include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/HdrRenderer.h"
 #include "Platform/Vulkan/DisplaySurface.h"
-#include "Platform/Core/Timer.h"
+
 #include <stdint.h> // for uintptr_t
 #include <iomanip>
 #include <sstream>
