@@ -29,6 +29,21 @@ namespace platform
 			CARTESIAN = EUCLIDEAN
 		};
 
+		enum class CameraMovements : uint16_t
+		{
+			None = 0,
+			Forward = 1,
+			Backward = 2,
+			Left = 4,
+			Right = 8,
+			Up = 16,
+			Down = 32,
+			StepRotateXPos = 64,
+			StepRotateXNeg = 128,
+			StepRotateYPos = 256,
+			StepRotateYNeg = 1024
+		};
+
 		class SIMUL_CROSSPLATFORM_EXPORT MouseHandler : public platform::core::BaseMouseHandler
 		{
 		public:
@@ -47,9 +62,10 @@ namespace platform
 				y_vertical = v;
 			}
 
-			void mouseMove(int x, int y);
-			void mouseWheel(int delta, int modifiers);
-			void KeyboardProc(unsigned int nChar, bool bKeyDown, bool bAltDown);
+			void mouseMove(int x, int y) override;
+			void mouseWheel(int delta, int modifiers) override;
+			void KeyboardProc(core::KeyboardModifiers modifiers, bool bKeyDown) override;
+			void KeyboardProc(CameraMovements movements, bool bKeyDown);
 
 			float getFov() const;
 			void setFov(float f);
@@ -62,7 +78,7 @@ namespace platform
 			void SetSpeedFactor(float s);
 			float GetSpeedFactor() const;
 			platform::crossplatform::Camera *GetCamera();
-			void getMousePosition(int &x, int &y) const;
+			void getMousePosition(int &x, int &y) const override;
 			bool getLeftButton() const;
 			bool getRightButton() const;
 			bool getMiddleButton() const;
@@ -86,7 +102,7 @@ namespace platform
 			bool y_vertical = false;
 			float aspect;
 			platform::crossplatform::Camera *camera;
-			bool move_forward, move_backward, move_left, move_right, move_up, move_down, shift_down, alt_down;
+			bool move_forward, move_backward, move_left, move_right, move_up, move_down, shift_down, alt_down, ctrl_down;
 			float up_down_spd;
 			float forward_back_spd;
 			float right_left_spd;
@@ -95,7 +111,6 @@ namespace platform
 			int wheel_forward=0;
 			int wheel_backward=0;
 		};
-
 	}
 }
 
