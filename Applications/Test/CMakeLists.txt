@@ -27,10 +27,12 @@ if(PLATFORM_SUPPORT_D3D11)
 endif() 
 
 if(PLATFORM_SUPPORT_D3D12)
+	target_include_directories(Test_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX12")
 	target_link_libraries(Test_MT PRIVATE SimulDirectX12_MT)
 endif()
 
 if(PLATFORM_SUPPORT_VULKAN)
+	target_include_directories(Test_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/External/VulkanMemoryAllocator/include")
 	target_include_directories(Test_MT PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_link_libraries(Test_MT PRIVATE SimulVulkan_MT glfw ${Vulkan_LIBRARY})
 endif()
