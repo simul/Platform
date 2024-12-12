@@ -8,17 +8,17 @@ file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
  
 file(GLOB SHADERS
-	"${SIMUL_PLATFORM_DIR}/Shaders/SFX/*.sfx"
+	"${SIMUL_PLATFORM_DIR}/Vulkan/Sfx/*.sfx"
 )
-
 file(GLOB SHADER_INCLUDES
-	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
 	"${SIMUL_PLATFORM_DIR}/Vulkan/Sfx/*.sl"
 )
-
 file(GLOB SHADER_DEFS
-	"${CMAKE_CURRENT_SOURCE_DIR}/Sfx/*.json" 
+	"${SIMUL_PLATFORM_DIR}/Vulkan/Sfx/*.json" 
 )
+
+source_group("Shaders" FILES  ${SHADERS} )
+source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 
 set(VK_DEFS SIMUL_VULKAN_DLL=1 VK_PROTOTYPES)
 set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_MULTIVIEW=$<BOOL:${PLATFORM_SUPPORT_VULKAN_MULTIVIEW}>)
@@ -36,8 +36,7 @@ endif()
 # Add in vk_mem_alloc.h
 set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include/vk_mem_alloc.h")
 
-
-add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} ${SHADER_INCLUDES} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
 	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
 	if(PLATFORM_WINDOWS)

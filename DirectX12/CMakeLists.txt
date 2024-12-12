@@ -20,25 +20,27 @@ file(GLOB HEADERS
 	"*.h" "**/*.h"
 )
 
-file(GLOB SHADER_DEFS
-	"${CMAKE_CURRENT_SOURCE_DIR}/Sfx/*.json" 
-)
-
-
-file(GLOB JSON
-	"${CMAKE_CURRENT_SOURCE_DIR}/HLSL/*.json"
-	"${SIMUL_PLATFORM_DIR}/XboxOne/HLSL/*.json"
-)
+if(PLATFORM_SPECTRUM)
+	set( FOLDER "Spectrum" )
+elseif(PLATFORM_XBOXONE)
+	set( FOLDER "XboxOne" )
+else()
+	set( FOLDER "DirectX12" )
+endif()
 
 file(GLOB SHADERS
-	"${SIMUL_PLATFORM_DIR}/Shaders/Sfx/*.sfx" 
+	"${SIMUL_PLATFORM_DIR}/${FOLDER}/Sfx/*.sfx"
+)
+file(GLOB SHADER_INCLUDES
+	"${SIMUL_PLATFORM_DIR}/${FOLDER}/Sfx/*.sl"
+)
+file(GLOB SHADER_DEFS
+	"${SIMUL_PLATFORM_DIR}/${FOLDER}/Sfx/*.json"
 )
 
-file(GLOB SHADER_INCLUDES
-	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
-	"${SIMUL_PLATFORM_DIR}/DirectX12/HLSL/*.sl"
-)
 source_group("NV" src FILES "**/*.cpp" "**/*.h" )
+source_group("Shaders" FILES  ${SHADERS} )
+source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 
 set(DX12_DEFS SIMUL_DIRECTX12_DLL=1 
 	PLATFORM_SUPPORT_D3D12_RAYTRACING=$<BOOL:${PLATFORM_SUPPORT_D3D12_RAYTRACING}> 
@@ -63,7 +65,7 @@ endif()
 set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include/D3D12MemAlloc.h")
 set(SOURCES ${SOURCES} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
 
-add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
+add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
 	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12")
 add_dependencies(SimulDirectX12${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
 
@@ -81,15 +83,14 @@ endif()
 option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 if(SIMUL_SOURCE_BUILD)
 	if(PLATFORM_SPECTRUM)
-		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/Spectrum/Sfx/Spectrum.json" )
 		set( PLATFORM_SUPPORT_D3D12_RAYTRACING True)
 	elseif(PLATFORM_XBOXONE)
-		set( JSON_FILE "${SIMUL_PLATFORM_DIR}/XboxOne/Sfx/XboxOne.json" )
 		set( PLATFORM_SUPPORT_D3D12_RAYTRACING False)
 	else()
-		set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/DirectX12.json" )
 		set( PLATFORM_SUPPORT_D3D12_RAYTRACING True)
 	endif()
+
+	set( JSON_FILE "${SIMUL_PLATFORM_DIR}/${FOLDER}/Sfx/${FOLDER}.json" )
 
 	#Note: Due to a CMake bug, we can't include the in_RootSignature file in SOURCES, or it will be default-compiled as an hlsl shader instead of the custom command below.
 
