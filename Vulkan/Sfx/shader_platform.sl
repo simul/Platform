@@ -5,16 +5,8 @@
 
 #ifndef __cplusplus
 
-#ifdef XBOTTOM_UP_TEXTURE_COORDINATES_DEFINED
-	vec2 BottomUpTextureCoordinates(vec2 texc)
-	{
-		return vec2(texc.x,1.0-texc.y);
-	}
-	vec4 BottomUpTextureCoordinates4(vec4 texc)
-	{
-		return vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w);
-	}
-	#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
+#ifndef BOTTOM_UP_TEXTURE_COORDINATES
+#define BOTTOM_UP_TEXTURE_COORDINATES 1
 #endif
 
 #define USE_D3D_REF_MODE 0

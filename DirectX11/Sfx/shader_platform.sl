@@ -42,10 +42,11 @@
 	#define layout(a)
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
-	#define BottomUpTextureCoordinates4(texc) vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w)
-	#define BottomUpTextureCoordinates(texc) vec2(texc.x,1.0-texc.y)
+	
+	#ifndef BOTTOM_UP_TEXTURE_COORDINATES
+	#define BOTTOM_UP_TEXTURE_COORDINATES 1
+	#endif
 #endif
 
-#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 
 #endif
