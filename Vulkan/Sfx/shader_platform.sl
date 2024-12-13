@@ -71,13 +71,6 @@ vec4 reverse_y_coord(vec4 a)
 #define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET6883660##n
 #define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET6883661##n
 
-#define BottomUpTextureCoordinates4(texc) vec4(texc.x, 1.0 - texc.y, texc.z, 1.0 - texc.w)
-#define BottomUpTextureCoordinates(texc) vec2(texc.x, 1.0 - texc.y)
-
-#ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
-#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
-#endif
-
 uint WaveGetLaneCount()
 {
 	return gl_SubgroupSize;
