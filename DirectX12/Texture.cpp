@@ -1037,6 +1037,8 @@ void Texture::RestoreExternalTextureState(crossplatform::DeviceContext& deviceCo
 {
 	if ((crossplatform::ResourceState)mExternalLayout == crossplatform::ResourceState::UNKNOWN)
 		return;
+	if(!IsValid())
+		return;
 	auto rPlat = (dx12::RenderPlatform*)(renderPlatform);
 	SetLayout(deviceContext, mExternalLayout);
 }
