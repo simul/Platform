@@ -2833,7 +2833,8 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContex
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext &deviceContext, int num, const crossplatform::Viewport *vps)
 {
 	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();
-
+	if(!commandList)
+		return;
 	D3D12_VIEWPORT viewports[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
 	D3D12_RECT scissors[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
 
