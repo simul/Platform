@@ -3969,7 +3969,12 @@ string GetSizeFunction(string textureName, string x, string y, string z)
 	if (config->getSizeExpression.size() > 0)
 	{
 		ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
-		if (IsTexture(type))
+		//STRUCTURED_BUFFER and RW_STRUCTURED_BUFFER GetDeminsion for GLSL - AJR. TODO: Find a better solution to this!
+		if (IsStructuredBuffer(type) || IsRWStructuredBuffer(type)) 
+		{
+			full_expr << x << "=" << textureName << ".length()";
+		}
+		else
 		{
 			bool isImage = IsRW(type);
 			bool isMsaa = IsMSAATexture(type);
@@ -4043,10 +4048,6 @@ string GetSizeFunction(string textureName, string x, string y, string z)
 					full_expr << z << " = " + tempName + ".z;";
 				}
 			}
-		}
-		else //STRUCTURED_BUFFER and RW_STRUCTURED_BUFFER GetDeminsion for GLSL - AJR. TODO: Find a better solution to this!
-		{
-			full_expr << x << "=" << textureName << ".length()";
 		}
 	}
 	else
