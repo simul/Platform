@@ -3969,77 +3969,84 @@ string GetSizeFunction(string textureName, string x, string y, string z)
 	if (config->getSizeExpression.size() > 0)
 	{
 		ShaderResourceType type = GetShaderResourceType(buildFunction, textureName);
-		bool isImage = IsRW(type);
-		bool isMsaa = IsMSAATexture(type);
-		bool lod_param = !isImage && !isMsaa;
-		int return_size = GetTextureDimension(type);
-		string exp = config->getSizeExpression;
-		if (isImage)
+		if (IsTexture(type))
 		{
-			exp = config->getRWSizeExpression;
-			// Legacy for GL
-			find_and_replace(exp, "{type}", "imageSize");
-		}
-		else
-		{
-			// Legacy for GL
-			find_and_replace(exp, "{type}", "textureSize");
-		}
-		string tempName = string("iv") + textureName;
-		// Add sampler constructor
-		if (type != ShaderResourceType::UNKNOWN)
-		{
-			find_and_replace(exp, "{return_size}", to_string(return_size));
-			find_and_replace(exp, "{dim:{textureName}}", to_string(return_size));
-		}
-		find_and_replace(exp, "{dim:{textureName}}", string("{dim:") + textureName + "}");
-		string nameToReplace = textureName;
-		if (!isImage)
-		{
-			if (!config->combineInShader)
+			bool isImage = IsRW(type);
+			bool isMsaa = IsMSAATexture(type);
+			bool lod_param = !isImage && !isMsaa;
+			int return_size = GetTextureDimension(type);
+			string exp = config->getSizeExpression;
+			if (isImage)
 			{
-				nameToReplace = GetSamplerConstructor(type, textureName, &buildFunction) + "(" + nameToReplace + "[0])";
-			}
-		}
-		find_and_replace(exp, "{tmpName}", textureName);
-		find_and_replace(exp, "{tempName}", tempName);
-		find_and_replace(exp, "{textureName}", nameToReplace);
-		// This case happens if the texture is passed as parameter with different name as the global,
-		// we will defer this step
-		if (type == ShaderResourceType::UNKNOWN)
-		{
-			find_and_replace(exp, "{args}", "{args" + textureName + "}");
-		}
-		else
-		{
-			if (lod_param && !isMsaa)
-			{
-				find_and_replace(exp, "{args}", ",0");
+				exp = config->getRWSizeExpression;
+				// Legacy for GL
+				find_and_replace(exp, "{type}", "imageSize");
 			}
 			else
 			{
-				find_and_replace(exp, "{args}", "");
+				// Legacy for GL
+				find_and_replace(exp, "{type}", "textureSize");
+			}
+			string tempName = string("iv") + textureName;
+			// Add sampler constructor
+			if (type != ShaderResourceType::UNKNOWN)
+			{
+				find_and_replace(exp, "{return_size}", to_string(return_size));
+				find_and_replace(exp, "{dim:{textureName}}", to_string(return_size));
+			}
+			find_and_replace(exp, "{dim:{textureName}}", string("{dim:") + textureName + "}");
+			string nameToReplace = textureName;
+			if (!isImage)
+			{
+				if (!config->combineInShader)
+				{
+					nameToReplace = GetSamplerConstructor(type, textureName, &buildFunction) + "(" + nameToReplace + "[0])";
+				}
+			}
+			find_and_replace(exp, "{tmpName}", textureName);
+			find_and_replace(exp, "{tempName}", tempName);
+			find_and_replace(exp, "{textureName}", nameToReplace);
+			// This case happens if the texture is passed as parameter with different name as the global,
+			// we will defer this step
+			if (type == ShaderResourceType::UNKNOWN)
+			{
+				find_and_replace(exp, "{args}", "{args" + textureName + "}");
+			}
+			else
+			{
+				if (lod_param && !isMsaa)
+				{
+					find_and_replace(exp, "{args}", ",0");
+				}
+				else
+				{
+					find_and_replace(exp, "{args}", "");
+				}
+			}
+			full_expr << exp;
+			if (type == ShaderResourceType::UNKNOWN)
+			{
+				full_expr << "{dim_check:" << textureName << "," << x << "," << y << "," << z << "," << tempName << "}";
+			}
+			else
+			{
+				if (return_size > 0 && x.size() > 0)
+				{
+					full_expr << x << " = " + tempName + ".x;";
+				}
+				if (return_size > 1 && y.size() > 0)
+				{
+					full_expr << y << " = " + tempName + ".y;";
+				}
+				if (return_size > 2 && z.size() > 0)
+				{
+					full_expr << z << " = " + tempName + ".z;";
+				}
 			}
 		}
-		full_expr << exp;
-		if (type == ShaderResourceType::UNKNOWN)
+		else //STRUCTURED_BUFFER and RW_STRUCTURED_BUFFER GetDeminsion for GLSL - AJR. TODO: Find a better solution to this!
 		{
-			full_expr << "{dim_check:" << textureName << "," << x << "," << y << "," << z << "," << tempName << "}";
-		}
-		else
-		{
-			if (return_size > 0 && x.size() > 0)
-			{
-				full_expr << x << " = " + tempName + ".x;";
-			}
-			if (return_size > 1 && y.size() > 0)
-			{
-				full_expr << y << " = " + tempName + ".y;";
-			}
-			if (return_size > 2 && z.size() > 0)
-			{
-				full_expr << z << " = " + tempName + ".z;";
-			}
+			full_expr << x << "=" << textureName << ".length()";
 		}
 	}
 	else
