@@ -601,6 +601,8 @@
 
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ COMPARISON D_NEVER D_ALWAYS D_LESS D_EQUAL D_LESS_EQUAL D_GREATER D_NOT_EQUAL D_GREATER_EQUAL
 
+%token INTERLOCKED_ADD INTERLOCKED_AND INTERLOCKED_OR INTERLOCKED_XOR INTERLOCKED_MIN INTERLOCKED_MAX INTERLOCKED_EXCHANGE INTERLOCKED_COMPARE_STORE INTERLOCKED_COMPARE_EXCHANGE
+
 %token LOAD GET_DIMS SAMPLE SAMPLE_LOD
 %token GATHER_RED GATHER_GREEN GATHER_BLUE GATHER_ALPHA
 %token SATURATE 
@@ -1529,7 +1531,7 @@ function_def : IDENTIFIER p_dec_list shader_brace_block
 		$$.strs[1]					= functionName;
 		$$.strs[2]					=inputs;
 	}
-
+	
 p_dec_list : '(' param_declaration_list ')'
 	{
 		ostringstream inputs;
@@ -2174,6 +2176,35 @@ postfix_exp : primary_exp
 		buildFunction.declareResource(samplerStateName);
 		$$.strs[0] = full_expr.str();
 	}
+	| interlocked_op_command '(' assignment_exp ',' argument_exp_list ')'
+	{
+		ostringstream full_expr;
+
+		string command = $1.strs[0];
+		string resourceName = $3.strs[0];
+		string params = $5.strs[0];
+		vector<sfxstype::variable> *params2 = $5.vars;
+
+		const SfxConfig *config = gEffect->GetConfig();
+		const std::string &interlockedOpSyntax = config->interlockedOpSyntax; 
+		if (interlockedOpSyntax.length() > 0)
+		{
+			string cmd = interlockedOpSyntax;
+			find_and_replace(cmd, "{command}", command);
+			find_and_replace(cmd, "{resourceName}", resourceName);
+			find_and_replace(cmd, "{value}", (*params2)[0].identifier);
+			find_and_replace(cmd, "{previousValue}", (*params2)[1].identifier);
+
+			full_expr << cmd;
+		}
+		else
+		{
+			full_expr << command << "(" << resourceName << "," << params << ")";
+		}
+		buildFunction.declarations.insert(resourceName);
+		buildFunction.declareResource(resourceName);
+		$$.strs[0] = full_expr.str();
+	}
 	| postfix_exp '(' argument_exp_list ')'
 	{
 		string expr1=$1.strs[0];
@@ -2360,7 +2391,53 @@ gather_command : GATHER_RED
 		$$.strs[0] = "GatherAlpha";
 		$$.num = GATHER_ALPHA;
 	}
-decl_specs : IDENTIFIER
+interlocked_op_command : INTERLOCKED_ADD
+	{
+		$$.strs[0] = "InterlockedAdd";
+		$$.num = INTERLOCKED_ADD;
+	}
+	| INTERLOCKED_AND
+	{
+		$$.strs[0] = "InterlockedAnd";
+		$$.num = INTERLOCKED_AND;
+	}
+	| INTERLOCKED_OR
+	{
+		$$.strs[0] = "InterlockedOr";
+		$$.num = INTERLOCKED_OR;
+	}
+	| INTERLOCKED_XOR
+	{
+		$$.strs[0] = "InterlockedXor";
+		$$.num = INTERLOCKED_XOR;
+	}
+	| INTERLOCKED_MIN
+	{
+		$$.strs[0] = "InterlockedMin";
+		$$.num = INTERLOCKED_MIN;
+	}
+	| INTERLOCKED_MAX
+	{
+		$$.strs[0] = "InterlockedMax";
+		$$.num = INTERLOCKED_MAX;
+	}
+	| INTERLOCKED_EXCHANGE
+	{
+		$$.strs[0] = "InterlockedExchange";
+		$$.num = INTERLOCKED_EXCHANGE;
+	}
+	| INTERLOCKED_COMPARE_STORE
+	{
+		$$.strs[0] = "InterlockedCompareStore";
+		$$.num = INTERLOCKED_COMPARE_STORE;
+	}
+	| INTERLOCKED_COMPARE_EXCHANGE
+	{
+		$$.strs[0] = "InterlockedCompareExchange";
+		$$.num = INTERLOCKED_COMPARE_EXCHANGE;
+	}
+
+	decl_specs : IDENTIFIER
 	{
 		$$.strs[0] = $1.strs[0];
 		$$.strs[1] = $1.strs[0];
@@ -2386,7 +2463,7 @@ tex_load_exp : postfix_exp '.' tex_load_command
 		// We put the command into strs[2]
 		$$.strs[2]=command;
 	}
-sampling_exp :	postfix_exp '.' sampling_command
+sampling_exp : postfix_exp '.' sampling_command
 	{
 		string texture=$1.strs[0];
 		string command=$3.strs[0];
@@ -2416,7 +2493,8 @@ get_dims_exp : postfix_exp '.' GET_DIMS
 		$$.strs[1]=texture;
 		// We put the command into strs[2]
 		$$.strs[2]=command;
-	}			
+	}
+
 argument_exp_list : argument_exp_list ',' assignment_exp
 	{
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
