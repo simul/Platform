@@ -2187,7 +2187,7 @@ postfix_exp : primary_exp
 
 		const SfxConfig *config = gEffect->GetConfig();
 		const std::string &interlockedOpSyntax = config->interlockedOpSyntax; 
-		if (interlockedOpSyntax.length() > 0)
+		if (interlockedOpSyntax.length() > 0 && (*params2).size() == 2)
 		{
 			string cmd = interlockedOpSyntax;
 			find_and_replace(cmd, "{command}", command);
