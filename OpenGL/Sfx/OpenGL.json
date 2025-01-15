@@ -212,7 +212,9 @@
 		"frac": "fract",
 		"ddx": "dFdx",
 		"ddy": "dFdy",
-		"static": ""
+		"static": "",
+		"round": "roundEven",
+		"roundNearest": "round"
 	},
 	"maxShaderModel": 5.0
 }

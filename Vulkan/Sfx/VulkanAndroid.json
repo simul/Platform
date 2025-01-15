@@ -222,6 +222,8 @@
 		"flat": "",
 		"ddx": "dFdx",
 		"ddy": "dFdy",
-		"static": ""
+		"static": "",
+		"round": "roundEven",
+		"roundNearest": "round"
 	}
 }
