@@ -1240,14 +1240,14 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 	x*=radius;
 	y = cross(direction , x);
 	int l=0;
-	for(int j=0;j<_countof(line_vertices);j++)
+	for(int j=0;j<std::size(line_vertices);j++)
 	{
-		float angle					=(float(j)/float(_countof(line_vertices)-1))*2.0f*3.1415926536f;
+		float angle					=(float(j)/float(std::size(line_vertices)-1))*2.0f*3.1415926536f;
 		vec3 p						=vec3((x * cos(angle) + y * sin(angle)));
 		line_vertices[l].pos		=vec3(pos)+p;
 		line_vertices[l++].colour	=colr;
 	}
-	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
+	DrawLines(deviceContext, line_vertices, std::size(line_vertices), true, false, view_centred);
 }
 
 void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const double *pos, const double *dir, double radius, const float *colr, bool fill, bool view_centred)
@@ -1265,14 +1265,14 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const doub
 	x *= radius;
 	y = cross(direction, x);
 	int l = 0;
-	for (int j = 0; j < _countof(line_vertices); j++)
+	for (int j = 0; j < std::size(line_vertices); j++)
 	{
-		double angle = (double(j) / float(_countof(line_vertices) - 1)) * 2.0 * 3.1415926536;
+		double angle = (double(j) / float(std::size(line_vertices) - 1)) * 2.0 * 3.1415926536;
 		vec3d p = vec3d((x * cos(angle) + y * sin(angle)));
 		line_vertices[l].pos = vec3(vec3d(pos) + p);
 		line_vertices[l++].colour = colr;
 	}
-	DrawLines(deviceContext, line_vertices, _countof(line_vertices), true, false, view_centred);
+	DrawLines(deviceContext, line_vertices, std::size(line_vertices), true, false, view_centred);
 }
 
 void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
@@ -2018,7 +2018,7 @@ std::shared_ptr<Effect> RenderPlatform::GetOrCreateEffect(const char *filename_u
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
-		SIMUL_BREAK(platform::core::QuickFormat("Failed to load effect file: %s. Effect will be placeholder.\n", filename_utf8));
+		SIMUL_BREAK("Failed to load effect file: {}. Effect will be placeholder.", filename_utf8);
 		return e;
 	}
 	return e;

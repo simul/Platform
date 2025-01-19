@@ -153,7 +153,7 @@ void DefaultFileLoader::AcquireFileContents(void *&pointer, unsigned int &bytes,
 		filesLoaded.insert(filename_utf8);
 }
 
-uint64_t DefaultFileLoader::GetFileDate(const char *filename_utf8) const
+uint64_t DefaultFileLoader::GetFileDateUnixTimeMs(const char *filename_utf8) const
 {
 	if (!FileExists(filename_utf8))
 		return 0;
@@ -183,7 +183,7 @@ uint64_t DefaultFileLoader::GetFileDate(const char *filename_utf8) const
 	std::chrono::system_clock::time_point systemTime = std::chrono::time_point_cast<std::chrono::system_clock::duration>(fileTime - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
 	const time_t time = std::chrono::system_clock::to_time_t(systemTime);
 #endif
-	return time;
+	return time*1000;
 #endif
 
 #if defined(_MSC_VER) && defined(_WIN32)
@@ -196,7 +196,7 @@ uint64_t DefaultFileLoader::GetFileDate(const char *filename_utf8) const
 	struct stat buf;
 	stat(filename_utf8, &buf);
 	time_t t = buf.st_mtime;
-	return t;
+	return t*1000;
 #endif
 	return 0;
 }

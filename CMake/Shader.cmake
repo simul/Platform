@@ -161,7 +161,7 @@ function ( add_multiplatform_sfx_shader_project targetName )
 					string(REPLACE ".sfx" ".sfxo" out_f ${name})
 					set(out_f "${out_folder}/${out_f}")
 					string(REPLACE ".sfxo" ".sfx_summary" main_output_file ${out_f})
-				message("add_custom_command sfx_OUTPUT ${sfx_OUTPUT}")
+					#message("add_custom_command sfx_OUTPUT ${sfx_OUTPUT}")
 					add_custom_command(OUTPUT ${main_output_file}
 						COMMAND "${this_exe}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
 						MAIN_DEPENDENCY ${in_f}

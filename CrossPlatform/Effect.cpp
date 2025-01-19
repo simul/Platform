@@ -674,7 +674,7 @@ crossplatform::SamplerStateDesc::Wrapping stringToWrapping(string s)
 		return crossplatform::SamplerStateDesc::CLAMP;
 	if(is_equal(s,"MIRROR"))
 		return crossplatform::SamplerStateDesc::MIRROR;
-	SIMUL_BREAK_ONCE((string("Invalid string")+s).c_str());
+	SIMUL_BREAK_ONCE("invalid string {}",s);
 	return crossplatform::SamplerStateDesc::WRAP;
 }
 
@@ -686,7 +686,7 @@ crossplatform::SamplerStateDesc::Filtering stringToFilter(string s)
 		return crossplatform::SamplerStateDesc::LINEAR;
 	if(is_equal(s,"ANISOTROPIC"))
 		return crossplatform::SamplerStateDesc::ANISOTROPIC;
-	SIMUL_BREAK((string("Invalid string: ")+s).c_str());
+	SIMUL_BREAK("invalid string {}",s);
 	return crossplatform::SamplerStateDesc::POINT;
 }
 
@@ -706,7 +706,7 @@ static crossplatform::CullFaceMode toCullFadeMode(string s)
 		return crossplatform::CULL_FACE_FRONTANDBACK;
 	else if(is_equal(s,"CULL_NONE"))
 		return crossplatform::CULL_FACE_NONE;
-	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	SIMUL_BREAK("invalid string {}",s);
 	return crossplatform::CULL_FACE_NONE;
 }
 
@@ -730,7 +730,7 @@ static crossplatform::Topology toTopology(string s)
 		return crossplatform::Topology::TRIANGLELIST_ADJ;
 	else if(is_equal(s,"TriangleStripAdjacency"))
 		return crossplatform::Topology::TRIANGLESTRIP_ADJ;
-	SIMUL_BREAK((string("Invalid string")+s).c_str());
+	SIMUL_BREAK("invalid string {}",s);
 	return crossplatform::Topology::UNDEFINED;
 }
 
@@ -1016,7 +1016,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
 			string err= platform::core::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
-			SIMUL_BREAK_ONCE(err.c_str());
+			SIMUL_BREAK_ONCE("{}",err);
 			static bool already = false;
 			if (!already)
 			{
@@ -1045,7 +1045,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	platform::core::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
 	#if 0
-	uint64_t timestamp = platform::core::FileLoader::GetFileLoader()->GetFileDate(sfxbFilenameUtf8.c_str());
+	uint64_t timestamp = platform::core::FileLoader::GetFileLoader()->GetFileDateUnixTimeMs(sfxbFilenameUtf8.c_str());
+	uint64_t timestamp_s=timestamp/1000;
 	struct tm timeDate;
 	gmtime_s(&timeDate, (time_t *)&timestamp);
 	std::cout << sfxbFilenameUtf8 << " write time " <<
@@ -1515,7 +1516,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 								platform::core::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, sfxbFilenameUtf8.c_str(), true);
 								if (!bin_ptr)
 								{
-									SIMUL_BREAK(platform::core::QuickFormat("Failed to load combined shader binary: %s\n", sfxbFilenameUtf8.c_str()));
+									SIMUL_BREAK("Failed to load combined shader binary: {}", sfxbFilenameUtf8);
 								}
 							}
 						}
@@ -1701,7 +1702,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					else
 					{
-						SIMUL_BREAK(platform::core::QuickFormat("Unknown shader type or command: %s\n",type.c_str()));
+						SIMUL_BREAK("Unknown shader type or command: {}",type);
 						continue;
 					}
 					Shader *s = nullptr;

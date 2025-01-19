@@ -106,7 +106,7 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8,uint64_t 
 	if(last_slash>0)
 		path=path.substr(0,last_slash);
 	shaderPathsUtf8.push_back(path);
-	datetime=FileLoader::GetFileDate(fullPathNameUtf8.c_str());
+	datetime=FileLoader::GetFileDateUnixTimeMs(fullPathNameUtf8.c_str());
 	return f;
 }
 
@@ -602,13 +602,13 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		readlink("/proc/self/exe",exeNameUtf8,_MAX_PATH);
 		#endif
 		// start with the date that this exe was made, so new exe's rebuild the shaders.
-		uint64_t exe_datetime=FileLoader::GetFileDate(exeNameUtf8);
-		uint64_t platformfile_datetime=FileLoader::GetFileDate(config->platformFilename.c_str());
+		uint64_t exe_datetime=FileLoader::GetFileDateUnixTimeMs(exeNameUtf8);
+		uint64_t platformfile_datetime=FileLoader::GetFileDateUnixTimeMs(config->platformFilename.c_str());
 		latest_datetime= std::max(exe_datetime,platformfile_datetime);
 		latest_file=file;
 		if (!preprocess(file, config->define, sfxOptions->disableLineWrites))
 			return false;
-		uint64_t output_filedatetime = FileLoader::GetFileDate(sfxoFilename.c_str());
+		uint64_t output_filedatetime = FileLoader::GetFileDateUnixTimeMs(sfxoFilename.c_str());
 		bool recompile=false;
 		if(sfxOptions->force)
 		{

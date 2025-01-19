@@ -41,8 +41,8 @@ namespace platform
 			//! The memory should later be freed by a call to ReleaseFileContents.
 			//! The filename should be unicode UTF8-encoded.
 			virtual void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text)=0;
-			//! Get the unix timestamp. Return zero if the file doesn't exist.
-			virtual uint64_t GetFileDate(const char* filename_utf8) const=0;
+			//! Get the unix timestamp in milliseconds. Return zero if the file doesn't exist.
+			virtual uint64_t GetFileDateUnixTimeMs(const char* filename_utf8) const=0;
 			//! Free the memory allocated by AcquireFileContents.		
 			virtual void ReleaseFileContents(void* pointer)=0;
 			//! Save the chunk of memory to storage.

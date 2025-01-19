@@ -227,7 +227,7 @@ void MouseHandler::Update(float time_step)
 		(y_vertical ? pos.y : pos.z) += up_down_spd * time_step;
 		(y_vertical ? pos.y : pos.z) = std::clamp((y_vertical ? pos.y : pos.z), minAlt, maxAlt);
 
-		camera->SetPosition(pos);
+		camera->SetPosition(pos.Values);
 
 		static float x_rotate=0.f;
 		static float y_rotate=0.f;
@@ -277,22 +277,22 @@ void MouseHandler::Update(float time_step)
 		step_rotate_x=0;
 		math::Vector3 dir=del;
 		dir.Normalize();
-		camera->Rotate(del.Magnitude(),dir);
+		camera->Rotate(del.Magnitude(),dir.Values);
 
 		del=camera->Orientation.Tx()*(y_rotate+sr*step_rotate_y)*(-1.f);
 		step_rotate_y=0;
 		dir=del;
 		dir.Normalize();
-		camera->Rotate(del.Magnitude(),dir);
+		camera->Rotate(del.Magnitude(),dir.Values);
 
 		del=math::Vector3(0.f,0.f,z_rotate);
-		camera->LocalRotate(del);
+		camera->LocalRotate(del.Values);
 
 		static float correct_tilt=0.005f;
 		dir=camera->Orientation.Tz();
 		dir.Normalize();
 		if(!alt_down)
-			camera->Rotate(-correct_tilt * tilt, view_dir);
+			camera->Rotate(-correct_tilt * tilt, view_dir.Values);
 
 	}
 	else if (cameraSpatial == SPHERICAL)
@@ -384,7 +384,7 @@ void MouseHandler::Update(float time_step)
 			y_vertical ? pos.z : pos.y = (float)position.y;
 			y_vertical ? pos.y : pos.z = (float)position.z;
 		}
-		camera->SetPosition(pos);
+		camera->SetPosition(pos.Values);
 
 		static float x_rotate = 0.f;
 		static float y_rotate = 0.f;
@@ -434,22 +434,22 @@ void MouseHandler::Update(float time_step)
 		step_rotate_x = 0;
 		math::Vector3 dir = del;
 		dir.Normalize();
-		camera->Rotate(del.Magnitude(), dir);
+		camera->Rotate(del.Magnitude(), dir.Values);
 
 		del = camera->Orientation.Tx() * (y_rotate + sr * step_rotate_y) * (-1.f);
 		step_rotate_y = 0;
 		dir = del;
 		dir.Normalize();
-		camera->Rotate(del.Magnitude(), dir);
+		camera->Rotate(del.Magnitude(), dir.Values);
 
 		del = math::Vector3(0.f, 0.f, z_rotate);
-		camera->LocalRotate(del);
+		camera->LocalRotate(del.Values);
 
 		static float correct_tilt = 0.005f;
 		dir = camera->Orientation.Tz();
 		dir.Normalize();
 		if (!alt_down)
-			camera->Rotate(-correct_tilt * tilt, view_dir);
+			camera->Rotate(-correct_tilt * tilt, view_dir.Values);
 	}
 	if(cameraMode==CENTRED)
 	{
@@ -458,9 +458,9 @@ void MouseHandler::Update(float time_step)
 		camera->Orientation.LocalToGlobalDirection(dir,offset_camspace);
 		pos=centre;
 		pos+=dir;
-		camera->SetPosition(pos);
+		camera->SetPosition(pos.Values);
 		dir.Normalize();
-		camera->LookInDirection(-dir);
+		camera->LookInDirection((-dir).Values);
 	}
 	lastTimeStep = time_step;
 }
