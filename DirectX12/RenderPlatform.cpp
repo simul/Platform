@@ -850,7 +850,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		if (res != S_OK)
 		{
 			std::string err = static_cast<const char *>(error->GetBufferPointer());
-			SIMUL_BREAK(err.c_str());
+			SIMUL_BREAK("{}",err.c_str());
 		}
 		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRootSignature)));
 
@@ -917,7 +917,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		if (res != S_OK)
 		{
 			std::string err = static_cast<const char *>(error->GetBufferPointer());
-			SIMUL_BREAK(err.c_str());
+			SIMUL_BREAK("{}",err.c_str());
 		}
 		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRaytracingGlobalSignature)));
 		mGRaytracingGlobalSignature->SetName(L"Raytracing Global Root Signature");

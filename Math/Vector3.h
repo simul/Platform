@@ -36,8 +36,6 @@ namespace platform
 			Vector3(float a,float b,float c);		///< Constructor, values are set to (a,b,c).
 			Vector3(const float *x);				///< Constructor, values are set to (x[0],x[1],x[2]).
 			
-			operator const float*() const;
-			operator float*();
 			void Define(float x,float y,float z);	///< Set the values to (x,y,z).
 			void DefineValues(const float *x);			///< Set the values to (x[0],x[1],x[2]).
 			void Zero();							///< Set all values to zero.
@@ -63,11 +61,11 @@ namespace platform
 			}
 			void operator=(const Vector3 &v);  
 		/// Is this vector equal to v?
-			bool operator==(const Vector3 &v)
+			bool operator==(const Vector3 &v) const
 			{
-				return(Values[0]==v[0]&&
-					Values[1]==v[1]&&
-					Values[2]==v[2]);
+				return(Values[0]==v.Values[0]&&
+					Values[1]==v.Values[1]&&
+					Values[2]==v.Values[2]);
 			} 
 			void operator-=(const Vector3 &v);		///< Subtract v from this.
 			void operator+=(const Vector3 &v);		///< Add v to this.

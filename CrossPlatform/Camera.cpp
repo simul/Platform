@@ -887,7 +887,7 @@ void platform::crossplatform::UpdateMouseCamera(	Camera *cam
 	if(pos.z>max_height)
 		pos.z=max_height;
 
-	cam->SetPosition(pos);
+	cam->SetPosition(pos.Values);
 
 	int dx=input.MouseX-input.LastMouseX;
 	int dy=input.MouseY-input.LastMouseY;
@@ -914,16 +914,16 @@ void platform::crossplatform::UpdateMouseCamera(	Camera *cam
 	platform::math::Vector3 del	=vertical*x_rotate;
 	platform::math::Vector3 dir	=del;
 	dir.Normalize();
-	cam->Rotate(del.Magnitude(),dir);
+	cam->Rotate(del.Magnitude(),dir.Values);
 
 	del	=cam->Orientation.Tx()*y_rotate*(-1.f);
 	dir	=del;
 	dir.Normalize();
-	cam->Rotate(del.Magnitude(),dir);
+	cam->Rotate(del.Magnitude(),dir.Values);
 
 	float tilt	=0;
 	tilt		=asin(cam->Orientation.Tx().z);
 	dir			=cam->Orientation.Tz();
 	dir.Normalize();
-	cam->Rotate(-0.5f*tilt,dir);
+	cam->Rotate(-0.5f*tilt,dir.Values);
 }

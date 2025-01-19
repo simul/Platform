@@ -1,7 +1,3 @@
-
-/* Parts of this program are Copyright (c) 2011, Max Aizenshtein <max.sniffer@gmail.com>
-*/
-
 #include <stdio.h>
 #include <vector>
 #include <iomanip> // for setw
