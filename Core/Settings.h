@@ -1,7 +1,11 @@
 #pragma once
 #include "Platform/Core/Export.h"
-#include "Platform/Core/SimpleIni.h"
 #include "Platform/Core/RuntimeError.h"
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include "Platform/Core/SimpleIni.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4251)

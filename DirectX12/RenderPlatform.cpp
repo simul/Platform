@@ -830,7 +830,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 
 		D3D12_DESCRIPTOR_RANGE &uavDescriptorRange = cbvSrvUavDescriptorRanges[2];
 		uavDescriptorRange.BaseShaderRegister = 0;
-		uavDescriptorRange.NumDescriptors = 16;
+		uavDescriptorRange.NumDescriptors = 32;
 		uavDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 		uavDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 
@@ -882,7 +882,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 
 		D3D12_DESCRIPTOR_RANGE &uavDescriptorRange = cbvSrvUavDescriptorRanges[2];
 		uavDescriptorRange.BaseShaderRegister = 0;
-		uavDescriptorRange.NumDescriptors = 16;
+		uavDescriptorRange.NumDescriptors = 32;
 		uavDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 		uavDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 		// uavDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
@@ -2833,7 +2833,8 @@ void RenderPlatform::DeactivateRenderTargets(crossplatform::GraphicsDeviceContex
 void RenderPlatform::SetViewports(crossplatform::GraphicsDeviceContext &deviceContext, int num, const crossplatform::Viewport *vps)
 {
 	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();
-
+	if(!commandList)
+		return;
 	D3D12_VIEWPORT viewports[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
 	D3D12_RECT scissors[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
 

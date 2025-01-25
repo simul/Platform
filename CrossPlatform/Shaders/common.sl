@@ -48,15 +48,29 @@
 #define sample_3d_lod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 
 #ifndef __cplusplus
-	vec2 ReverseYTextureCoordinates(vec2 texc)
+
+	#ifndef BOTTOM_UP_TEXTURE_COORDINATES
+	#define BOTTOM_UP_TEXTURE_COORDINATES 0
+	#endif
+
+	#if BOTTOM_UP_TEXTURE_COORDINATES
+	vec2 BottomUpTextureCoordinates(vec2 texc)
 	{
 		return vec2(texc.x, 1.0 - texc.y);
 	}
-	
-	#ifndef BOTTOM_UP_TEXTURE_COORDINATES_DEFINED
-		#define BottomUpTextureCoordinates(original_texc) original_texc
-		#define BottomUpTextureCoordinates4(original_texc) original_texc
-		#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
+	vec4 BottomUpTextureCoordinates4(vec4 texc)
+	{
+		return vec4(texc.x, 1.0 - texc.y, texc.z, 1.0 - texc.w);
+	}
+	#else
+	vec2 BottomUpTextureCoordinates(vec2 texc)
+	{
+		return texc;
+	}
+	vec4 BottomUpTextureCoordinates4(vec4 texc)
+	{
+		return texc;
+	}
 	#endif
 	
 	#define ALIGN_16

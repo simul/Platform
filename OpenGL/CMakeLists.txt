@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
 file(GLOB CMAKE
     "*.cmake"
@@ -13,18 +13,19 @@ file(GLOB HEADERS
 )
 
 file(GLOB SHADERS
-	"${SIMUL_PLATFORM_DIR}/Shaders/Sfx/*.sfx" 
+	"${SIMUL_PLATFORM_DIR}/OpenGL/Sfx/*.sfx"
 )
-
 file(GLOB SHADER_INCLUDES
-	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
 	"${SIMUL_PLATFORM_DIR}/OpenGL/Sfx/*.sl"
 )
 file(GLOB SHADER_DEFS
-	"${SIMUL_PLATFORM_DIR}/OpenGL/Sfx/*.json" 
-	)
+	"${SIMUL_PLATFORM_DIR}/OpenGL/Sfx/*.json"
+)
 
-add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+source_group("Shaders" FILES  ${SHADERS} )
+source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
+
+add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
 	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../External/stb")
 	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")

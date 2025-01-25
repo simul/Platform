@@ -8,9 +8,9 @@ BaseMouseHandler::BaseMouseHandler()
 	,fDeltaY(0)
 	,MouseX(0)
 	,MouseY(0)
-	, view_width(750)
-	, view_height(750)
-	,mouseButtons(core::NoButton)
+	,view_width(750)
+	,view_height(750)
+	,mouseButtons(core::MouseButtons::NoButton)
 {
 }
 
@@ -18,23 +18,23 @@ BaseMouseHandler::~BaseMouseHandler()
 {
 }
 
-void BaseMouseHandler::mouseRelease(int button,int x,int y)
+void BaseMouseHandler::mouseRelease(MouseButtons button, int x, int y)
 {
-	*((int*)&mouseButtons)&=(~button);
+	mouseButtons&=~button;
 	MouseX=x;
 	MouseY=y;
 	UpdateViews();
 }
 
-void BaseMouseHandler::mousePress(int button,int x,int y)
+void BaseMouseHandler::mousePress(MouseButtons button, int x, int y)
 {
-	*((int*)&mouseButtons)|=button;
+	mouseButtons|=button;
 	MouseX=x;
 	MouseY=y;
 	UpdateViews();
 }
 
-void BaseMouseHandler::mouseDoubleClick(int ,int x,int y)
+void BaseMouseHandler::mouseDoubleClick(MouseButtons, int x, int y)
 {
 	MouseX=x;
 	MouseY=y;
@@ -81,17 +81,13 @@ void BaseMouseHandler::SetViewSize(int w, int h)
 }
 
 
-
-void BaseMouseHandler::KeyboardProc(unsigned int /*nChar*/, bool bKeyDown, bool )
+void BaseMouseHandler::KeyboardProc(KeyboardModifiers modifiers, bool bKeyDown)
 {
-	if(bKeyDown)
-	{
-	}
 	if(updateViews)
 		UpdateViews();
 }
 
-MouseButtons	BaseMouseHandler::getMouseButtons() const
+MouseButtons BaseMouseHandler::getMouseButtons() const
 {
-	return  mouseButtons;
+	return mouseButtons;
 }

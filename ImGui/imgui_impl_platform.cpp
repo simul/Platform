@@ -9,6 +9,8 @@
 #include "Platform/CrossPlatform/Macros.h"
 #include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #pragma optimize("",off)
+#include "Platform/External/glfw/include/GLFW/glfw3.h"
+
 using namespace platform;
 using namespace crossplatform;
 
@@ -34,6 +36,43 @@ TextureHash MakeTextureHash(TextureCreate *tc)
 	hash+=800000000*tc->f;
 	return hash;
 }
+
+// GLFW data
+enum GlfwClientApi
+{
+	GlfwClientApi_Unknown,
+	GlfwClientApi_OpenGL,
+	GlfwClientApi_Vulkan
+};
+
+struct ImGui_ImplGlfw_Data
+{
+	GLFWwindow *Window;
+	GlfwClientApi ClientApi;
+	double Time;
+	GLFWwindow *MouseWindow;
+	GLFWcursor *MouseCursors[ImGuiMouseCursor_COUNT];
+	ImVec2 LastValidMousePos;
+	GLFWwindow *KeyOwnerWindows[GLFW_KEY_LAST];
+	bool InstalledCallbacks;
+	bool CallbacksChainForAllWindows;
+	bool WantUpdateMonitors;
+#ifdef _WIN32
+	WNDPROC GlfwWndProc;
+#endif
+
+	// Chain GLFW callbacks: our callbacks will call the user's previously installed callbacks, if any.
+	GLFWwindowfocusfun PrevUserCallbackWindowFocus;
+	GLFWcursorposfun PrevUserCallbackCursorPos;
+	GLFWcursorenterfun PrevUserCallbackCursorEnter;
+	GLFWmousebuttonfun PrevUserCallbackMousebutton;
+	GLFWscrollfun PrevUserCallbackScroll;
+	GLFWkeyfun PrevUserCallbackKey;
+	GLFWcharfun PrevUserCallbackChar;
+	GLFWmonitorfun PrevUserCallbackMonitor;
+
+	ImGui_ImplGlfw_Data() { memset((void *)this, 0, sizeof(*this)); }
+};
 
 // Platform data
 struct ImGui_ImplPlatform_Data
@@ -455,6 +494,13 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 
 	renderPlatform->EndEvent(deviceContext);
 	renderPlatform->EndEvent(deviceContext);
+}
+
+void ImGui_ImplPlatform_SetUpdateMonitors() 
+{
+	ImGui_ImplGlfw_Data *bd = ImGui::GetCurrentContext() ? (ImGui_ImplGlfw_Data *)ImGui::GetIO().BackendPlatformUserData : nullptr;
+	if (bd)
+		bd->WantUpdateMonitors = true;
 }
 
 static void ImGui_ImplPlatform_CreateFontsTexture()

@@ -454,8 +454,7 @@ void RenderPlatform::RestoreDeviceObjects(void*)
 
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
-		crossplatform::Material *mat = (crossplatform::Material*)(i->second);
-		mat->SetEffect(solidEffect);
+		i->second->SetEffect(solidEffect);
 	}
 	
 	debugEffect=GetOrCreateEffect("debug");
@@ -499,9 +498,8 @@ void RenderPlatform::InvalidateDeviceObjects()
 	
 	for (auto i = materials.begin(); i != materials.end(); i++)
 	{
-		Material *mat = i->second;
-		mat->InvalidateDeviceObjects();
-		delete mat;
+		i->second->InvalidateDeviceObjects();
+		i->second = nullptr;
 	}
 	materials.clear();
 	for (auto &debugVertexBuffer : debugVertexBuffers)
@@ -1227,7 +1225,6 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const doubl
 
 void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float *pos,const float *dir,float radius,const float *colr,bool fill,bool view_centred)
 {
-	PosColourVertex line_vertices[36];
 	vec3 direction(dir);
 	direction = normalize(direction);
 	vec3 z(0,0,1.f);
@@ -1239,20 +1236,37 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 		x=cross(direction,y);
 	x*=radius;
 	y = cross(direction , x);
-	int l=0;
-	for(int j=0;j<std::size(line_vertices);j++)
+
+	mat4 wvp;
+	if (view_centred)
+		crossplatform::MakeCentredViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	else
+		crossplatform::MakeViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj = wvp;
+	debugConstants.debugWorldViewProj.transpose();
+	debugConstants.debugColour = colr;
+	debugConstants.centre_position = pos;
+	debugConstants.x_axis = x;
+	debugConstants.y_axis = y;
+	SetConstantBuffer(deviceContext, &debugConstants);
+
+	EffectTechniqueGroup *group = debugEffect->GetTechniqueGroupByName("circle");
+	if (fill)
 	{
-		float angle					=(float(j)/float(std::size(line_vertices)-1))*2.0f*3.1415926536f;
-		vec3 p						=vec3((x * cos(angle) + y * sin(angle)));
-		line_vertices[l].pos		=vec3(pos)+p;
-		line_vertices[l++].colour	=colr;
+		debugEffect->Apply(deviceContext, group->GetTechniqueByName("filled"));
+		SetTopology(deviceContext, Topology::TRIANGLESTRIP);
+		Draw(deviceContext, 64, 0);
+		debugEffect->Unapply(deviceContext);
 	}
-	DrawLines(deviceContext, line_vertices, std::size(line_vertices), true, false, view_centred);
+
+	debugEffect->Apply(deviceContext, group->GetTechniqueByName("outline"));
+	SetTopology(deviceContext, Topology::LINESTRIP);
+	Draw(deviceContext, 32, 0);
+	debugEffect->Unapply(deviceContext);
 }
 
 void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const double *pos, const double *dir, double radius, const float *colr, bool fill, bool view_centred)
 {
-	PosColourVertex line_vertices[36];
 	vec3d direction(dir);
 	direction = normalize(direction);
 	vec3d z(0, 0, 1.0);
@@ -1264,15 +1278,33 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const doub
 		x = cross(direction, y);
 	x *= radius;
 	y = cross(direction, x);
-	int l = 0;
-	for (int j = 0; j < std::size(line_vertices); j++)
+
+	mat4 wvp;
+	if (view_centred)
+		crossplatform::MakeCentredViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	else
+		crossplatform::MakeViewProjMatrix((float *)&wvp, deviceContext.viewStruct.view, deviceContext.viewStruct.proj);
+	debugConstants.debugWorldViewProj = wvp;
+	debugConstants.debugWorldViewProj.transpose();
+	debugConstants.debugColour = colr;
+	debugConstants.centre_position = pos;
+	debugConstants.x_axis = x;
+	debugConstants.y_axis = y;
+	SetConstantBuffer(deviceContext, &debugConstants);
+
+	EffectTechniqueGroup *group = debugEffect->GetTechniqueGroupByName("circle");
+	if (fill)
 	{
-		double angle = (double(j) / float(std::size(line_vertices) - 1)) * 2.0 * 3.1415926536;
-		vec3d p = vec3d((x * cos(angle) + y * sin(angle)));
-		line_vertices[l].pos = vec3(vec3d(pos) + p);
-		line_vertices[l++].colour = colr;
+		debugEffect->Apply(deviceContext, group->GetTechniqueByName("filled"));
+		SetTopology(deviceContext, Topology::TRIANGLESTRIP);
+		Draw(deviceContext, 64, 0);
+		debugEffect->Unapply(deviceContext);
 	}
-	DrawLines(deviceContext, line_vertices, std::size(line_vertices), true, false, view_centred);
+
+	debugEffect->Apply(deviceContext, group->GetTechniqueByName("outline"));
+	SetTopology(deviceContext, Topology::LINESTRIP);
+	Draw(deviceContext, 32, 0);
+	debugEffect->Unapply(deviceContext);
 }
 
 void RenderPlatform::SetModelMatrix(GraphicsDeviceContext &deviceContext, const double *m, const crossplatform::PhysicalLightRenderData &physicalLightRenderData)
@@ -1293,36 +1325,40 @@ crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,
 	auto i = textures.find(filename);
 	if (i != textures.end())
 		return i->second;
+
 	crossplatform::Texture* t=CreateTexture(filename, gen_mips);
 	textures[filename] = t;
+
 	// special textures:
 	if (std::string(filename) == "white")
 	{
 		t->ensureTexture2DSizeAndFormat(this,1,1, 1,PixelFormat::RGBA_8_UNORM,false,false,false,1,0,true,vec4(1.f,1.f,1.f,1.f));
-		unsigned white_rgba8=0xFFFFFFFF;
-		t->setTexels(GetImmediateContext(),&white_rgba8,0,1);
+		uint8_t dataWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+		t->setTexels(GetImmediateContext(), &dataWhite, 0, 1);
 	}
 	else if (std::string(filename) == "black")
 	{
 		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
-		unsigned black_rgba8 = 0;
-		t->setTexels(GetImmediateContext(), &black_rgba8, 0, 1);
+		uint8_t dataBlack[4] = {0x00, 0x00, 0x00, 0xFF};
+		t->setTexels(GetImmediateContext(), &dataBlack, 0, 1);
 	}
 	else if (std::string(filename) == "blue")
 	{
 		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
-		unsigned blue_rgba8 = 0x7FFF7F7F;
-		t->setTexels(GetImmediateContext(), &blue_rgba8, 0, 1);
+		uint8_t dataBlue[4] = {0x7F, 0x7F, 0xFF, 0xFF};
+		t->setTexels(GetImmediateContext(), &dataBlue, 0, 1);
 	}
+
 	return t;
 }
 
-Material *RenderPlatform::GetOrCreateMaterial(const char *name)
+std::shared_ptr<Material> RenderPlatform::GetOrCreateMaterial(const char *name)
 {
 	auto i = materials.find(name);
 	if (i != materials.end())
 		return i->second;
-	crossplatform::Material *mat = new crossplatform::Material(name);
+
+	std::shared_ptr<Material> mat = std::make_shared<Material>(name);
 	mat->SetEffect(solidEffect);
 	materials[name]=mat;
 	return mat;
@@ -1362,7 +1398,7 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 		{
 			if(tex->LoadFromFile(this, fileNameUtf8, gen_mips))
 			{
-				unfinishedTextures.insert(tex);
+				unfinishedTextures[fileNameUtf8]=tex;
 				SIMUL_INTERNAL_COUT <<"unfinishedTexture: "<<tex<<" "<<fileNameUtf8<<std::endl;
 			}
 			else
@@ -1377,9 +1413,14 @@ Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 
 void RenderPlatform::InvalidatingTexture(Texture *t)
 {
-	auto i=unfinishedTextures.find(t);
-	if(i!=unfinishedTextures.end())
-		unfinishedTextures.erase(i);
+	for(auto i:unfinishedTextures)
+	{
+		if(i.second==t)
+		{
+			unfinishedTextures.erase(i.first);
+			break;
+}
+	}
 }
 
 void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *cubemap,int x,int y,int pixelSize,float exposure,float gamma,float displayMip)
@@ -2149,9 +2190,9 @@ void RenderPlatform::FinishLoadingTextures(DeviceContext& deviceContext)
 {
 	for(auto t:unfinishedTextures)
 	{
-		t->FinishLoading(deviceContext);
-		if(t->ShouldGenerateMips())
-			unMippedTextures.insert(t);
+		t.second->FinishLoading(deviceContext);
+		if(t.second->ShouldGenerateMips())
+			unMippedTextures[t.first]=t.second;
 	}
 	unfinishedTextures.clear();
 }
@@ -2162,7 +2203,7 @@ void RenderPlatform::FinishGeneratingTextureMips(DeviceContext& deviceContext)
 		return;
 	for(auto t:unMippedTextures)
 	{
-		GenerateMips(*deviceContext.AsGraphicsDeviceContext(),t,true);
+		GenerateMips(*deviceContext.AsGraphicsDeviceContext(),t.second,true);
 	}
 	unMippedTextures.clear();
 }
