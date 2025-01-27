@@ -51,10 +51,10 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 	SetVulkanName(renderPlatform,mSampler,"Sampler");
 }
 
-  vk::Sampler *SamplerState::AsVulkanSampler() 
-  {
-	  return &mSampler;
-  }
+vk::Sampler *SamplerState::AsVulkanSampler() 
+{
+	return &mSampler;
+}
 
 void SamplerState::InvalidateDeviceObjects()
 {
