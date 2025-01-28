@@ -32,10 +32,10 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	HRESULT res			= S_FALSE;
 	if(n)
 		name=n;
-	mNumElements		= ct;
-	mElementByteSize	= unit_size;
+	mNumElements		= static_cast<uint32_t>(ct);
+	mElementByteSize	= static_cast<uint32_t>(unit_size);
 	
-	mUnitSize           = mNumElements * mElementByteSize;
+	mUnitSize			= mNumElements * mElementByteSize;
 	mTotalSize			= mUnitSize * mMaxApplyMod;
 
 	renderPlatform                          = r;

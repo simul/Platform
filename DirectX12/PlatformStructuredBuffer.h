@@ -17,7 +17,7 @@ namespace platform
 		class RenderPlatform;
 
 		//! DirectX12 structured buffer class
-		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
+		class PlatformStructuredBuffer : public crossplatform::PlatformStructuredBuffer
 		{
 		public:
 											PlatformStructuredBuffer();
@@ -72,21 +72,21 @@ namespace platform
 			D3D12_RESOURCE_STATES			mCurrentState;
 
 			//! Total number of individual elements
-			int								mNumElements;
+			uint32_t						mNumElements;
 			//! Size of each element
-			int								mElementByteSize;
+			uint32_t						mElementByteSize;
 			//! Total size (size of one unit * max applies)
-			int								mTotalSize;
-			int								mUnitSize;
+			uint64_t						mTotalSize;
+			uint64_t						mUnitSize;
 			//! Does this buffer allow reads from CPU?
 			bool							mCpuRead;
 
 			//! How many times we can Apply this SB with different data
 			//! During runtime we will check the current applies and recreate if needed
-			int								mMaxApplyMod = 6;
-			int								mCurApplies;
+			uint32_t						mMaxApplyMod = 6;
+			uint32_t						mCurApplies;
 			uint64_t						mLastFrame;
-			int								mFrameCycle=0;
+			uint32_t						mFrameCycle = 0;
 		};
 	}
 }
