@@ -1908,6 +1908,18 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,in
 	EndEvent(deviceContext);
 }
 
+void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert)
+{
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+
+	BeginEvent(deviceContext, ((vulkan::EffectPass *)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyContextState(deviceContext);
+	commandBuffer->draw(num_verts, num_instances, start_vert, base_instance);
+	EndEvent(deviceContext);
+}
+
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
 	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;

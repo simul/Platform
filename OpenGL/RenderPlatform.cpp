@@ -1065,6 +1065,14 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,in
 	EndEvent(deviceContext);
 }
 
+void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert)
+{
+	BeginEvent(deviceContext, ((opengl::EffectPass *)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyCurrentPass(deviceContext);
+	glDrawArraysInstancedBaseInstance(mCurTopology, start_vert, num_verts, num_instances, base_instance);
+	EndEvent(deviceContext);
+}
+
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vertex)
 {
 	BeginEvent(deviceContext, ((opengl::EffectPass *)deviceContext.contextState.currentEffectPass)->name.c_str());
