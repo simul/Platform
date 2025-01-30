@@ -1615,6 +1615,14 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext, i
 	commandList->DrawInstanced(num_verts, 1, start_vert, 0);
 }
 
+void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert)
+{
+	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();
+
+	ApplyContextState(deviceContext);
+	commandList->DrawInstanced(num_verts, num_instances, start_vert, base_instance);
+}
+
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext, int num_indices, int start_index, int base_vert)
 {
 	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();

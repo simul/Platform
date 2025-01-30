@@ -397,7 +397,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE* PlatformStructuredBuffer::AsD3D12ShaderResourceView
 	
 	// Check the resource state
 	bool is_pixel_shader=(deviceContext.contextState.currentEffectPass->shaders[crossplatform::SHADERTYPE_PIXEL]!=nullptr);
-	 D3D12_RESOURCE_STATES		readState = is_pixel_shader?D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+	D3D12_RESOURCE_STATES readState = is_pixel_shader ? D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	if (mCurrentState != readState)
 	{
 		mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, mCurrentState, readState);

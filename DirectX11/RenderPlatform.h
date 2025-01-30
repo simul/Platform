@@ -65,6 +65,7 @@ namespace platform
 			void ApplyShaderPass(crossplatform::DeviceContext &deviceContext,crossplatform::Effect *,crossplatform::EffectTechnique *,int index);
 			
 			void Draw			(crossplatform::GraphicsDeviceContext &deviceContext,int num_verts,int start_vert);
+			void DrawInstanced	(crossplatform::GraphicsDeviceContext &deviceContext,int num_instances,int base_instance,int num_verts,int start_vert) override;
 			void DrawIndexed	(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0) override;
 			void DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index = 0, int base_vertex = 0) override;
 		
