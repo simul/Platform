@@ -1982,6 +1982,8 @@ void RenderPlatform::SetConstantBuffer(DeviceContext& deviceContext,ConstantBuff
 
 void RenderPlatform::SetStructuredBuffer(DeviceContext& deviceContext, BaseStructuredBuffer* s, const ShaderResource& shaderResource)
 {
+	if(!s||!s->platformStructuredBuffer)
+		return;
 	if((shaderResource.shaderResourceType & ShaderResourceType::RW) == ShaderResourceType::RW)
 		s->platformStructuredBuffer->ApplyAsUnorderedAccessView(deviceContext, shaderResource);
 	else
