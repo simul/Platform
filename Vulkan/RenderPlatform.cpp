@@ -616,9 +616,11 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 	vulkan::EffectPass* vkEffectPass = ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);
 	BeginEvent(deviceContext, vkEffectPass->name.c_str());
-	ApplyContextState(deviceContext);
-	commandBuffer->dispatch(w, l, d);
-	InsertFences(deviceContext);
+	if(ApplyContextState(deviceContext))
+	{
+		commandBuffer->dispatch(w, l, d);
+		InsertFences(deviceContext);
+	}
 	EndEvent(deviceContext);
 }
 
@@ -881,7 +883,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	else
 	{
 		// Set Compute Pipeline
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline.pipeline);
+		if(renderPassPipeline.pipeline)
+			commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline.pipeline);
+		else
+			return false;
 		
 	}
 	return true;
