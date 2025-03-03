@@ -163,7 +163,7 @@
 		"SV_Coverage": "S_COVERAGE",
 		"POSITION": "S_POSITION",
 		"groupshared": "shared",
-		"GroupMemoryBarrier": "ThreadGroupMemoryBarrier",
+		"GroupMemoryBarrier": "groupMemoryBarrier",
 		"GroupMemoryBarrierWithGroupSync": "barrier",
 		"SV_DispatchThreadID": "S_DISPATCH_THREAD_ID",
 		"SV_GroupThreadID": "S_GROUP_THREAD_ID",
