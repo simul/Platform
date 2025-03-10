@@ -223,7 +223,7 @@ struct tvector2
 	}
 	friend tvector2 operator/(const T &m, const tvector2 &v)
 	{
-		tvector3 r;
+		tvector2 r;
 		r.x = m / v.x;
 		r.y = m / v.y;
 		return r;

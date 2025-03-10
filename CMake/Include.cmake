@@ -1,6 +1,6 @@
 include_guard()
 
-set( PLATFORM_CPP_VERSION 17 CACHE STRING "Set the C++ version to compile." )
+set( PLATFORM_CPP_VERSION 20 CACHE STRING "Set the C++ version to compile." )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 set( CMAKE_CXX_EXTENSIONS ON )
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

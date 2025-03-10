@@ -228,7 +228,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 						errorMessage += ("D3D12 " + severity + ": " + description + " [ " + category + " " + severity + " #" + std::to_string(ID) + ": " + id + " ]");
 						if (Severity < D3D12_MESSAGE_SEVERITY_WARNING)
 						{
-							SIMUL_BREAK(errorMessage.c_str());
+							SIMUL_BREAK("{}",errorMessage);
 						}
 					};
 					infoQueue1->RegisterMessageCallback(MessageCallbackFunction, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &mCallbackCookie);

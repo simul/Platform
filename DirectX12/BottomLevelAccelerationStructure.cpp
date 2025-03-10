@@ -201,7 +201,10 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 	//BuildRaytracingAccelerationStructure need the StructuredBuffer for AABB in D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
 	//Transition to D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE (from D3D12_RESOURCE_STATE_UNORDERED_ACCESS).
 	if (aabbBuffer)
-		commandList4->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(aabbBuffer->platformStructuredBuffer->AsD3D12Resource(deviceContext), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	{
+		auto b=CD3DX12_RESOURCE_BARRIER::Transition(aabbBuffer->platformStructuredBuffer->AsD3D12Resource(deviceContext), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		commandList4->ResourceBarrier(1, &b);
+	}
 	
 	commandList4->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 	

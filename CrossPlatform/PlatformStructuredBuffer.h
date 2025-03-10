@@ -71,6 +71,7 @@ namespace platform
 		public:
 			virtual ~BaseStructuredBuffer() = default;
 			PlatformStructuredBuffer* platformStructuredBuffer=nullptr;
+			int count=0;
 		};
 		class PlatformStructuredBuffer;
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
@@ -83,7 +84,6 @@ namespace platform
 		{
 		public:
 			StructuredBuffer()
-				:count(0)
 			{
 			}
 			~StructuredBuffer()
@@ -187,8 +187,6 @@ namespace platform
 				if (platformStructuredBuffer)
 					platformStructuredBuffer->ResetCopies();
 			}
-
-			int count;
 		};
 
 	}
