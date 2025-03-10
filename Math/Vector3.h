@@ -63,7 +63,7 @@ namespace platform
 			}
 			void operator=(const Vector3 &v);  
 		/// Is this vector equal to v?
-			bool operator==(const Vector3 &v)
+			bool operator==(const Vector3 &v) const
 			{
 				return(Values[0]==v[0]&&
 					Values[1]==v[1]&&

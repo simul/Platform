@@ -1,3 +1,8 @@
+
+// The following two lines prevent a link error in C++20 and above for IID_ID3D11ShaderReflection and other symbols:
+#define INITGUID
+#include <guiddef.h> 
+
 #include "Effect.h"
 #include "Texture.h"
 #include "Platform/Core/RuntimeError.h"
@@ -805,7 +810,7 @@ void EffectPass::CreateLocalRootSignature()
 	if (res != S_OK)
 	{
 		std::string err = static_cast<const char*>(error->GetBufferPointer());
-		SIMUL_BREAK(err.c_str());
+		SIMUL_BREAK("{}",err);
 	}
 	auto* device = renderPlatform->AsD3D12Device();
 	V_CHECK(device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&localRootSignature)));

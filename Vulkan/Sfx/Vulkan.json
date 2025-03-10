@@ -16,7 +16,7 @@
 	"outputOption": "-o ",
 	"includeOption": "",
 	"entryPointOption": "--target-env vulkan1.1 --entry-point {name} --source-entrypoint main",
-	"debugOption": "-g -Od",
+	"debugOption": "-gVS -Od",
 	"debugOptionSometimesFailsToGenerateSpirV": "-gVS",
 	"multiplePixelOutputFormats": false,
 	"define": {

@@ -176,7 +176,7 @@ uint64_t DefaultFileLoader::GetFileDate(const char *filename_utf8) const
 	// https://stackoverflow.com/questions/61030383/how-to-convert-stdfilesystemfile-time-type-to-time-t
 	// https://stackoverflow.com/questions/51273205/how-to-compare-time-t-and-stdfilesystemfile-time-type
 	fs::file_time_type fileTime = fs::last_write_time(filename_utf8);
-#if PLATFORM_CXX20
+#if PLATFORM_CXX20_OR_ABOVE
 	const std::chrono::system_clock systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
 	const time_t time = std::chrono::system_clock::to_time_t(systemTime);
 #else

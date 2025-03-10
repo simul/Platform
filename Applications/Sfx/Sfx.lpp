@@ -69,6 +69,10 @@ the last is C code to be copied verbatim to the output.
 	{
 		insert_line_statement++;
 	}
+	bool charisspace(char c)
+	{
+		return std::isspace((int)c);
+	}
 	float ToFloat(const char * txr)
 	{
 		std::string yytextStr=yytext;
@@ -78,7 +82,7 @@ the last is C code to be copied verbatim to the output.
 		// Clang/Gcc still doesn't implement the standard function std::from_chars properly.
 		float value=atof(yytextStr.c_str());
 	#else
-		yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+		yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),charisspace),yytextStr.end());
 		float value=0.0f;
 		std::from_chars(yytextStr.data(),yytextStr.data()+yytextStr.size(),value,std::chars_format::general);
 	#endif
