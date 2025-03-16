@@ -273,6 +273,7 @@
 		"._m32": "[3][2]",
 		"._m33": "[3][3]",
 		"round": "roundEven",
-		"roundNearest": "round"
+		"roundNearest": "round",
+		"firstbitlow": "findLSB"
 	}
 }
