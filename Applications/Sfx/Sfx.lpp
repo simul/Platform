@@ -806,6 +806,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"continue"							stdReturn(CONTINUE);
 <IN_SHADER>"do"									stdReturn(DO);
 <IN_SHADER>"for"								stdReturn(FOR);
+<IN_SHADER>"unroll"								stdReturn(UNROLL);
 <IN_SHADER>"goto"								stdReturn(GOTO);
 <IN_SHADER>"if"									stdReturn(IF);
 <IN_SHADER>"switch"								stdReturn(SWITCH);
