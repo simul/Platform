@@ -69,6 +69,10 @@ the last is C code to be copied verbatim to the output.
 	{
 		insert_line_statement++;
 	}
+	bool charisspace(char c)
+	{
+		return std::isspace((int)c);
+	}
 	float ToFloat(const char * txr)
 	{
 		std::string yytextStr=yytext;
@@ -78,7 +82,7 @@ the last is C code to be copied verbatim to the output.
 		// Clang/Gcc still doesn't implement the standard function std::from_chars properly.
 		float value=atof(yytextStr.c_str());
 	#else
-		yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),std::isspace),yytextStr.end());
+		yytextStr.erase(std::remove_if(yytextStr.begin(),yytextStr.end(),charisspace),yytextStr.end());
 		float value=0.0f;
 		std::from_chars(yytextStr.data(),yytextStr.data()+yytextStr.size(),value,std::chars_format::general);
 	#endif
@@ -146,8 +150,8 @@ the last is C code to be copied verbatim to the output.
 %}
 %x renderstate_mode IN_SHADER IN_SHADER_COMPILE IN_LINE IN_RENDER_STATE IN_TEXTURE_DECL IN_LAYOUT IN_STRUCT IN_MULTILINE_COMMENT IN_VARIANT_CASE
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*																	
-NUM_BLCK ([0-9][0-9]*)[uU]?
-HEX_BLCK 0x[0-9A-Fa-f][0-9A-Fa-f]*[uU]?
+NUM_BLCK ([0-9][0-9]*)[uU]?L?
+HEX_BLCK 0x[0-9A-Fa-f][0-9A-Fa-f]*[uU]?L?
 STR_BLCK \"[^"\n]*\"																								
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 
@@ -802,6 +806,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <IN_SHADER>"continue"							stdReturn(CONTINUE);
 <IN_SHADER>"do"									stdReturn(DO);
 <IN_SHADER>"for"								stdReturn(FOR);
+<IN_SHADER>"unroll"								stdReturn(UNROLL);
 <IN_SHADER>"goto"								stdReturn(GOTO);
 <IN_SHADER>"if"									stdReturn(IF);
 <IN_SHADER>"switch"								stdReturn(SWITCH);

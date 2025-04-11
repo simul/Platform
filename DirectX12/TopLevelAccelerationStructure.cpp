@@ -129,7 +129,8 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 	buildDesc.ScratchAccelerationStructureData = scratchResource->GetGPUVirtualAddress();
 
 	commandList4->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
-	commandList4->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(accelerationStructure));
+	auto b=CD3DX12_RESOURCE_BARRIER::UAV(accelerationStructure);
+	commandList4->ResourceBarrier(1, &b);
 
 	SAFE_RELEASE(commandList4);
 	SAFE_RELEASE(device5);
