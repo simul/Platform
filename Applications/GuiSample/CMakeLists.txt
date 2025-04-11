@@ -17,3 +17,4 @@ endif()
 if(PLATFORM_SUPPORT_VULKAN)
 	target_link_libraries(GuiSample${STATIC_LINK_SUFFIX} SimulVulkan${STATIC_LINK_SUFFIX} ${Vulkan_LIBRARY} )
 endif()
+
