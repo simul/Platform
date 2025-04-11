@@ -18,21 +18,6 @@
 	#pragma warning Unknown dynamic link import/export semantics.
 #endif
 
-#if defined(_MSC_VER) && !defined(SIMUL_DIRECTX11_DLL) && !defined(SIMUL_NO_PRAGMA_LINK)
-	#ifdef _DEBUG
-		#ifdef _DLL
-			#pragma comment(lib,"SimulDirectX11_MDd")
-		#else
-			#pragma comment(lib,"SimulDirectX11_MTd")
-		#endif
-	#else
-		#ifdef _DLL
-			#pragma comment(lib,"SimulDirectX11_MD")
-		#else
-			#pragma comment(lib,"SimulDirectX11_MT")
-		#endif
-	#endif
-#endif
 
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
 // In this lib:
