@@ -16,21 +16,7 @@
     #pragma warning Unknown dynamic link import/export semantics.
 #endif
 
-#if defined(_MSC_VER) && !defined(PLATFORM_IMGUI_DLL) && !defined(SIMUL_NO_PRAGMA_LINK)
-	#ifdef _DEBUG
-		#ifdef _DLL
-			#pragma comment(lib,"ImGui_MDd")
-		#else
-			#pragma comment(lib,"ImGui_MTd")
-		#endif
-	#else
-		#ifdef _DLL
-			#pragma comment(lib,"ImGui_MD")
-		#else
-			#pragma comment(lib,"ImGui_MT")
-		#endif
-	#endif
-#endif
+
 
 #if defined(SIMUL_DYNAMIC_LINK) && !defined(DOXYGEN)
     // In this lib:

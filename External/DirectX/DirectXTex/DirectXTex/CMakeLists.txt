@@ -48,9 +48,6 @@ if(PLATFORM_WINDOWS )
 	add_static_library (directxtex SOURCES ${DIRECTX_TEX_SRC} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 endif()
 
-if(PLATFORM_BUILD_MD_LIBS)
-	add_static_library(directxtex SOURCES ${DIRECTX_TEX_SRC} RUNTIME MD FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-endif()
 
 #target_compile_options( directxtex PRIVATE /fp:fast )
 
