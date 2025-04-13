@@ -870,7 +870,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	string src = preamble;
 	src += sharedSource;
 	src+=shaderInstance->m_augmentedSource;
-	ReplaceRegexes(src, sfxConfig.replace);
+	
 	const char *strSrc=src.c_str();
 
 	wstring targetDir=StringToWString(GetDirectoryFromFilename(targetFile));
@@ -993,7 +993,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		bool write_log=false;
 		if(!unchanged)
 		{
-		res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
+			res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
 			const string &log_str=log.str();
 			if (sfxOptions.verbose)
 			{

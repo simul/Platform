@@ -59,6 +59,7 @@ typedef int errno_t;
 #include "SfxClasses.h"
 #include "Sfx.h"
 #include "SfxEffect.h"
+#include "Compiler.h"
 
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H

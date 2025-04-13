@@ -91,10 +91,17 @@
 	{
 		write_line_number_next=true;
 	}
-	void WriteLineNumber(std::ostringstream &str,const std::string &filename,int lineno)
+	bool WriteLineNumber(std::ostringstream &str,const std::string &filename,int lineno)
 	{
-		if(!lineno)
-			return;
+		if(lineno==0)
+		{
+			return true;
+		}
+		if(lineno<0)
+		{
+			std::cerr<<"line: "<<lineno<<" not valid for #line directive.\n";
+			return false;
+		}
 		std::string f=filename;
 		size_t p=f.find("\\");
 		while(p<f.length())
@@ -105,16 +112,20 @@
 		if (gEffect->GetOptions()->disableLineWrites)
 			str<<"//";
 		str<<"#line "<<lineno<<" "<<gEffect->GetFilenameOrNumber(f)<<endl;
+		return true;
 	}
-	void WriteLineNumber(std::ostringstream &str,int lineno)
+	bool WriteLineNumber(std::ostringstream &str,int lineno)
 	{
-		WriteLineNumber(str,current_filename,lineno);//.c_str()<<"\""<<endl;
+		return WriteLineNumber(str,current_filename,lineno);//.c_str()<<"\""<<endl;
 	}
 	std::string CreateLineStatement(int lineno)
 	{
 		ostringstream ostr;
 		ostr<<"\n";
-		WriteLineNumber(ostr,current_filename,lineno+last_linenumber-global_linenumber);
+		if(!WriteLineNumber(ostr,current_filename,lineno+last_linenumber-global_linenumber))
+		{
+			std::cerr<<"lineno: "<<lineno<<" last_linenumber: "<<last_linenumber<<", global_linenumber: "<<global_linenumber<<".\n";
+		}
 		return ostr.str();
 	}
 	void stringReplaceAll(std::string& str, const std::string& from, const std::string& to)
@@ -616,6 +627,7 @@
 %token SET_RAY_GENERATION SET_MISS SET_CALLABLE SET_HIT_GROUP SET_CLOSEST_HIT SET_ANY_HIT SET_INTERSECTION SET_MISS_SHADERS SET_CALLABLE_SHADERS SET_RAY_TRACING_SHADER_CONFIG SET_RAY_TRACING_PIPELINE_CONFIG SET_MAX_PAYLOAD_SIZE SET_MAX_ATTRIBUTE_SIZE SET_MAX_TRACE_RECURSION_DEPTH
 %token SFX_VARIANT SFX_VARIANT_IF SFX_VARIANT_ELSE SFX_VARIANT_END
 
+%token UNROLL
 %%
 
 prog : prog tok
@@ -1056,6 +1068,13 @@ gslayout : '[' MAX_VERTEX_COUNT '(' NUM ')' ']'
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0];
 	}
 
+optional_unroll : '[' UNROLL ']'
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+" ";
+} | %empty
+{
+	$$.strs[0] = "";
+}
 optional_expression : expression
 	{
 		$$.strs[0]=$1.strs[0];
@@ -2644,7 +2663,13 @@ statement : COMMENT
 		$$.strs[1]="";
 		$$.lineno=$1.lineno;
 	}
-
+for: optional_unroll FOR
+	{
+		int line=$2.lineno;
+		$$.lineno=line;
+		$$.strs[0] = $1.strs[0] + $2.strs[0] ;
+		$$.strs[1] = "";
+	}
 variant_conditional_expression: SFX_VARIANT_IF '(' conditional_exp ')'
 {
 // TODO: Properly change the identifiers, instead of this hack.

@@ -80,7 +80,7 @@
 		if(!m)
 		{
 			string str=string("Macro ")+id+string(" not defined");
-			prepro_error(str.c_str());
+			prepro_warning(str.c_str());
 			return false;
 		}
 		int value=1;

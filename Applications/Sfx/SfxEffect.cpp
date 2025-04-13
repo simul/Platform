@@ -179,7 +179,12 @@ Function* Effect::DeclareFunction(const std::string &functionName, Function &bui
 			find_and_replace(f->declaration, "Texture2DMS ",		"uint64_t ");
 		}
 	}
-
+	ReplaceRegexes(f->declaration, sfxConfig.replace);
+	ReplaceRegexes(f->content, sfxConfig.replace);
+	for(int i=0;i<f->parameters.size();i++)
+	{
+		ReplaceRegexes(f->parameters[i].type, sfxConfig.replace);
+	}
 	m_declaredFunctions[functionName].push_back(f);
 	return f;
 }
@@ -539,6 +544,11 @@ void Effect::DeclareStruct(const string &name,const Struct &ts,const string &ori
 	*rs							=ts;
 	rs->name=name;
 	rs->original=original;
+	ReplaceRegexes(rs->original,sfxConfig.replace);
+	for (int i = 0; i < rs->m_structMembers.size(); i++)
+	{
+		ReplaceRegexes(rs->m_structMembers[i].type, sfxConfig.replace);
+	}
 	m_structs[name]	=rs;
 	declarations[name]=rs;
 }
@@ -549,6 +559,11 @@ void Effect::DeclareConstantBuffer(const std::string &name, int slot, int group_
 	m_constantBuffers[name] = cb;
 	*(static_cast<Struct*>(cb)) = ts;
 	cb->original=original;
+	ReplaceRegexes(cb->original, sfxConfig.replace);
+	for (int i = 0; i < cb->m_structMembers.size(); i++)
+	{
+		ReplaceRegexes(cb->m_structMembers[i].type, sfxConfig.replace);
+	}
 	cb->declarationType=DeclarationType::CONSTANT_BUFFER;
 	cb->slot = slot;
 	cb->group_num = group_num;
@@ -564,6 +579,9 @@ void Effect::DeclareVariable(const Variable* v)
 {
 	Variable *variable=new Variable;
 	*variable=*v;
+	ReplaceRegexes(variable->structureType, sfxConfig.replace);
+	ReplaceRegexes(variable->type, sfxConfig.replace);
+	ReplaceRegexes(variable->original, sfxConfig.replace);
 	declarations[variable->name] = variable;
 }
 
@@ -755,7 +773,7 @@ unsigned Effect::CompileAllShaders(string sfxoFilename,const string &sharedCode,
 		combinedBinary.open(sfxbFilename, std::ios_base::binary);
 		if(!combinedBinary.is_open())
 		{
-			std::cerr << "Failed to open " << sfxbFilename << " for writing."<<std::endl;
+			std::cerr << "Failed to open " << sfxbFilename << " for writing.\n";
 			exit(3);
 		}
 	}
@@ -1301,6 +1319,7 @@ bool Effect::Save(string sfxFilename,string sfxoFilename)
 			find_and_replace(sharedCode,type+string("####")+t.first+"####",type+std::to_string(ss->register_number));
 		}
 	}
+	ReplaceRegexes(sharedCode, sfxConfig.replace);
 	BinaryMap binaryMap;
 	int res			=CompileAllShaders(sfxoFilename,sharedCode,log, binaryMap);
 	if(!res)
@@ -2206,7 +2225,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 
  void Effect::Declare( ShaderInstance *shaderInstance, ostream &os, const Declaration *d, ConstantBuffer &texCB, ConstantBuffer &sampCB, const std::set<std::string> &rwLoad, std::set<const SamplerState *> &declaredSS, const Function *mainFunction)
  {
-	 ShaderType shaderType=shaderInstance->shaderType;
+	ShaderType shaderType=shaderInstance->shaderType;
 	switch(d->declarationType)
 	{
 		case DeclarationType::TEXTURE:
@@ -2359,6 +2378,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					}
 				}
 			}
+			ReplaceRegexes(dec,sfxConfig.replace);
 			os << dec.c_str() << endl;
 		}
 		break;
@@ -2507,6 +2527,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 			}
 			find_and_replace(str, "{members}", members);
 			find_and_replace(str, "{name}", s->name);
+			ReplaceRegexes(str,sfxConfig.replace);
 			os << str.c_str() << endl;
 		}
 		break;
@@ -2561,6 +2582,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 					find_and_replace(str, "{slot}", ToString(GenerateConstantBufferSlot(s->slot)));
 				}
 				find_and_replace(str, "{group}", ToString(s->group_num));
+				ReplaceRegexes(str,sfxConfig.replace);
 				os << str.c_str() << endl;
 			}
 			break;
@@ -2611,6 +2633,7 @@ int Effect::GetTextureNumber(string n,int specified_slot)
 				find_and_replace(str, "{slot}", ToString(c->slot));
 				find_and_replace(str, "{group}", ToString(c->group_num));
 				find_and_replace(str, "{instance_name}", c->instance_name);
+				ReplaceRegexes(str,sfxConfig.replace);
 				os << str.c_str() << endl;
 			}
 		}
