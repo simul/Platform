@@ -47,6 +47,7 @@
 	"gatherGreenSyntax": "{command}({samplerType}({textureSampler}),{otherParams},1)",
 	"gatherBlueSyntax": "{command}({samplerType}({textureSampler}),{otherParams},2)",
 	"gatherAlphaSyntax": "{command}({samplerType}({textureSampler}),{otherParams},3)",
+	"interlockedOpSyntax": "{previousValue}={command}({resourceName},{value})",
 	"structDeclaration": "struct {name}\n{\n[\t{flat} {type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, set={group}, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} ;",
 	"namedConstantBufferDeclaration": "layout(std140, set={group}, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} {instance_name};",
@@ -234,6 +235,13 @@
 		"QuadReadAcrossDiagonal": "subgroupQuadSwapDiagonal",
 		"QuadReadLaneAt": "subgroupQuadBroadcast",
 		"InterlockedAdd": "atomicAdd",
+		"InterlockedAnd" : "atomicAnd",
+		"InterlockedOr" : "atomicOr",
+		"InterlockedXor" : "atomicXor",
+		"InterlockedMax" : "atomicMax",
+		"InterlockedMin" : "atomicMin",
+		"InterlockedExchange" : "atomicExchange",
+		"InterlockedCompareExchange" : "atomicCompSwap",
 		"countbits": "bitCount",
 		"lerp": "mix",
 		"atan2": "atan",
@@ -262,6 +270,8 @@
 		"._m30": "[3][0]",
 		"._m31": "[3][1]",
 		"._m32": "[3][2]",
-		"._m33": "[3][3]"
+		"._m33": "[3][3]",
+		"round": "roundEven",
+		"roundNearest": "round"
 	}
 }

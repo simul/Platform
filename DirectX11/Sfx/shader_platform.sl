@@ -42,10 +42,27 @@
 	#define layout(a)
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET0
 	#define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET1
-	#define BottomUpTextureCoordinates4(texc) vec4(texc.x,1.0-texc.y,texc.z,1.0-texc.w)
-	#define BottomUpTextureCoordinates(texc) vec2(texc.x,1.0-texc.y)
+	
+	#ifndef BOTTOM_UP_TEXTURE_COORDINATES
+	#define BOTTOM_UP_TEXTURE_COORDINATES 1
+	#endif
+
+	float roundNearest(float x)
+	{
+		float x_f = floor(x);
+		float x_c = ceil(x);
+		return x_c - x <= x - x_f ? x_c : x_f;
+	}
+	float1 roundNearest(float1 x) { return float1(roundNearest(x.x)); }
+	float2 roundNearest(float2 x) { return float2(roundNearest(x.x), roundNearest(x.y)); }
+	float3 roundNearest(float3 x) { return float3(roundNearest(x.x), roundNearest(x.y), roundNearest(x.z)); }
+	float4 roundNearest(float4 x) { return float4(roundNearest(x.x), roundNearest(x.y), roundNearest(x.z), roundNearest(x.w)); }
+
+	float4x4 roundNearest(float4x4 x) { return float4x4(roundNearest(x[0]), roundNearest(x[1]), roundNearest(x[2]), roundNearest(x[3])); }
+	float3x3 roundNearest(float3x3 x) { return float3x3(roundNearest(x[0]), roundNearest(x[1]), roundNearest(x[2])); }
+	float2x2 roundNearest(float2x2 x) { return float2x2(roundNearest(x[0]), roundNearest(x[1])); }
+	float1x1 roundNearest(float1x1 x) { return float1x1(roundNearest(x[0])); }
 #endif
 
-#define BOTTOM_UP_TEXTURE_COORDINATES_DEFINED 1
 
 #endif

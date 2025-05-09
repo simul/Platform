@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
 option(PLATFORM_SUPPORT_VULKAN_MULTIVIEW "" OFF)
 option(PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR "" OFF)
@@ -8,17 +8,17 @@ file(GLOB SOURCES "*.cpp" )
 file(GLOB HEADERS "*.h" )
  
 file(GLOB SHADERS
-	"${SIMUL_PLATFORM_DIR}/Shaders/SFX/*.sfx"
+	"${SIMUL_PLATFORM_DIR}/Vulkan/Sfx/*.sfx"
 )
-
 file(GLOB SHADER_INCLUDES
-	"${SIMUL_PLATFORM_DIR}/Shaders/SL/*.sl"
 	"${SIMUL_PLATFORM_DIR}/Vulkan/Sfx/*.sl"
 )
-
 file(GLOB SHADER_DEFS
-	"${CMAKE_CURRENT_SOURCE_DIR}/Sfx/*.json" 
+	"${SIMUL_PLATFORM_DIR}/Vulkan/Sfx/*.json" 
 )
+
+source_group("Shaders" FILES  ${SHADERS} )
+source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 
 set(VK_DEFS SIMUL_VULKAN_DLL=1 VK_PROTOTYPES)
 set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_MULTIVIEW=$<BOOL:${PLATFORM_SUPPORT_VULKAN_MULTIVIEW}>)
@@ -36,9 +36,9 @@ endif()
 # Add in vk_mem_alloc.h
 set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include/vk_mem_alloc.h")
 
+add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
-	add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADER_DEFS} ${SHADER_INCLUDES} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-	
+	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
 	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
 	if(PLATFORM_WINDOWS)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
@@ -48,6 +48,7 @@ if(SIMUL_SOURCE_BUILD)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
 	endif()
 	
+	message("target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC \"${Vulkan_INCLUDE_DIR}\"")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 	# For parallel_hashmap

@@ -438,6 +438,8 @@ int main(int argc, char** argv)
 				sfxConfig.gatherBlueSyntax						=j["gatherBlueSyntax"];
 			if (j.count("gatherAlphaSyntax") > 0)
 				sfxConfig.gatherAlphaSyntax						=j["gatherAlphaSyntax"];
+			if (j.count("interlockedOpSyntax") > 0)
+				sfxConfig.interlockedOpSyntax					=j["interlockedOpSyntax"];
 			if (j.count("preamble")>0)
 				sfxConfig.preamble								=j["preamble"];
 			if (j.count("optimizationLevelOption")>0)

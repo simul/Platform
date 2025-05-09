@@ -115,6 +115,7 @@ struct SfxConfig
 	std::string gatherGreenSyntax;
 	std::string gatherBlueSyntax;
 	std::string gatherAlphaSyntax;
+	std::string interlockedOpSyntax;
 	//! Generic preamble
 	std::string preamble;
 	std::string optimizationLevelOption;

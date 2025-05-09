@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
 file(GLOB CMAKE "*.cmake" )
 
@@ -39,12 +39,14 @@ endif()
 
 if(PLATFORM_SUPPORT_D3D12)
 	if(${SAMPLE_API} MATCHES "SAMPLE_USE_D3D12")
+		target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/DirectX12")
 		target_link_libraries(Sample_MT PRIVATE SimulDirectX12_MT)
 	endif()
 endif()
 
 if(PLATFORM_SUPPORT_VULKAN)
 	if(${SAMPLE_API} MATCHES "SAMPLE_USE_VULKAN")
+		target_include_directories(Sample_MT PRIVATE "${CMAKE_SOURCE_DIR}/Platform/External/VulkanMemoryAllocator/include")
 		target_link_libraries(Sample_MT PRIVATE SimulVulkan_MT)
 	endif()
 endif()

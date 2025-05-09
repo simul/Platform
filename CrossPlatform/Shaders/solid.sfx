@@ -21,7 +21,6 @@ uniform Texture2D screenspaceShadowTexture;
 uniform Texture2D loss2dTexture;
 uniform Texture3D inscatterVolumeTexture;
 
-#define SIMUL_TRUESKY 0
 uniform StructuredBuffer<Light> lights;
 
 float GetRoughness(vec4 combinedLookup)
@@ -365,141 +364,6 @@ shader vec4 PS_DebugNormal_VertexNormals(vertexOutput IN) : SV_TARGET
 	return DebugNormal(IN, 3);
 }
 
-#if SIMUL_TRUESKY
-/// A function that applies atmospherics and cloud visibility to a pixel of a transparent object.
-void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
-				,vec4 clip_pos
-				,vec3 view
-				,TextureCube nearFarTextureCube
-				,Texture2D shadowTexture
-				,vec4 depthToLinFadeDistParams)
-{
-	clip_pos/=clip_pos.w;
-	// we only care about view.z, i.e. the third element of the vector.
-	// so only dot-product the third row of invViewProj, with clip_pos.
-
-	vec4 nearFarCloud			=texture_wrap_lod(nearFarTextureCube	,view		,0);
-
-	// translate from depth to linear distance.
-	DepthInterpretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=(reverseDepth!=0);
-	float dist					=depthToLinearDistance(clip_pos.z,depthInterpretationStruct);
-	vec3 vp						=viewPosition / 1000.0 + vec3(0, 0, originRadiusKm);
-	vec3 pt						=vp + (dist * maxFadeDistanceKm * view);
-	// Transmittance and Inscatter from air:
-	vec3 transmittance;
-	vec3 insc = GetSkyRadianceToPoint(transmittanceTexture,
-										scatteringTexture,
-										singleMieScattering,
-										vp,
-										pt,
-										0.0,
-										lights[0].direction,
-										transmittance);
-	
-	// Visibility due to clouds:
-	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (0.001));//(nearFarCloud.x-nearFarCloud.y));
-	insc						*=visibility;
-	
-	// loss due to air (alpha is visilibity due to cloud occlusion).
-	loss						=vec4(transmittance,visibility);
-	add							=insc.rgb;
-}
-#else
-/// A function that applies atmospherics and cloud visibility to a pixel of a transparent object.
-void AtmosphericsAndCloudOcclusion(out vec4 loss,out vec3 add
-				,vec4 clip_pos
-				,vec3 view
-				,TextureCube nearFarTextureCube
-				,Texture2D loss2dTexture
-				,Texture2D shadowTexture
-				,Texture3D inscatterVolumeTexture
-				,vec4 depthToLinFadeDistParams)
-{
-	clip_pos/=clip_pos.w;
-	// we only care about view.z, i.e. the third element of the vector.
-	// so only dot-product the third row of invViewProj, with clip_pos.
-	float sine					=normalize(view).z;
-	vec2 texCoords				=0.5*vec2(clip_pos.x+1.0,1.0-clip_pos.y);
-
-	vec4 nearFarCloud			=texture_wrap_lod(nearFarTextureCube	,view		,0);
-
-	// translate from depth to linear distance.
-	DepthInterpretationStruct depthInterpretationStruct;
-	depthInterpretationStruct.depthToLinFadeDistParams=depthToLinFadeDistParams;
-	depthInterpretationStruct.reverseDepth=(reverseDepth!=0);
-	float dist					=depthToLinearDistance(clip_pos.z	,depthInterpretationStruct);
-	float dist_rt				=pow(dist,0.5);
-	vec3 worldspaceVolumeTexCoords	=vec3(atan2(view.x,view.y)/(2.0*SIMUL_PI_F),0.5*(1.0+2.0*asin(sine)/SIMUL_PI_F),dist_rt);
-	
-	// Inscatter from air:
-	vec4 insc						=texture_3d_wmc_lod(inscatterVolumeTexture,worldspaceVolumeTexCoords,0);
-	
-	vec2 loss_texc				=vec2(dist_rt,0.5*(1.f-sine));
-
-	// Visibility due to clouds:
-	float visibility			=1.0-saturate((dist-nearFarCloud.w) / (0.001));//(nearFarCloud.x-nearFarCloud.y));
-
-	insc.rgb					*=visibility;
-	// loss due to air (alpha is visilibity due to cloud occlusion).
-	loss						=vec4(texture_clamp_lod(loss2dTexture,loss_texc,0).rgb,visibility);
-	add							=insc.rgb;
-}
-#endif
-
-#if SIMUL_TRUESKY
-/// An example shader for rendering transparent objects.
-shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
-{
-	vec3 normal	=normalize(IN.normal);
-// Here is whatever colour your shader would normally generate in the absence of atmospherics:
-	vec4 c = Solid(IN);
-
-// Now we calculate the atmospheric effects:
-	vec4 loss;
-	vec3 add;
-// We need clip_pos and view direction (i.e. the direction in model xyz to the pixel from the camera).
-	AtmosphericsAndCloudOcclusion(loss,add
-				,IN.clip_pos
-				,IN.view
-				,nearFarTextureCube
-				,shadowTexture
-				,depthToLinFadeDistParams
-				);
-// Loss is multiplied over the original colour, and inscatter is added:
-	c.rgba*=loss.rgba;
-	c.rgb+=add;
-	return c;
-}
-#else
-/// An example shader for rendering transparent objects.
-shader vec4 PS_Transparent(vertexOutput IN) : SV_TARGET
-{
-	vec3 normal	=normalize(IN.normal);
-// Here is whatever colour your shader would normally generate in the absence of atmospherics:
-	vec4 c = Solid(IN);
-
-// Now we calculate the atmospheric effects:
-	vec4 loss;
-	vec3 add;
-// We need clip_pos and view direction (i.e. the direction in model xyz to the pixel from the camera).
-	AtmosphericsAndCloudOcclusion(loss,add
-				,IN.clip_pos
-				,IN.view
-				,nearFarTextureCube
-				,loss2dTexture
-				,shadowTexture
-				,inscatterVolumeTexture
-				,depthToLinFadeDistParams
-				);
-// Loss is multiplied over the original colour, and inscatter is added:
-	c.rgba*=loss.rgba;
-	c.rgb+=add;
-	return c;
-}
-#endif
-
 VertexShader vs_solid = CompileShader(vs_4_0, VS_Solid());
 PixelShader ps_solid = CompileShader(ps_4_0, PS_Solid());
 
@@ -508,9 +372,10 @@ PixelShader ps_solid_albedo_only = CompileShader(ps_4_0, PS_Solid_AlbedoOnly());
 PixelShader ps_debug_normal_unreal = CompileShader(ps_4_0, PS_DebugNormal_Unreal()); //Unreal-basis normal view
 PixelShader ps_debug_normal_unity = CompileShader(ps_4_0, PS_DebugNormal_Unity()); //Unity-basis normal view
 PixelShader ps_debug_normal_vertexnormals = CompileShader(ps_4_0, PS_DebugNormal_VertexNormals()); //Vertex normals
+
 technique solid
 {
-	pass base 
+	pass reverse_depth
 	{
 		SetRasterizerState(RenderNoCull);
 		SetDepthStencilState(ReverseDepth,0);
@@ -519,18 +384,13 @@ technique solid
 		SetGeometryShader(NULL);
 		SetPixelShader(ps_solid);
 	}
-}
-
-
-technique transparent
-{
-	pass base 
+	pass forward_depth
 	{
-		SetRasterizerState(RenderBackfaceCull);
-		//SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
-		SetBlendState(AlphaBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Solid()));
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(ForwardDepth,0);
+		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
+		SetVertexShader(vs_solid);
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Transparent()));
+		SetPixelShader(ps_solid);
 	}
 }

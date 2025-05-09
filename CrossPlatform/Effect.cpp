@@ -1090,8 +1090,13 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	string group_name,tech_name,pass_name;
 	int shaderCount=0;
 	bool platformChecked = false;
-	const std::regex re_resources("(\\b[a-z]):\\(([^\\)]*)\\)");
-	const std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
+	static const std::regex re_resources("(\\b[a-z]):\\(([^\\)]*)\\)");
+	static const std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
+	static const std::string var_name_regex = "[a-z0-9A-Z_]+";
+	static const std::string var_val_regex = "[a-z0-9A-Z]+";
+	static const std::string var_combo_regex = "("s + var_name_regex + ")\\s*=\\s*(" + var_name_regex + ")";
+	static const std::string variant_regex = "(?:\\s*variant:\\(" + var_combo_regex + "(?:\\s*,\\s*" + var_combo_regex + ")*\\))?"s; //" + var_combo_regex+"(?:,"+var_combo_regex+")*
+	static const std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 	while(next>=0)
 	{
 		#ifdef UNIX
@@ -1483,11 +1488,6 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					uses=line.substr(cm+1,line.length()-cm-1);
 				platform::core::ClipWhitespace(uses);
 				platform::core::ClipWhitespace(type);
-				const std::string var_name_regex = "[a-z0-9A-Z_]+";
-				const std::string var_val_regex = "[a-z0-9A-Z]+";
-				const std::string var_combo_regex = "("s + var_name_regex + ")\\s*=\\s*(" + var_name_regex + ")";
-				const std::string variant_regex = "(?:\\s*variant:\\(" + var_combo_regex + "(?:\\s*,\\s*" + var_combo_regex + ")*\\))?"s; //" + var_combo_regex+"(?:,"+var_combo_regex+")*
-				const std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 				std::smatch fe_smatch;
 				
 				std::smatch sm;

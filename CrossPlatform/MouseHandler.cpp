@@ -114,17 +114,17 @@ void MouseHandler::getMousePosition(int &x,int &y) const
 
 bool MouseHandler::getLeftButton() const
 {
-	return (mouseButtons==core::LeftButton);
+	return (mouseButtons==core::MouseButtons::LeftButton);
 }
 
 bool MouseHandler::getRightButton() const
 {
-	return (mouseButtons==core::RightButton);
+	return (mouseButtons==core::MouseButtons::RightButton);
 }
 
 bool MouseHandler::getMiddleButton() const
 {
-	return (mouseButtons==core::MiddleButton);
+	return (mouseButtons==core::MouseButtons::MiddleButton);
 }
 
 void MouseHandler::mouseWheel(int delta,int modifiers)
@@ -212,7 +212,7 @@ void MouseHandler::Update(float time_step)
 			up_down_spd+=cam_spd*introduce;
 		if(move_down)
 			up_down_spd-=cam_spd*introduce;
-		if((mouseButtons&core::MiddleButton)||mouseButtons==(core::LeftButton|core::RightButton))
+		if (mouseButtons == core::MouseButtons::MiddleButton || mouseButtons == (core::MouseButtons::LeftButton | core::MouseButtons::RightButton))
 		{
 			static float slide_spd=100.f;
 			right_left_spd	+=slide_spd*fDeltaX*cam_spd*introduce;
@@ -236,7 +236,7 @@ void MouseHandler::Update(float time_step)
 		y_rotate*=retain;
 		z_rotate*=retain;
 		float tilt = y_vertical ? asin(camera->Orientation.Tx().y) : asin(camera->Orientation.Tx().z);
-		if(mouseButtons==core::RightButton)
+		if(mouseButtons == core::MouseButtons::RightButton)
 		{
 			if(!alt_down)
 			{
@@ -256,7 +256,7 @@ void MouseHandler::Update(float time_step)
 				}
 			}
 		}
-		if(mouseButtons==core::MiddleButton)
+		if(mouseButtons == core::MouseButtons::MiddleButton)
 		{
 			//z_rotate-=fDeltaX*introduce;
 		}
@@ -344,7 +344,7 @@ void MouseHandler::Update(float time_step)
 			up_down_spd += cam_spd * introduce;
 		if (move_down)
 			up_down_spd -= cam_spd * introduce;
-		if ((mouseButtons & core::MiddleButton) || mouseButtons == (core::LeftButton | core::RightButton))
+		if (mouseButtons == core::MouseButtons::MiddleButton || mouseButtons == (core::MouseButtons::LeftButton | core::MouseButtons::RightButton))
 		{
 			static float slide_spd = 100.f;
 			right_left_spd += slide_spd * fDeltaX * cam_spd * introduce;
@@ -393,7 +393,7 @@ void MouseHandler::Update(float time_step)
 		y_rotate *= retain;
 		z_rotate *= retain;
 		float tilt = y_vertical ? asin(camera->Orientation.Tx().y) : asin(camera->Orientation.Tx().z);
-		if (mouseButtons == core::RightButton)
+		if (mouseButtons == core::MouseButtons::RightButton)
 		{
 			if (!alt_down)
 			{
@@ -413,7 +413,7 @@ void MouseHandler::Update(float time_step)
 				}
 			}
 		}
-		if (mouseButtons == core::MiddleButton)
+		if (mouseButtons == core::MouseButtons::MiddleButton)
 		{
 			// z_rotate-=fDeltaX*introduce;
 		}
@@ -465,125 +465,149 @@ void MouseHandler::Update(float time_step)
 	lastTimeStep = time_step;
 }
 
-
-void MouseHandler::KeyboardProc(unsigned int nChar, bool bKeyDown, bool bAltDown)
+void MouseHandler::KeyboardProc(KeyboardModifiers modifiers, bool bKeyDown)
 {
-	if(bKeyDown)
+	switch (modifiers)
 	{
-		if(nChar==0x01000020||nChar==16)
-		{
-			shift_down=true;
-		}
-		if(nChar==18)
-		{
-			alt_down=true;
-		}
-		if(nChar==0x01000016||nChar==0x21)
-		{
-			move_up=true;
-			move_down=false;
-		}
-		if(nChar==0x01000017||nChar==0x22)
-		{
-			move_down=true;
-			move_up=false;
-		}
-		if(nChar=='w'||nChar=='W')
-		{
-			move_forward=true;
-			move_backward=false;
-		}
-		if(nChar=='s'||nChar=='S')
-		{
-			move_backward=true;
-			move_forward=false;
-		}
-		if(nChar=='a'||nChar=='A')
-		{
-			move_left=true;
-			move_right=false;
-		}
-		if(nChar=='d'||nChar=='D')
-		{
-			move_right=true;
-			move_left=false;
-		}
-		if (nChar == '5' )
-		{
-			return;
-		}
-		if(nChar==37) // arrow left
-		{
-			return;
-		}
-		if(nChar==39) // arrow right
-		{
-			return;
-		}
-		if(nChar==38) // arrow up
-		{
-			return;
-		}
-		if(nChar==40) // arrow down
-		{
-			return;
-		}
-		if (nChar == 32) // space
-		{
-			return;
-		}
+	case KeyboardModifiers::NoModifier:
+		break;
+	case KeyboardModifiers::Shift:
+		shift_down = bKeyDown;
+		break;
+	case KeyboardModifiers::Alt:
+		alt_down = bKeyDown;
+		break;
+	case KeyboardModifiers::Ctrl:
+		ctrl_down = bKeyDown;
+		break;
+	default:
+		break;
 	}
-	else
+}
+
+void MouseHandler::KeyboardProc(CameraMovements movements, bool bKeyDown)
+{
+	switch (movements)
 	{
-		if(nChar==18)
-		{
-			alt_down=false;
-		}
-		if(nChar==0x01000020||nChar==16)
-		{
-			shift_down=false;
-		}
-		if(nChar==0x01000016||nChar==0x21)
-		{
-			move_up=false;
-		}
-		if(nChar==0x01000017||nChar==0x22)
-		{
-			move_down=false;
-		}
-		if(nChar=='w'||nChar=='W')
-		{
-			move_forward=false;
-		}
-		if(nChar=='s'||nChar=='S')
-		{
-			move_backward=false;
-		}
-		if(nChar=='a'||nChar=='A')
-		{
-			move_left=false;
-		}
-		if(nChar=='d'||nChar=='D')
-		{
-			move_right=false;
-		}
-		if(nChar==37) // arrow left
-		{
-			step_rotate_x=-1;
-		}
-		if(nChar==39) // arrow right
-		{
-			step_rotate_x=1;
-		}
-		if(nChar==38) // arrow up
-		{
-			step_rotate_y=1;
-		}
-		if(nChar==40) // arrow down
-		{
-			step_rotate_y=-1;
-		}
+	case CameraMovements::None:
+	{
+		break;
 	}
-	if(updateViews)
+	case CameraMovements::Forward:
+	{
+		if (bKeyDown)
+		{
+			move_forward = true;
+			move_backward = false;
+		}
+		else
+		{
+			move_forward = false;
+		}
+		break;
+	}
+	case CameraMovements::Backward:
+	{
+		if (bKeyDown)
+		{
+			move_backward = true;
+			move_forward = false;
+		}
+		else
+		{
+			move_backward = false;
+		}
+		break;
+	}
+	case CameraMovements::Left:
+	{
+		if (bKeyDown)
+		{
+			move_left = true;
+			move_right = false;
+		}
+		else
+		{
+			move_left = false;
+		}
+		break;
+	}
+	case CameraMovements::Right:
+	{
+		if (bKeyDown)
+		{
+			move_right = true;
+			move_left = false;
+		}
+		else
+		{
+			move_right = false;
+		}
+		break;
+	}
+	case CameraMovements::Up:
+	{
+		if (bKeyDown)
+		{
+			move_up = true;
+			move_down = false;
+		}
+		else
+		{
+			move_up = false;
+		}
+		break;
+	}
+	case CameraMovements::Down:
+	{	
+		if (bKeyDown)
+		{
+			move_down = true;
+			move_up = false;
+		}
+		else
+		{
+			move_down = false;
+		}
+		break;
+	}
+	case CameraMovements::StepRotateXPos:
+	{
+		if (bKeyDown)
+			step_rotate_x = 1;
+		else
+			step_rotate_x = 0;
+
+		break;
+	}
+	case CameraMovements::StepRotateXNeg:
+	{
+		if (bKeyDown)
+			step_rotate_x = -1;
+		else
+			step_rotate_x = 0;
+		break;
+	}
+	case CameraMovements::StepRotateYPos:
+	{
+		if (bKeyDown)
+			step_rotate_y = 1;
+		else
+			step_rotate_y = 0;
+		break;
+	}
+	case CameraMovements::StepRotateYNeg:
+	{
+		if (bKeyDown)
+			step_rotate_y = -1;
+		else
+			step_rotate_y = 0;
+		break;
+	}
+	default:
+		break;
+	}
+
+	if (updateViews)
 		updateViews();
 }

@@ -5,6 +5,7 @@
 #include "SimulDirectXHeader.h"
 #include "Heap.h"
 
+#pragma warning(push)
 #pragma warning(disable:4251)
 
 namespace platform
@@ -14,6 +15,7 @@ namespace platform
 		class EffectPass;
 		class Effect;
 		class RenderPlatform;
+
 		//! DirectX12 structured buffer class
 		class PlatformStructuredBuffer:public crossplatform::PlatformStructuredBuffer
 		{
@@ -88,3 +90,5 @@ namespace platform
 		};
 	}
 }
+
+#pragma warning(pop)

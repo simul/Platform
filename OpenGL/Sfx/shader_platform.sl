@@ -5,6 +5,10 @@
 
 #ifndef __cplusplus
 
+#ifndef BOTTOM_UP_TEXTURE_COORDINATES
+#define BOTTOM_UP_TEXTURE_COORDINATES 1
+#endif
+
 #define USE_D3D_REF_MODE 0
 
 // This should be passed to the compiler, do we use it? (gaussian.sfx)

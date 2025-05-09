@@ -440,6 +440,8 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 }
 static std::map<std::string,std::string> useCompilerPath;
 
+static bool checkedCompilerPath=false;
+
 extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig,const SfxOptions &sfxOptions)
 {
 	std::string usePath="";
@@ -470,7 +472,6 @@ extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig,const SfxOptions &s
 		}
 	}
 }
-
 wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance,const SfxConfig &sfxConfig,const  SfxOptions &sfxOptions,wstring targetDir,wstring outputFile,
 							wstring generatedSourceFilename,ShaderType t, PixelOutputFormat pixelOutputFormat)
 {
@@ -658,7 +659,7 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	(*log)<< str.c_str();
 	return has_errors;
 }
-
+#pragma optimize("",off)
 bool IsShaderUnchanged(std::string sourceFilename,std::string outputFilename,const std::string &src)
 {
 	if(!std::filesystem::exists(outputFilename))
@@ -676,7 +677,6 @@ bool IsShaderUnchanged(std::string sourceFilename,std::string outputFilename,con
 		return false;
 	return true;
 }
-
 
 int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		,const string &sourceFile
@@ -870,7 +870,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	string src = preamble;
 	src += sharedSource;
 	src+=shaderInstance->m_augmentedSource;
-	ReplaceRegexes(src, sfxConfig.replace);
+	
 	const char *strSrc=src.c_str();
 
 	wstring targetDir=StringToWString(GetDirectoryFromFilename(targetFile));
@@ -890,9 +890,9 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	if(!unchanged)
 	{
 #ifdef _MSC_VER
-	ofstream ofs(generatedSourceFilename.c_str());
+		ofstream ofs(generatedSourceFilename.c_str());
 #else
-	ofstream ofs(WStringToUtf8(generatedSourceFilename).c_str());
+		ofstream ofs(WStringToUtf8(generatedSourceFilename).c_str());
 #endif
 	ofs.write(strSrc, strlen(strSrc));
 	ofs.close();
@@ -940,7 +940,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		sfxOptions,
 		targetDir,
 		outputFile,
-		generatedSourceFilename,
+			generatedSourceFilename,
 		t,
 		pixelOutputFormat
 	);
@@ -949,15 +949,15 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	if (compile_command.empty())
 	{
 		if(sfxOptions.verbose)
-			std::cout<<WStringToUtf8(generatedSourceFilename).c_str()<<"\n";
+				std::cout<<WStringToUtf8(generatedSourceFilename).c_str()<<"\n";
 		// But let's in that case, wrap up the GENERATED SOURCE in sfxb:
 		if (sfxOptions.wrapOutput)
 		{
 			//concatenate
 #ifdef _MSC_VER
-			std::ifstream if_c(generatedSourceFilename.c_str(), std::ios_base::binary);
+				std::ifstream if_c(generatedSourceFilename.c_str(), std::ios_base::binary);
 #else
-			std::ifstream if_c(WStringToUtf8(generatedSourceFilename).c_str(), std::ios_base::binary);
+				std::ifstream if_c(WStringToUtf8(generatedSourceFilename).c_str(), std::ios_base::binary);
 #endif
 			if(!if_c.good())
 			{
@@ -971,7 +971,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 			if(!sz)
 			{
 				SFX_BREAK("Empty output shader ");
-				std::cerr<<"Empty output shader "<<WStringToUtf8(generatedSourceFilename)<<"\n";
+					std::cerr<<"Empty output shader "<<WStringToUtf8(generatedSourceFilename)<<"\n";
 				exit(1001);
 			}
 			binaryMap[sbf] = std::make_tuple(startp, sz);
@@ -993,8 +993,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		bool write_log=false;
 		if(!unchanged)
 		{
-		res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
-			bool write_log=false;
+			res=RunDOSCommand(compile_command.c_str(),wd,log,sfxConfig,cc);
 			const string &log_str=log.str();
 			if (sfxOptions.verbose)
 			{
