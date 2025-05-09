@@ -1018,10 +1018,14 @@ void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk:
 	SIMUL_VK_CHECK((vk::Result)vmaCreateImage(allocationInfo.allocator, &_imageCreateInfo, &allocationCI, &_image, &allocationInfo.allocation, &allocationInfo.allocationInfo));
 	image = _image;
 
-	if (name)
+	if (name&&image)
 	{
 		SetVulkanName(this, image, name);
 		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
+	}
+	else
+	{
+		PLATFORM_WARN("Failed to create texture {}",name);
 	}
 }
 

@@ -352,6 +352,8 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::TextureView textureView
 
 vk::ImageView *Texture::CreateVulkanImageView(crossplatform::TextureView textureView)
 {
+	if(!mImage)
+		return nullptr;
 	// TODO: Should we override aspect if the texture is a depth stencil? - AJR
 	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.elements.subresourceRange.aspectMask);
 	const uint8_t &startMip = textureView.elements.subresourceRange.baseMipLevel;
