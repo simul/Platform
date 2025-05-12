@@ -527,6 +527,7 @@ namespace platform
 			void ScheduleRecompileEffects(const std::vector<std::string>& effect_names,std::function <void()> f);
 
 		protected:
+			virtual void Defrag(GraphicsDeviceContext &deviceContext){}
 			struct EffectRecompile
 			{
 				std::string effect_name;

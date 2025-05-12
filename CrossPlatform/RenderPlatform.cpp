@@ -701,6 +701,7 @@ void RenderPlatform::ContextFrameBegin(GraphicsDeviceContext &deviceContext)
 {
 	if (!frame_started)
 		BeginFrame();
+	//Defrag(deviceContext);
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
 		gpuProfiler->StartFrame(deviceContext);

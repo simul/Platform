@@ -86,6 +86,11 @@ void EffectPass::Apply(crossplatform::DeviceContext& deviceContext, bool asCompu
 
 void EffectPass::ApplyContextState(crossplatform::DeviceContext& deviceContext, vk::DescriptorSet& descriptorSet)
 {
+	if(!descriptorSet)
+	{
+		SIMUL_CERR << "Descriptor set is null.\n";
+		return;
+	}
 	crossplatform::ContextState* cs = &deviceContext.contextState;
 	vulkan::Shader *c = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_COMPUTE];
 	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;

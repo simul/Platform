@@ -38,11 +38,23 @@ namespace platform
 		extern bool debugMarkerSupported;
 		class Material;
 		class Texture;
-
+		
+		class SIMUL_VULKAN_EXPORT MemoryInterface: public core::MemoryInterface
+		{
+			VmaAllocator &mGPUAllocator;
+		public:
+			MemoryInterface(VmaAllocator &alloc):mGPUAllocator(alloc){}
+			size_t GetCurrentVideoBytesAllocated() const override;
+			size_t GetTotalVideoBytesAllocated() const override;
+			size_t GetTotalVideoBytesFreed() const override;
+			void Deallocate(void* ) override{};
+		};
 
 		//! Vulkan renderplatform implementation
 		class SIMUL_VULKAN_EXPORT RenderPlatform:public crossplatform::RenderPlatform
 		{
+			// No external memory interface, and this is read-only.
+			MemoryInterface vulkanMemoryInterface;
 		public:
 						RenderPlatform();
 			virtual		~RenderPlatform() override;
@@ -51,6 +63,7 @@ namespace platform
 
 			vk::Instance *AsVulkanInstance() override;
 			vk::PhysicalDevice *GetVulkanGPU();
+
 			uint32_t GetInstanceAPIVersion();
 			uint32_t GetPhysicalDeviceAPIVersion();
 			bool CheckInstanceExtension(const std::string& instanceExtensionName);
@@ -165,7 +178,6 @@ namespace platform
 			
 			void									InsertFences(crossplatform::DeviceContext& deviceContext);
 
-			crossplatform::Material*				CreateMaterial();
 			crossplatform::Framebuffer*				CreateFramebuffer(const char *name=nullptr) override;
 			crossplatform::SamplerState*			CreateSamplerState(crossplatform::SamplerStateDesc *) override;
 			crossplatform::Effect*					CreateEffect() override;
@@ -236,8 +248,9 @@ namespace platform
 			static vk::Extent2D						GetTargetAndViewportExtext2D(const crossplatform::TargetsAndViewport* targetsAndViewport);
 			
 			uint32_t								FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFlags properties);
-			void									CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const char *name);
-			void									CreateVulkanImage(vk::ImageCreateInfo& imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name);
+			void									CreateVulkanBuffer(crossplatform::Resource *res,vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const char *name);
+			void									CreateVulkanImage(crossplatform::Resource *res,vk::ImageCreateInfo& imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name);
+			void									ReallocVulkanImage(vk::ImageCreateInfo& imageCreateInfo, VmaAllocation &dstAllocation, vk::Image &image);
 			void									CreateVulkanRenderpass(crossplatform::DeviceContext& deviceContext, vk::RenderPass &renderPass
 																			,int num_colour,const crossplatform::PixelFormat *pixelFormats
 																			,crossplatform::PixelFormat depthFormat=crossplatform::PixelFormat::UNKNOWN
@@ -279,6 +292,7 @@ namespace platform
 			}
 
 		protected:
+			void Defrag(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			void CreateDescriptorPool(int g, int countPerFrame);
 			vk::DescriptorPool mDescriptorPools[3];
 			vk::DescriptorSetLayout descriptorSetLayouts[3];
@@ -300,7 +314,7 @@ namespace platform
 
 			vk::SamplerYcbcrConversionInfo samplerYcbcrConversionInfo;
 
-			crossplatform::Texture*					createTexture() override;
+			crossplatform::Texture*							createTexture() override;
 			vk::Instance*									vulkanInstance=nullptr;
 			vk::PhysicalDevice*								vulkanGpu=nullptr;
 			vk::Device*										vulkanDevice=nullptr;
@@ -322,8 +336,8 @@ namespace platform
 
 			vk::DeviceSize mCPUPreferredBlockSize = 0;
 			vk::DeviceSize mGPUPreferredBlockSize = 0;
-			VmaAllocator mCPUAllocator;
-			VmaAllocator mGPUAllocator;
+			VmaAllocator mCPUAllocator = 0;
+			VmaAllocator mGPUAllocator = 0;
 
 			//! Vulkan-specific apply resource group, called from ApplyContextState().
 			vk::DescriptorSet *GetDescriptorSetForResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g);

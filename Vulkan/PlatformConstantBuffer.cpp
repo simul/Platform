@@ -48,7 +48,7 @@ void PlatformConstantBuffer::RestoreDeviceObjects(crossplatform::RenderPlatform*
 		vrp->PushToReleaseManager(mBuffers[i], &(mAllocationInfo[i]));
 
 		std::string name = "ConstantBuffer " + std::to_string(i);
-		vrp->CreateVulkanBuffer(mBufferSize, vk::BufferUsageFlagBits::eUniformBuffer, 
+		vrp->CreateVulkanBuffer(nullptr,mBufferSize, vk::BufferUsageFlagBits::eUniformBuffer, 
 								vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
 								mBuffers[i], mAllocationInfo[i], name.c_str());
 		if(addr)
@@ -132,7 +132,6 @@ void PlatformConstantBuffer::ActualApply(crossplatform::DeviceContext &deviceCon
 	last_offset = (kBufferAlign * mSlots) * mCurApplyCount;	
 	lastBuffer = &mBuffers[currentFrameIndex];
 	const AllocationInfo &_allocationInfo = mAllocationInfo[currentFrameIndex];
-
 	uint8_t *pData = nullptr;
 	vmaMapMemory(_allocationInfo.allocator, _allocationInfo.allocation, (void **)&pData);
 	if(pData)

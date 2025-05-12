@@ -105,6 +105,8 @@ namespace platform
 			void			AssumeLayout(vk::ImageLayout imageLayout);
 			/// Get the tracked current layout.
 			vk::ImageLayout GetLayout(crossplatform::DeviceContext& deviceContext, const crossplatform::SubresourceRange& subresourceRange);
+			
+			void			Reallocate(crossplatform::GraphicsDeviceContext& deviceContext,const void *src,const void *dest) override;
 
 		private:
 			void			SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, vk::ImageAspectFlags aspectMask
@@ -134,7 +136,7 @@ namespace platform
 			std::vector<std::vector<LoadedTexture>>			mLoadedTextures; //By mip, then by layer.
 			int												mNumSamples = 1;
 			vk::ImageLayout									mExternalLayout;
-			
+			vk::ImageCreateInfo imageCreateInfo; //!< Stored for defragmentation purposes.
 		};
 	}
 
