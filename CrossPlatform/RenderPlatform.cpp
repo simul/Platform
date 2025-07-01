@@ -1041,8 +1041,102 @@ bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int 
 	uint64_t texelSize = elementCount * elementSize;
 	uint64_t size = texelCount * texelSize;
 
-	std::vector<uint8_t> imageData;
-	imageData.reserve(texelCount * elementCount);
+	// Check if we should save as HDR format
+	std::string filenameStr(filename);
+	bool saveAsHDR = (filenameStr.find(".hdr") != std::string::npos);
+
+	if (saveAsHDR)
+	{
+		// For HDR format, we need to preserve floating point data
+		std::vector<float> hdrData;
+		hdrData.reserve(texelCount * 3); // RGB only for HDR
+
+		if (data)
+		{
+			for (uint64_t i = 0; i < size; i += elementSize)
+			{
+				float floatValue = 0.0f;
+				void* _ptr = (void*)((uint64_t)data + i);
+
+				switch (type)
+				{
+					using namespace crossplatform;
+					case PixelFormatType::DOUBLE:
+					{
+						floatValue = static_cast<float>(*(double*)_ptr);
+						break;
+					}
+					case PixelFormatType::FLOAT:
+					{
+						floatValue = *(float*)_ptr;
+						break;
+					}
+					case PixelFormatType::HALF:
+					{
+						floatValue = math::ToFloat32(*(uint16_t*)_ptr);
+						break;
+					}
+					case PixelFormatType::UINT:
+					{
+						uint32_t value = *(uint32_t*)_ptr;
+						floatValue = static_cast<float>(value) / static_cast<float>(UINT32_MAX);
+						break;
+					}
+					case PixelFormatType::USHORT:
+					{
+						uint16_t value = *(uint16_t*)_ptr;
+						floatValue = static_cast<float>(value) / static_cast<float>(UINT16_MAX);
+						break;
+					}
+					case PixelFormatType::UCHAR:
+					{
+						uint8_t value = *(uint8_t*)_ptr;
+						floatValue = static_cast<float>(value) / 255.0f;
+						break;
+					}
+					case PixelFormatType::INT:
+					{
+						int32_t value = std::max(0, *(int32_t*)_ptr);
+						floatValue = static_cast<float>(value) / static_cast<float>(INT32_MAX);
+						break;
+					}
+					case PixelFormatType::SHORT:
+					{
+						int16_t value = std::max<int16_t>(0, *(int16_t*)_ptr);
+						floatValue = static_cast<float>(value) / static_cast<float>(INT16_MAX);
+						break;
+					}
+					case PixelFormatType::CHAR:
+					{
+						int8_t value = std::max<int8_t>(0, *(int8_t*)_ptr);
+						floatValue = static_cast<float>(value) / static_cast<float>(INT8_MAX);
+						break;
+					}
+				}
+
+				// For HDR, we only store RGB (skip alpha if present)
+				uint64_t componentIndex = (i / elementSize) % elementCount;
+				if (componentIndex < 3) // R, G, B only
+				{
+					hdrData.push_back(floatValue);
+				}
+			}
+		}
+
+		// Write HDR file using stb_image_write
+		int res = stbi_write_hdr(filename, width, height, 3, hdrData.data());
+		if (res != 1)
+		{
+			SIMUL_BREAK_ONCE("Failed to save HDR data to disk.");
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		// Original PNG saving code
+		std::vector<uint8_t> imageData;
+		imageData.reserve(texelCount * elementCount);
 
 	if (data)
 	{
@@ -1111,13 +1205,14 @@ bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int 
 		}
 	}
 
-	int res = stbi_write_png(filename, width, height, (int)elementCount, imageData.data(), (int)(elementCount * width));
-	if (res != 1)
-	{
-		SIMUL_BREAK_ONCE("Failed to save screenshot data to disk.");
-		return false;
-	}
-	return true;
+		int res = stbi_write_png(filename, width, height, (int)elementCount, imageData.data(), (int)(elementCount * width));
+		if (res != 1)
+		{
+			SIMUL_BREAK_ONCE("Failed to save screenshot data to disk.");
+			return false;
+		}
+		return true;
+	} // End of else block
 }
 
 void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, vec3 endp, vec4 colour,float width)

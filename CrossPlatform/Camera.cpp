@@ -482,6 +482,103 @@ void platform::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bo
 		}
 	memcpy(mat4x4,ivp_matrices[combo][face],sizeof(float)*16);
 }
+
+void MakeCubeInvViewProjMatricesForAxesStandard(platform::math::Matrix4x4 mat[], bool ReverseDepth, bool ReverseDirection, AxesStandard axesStandard)
+{
+	static math::Matrix4x4 view, proj;
+	proj = crossplatform::Camera::MakeDepthReversedProjectionMatrix(SIMUL_PI_F/2.f, SIMUL_PI_F/2.f, 1.0f, 0.0f);
+
+	// Define face mappings for different coordinate systems
+	int faceMapping[6];
+
+	switch (axesStandard)
+	{
+	case AxesStandard::OpenGL: // Y vertical, right-handed
+		// OpenGL: +X=right, +Y=up, +Z=towards viewer
+		// Engineering: +X=right, +Y=forward, +Z=up
+		// Face mapping: swap Y and Z axes
+		faceMapping[0] = 0; // +X stays +X
+		faceMapping[1] = 1; // -X stays -X
+		faceMapping[2] = 4; // +Y -> +Z
+		faceMapping[3] = 5; // -Y -> -Z
+		faceMapping[4] = 3; // +Z -> -Y
+		faceMapping[5] = 2; // -Z -> +Y
+		break;
+
+	case AxesStandard::Unreal: // Z vertical, left-handed
+		// Unreal: +X=forward, +Y=right, +Z=up
+		// Engineering: +X=right, +Y=forward, +Z=up
+		// Face mapping: swap X and Y axes, flip handedness
+		faceMapping[0] = 4; // +X -> +Z (forward)
+		faceMapping[1] = 5; // -X -> -Z (back)
+		faceMapping[2] = 2; // +Y stays +Y (up)
+		faceMapping[3] = 3; // -Y stays -Y (down)
+		faceMapping[4] = 1; // +Z -> -X (left, flipped)
+		faceMapping[5] = 0; // -Z -> +X (right, flipped)
+		break;
+
+	case AxesStandard::Unity: // Y vertical, left-handed
+		// Unity: +X=right, +Y=up, +Z=forward
+		// Engineering: +X=right, +Y=forward, +Z=up
+		// Face mapping: swap Y and Z, flip Z
+		faceMapping[0] = 0; // +X stays +X
+		faceMapping[1] = 1; // -X stays -X
+		faceMapping[2] = 5; // +Y -> -Z (forward, flipped)
+		faceMapping[3] = 4; // -Y -> +Z (back, flipped)
+		faceMapping[4] = 2; // +Z -> +Y (up)
+		faceMapping[5] = 3; // -Z -> -Y (down)
+		break;
+
+	default: // Engineering or unknown
+		for (int j = 0; j < 6; j++) faceMapping[j] = j;
+		break;
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		// Get the Engineering view matrix for the mapped face
+		int mappedFace = faceMapping[i];
+		GetCubeMatrix((float*)&view, mappedFace, ReverseDepth, ReverseDirection);
+
+		// Calculate inverse view-projection matrix
+		MakeInvViewProjMatrix((float*)&mat[i], view, proj);
+	}
+}
+
+void platform::crossplatform::GetCubeInvViewProjMatrix(float *mat4x4,int face,bool ReverseDepth,bool ReverseDirection,AxesStandard axesStandard)
+{
+	// For Engineering standard, use the original function
+	if (axesStandard == AxesStandard::Engineering)
+	{
+		GetCubeInvViewProjMatrix(mat4x4, face, ReverseDepth, ReverseDirection);
+		return;
+	}
+
+	// Static cache for different axes standards and combinations
+	static bool init[4][4] = {{false,false,false,false},{false,false,false,false},{false,false,false,false},{false,false,false,false}};
+	int combo = (ReverseDepth?2:0) + (ReverseDirection?1:0);
+	int axesIndex = 0;
+
+	// Map axes standard to index
+	switch (axesStandard)
+	{
+	case AxesStandard::OpenGL: axesIndex = 1; break;
+	case AxesStandard::Unreal: axesIndex = 2; break;
+	case AxesStandard::Unity: axesIndex = 3; break;
+	default: axesIndex = 0; break; // Engineering
+	}
+
+	static math::Matrix4x4 ivp_matrices[4][4][6]; // [axesStandard][combo][face]
+
+	if (!init[axesIndex][combo])
+	{
+		// Generate matrices for this axes standard
+		MakeCubeInvViewProjMatricesForAxesStandard(ivp_matrices[axesIndex][combo], ReverseDepth, ReverseDirection, axesStandard);
+		init[axesIndex][combo] = true;
+	}
+
+	memcpy(mat4x4, ivp_matrices[axesIndex][combo][face], sizeof(float)*16);
+}
 math::Matrix4x4 platform::crossplatform::MakeOrthoProjectionMatrix(float left,
  	float right,
  	float bottom,

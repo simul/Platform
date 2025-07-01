@@ -21,6 +21,10 @@ namespace platform
 			Button4 = 8,
 			Button5 = 16,
 		};
+		MouseButtons operator|(MouseButtons a,MouseButtons b)
+		{
+			return (MouseButtons)((int)a|(int)b);
+		}
 		enum class KeyboardModifiers : uint16_t
 		{
 			NoModifier = 0,
