@@ -647,9 +647,6 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		if(sfxOptions->verbose)
 		{
 			char buffer[_MAX_PATH];
-			string wd="";
-			if(_getcwd(buffer,_MAX_PATH))
-				wd=string(buffer)+"/";
 			mkpath(sfxOptions->intermediateDirectory);
 			ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(file))+"_pp";
 			ofstream pps(ppfile);
