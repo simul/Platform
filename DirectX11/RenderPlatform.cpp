@@ -353,6 +353,13 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,in
 	pContext->Draw(num_verts,start_vert);
 }
 
+void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert)
+{
+	ApplyContextState(deviceContext);
+	ID3D11DeviceContext *pContext = deviceContext.asD3D11DeviceContext();
+	pContext->DrawInstanced(num_verts, num_instances, start_vert, base_instance);
+}
+
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext,int num_indices,int start_index,int base_vert)
 {
 	ApplyContextState(deviceContext);

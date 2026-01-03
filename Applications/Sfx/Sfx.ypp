@@ -2617,7 +2617,7 @@ statement : COMMENT
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
 		$$.strs[1]="";
 	}
-	| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
+	| for '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
 	{
 		string statement=$9.strs[0];
 		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+statement;

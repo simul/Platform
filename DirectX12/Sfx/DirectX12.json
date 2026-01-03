@@ -30,6 +30,7 @@
 		"vec4": "float4",
 		"char4": "snorm float4",
 		"uchar4": "unorm float4",
+		"uint64": "uint64_t",
 		"mat2": "float2x2",
 		"mat3": "float3x3",
 		"mat4": "float4x4",

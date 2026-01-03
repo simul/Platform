@@ -125,6 +125,11 @@ struct idOnly
 {
 	uint vertex_id	: SV_VertexId;
 };
+struct VertexIdInstancedId
+{
+	uint vertex_id		: SV_VertexId;
+	uint instance_id	: SV_InstanceID;
+};
 
 struct posVertexOutput
 {

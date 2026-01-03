@@ -850,7 +850,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		if (res != S_OK)
 		{
 			std::string err = static_cast<const char *>(error->GetBufferPointer());
-			SIMUL_BREAK("{}",err.c_str());
+			SIMUL_BREAK("{}",err);
 		}
 		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRootSignature)));
 
@@ -917,7 +917,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		if (res != S_OK)
 		{
 			std::string err = static_cast<const char *>(error->GetBufferPointer());
-			SIMUL_BREAK("{}",err.c_str());
+			SIMUL_BREAK("{}",err);
 		}
 		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRaytracingGlobalSignature)));
 		mGRaytracingGlobalSignature->SetName(L"Raytracing Global Root Signature");
@@ -1613,6 +1613,14 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext, i
 
 	ApplyContextState(deviceContext);
 	commandList->DrawInstanced(num_verts, 1, start_vert, 0);
+}
+
+void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert)
+{
+	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();
+
+	ApplyContextState(deviceContext);
+	commandList->DrawInstanced(num_verts, num_instances, start_vert, base_instance);
 }
 
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext, int num_indices, int start_index, int base_vert)

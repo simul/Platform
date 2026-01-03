@@ -674,7 +674,7 @@ crossplatform::SamplerStateDesc::Wrapping stringToWrapping(string s)
 		return crossplatform::SamplerStateDesc::CLAMP;
 	if(is_equal(s,"MIRROR"))
 		return crossplatform::SamplerStateDesc::MIRROR;
-	SIMUL_BREAK_ONCE("invalid string {}",s);
+	SIMUL_BREAK_ONCE("Invalid string: {}",s);
 	return crossplatform::SamplerStateDesc::WRAP;
 }
 
@@ -686,7 +686,7 @@ crossplatform::SamplerStateDesc::Filtering stringToFilter(string s)
 		return crossplatform::SamplerStateDesc::LINEAR;
 	if(is_equal(s,"ANISOTROPIC"))
 		return crossplatform::SamplerStateDesc::ANISOTROPIC;
-	SIMUL_BREAK("invalid string {}",s);
+	SIMUL_BREAK("Invalid string: {}",s);
 	return crossplatform::SamplerStateDesc::POINT;
 }
 
@@ -706,7 +706,7 @@ static crossplatform::CullFaceMode toCullFadeMode(string s)
 		return crossplatform::CULL_FACE_FRONTANDBACK;
 	else if(is_equal(s,"CULL_NONE"))
 		return crossplatform::CULL_FACE_NONE;
-	SIMUL_BREAK("invalid string {}",s);
+	SIMUL_BREAK("Invalid string: {}",s);
 	return crossplatform::CULL_FACE_NONE;
 }
 
@@ -730,7 +730,7 @@ static crossplatform::Topology toTopology(string s)
 		return crossplatform::Topology::TRIANGLELIST_ADJ;
 	else if(is_equal(s,"TriangleStripAdjacency"))
 		return crossplatform::Topology::TRIANGLESTRIP_ADJ;
-	SIMUL_BREAK("invalid string {}",s);
+	SIMUL_BREAK("Invalid string: {}",s);
 	return crossplatform::Topology::UNDEFINED;
 }
 
@@ -1015,8 +1015,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 		std::transform(binFilenameUtf8.begin(), binFilenameUtf8.end(), binFilenameUtf8.begin(), ::tolower);
 		if(!platform::core::FileLoader::GetFileLoader()->FileExists(binFilenameUtf8.c_str()))
 		{
-			string err= platform::core::QuickFormat("Shader effect file not found: %s",binFilenameUtf8.c_str());
-			SIMUL_BREAK_ONCE("{}",err);
+			SIMUL_BREAK_ONCE("Shader effect file not found: {}",binFilenameUtf8);
 			static bool already = false;
 			if (!already)
 			{
@@ -1496,7 +1495,42 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				string entry_point="main";
 				size_t inline_offset =0;
 				size_t inline_length =0;
-				
+
+				if(std::regex_search(line, sm, re_file_entry))
+				{
+					filenamestr= sm.str(1);
+					if(sm.length()>2)
+						entry_point= sm.str(2);
+					entry_point = sm.str(2);
+					if (entry_point.length()>0&&sm.length() > 4)
+					{
+						if (sm.length(3) && sm.length(4))
+						{
+							string inline_offset_str = sm.str(3);
+							string inline_length_str = sm.str(4);
+							inline_offset = std::stoul(inline_offset_str, nullptr, 16);
+							inline_length = std::stoul(inline_length_str, nullptr, 16);
+							if (!bin_ptr)
+							{
+								platform::core::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, sfxbFilenameUtf8.c_str(), true);
+								if (!bin_ptr)
+								{
+									SIMUL_BREAK("Failed to load combined shader binary: {}\n", sfxbFilenameUtf8);
+								}
+							}
+						}
+						{
+							int pos=5;
+							while(sm.length(pos+1)>0)
+							{
+								string var_name = sm.str(pos);
+								string var_value = sm.str(pos+1);
+								variantValues[var_name] = var_value;
+								pos+=2;
+							}
+						}
+					}
+				}
 				string name;
 				if(words.size()>1)
 					name=words[1];
@@ -1667,7 +1701,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					}
 					else
 					{
-						SIMUL_BREAK("Unknown shader type or command: {}",type);
+						SIMUL_BREAK("Unknown shader type or command: {}\n",type);
 						continue;
 					}
 					if(t!=crossplatform::ShaderType::SHADERTYPE_COUNT&&std::regex_search(line, sm, re_file_entry))

@@ -120,7 +120,7 @@ void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext& de
 
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
 	vk::BufferCopy region=vk::BufferCopy().setDstOffset(0).setSize(mTotalSize).setSrcOffset(last_offset);
-	if(lastBuffer->mBuffer)
+	if(lastBuffer!=perFrameBuffers.end()&&lastBuffer->mBuffer)
 		commandBuffer->copyBuffer(lastBuffer->mBuffer,mReadBuffers[mFrameIndex],region);
 }
 

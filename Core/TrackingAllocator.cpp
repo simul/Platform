@@ -2,7 +2,12 @@
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/RuntimeError.h"
 #include <string.h> // for strlen
+#if PLATFORM_CXX20_OR_ABOVE
+#include <format>
 #include <fmt/format.h>
+#else
+#include <fmt/format.h>
+#endif
 
 using namespace platform;
 using namespace core;

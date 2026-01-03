@@ -703,9 +703,11 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 	vulkan::EffectPass* vkEffectPass = ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);
 	BeginEvent(deviceContext, vkEffectPass->name.c_str());
-	ApplyContextState(deviceContext);
-	commandBuffer->dispatch(w, l, d);
-	InsertFences(deviceContext);
+	if(ApplyContextState(deviceContext))
+	{
+		commandBuffer->dispatch(w, l, d);
+		InsertFences(deviceContext);
+	}
 	EndEvent(deviceContext);
 }
 
@@ -968,7 +970,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	else
 	{
 		// Set Compute Pipeline
-		commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline.pipeline);
+		if(renderPassPipeline.pipeline)
+			commandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, renderPassPipeline.pipeline);
+		else
+			return false;
 		
 	}
 	return true;
@@ -2004,6 +2009,18 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext,in
 	BeginEvent(deviceContext, ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass)->name.c_str());
 	ApplyContextState(deviceContext);
 	commandBuffer->draw(num_verts,1,start_vert,0);
+	EndEvent(deviceContext);
+}
+
+void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert)
+{
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+
+	BeginEvent(deviceContext, ((vulkan::EffectPass *)deviceContext.contextState.currentEffectPass)->name.c_str());
+	ApplyContextState(deviceContext);
+	commandBuffer->draw(num_verts, num_instances, start_vert, base_instance);
 	EndEvent(deviceContext);
 }
 

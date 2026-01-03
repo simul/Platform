@@ -168,6 +168,7 @@ namespace platform
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
 			
 			void									Draw(crossplatform::GraphicsDeviceContext& deviceContext, int num_verts, int start_vert) override;
+			void									DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert) override;
 			void									DrawIndexed(crossplatform::GraphicsDeviceContext& deviceContext, int num_indices, int start_index = 0, int base_vertex = 0) override;
 			void									DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index, int base_vertex) override;
 			void									DrawQuad(crossplatform::GraphicsDeviceContext& deviceContext) override;

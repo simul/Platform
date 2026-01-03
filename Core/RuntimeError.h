@@ -1,17 +1,28 @@
-#ifndef PLATFORM_RUNTIMEERROR_H
-#define PLATFORM_RUNTIMEERROR_H
+#pragma once
+
+// C++ Versions
+#if defined(_WIN64)
+#define PLATFORM_CXX20_OR_ABOVE _HAS_CXX20
+#define PLATFORM_CXX17_OR_ABOVE _HAS_CXX17
+#elif defined(__linux__)
+#define PLATFORM_CXX20_OR_ABOVE (__cplusplus >= 202002L)
+#define PLATFORM_CXX17_OR_ABOVE (__cplusplus >= 201703L)
+#endif
 
 #include "Export.h"
 
 #include <string>
+#include <string_view>
 #include <string.h>
 #include <iostream>
 #include <cerrno>
 #include <assert.h>
-#if __cplusplus>=202002L
+#if PLATFORM_CXX20_OR_ABOVE
 #include <format>
-#endif
 #include <fmt/core.h>
+#else
+#include <fmt/core.h>
+#endif
 
 #ifndef SIMUL_INTERNAL_CHECKS
 #define SIMUL_INTERNAL_CHECKS 0
@@ -38,14 +49,6 @@
 #endif
 #include <stdexcept> // for runtime_error
 
-// C++ Versions
-#if defined(_WIN64)
-#define PLATFORM_CXX20 _HAS_CXX20
-#define PLATFORM_CXX17 _HAS_CXX17
-#elif defined(__linux__)
-#define PLATFORM_CXX20 (__cplusplus == 202002L)
-#define PLATFORM_CXX17 (__cplusplus == 201703L)
-#endif
 
 #define SIMUL_COUT \
 	std::cout << __FILE__ << "(" << std::dec << __LINE__ << "): info: "
@@ -148,13 +151,22 @@ namespace platform
 #endif
 
 #define PLATFORM_ERROR(txt, ...) \
-	platform::core::Error(txt, __FILE__, __LINE__, ##__VA_ARGS__)
+	{\
+	std::string str = fmt::format(txt, ##__VA_ARGS__);\
+	std::cerr << fmt::format("{} ({}): error: {}", __FILE__, __LINE__, str) << "\n";\
+	}
 
 #define PLATFORM_WARN(txt, ...) \
-	platform::core::Warn(txt, __FILE__, __LINE__, ##__VA_ARGS__)
+	{\
+	std::string str = fmt::format(txt, ##__VA_ARGS__);\
+	std::cerr << fmt::format("{} ({}): warn: {}", __FILE__, __LINE__, str) << "\n";\
+	}
 
 #define PLATFORM_LOG(txt, ...) \
-	platform::core::Info(txt, __FILE__, __LINE__, ##__VA_ARGS__)
+	{\
+		std::string str = fmt::format(txt, ##__VA_ARGS__);\
+		std::cout << fmt::format("{} ({}): info: {}", __FILE__, __LINE__, str) << "\n";\
+	}
 
 
 #define SIMUL_INTERNAL_COUT                  \
@@ -214,7 +226,7 @@ namespace platform
 
 #define SIMUL_BREAK(msg, ...)                                          \
 	{                                                                  \
-		platform::core::Error(msg, __FILE__, __LINE__, ##__VA_ARGS__); \
+		PLATFORM_ERROR(msg, ##__VA_ARGS__); \
 		BREAK_IF_DEBUGGING                                             \
 	}
 
@@ -223,7 +235,7 @@ namespace platform
 		static bool done = false;                                          \
 		if (!done)                                                         \
 		{                                                                  \
-			platform::core::Error(msg, __FILE__, __LINE__, ##__VA_ARGS__); \
+			PLATFORM_ERROR(msg, ##__VA_ARGS__); \
 			BREAK_IF_DEBUGGING;                                            \
 			done = true;                                                   \
 		}                                                                  \
@@ -374,4 +386,3 @@ namespace platform
 #pragma warning(pop)
 #endif
 
-#endif

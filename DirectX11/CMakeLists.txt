@@ -30,15 +30,4 @@ endif()
 if(SIMUL_SOURCE_BUILD)
 	set( JSON_FILE "${SIMUL_PLATFORM_DIR}/DirectX11/Sfx/DirectX11.json" )
 	
-	if(PLATFORM_BUILD_MD_LIBS)
-		add_dynamic_library(SimulDirectX11 SOURCES ${SOURCES} ${HEADERS} ${CMAKE} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
-		target_compile_definitions(SimulDirectX11_MD PRIVATE SIMUL_DIRECTX11_DLL=1 SIMUL_WIN8_SDK=1 PLATFORM_D3D11_SFX=1 PLATFORM_TYPED_UAV_FORMATS=1)
-		set_target_properties(SimulDirectX11_MD PROPERTIES LINK_FLAGS "/DELAYLOAD:d3dcompiler_47.dll")
-		target_include_directories(SimulDirectX11_MD PUBLIC "${SIMUL_PLATFORM_DIR}/DirectX11")
-		target_include_directories(SimulDirectX11_MD PRIVATE "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" )
-		LibraryDefaults(SimulDirectX11_MD)
-
-		target_link_libraries(SimulDirectX11_MD SimulCrossPlatform_MD SimulMath_MD Core_MD directxtex_MD)
-
-	endif()
 endif()

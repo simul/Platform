@@ -31,7 +31,6 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <fmt/core.h>
 
 using namespace std::literals;
 using namespace std::string_literals;
@@ -2078,6 +2077,8 @@ void RenderPlatform::SetConstantBuffer(DeviceContext& deviceContext,ConstantBuff
 
 void RenderPlatform::SetStructuredBuffer(DeviceContext& deviceContext, BaseStructuredBuffer* s, const ShaderResource& shaderResource)
 {
+	if(!s||!s->platformStructuredBuffer)
+		return;
 	if((shaderResource.shaderResourceType & ShaderResourceType::RW) == ShaderResourceType::RW)
 		s->platformStructuredBuffer->ApplyAsUnorderedAccessView(deviceContext, shaderResource);
 	else
@@ -2155,7 +2156,7 @@ std::shared_ptr<Effect> RenderPlatform::GetOrCreateEffect(const char *filename_u
 	bool success = e->Load(this,filename_utf8);
 	if (!success)
 	{
-		SIMUL_BREAK("Failed to load effect file: {}. Effect will be placeholder.", filename_utf8);
+		SIMUL_BREAK("Failed to load effect file: {}. Effect will be placeholder.\n", filename_utf8);
 		return e;
 	}
 	return e;

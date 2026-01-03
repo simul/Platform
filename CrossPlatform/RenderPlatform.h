@@ -297,6 +297,7 @@ namespace platform
 			virtual void Clear				(GraphicsDeviceContext &deviceContext,vec4 colour_rgba);
 			//! Draw the specified number of vertices.
 			virtual void Draw				(GraphicsDeviceContext &deviceContext,int num_verts,int start_vert)=0;
+			virtual void DrawInstanced		(GraphicsDeviceContext &deviceContext,int num_instances,int base_instance,int num_verts,int start_vert)=0;
 			//! Draw the specified number of vertices using the bound index arrays.
 			virtual void DrawIndexed		(GraphicsDeviceContext &deviceContext,int num_indices,int start_index=0,int base_vertex=0)=0;
 			virtual void DrawIndexedInstanced(GraphicsDeviceContext &deviceContext, int num_instances , int base_instance , int num_indices, int start_index = 0, int base_vertex = 0) = 0;

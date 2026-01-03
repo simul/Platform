@@ -110,7 +110,7 @@ static void ConvertMaterial(RenderPlatform *renderPlatform, std::shared_ptr<Mate
 			}
 			if (p->mDataLength == 12)
 			{
-				vec4 result = Colour3(p->mKey.C_Str());
+				vec4 result = Colour4(p->mKey.C_Str());
 				#if PLATFORM_DEBUG_MATERIAL_LOAD
 				std::cout << " " << result.x << "," << result.y << "," << result.z;
 				#endif
