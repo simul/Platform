@@ -2,6 +2,7 @@
 #define PLATFORM_CORE_MOUSEHANDLER_H
 
 #include <functional>
+#include <stdint.h>
 #include "Platform/Core/Export.h"
 #include "Platform/Core/EnumClassBitwiseOperators.h"
 

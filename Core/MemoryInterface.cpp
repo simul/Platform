@@ -1,7 +1,7 @@
 #include "MemoryInterface.h"
 #ifdef _MSC_VER
 #include <malloc.h>
-#elif __APPLE__
+#else
 #include <stdlib.h>
 #endif
 #include <map>

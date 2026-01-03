@@ -268,4 +268,22 @@ typedef tvector3<double> vec3d;
 typedef tvector3<int> int3;
 typedef tvector3<unsigned int> uint3;
 
+// POD-compatible packed version for use in packed structs
+template <typename T>
+struct pvector3
+{
+	T x, y, z;
+};
+
+typedef pvector3<float> vec3_packed;
+typedef pvector3<double> vec3d_packed;
+typedef pvector3<int> int3_packed;
+typedef pvector3<unsigned int> uint3_packed;
+
+template <typename T>
+pvector3<T> packed(const tvector3<T> &v)
+{
+	return pvector3<T>{v.x, v.y, v.z};
+}
+
 #endif

@@ -305,4 +305,16 @@ typedef tvector4<double> vec4d;
 typedef tvector4<int> int4;
 typedef tvector4<unsigned int> uint4;
 
+// POD-compatible packed version for use in packed structs
+template <typename T>
+struct pvector4
+{
+	T x, y, z, w;
+};
+
+typedef pvector4<float> vec4_packed;
+typedef pvector4<double> vec4d_packed;
+typedef pvector4<int> int4_packed;
+typedef pvector4<unsigned int> uint4_packed;
+
 #endif

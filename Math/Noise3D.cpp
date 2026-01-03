@@ -8,10 +8,6 @@
 
 using namespace platform::math;
 
-static float lerp(float t, float a, float b)
-{
-	return ( a + t * (b - a) );
-}
 NoiseInterface::NoiseInterface(){}
 NoiseInterface::~NoiseInterface(){}
 

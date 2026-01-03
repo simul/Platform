@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/Export.h"
 #if defined(__ANDROID__)

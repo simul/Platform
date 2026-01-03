@@ -1,6 +1,7 @@
 #ifndef SIMUL_BASE_FILEINTERFACE_H
 #define SIMUL_BASE_FILEINTERFACE_H
 #include <vector>
+#include <stdint.h>
 #include <set>
 #include <string>
 #include "Platform/Core/Export.h"

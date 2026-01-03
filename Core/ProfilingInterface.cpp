@@ -11,27 +11,17 @@
 #include "Platform/Core/StringFunctions.h"
 #include <algorithm>
 
-#ifndef _MSC_VER
-	#ifndef UNIX
-		#ifdef NN_NINTENDO_SDK
-			#include <nn/util/util_FloatFormat.h>
-			#define _isnanf (nn::util::FloatFormat16::IsNan)
-		#else
-			#define _isnanf isnan
-		#endif
-	#else
-		#include <cmath>
-		#define _isnanf ( std::isnan )
-	#endif
+#ifdef _MSC_VER
+	#include <math.h>
+	#define _isnanf _isnan
 #else
-#include <math.h>
-#define _isnanf _isnan
+	#include <cmath>
+	#define _isnanf ( std::isnan )
 #endif
 
 using namespace platform;
 using namespace core;
 using std::string;
-
 namespace platform
 {
 	namespace core
