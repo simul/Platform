@@ -46,6 +46,7 @@ const SfxOptions &GetSfxOptions()
     return sfxOptions;
 }
 extern bool terminate_command;
+#ifdef _MSC_VER
 // A ctrl message handler to detect "close" events.
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
@@ -82,13 +83,14 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
         return FALSE;
     }
 }
+#endif
 std::string templateOutputFile;
 int main(int argc, char** argv) 
 {
+	#ifdef _MSC_VER
     if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
 	{
 	}
-	#ifdef _MSC_VER
 	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT);
 	_set_abort_behavior(0, _WRITE_ABORT_MSG);
 	#endif

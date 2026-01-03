@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <map>
+#include <memory>
 #include "SfxClasses.h"
 #include "SfxEffect.h"
 #include "ShaderInstance.h"

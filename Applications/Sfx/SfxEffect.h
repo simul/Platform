@@ -1,5 +1,6 @@
 #pragma once
 #include <set>
+#include <memory>
 #include "Sfx.h"
 #include "SfxParser.h"
 #include "Function.h"

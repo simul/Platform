@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <stdint.h>
 #ifndef _MAX_PATH
 #define _MAX_PATH 260
 #endif
