@@ -125,6 +125,8 @@ int main(int argc, char** argv)
 		int a=0;
 		for(int i=1;i<argc;i++)
 		{
+			while(argv[i][0]==' ')
+				argv[i]++;
 			if(strlen(argv[i])>=2&&(argv[i][0]=='-'))
 			{
 				const char *arg=argv[i]+2;
