@@ -780,7 +780,7 @@ void RenderPlatform::BeginFrame(long long f)
 
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
-	if (deviceContext.targetStack.empty() && deviceContext.defaultTargetsAndViewport.m_rt)
+	if (deviceContext.targetStack.empty() )
 	{
 		crossplatform::EffectTechnique *clearTechnique = debugEffect->GetTechniqueByName("clear");
 		if (deviceContext.AsMultiviewGraphicsDeviceContext())

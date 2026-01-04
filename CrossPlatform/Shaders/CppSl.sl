@@ -4,6 +4,7 @@
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifdef __cplusplus
+	#include <stdint.h>
 	// required for sqrt
 	#include <math.h>
 	// required for std::min and max

@@ -286,4 +286,10 @@ pvector3<T> packed(const tvector3<T> &v)
 	return pvector3<T>{v.x, v.y, v.z};
 }
 
+template <typename T>
+tvector3<T> unpacked(const pvector3<T> &v)
+{
+	return tvector3<T>{v.x, v.y, v.z};
+}
+
 #endif

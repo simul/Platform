@@ -317,4 +317,16 @@ typedef pvector4<double> vec4d_packed;
 typedef pvector4<int> int4_packed;
 typedef pvector4<unsigned int> uint4_packed;
 
+template <typename T>
+pvector4<T> packed(const tvector4<T> &v)
+{
+	return pvector4<T>{v.x, v.y, v.z, v.w};
+}
+
+template <typename T>
+tvector3<T> unpacked(const pvector4<T> &v)
+{
+	return tvector4<T>{v.x, v.y, v.z, v.w};
+}
+
 #endif

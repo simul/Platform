@@ -82,7 +82,7 @@ namespace platform
 				}
 				else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
 				{
-					vk::DispatchLoaderDynamic d;
+					vk::detail::DispatchLoaderDynamic d;
 					d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceFeatures2");
 					vulkanGpu->getFeatures2(&features2, d);
 				}
@@ -101,7 +101,7 @@ namespace platform
 				}
 				else if (CheckDeviceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
 				{
-					vk::DispatchLoaderDynamic d;
+					vk::detail::DispatchLoaderDynamic d;
 					d.vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)vulkanInstance->getProcAddr("vkGetPhysicalDeviceProperties2");
 					vulkanGpu->getProperties2(&properties2, d);
 				}
@@ -352,7 +352,7 @@ namespace platform
 
 			if (debugUtilsSupported)
 			{
-				vk::DispatchLoaderDynamic d;
+				vk::detail::DispatchLoaderDynamic d;
 				d.vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)instance->getProcAddr("vkSetDebugUtilsObjectNameEXT");
 				if (d.vkSetDebugUtilsObjectNameEXT)
 				{
@@ -370,7 +370,7 @@ namespace platform
 			// TODO: this won't compile if the Vulkan version is too early
 			if(debugMarkerSupported)
 			{
-				vk::DispatchLoaderDynamic d;
+				vk::detail::DispatchLoaderDynamic d;
 				d.vkDebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)instance->getProcAddr("vkDebugMarkerSetObjectNameEXT");
 				if (d.vkDebugMarkerSetObjectNameEXT)
 				{

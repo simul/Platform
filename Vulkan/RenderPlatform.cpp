@@ -652,7 +652,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 		labelInfo.pLabelName = name;
 		labelInfo.color[0] = labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
 
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdBeginDebugUtilsLabelEXT = vkCmdBeginDebugUtilsLabelEXT;
 		commandBuffer->beginDebugUtilsLabelEXT(&labelInfo, d);
 	}
@@ -664,7 +664,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 		markerInfo.pMarkerName = name;
 		markerInfo.color[0] = markerInfo.color[1] = markerInfo.color[2] = markerInfo.color[3] = 1.0f;
 
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdDebugMarkerBeginEXT = vkCmdDebugMarkerBeginEXT;
 		commandBuffer->debugMarkerBeginEXT(markerInfo, d);
 	}
@@ -675,14 +675,14 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 	if (debugUtilsSupported)
 	{
 		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdEndDebugUtilsLabelEXT = vkCmdEndDebugUtilsLabelEXT;
 		commandBuffer->endDebugUtilsLabelEXT(d);
 	}
 	if (debugMarkerSupported)
 	{
 		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdDebugMarkerEndEXT = vkCmdDebugMarkerEndEXT;
 		commandBuffer->debugMarkerEndEXT(d);
 	}

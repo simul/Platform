@@ -28,7 +28,7 @@ namespace platform
 				return _aligned_malloc(nbytes,align);
 		#else
             #ifndef UNIX
-				return memalign(align,nbytes);
+				return aligned_alloc(align,nbytes);
 			#else
 				if(align==1)
 				{

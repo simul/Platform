@@ -241,6 +241,7 @@ int main(int argc, char** argv)
 		}
 		std::cout << std::setw(4)<< "info: building "<<sourceName<<" for "<<platformName<<"."<< std::endl;
 		SetEnv("PLATFORM_DIR",platform_dir.c_str());
+		std::cout<<"\n"<<GetEnv("BUILD_DIR")<<std::endl;
 		auto pathStrings=genericPathStrings;
 		pathStrings.push_back(json_path);
 		pathStrings.push_back(platform_dir+"/Shaders/SL"s);

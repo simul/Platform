@@ -514,6 +514,13 @@ std::string GetExecutableDirectory()
 	}
 	else
 		str=L"";
+#else
+	char pBuf[512];
+	size_t len = sizeof(pBuf); 
+	int bytes = std::min((int)readlink("/proc/self/exe", pBuf, len), (int)len - 1);
+	if(bytes >= 0)
+		pBuf[bytes] = '\0';
+	return std::string(pBuf);
 #endif
 	return WStringToUtf8(str);
 }
