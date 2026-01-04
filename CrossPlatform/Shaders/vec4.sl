@@ -1,6 +1,15 @@
 #ifndef VEC4_SL
 #define VEC4_SL
 
+
+// POD-compatible packed version for use in packed structs
+template <typename T>
+struct pvector4
+{
+	T x, y, z, w;
+};
+
+//! Four-element vector template struct.
 template <typename T>
 struct tvector4
 {
@@ -71,6 +80,14 @@ struct tvector4
 	}
 	template <typename U>
 	tvector4(const tvector4<U> &v)
+	{
+		x = T(v.x);
+		y = T(v.y);
+		z = T(v.z);
+		w = T(v.w);
+	}
+	template <typename U>
+	tvector4(const pvector4<U> &v)
 	{
 		x = T(v.x);
 		y = T(v.y);
@@ -304,13 +321,6 @@ typedef tvector4<float> vec4;
 typedef tvector4<double> vec4d;
 typedef tvector4<int> int4;
 typedef tvector4<unsigned int> uint4;
-
-// POD-compatible packed version for use in packed structs
-template <typename T>
-struct pvector4
-{
-	T x, y, z, w;
-};
 
 typedef pvector4<float> vec4_packed;
 typedef pvector4<double> vec4d_packed;
