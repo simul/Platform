@@ -1,6 +1,7 @@
 #ifndef PLATFORM_CORE_MOUSEHANDLER_H
 #define PLATFORM_CORE_MOUSEHANDLER_H
 
+#include <cstdint>
 #include <functional>
 #include <stdint.h>
 #include "Platform/Core/Export.h"

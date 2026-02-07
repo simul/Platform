@@ -22,6 +22,7 @@ namespace platform
 				, depthTextureStyle(DepthTextureStyle::PROJECTION)
 			{}
 			ViewStruct(const ViewStruct& vs) = default;
+			ViewStruct& operator=(const ViewStruct& vs) = default;
 			void PushModelMatrix(math::Matrix4x4 m);
 			void PopModelMatrix();
 			vec4 GetDepthToLinearDistanceParameters(float unit_distance_metres) const;

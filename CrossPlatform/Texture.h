@@ -332,9 +332,9 @@ namespace platform
 			virtual void SetName(const char *n);
 			const char* GetName() const;
 			/// Set the fence on this texture: it cannot be used until the fence has been triggered by the rendering API.
-			void SetFence(DeviceContext &,unsigned long long);
+			void SetFence(DeviceContext &,uint64_t);
 			/// Get the current fence on this texture; it should not be used until the API has passed this fence.
-			unsigned long long GetFence(DeviceContext &) const;
+			uint64_t GetFence(DeviceContext &) const;
 			/// Clear the fence: this texture is ok to use now.
 			void ClearFence(DeviceContext &deviceContext);
 			/// For API's that care about Resource State, aka Layout, tell the Simul API what state it was in to begin with.

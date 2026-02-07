@@ -64,7 +64,7 @@ namespace platform
 using namespace platform;
 using namespace crossplatform;
 
-std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
+std::map<uint64_t,std::string> RenderPlatform::ResourceMap;
 std::atomic<int> RenderPlatform::numPlatforms=0;
 
 RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
@@ -1750,7 +1750,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	}
 
 	static int frames = 25;
-	static unsigned long long framenumber = 0;
+	static uint64_t framenumber = 0;
 
 	float displayMip = mip;
 	static int _mip = 0;

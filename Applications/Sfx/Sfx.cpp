@@ -319,19 +319,16 @@ RenderStateType	 renderState;
 
 static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
 {
-	bool is_error=true;
 	int errpos=(int)line.find("ERROR");
 	if(errpos<0)
 		errpos=(int)line.find("error");
 	if(errpos<0)
 	{
 		errpos=(int)line.find("WARNING");
-		is_error=false;
 	}
 	if(errpos<0)
 	{
 		errpos=(int)line.find("warning");
-		is_error=false;
 	}
 	if(errpos>=0)
 	{
@@ -340,11 +337,10 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 		int third_colon		=(int)line.find(":",second_colon+1);
 		int first_bracket	=(int)line.find("(");
 		int second_bracket	=(int)line.find(")",first_bracket+1);
-		int numberstart,numberlen=0;
+		int numberlen=0;
 	//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
 		if(third_colon>=0&&second_colon>=0&&(second_colon-first_colon)<5)
 		{
-			numberstart	=first_colon+1;
 			numberlen	=second_colon-first_colon-1;
 		}
 	//	ERROR: 0:11: 'assign' :  cannot convert from '2-component vector of float' to 'float'
@@ -352,18 +348,15 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 		{
 			if(first_colon<first_bracket)
 			{
-				numberstart	=first_colon+1;
 				numberlen	=first_bracket-first_colon-1;
 			}
 			else
 			{
-				numberstart=0;
 				numberlen=first_bracket;
 			}
 		}
 		else
 		{
-			numberstart=0;
 			numberlen=first_bracket;
 		}
 		if(numberlen>0)
@@ -524,6 +517,7 @@ std::string GetExecutableDirectory()
 #endif
 	return WStringToUtf8(str);
 }
+
 std::vector<std::string> extra_arguments;
 std::string ppfile;
 

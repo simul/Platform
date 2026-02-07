@@ -1094,7 +1094,7 @@ primary_exp : IDENTIFIER
 		{
 			buildFunction.declarations.insert(varName);
 			buildFunction.declareResource(varName);
-			if (cb=gEffect->GetNamedConstantBufferForMember(varName);cb)
+			if (cb=gEffect->GetNamedConstantBufferForMember(varName); cb)
 				buildFunction.declareConstantBuffer(cb);
 		}
 		else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)
@@ -3484,7 +3484,7 @@ shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
 	{
 		string shaderInstanceNames=$3.strs[0];
 		vector<string> shaderInstances;
-		for(const auto i:$3.children)
+		for(const auto const &i:$3.children)
 		{
 			shaderInstances.push_back(i.strs[0]);
 		}
@@ -4210,11 +4210,11 @@ void errSyn(const char* e)
 	ostringstream errMsg;
 	int lex_linenumber=sfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    if (GetSfxOptions().disableLineWrites)
-        errMsg << ppfile;
-    else
+	if (GetSfxOptions().disableLineWrites)
+		errMsg << ppfile;
+	else
 		errMsg << current_filename;
-    
+	
 	errMsg<< "(" << true_linenumber << ") : sfx syntax error: \"" << sfxget_text() << "\" " << e;
 	const char *st=GetStartModeText();
 	if(st)
@@ -4230,11 +4230,11 @@ void errSem(const string& str, int lex_linenumber)
 	
 	if(lex_linenumber==-1)
 		lex_linenumber= sfxget_lineno();
-    int true_linenumber = lex_linenumber + last_linenumber - global_linenumber;
-    if (GetSfxOptions().disableLineWrites)
-        errMsg << ppfile;
-    else
-        errMsg << current_filename;
+	int true_linenumber = lex_linenumber + last_linenumber - global_linenumber;
+	if (GetSfxOptions().disableLineWrites)
+		errMsg << ppfile;
+	else
+		errMsg << current_filename;
 	errMsg<<"("<<true_linenumber<<") : sfx error: "<<str;
 	const char *st=GetStartModeText();
 	if(st)

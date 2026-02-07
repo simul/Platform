@@ -133,7 +133,7 @@ void TimestampQueryManager::GetTimestampQueryHeap(crossplatform::DeviceContext &
 	mTimestampQueryHeapOffset++;
 }
 
-unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::DeviceContext &deviceContext, int offset)
+uint64_t TimestampQueryManager::GetTimestampQueryData(crossplatform::DeviceContext &deviceContext, int offset)
 {
 	ID3D12GraphicsCommandList *commandList = deviceContext.asD3D12Context();
 	if (!mTimestampQueryData)
@@ -160,7 +160,7 @@ unsigned long long TimestampQueryManager::GetTimestampQueryData(crossplatform::D
 				return 0;
 
 			bMapped[lastFrame] = true;
-			unsigned long long result = mTimestampQueryData[offset];
+			uint64_t result = mTimestampQueryData[offset];
 			CD3DX12_RANGE zeroRange(0, 0);
 			mTimestampQueryReadBuffer[mTimestampQueryCurrFrame]->Unmap(0, &zeroRange);
 			bMapped[lastFrame] = false;

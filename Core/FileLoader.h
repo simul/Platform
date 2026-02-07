@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <set>
 #include <string>
+#include <cstdint>
 #include "Platform/Core/Export.h"
 
 #ifdef _MSC_VER
