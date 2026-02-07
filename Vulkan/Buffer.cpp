@@ -51,7 +51,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	size = num_vertices * stride;
 	count = num_vertices;
 	
-	vulkanRenderPlatform->CreateVulkanBuffer(
+	vulkanRenderPlatform->CreateVulkanBuffer(nullptr,
 		size, vk::BufferUsageFlagBits::eTransferSrc, 
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, 
 		mStagingBuffer, mStagingAllocation, "VertexBuffer Upload");
@@ -67,7 +67,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 		}
 	}
 
-	vulkanRenderPlatform->CreateVulkanBuffer(
+	vulkanRenderPlatform->CreateVulkanBuffer(nullptr,
 		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
 		vk::MemoryPropertyFlagBits::eDeviceLocal, mBuffer, mAllocation, "VertexBuffer");
 
@@ -83,8 +83,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 	stride = index_size_bytes;
 	size = num_indices * index_size_bytes;
 	count = num_indices;
-
-	vulkanRenderPlatform->CreateVulkanBuffer(
+	vulkanRenderPlatform->CreateVulkanBuffer(nullptr,
 		size, vk::BufferUsageFlagBits::eTransferSrc, 
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
 		mStagingBuffer, mStagingAllocation, "IndexBuffer Upload");
@@ -99,8 +98,8 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 			vmaUnmapMemory(mStagingAllocation.allocator, mStagingAllocation.allocation);
 		}
 	}
-
-	vulkanRenderPlatform->CreateVulkanBuffer(
+	
+	vulkanRenderPlatform->CreateVulkanBuffer(nullptr,
 		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
 		vk::MemoryPropertyFlagBits::eDeviceLocal, mBuffer, mAllocation, "IndexBuffer");
 

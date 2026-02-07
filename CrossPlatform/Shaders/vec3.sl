@@ -1,6 +1,14 @@
 #ifndef VEC3_SL
 #define VEC3_SL
 
+
+// POD-compatible packed version for use in packed structs
+template <typename T>
+struct pvector3
+{
+	T x, y, z;
+};
+
 template <typename T>
 struct tvector3
 {
@@ -47,6 +55,13 @@ struct tvector3
 	}
 	template <typename U>
 	tvector3(const tvector3<U> &v)
+	{
+		x = T(v.x);
+		y = T(v.y);
+		z = T(v.z);
+	}
+	template <typename U>
+	tvector3(const pvector3<U> &v)
 	{
 		x = T(v.x);
 		y = T(v.y);
@@ -267,5 +282,22 @@ typedef tvector3<float> vec3;
 typedef tvector3<double> vec3d;
 typedef tvector3<int> int3;
 typedef tvector3<unsigned int> uint3;
+
+typedef pvector3<float> vec3_packed;
+typedef pvector3<double> vec3d_packed;
+typedef pvector3<int> int3_packed;
+typedef pvector3<unsigned int> uint3_packed;
+
+template <typename T>
+pvector3<T> packed(const tvector3<T> &v)
+{
+	return pvector3<T>{v.x, v.y, v.z};
+}
+
+template <typename T>
+tvector3<T> unpacked(const pvector3<T> &v)
+{
+	return tvector3<T>{v.x, v.y, v.z};
+}
 
 #endif

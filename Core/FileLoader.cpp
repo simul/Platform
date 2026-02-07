@@ -258,7 +258,7 @@ int FileLoader::FindIndexInPathStack(const char* filename_utf8, const char* cons
 		f += filename_utf8;
 		if (FileExists(f.c_str()))
 		{
-			uint64_t filedate = GetFileDate(f.c_str());
+			uint64_t filedate = GetFileDateUnixTimeMs(f.c_str());
 			if (filedate >= newest_date)
 			{
 				fn = f;

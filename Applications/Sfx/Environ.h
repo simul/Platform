@@ -42,9 +42,7 @@ static void SetEnv(const std::string &name_utf8, const std::string &value_utf8)
 	errno_t err = _wputenv_s(
 		wname.c_str(),wval.c_str());
 #else
-	char txt[1000];
-	sprintf(txt,"%s=%s",name_utf8.c_str(),value_utf8.c_str());
-	putenv(txt);
+	setenv(name_utf8.c_str(),value_utf8.c_str(),1);
 #endif
 }
 
@@ -53,7 +51,6 @@ static void SetEnv(const std::string &name_utf8, const std::string &value_utf8)
 static std::string ProcessEnvironmentVariables(const std::string &str)
 {
 	std::string ret=str;
-#if defined(WIN32)|| defined(WIN64)
 	std::regex re("\\$([A-Z|a-z|0-9|_]+)");
 	std::sregex_iterator next(str.begin(), str.end(), re);
 	std::sregex_iterator end;
@@ -71,6 +68,5 @@ static std::string ProcessEnvironmentVariables(const std::string &str)
 	  // Syntax error in the regular expression
 		}
 	}
-#endif
 	return ret;
 }

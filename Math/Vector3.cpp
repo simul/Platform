@@ -85,14 +85,6 @@ Vector3::Vector3(const Vector3 &v)
 	operator=(v);
 }
 
-Vector3::operator const float*() const
-{
-	return Values;
-}
-Vector3::operator float*()
-{
-	return Values;
-}
 void Vector3::Define(float x,float y,float z)
 {
 	Values[0]=x;
@@ -1175,7 +1167,7 @@ void CrossProduct(Vector3 &result,const Vector3 &v1,const Vector3 &v2)
 	#ifndef PLAYSTATION2
 		float total=0.0f;
 		for(unsigned i=0;i<3;i++)
-			total+=v1[i]*v2[i];
+			total+=v1.Values[i]*v2.Values[i];
 		return total;
 	#else
 		float d;

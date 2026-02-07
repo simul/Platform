@@ -172,6 +172,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 			vulkanDevice->destroySemaphore(draw_complete_semaphores[i], nullptr);
 			vulkanDevice->destroySemaphore(image_ownership_semaphores[i], nullptr);
 			vulkanDevice->destroyFence(fences[i], nullptr);
+			fences[i]=nullptr;
 		}
 		vulkanDevice->destroyRenderPass(render_pass, nullptr);
 	}

@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <stdint.h>
 enum Test
 {
 	IS_DEFINED,NOT_DEFINED,ZERO,NONZERO,EQUALS,NOTEQUAL,GREATER,LESS,GREATER_EQUAL,LESS_EQUAL

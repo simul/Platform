@@ -51,10 +51,10 @@ void SamplerState::Init(crossplatform::RenderPlatform*r,crossplatform::SamplerSt
 	SetVulkanName(renderPlatform,mSampler,"Sampler");
 }
 
-  vk::Sampler *SamplerState::AsVulkanSampler() 
-  {
-	  return &mSampler;
-  }
+vk::Sampler *SamplerState::AsVulkanSampler() 
+{
+	return &mSampler;
+}
 
 void SamplerState::InvalidateDeviceObjects()
 {
@@ -314,6 +314,8 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	
 	textureUploadComplete = true;
 }
+#pragma optimize("",off)
+
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::TextureView textureView)
 {
 #if PLATFORM_INTERNAL_CHECKS
@@ -347,8 +349,11 @@ vk::ImageView *Texture::AsVulkanImageView(crossplatform::TextureView textureView
 	mImageViews[hash] = imageView;
 	return imageView;
 }
+
 vk::ImageView *Texture::CreateVulkanImageView(crossplatform::TextureView textureView)
 {
+	if(!mImage)
+		return nullptr;
 	// TODO: Should we override aspect if the texture is a depth stencil? - AJR
 	vk::ImageAspectFlagBits aspect = depthStencil ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits(textureView.elements.subresourceRange.aspectMask);
 	const uint8_t &startMip = textureView.elements.subresourceRange.baseMipLevel;
@@ -520,7 +525,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
 	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
 	
-	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
+	imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (int32_t)1 })
@@ -536,7 +541,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 
 	std::string _name = name + " texture mImage";
-	vulkanRenderPlatform->CreateVulkanImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
+	vulkanRenderPlatform->CreateVulkanImage(this,imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	InitViewTable(1, m);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
@@ -565,7 +570,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		{
 			uint32_t n = CalculateSubresourceIndex(i, 0, 0, mips, 1);
 			LoadedTexture& loadedTexture=mLoadedTextures[i][0];
-			SetTextureData(loadedTexture, (*data)[i].data(), mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
+  			SetTextureData(loadedTexture, (*data)[i].data(), mip_width, mip_length, 1, 0, pixelFormat, compressionFormat);
 			mip_width=(mip_width+1)/2;
 			mip_length=(mip_length+1)/2;
 		}
@@ -618,7 +623,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
 	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
 	
-	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
+	imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (uint32_t)1 })
@@ -634,7 +639,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 
 	std::string _name = name + " texture mImage";
-	vulkanRenderPlatform->CreateVulkanImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
+	vulkanRenderPlatform->CreateVulkanImage(this,imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	pixelFormat=f;
 	width=w;
@@ -697,7 +702,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	if(computable)
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 
-	vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo()
+	imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e3D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (uint32_t)d })
@@ -712,7 +717,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 
 	std::string _name = name + " texture mImage";
-	vulkanRenderPlatform->CreateVulkanImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
+	vulkanRenderPlatform->CreateVulkanImage(this,imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 	
 	InitViewTable(1, m);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
@@ -921,28 +926,28 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 		break;
 	};
 	if(cf!=crossplatform::CompressionFormat::UNCOMPRESSED)
-		{
+	{
 		// The memory pitch of a line for uncompressed formats, becomes the memory pitch
 		// of a row of blocks in the case of the compressed.
-			size_t block_width		=std::max(1,(x+3)/4);
-			size_t block_height		=std::max(1,(y+3)/4);
-			SysMemPitch				= block_size_bytes*block_width;
-			// buffer must be at least one block in size.
-			bufferSize				= std::max(block_size_bytes,SysMemPitch*block_height);
-			numRowsToCopy			=block_height;
-		}
+		size_t block_width		=std::max(1,(x+3)/4);
+		size_t block_height		=std::max(1,(y+3)/4);
+		SysMemPitch				= block_size_bytes*block_width;
+		// buffer must be at least one block in size.
+		bufferSize				= std::max(block_size_bytes,SysMemPitch*block_height);
+		numRowsToCopy			=block_height;
+	}
 	//int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
 	std::string _name = name + " texture upload buffer";
 
-	vkRenderPlatform->CreateVulkanBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
+	vkRenderPlatform->CreateVulkanBuffer(nullptr,bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
 		lt.buffer, lt.allocationInfo, _name.c_str());
 
 	vk::SubresourceLayout layout;
 	memset(&layout, 0, sizeof(layout));
-	layout.rowPitch = SysMemPitch;//lt.x * texelBytes;
+	layout.rowPitch = SysMemPitch;
 	void *mapped_data = nullptr;
 	vmaMapMemory(lt.allocationInfo.allocator, lt.allocationInfo.allocation, &mapped_data);
 	SIMUL_ASSERT(mapped_data !=nullptr);
@@ -1221,6 +1226,71 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 
 	// Return a subresource state
 	return mSubResourcesLayouts[startLayer][startMip];
+}
+
+void Texture::Reallocate(crossplatform::GraphicsDeviceContext& deviceContext, const void *src_ptr, const void *dest_alloc)
+{
+	if(mImage!=src_ptr)
+		return;
+	vk::CommandBuffer* cmdBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!cmdBuffer)
+		return;
+	// Recreate and bind this buffer/image at: pass.pMoves[i].dstMemory, pass.pMoves[i].dstOffset.
+	vk::Image newImg;
+	auto r=((vulkan::RenderPlatform*)renderPlatform);
+	r->ReallocVulkanImage(imageCreateInfo, *((VmaAllocation*)dest_alloc), newImg);
+	
+	// Issue a vkCmdCopyBuffer/vkCmdCopyImage to copy its content to the new place.
+	vk::ImageLayout srcLayout = mCurrentImageLayout;
+	
+	int w=width,h=length;
+	for (uint32_t mip = 0; mip < mips; mip++)
+	{
+		for (uint32_t layer = 0; layer < arraySize; layer++)
+		{
+			if (mip >= mLoadedTextures.size())
+				continue;
+			if (layer >= mLoadedTextures[mip].size())
+				continue;
+
+			LoadedTexture &lt = mLoadedTextures[mip][layer];
+			auto const subresource = vk::ImageSubresourceLayers()
+				.setAspectMask(vk::ImageAspectFlagBits::eColor)
+				.setMipLevel(mip)
+				.setBaseArrayLayer(layer)
+				.setLayerCount(1);
+
+			int row_texels = w;
+			int rows = h;
+			if(compressionFormat!=crossplatform::CompressionFormat::UNCOMPRESSED)
+			{
+				// must be at least a block size;
+				if(row_texels<4)
+					row_texels=4;
+				if(rows<4)
+					rows=4;
+			}
+
+			vk::Offset3D offset = { 0, 0, 0 };
+			vk::Extent3D extent = vk::Extent3D()
+				.setWidth(w)
+				.setHeight(h)
+				.setDepth(1);
+
+			auto const copy_region =
+				vk::ImageCopy()
+				.setSrcSubresource(subresource)
+				.setDstSubresource(subresource)
+				.setExtent(extent);
+
+			cmdBuffer->copyImage(mImage, vk::ImageLayout::eTransferSrcOptimal, newImg, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+	
+		}
+		w/=2;
+		h/=2;
+	}
+	r->PushToReleaseManager(mImage, &mAllocationInfo);
+	mImage = newImg;
 }
 
 void Texture::SetImageLayout(vk::CommandBuffer* commandBuffer, vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,

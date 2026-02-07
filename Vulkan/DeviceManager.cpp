@@ -139,13 +139,13 @@ DeviceManager::~DeviceManager()
 {
 	if (debugReportCallback)
 	{
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)deviceManagerInternal->instance.getProcAddr("vkDestroyDebugReportCallbackEXT");
 		deviceManagerInternal->instance.destroyDebugReportCallbackEXT(debugReportCallback, nullptr, d);
 	}
 	if (debugUtilsMessenger)
 	{
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)deviceManagerInternal->instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT");
 		deviceManagerInternal->instance.destroyDebugUtilsMessengerEXT(debugUtilsMessenger, nullptr, d);
 	}
@@ -578,7 +578,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
 	else if (IsInVector(instance_extension_names, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
 	{
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkGetPhysicalDeviceFeatures2 = (PFN_vkGetPhysicalDeviceFeatures2)deviceManagerInternal->instance.getProcAddr("vkGetPhysicalDeviceFeatures2");
 		d.vkGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)deviceManagerInternal->instance.getProcAddr("vkGetPhysicalDeviceProperties2");
 		deviceManagerInternal->gpu.getFeatures2(&deviceManagerInternal->gpu_features2, d);
@@ -768,7 +768,7 @@ void DeviceManager::SetupDebugCallback(bool debugUtils, bool debugReport, bool d
 			.setPfnUserCallback(DebugUtilsCallback)
 			.setPUserData(this);
 
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)deviceManagerInternal->instance.getProcAddr("vkCreateDebugUtilsMessengerEXT");
 		debugUtilsMessenger = deviceManagerInternal->instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCI, nullptr, d);
 		debugUtilsSupported = true;
@@ -783,7 +783,7 @@ void DeviceManager::SetupDebugCallback(bool debugUtils, bool debugReport, bool d
 			.setPfnCallback(DebugReportCallback)
 			.setPUserData(this);
 
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)deviceManagerInternal->instance.getProcAddr("vkCreateDebugReportCallbackEXT");
 		debugReportCallback = deviceManagerInternal->instance.createDebugReportCallbackEXT(debugReportCallbackCI, nullptr, d);
 		debugMarkerSupported = debugMarker;

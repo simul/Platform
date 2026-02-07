@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <stdint.h>
 #ifndef _MAX_PATH
 #define _MAX_PATH 260
 #endif
@@ -16,7 +17,7 @@ public:
 	bool FileExists(const char *filename_utf8) const;
 	const char *FindFileInPathStack(const char *filename_utf8,const std::vector<std::string> &path_stack_utf8) const;
 	void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text);
-	static uint64_t GetFileDate(const char* filename_utf8);
+	static uint64_t GetFileDateUnixTimeMs(const char* filename_utf8);
 	void ReleaseFileContents(void* pointer);
 	void Save(void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text);
 };

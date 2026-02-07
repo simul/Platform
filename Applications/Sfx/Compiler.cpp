@@ -440,6 +440,8 @@ void ReplaceRegexes(string &src, const std::map<string,string> &replace)
 }
 static std::map<std::string,std::string> useCompilerPath;
 
+static bool checkedCompilerPath=false;
+
 extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig,const SfxOptions &sfxOptions)
 {
 	std::string usePath="";
@@ -657,7 +659,7 @@ bool RewriteOutput(const SfxConfig &sfxConfig
 	(*log)<< str.c_str();
 	return has_errors;
 }
-
+#pragma optimize("",off)
 bool IsShaderUnchanged(std::string sourceFilename,std::string outputFilename,const std::string &src)
 {
 	if(!std::filesystem::exists(outputFilename))
@@ -675,7 +677,6 @@ bool IsShaderUnchanged(std::string sourceFilename,std::string outputFilename,con
 		return false;
 	return true;
 }
-
 
 int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 		,const string &sourceFile
@@ -869,7 +870,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	string src = preamble;
 	src += sharedSource;
 	src+=shaderInstance->m_augmentedSource;
-	ReplaceRegexes(src, sfxConfig.replace);
+	
 	const char *strSrc=src.c_str();
 
 	wstring targetDir=StringToWString(GetDirectoryFromFilename(targetFile));
@@ -893,8 +894,8 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 #else
 		ofstream ofs(WStringToUtf8(generatedSourceFilename).c_str());
 #endif
-		ofs.write(strSrc, strlen(strSrc));
-		ofs.close();
+	ofs.write(strSrc, strlen(strSrc));
+	ofs.close();
 	}
 #ifdef _MSC_VER
 	// Now delete the corresponding sdb's
@@ -933,52 +934,52 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 	if(!unchanged)
 	{
 		compile_command=BuildCompileCommand
-		(
-			shaderInstance,
-			sfxConfig,
-			sfxOptions,
-			targetDir,
-			outputFile,
+	(
+		shaderInstance,
+		sfxConfig,
+		sfxOptions,
+		targetDir,
+		outputFile,
 			generatedSourceFilename,
-			t,
-			pixelOutputFormat
-		);
-		// If no compiler provided, we can return now (perhaps we are only interested in
-		// the shader source)
-		if (compile_command.empty())
-		{
-			if(sfxOptions.verbose)
-				std::cout<<WStringToUtf8(generatedSourceFilename).c_str()<<"\n";
-			// But let's in that case, wrap up the GENERATED SOURCE in sfxb:
-			if (sfxOptions.wrapOutput)
-			{
-				//concatenate
-	#ifdef _MSC_VER
-				std::ifstream if_c(generatedSourceFilename.c_str(), std::ios_base::binary);
-	#else
-				std::ifstream if_c(WStringToUtf8(generatedSourceFilename).c_str(), std::ios_base::binary);
-	#endif
-				if(!if_c.good())
-				{
-					SFX_BREAK("Failed to load generated shader source");
-					exit(1002);
-				}
-				std::streampos startp = combinedBinary.tellp();
-				combinedBinary << if_c.rdbuf();
-				std::streampos endp = combinedBinary.tellp();
-				size_t sz=endp - startp;
-				if(!sz)
-				{
-					SFX_BREAK("Empty output shader ");
-					std::cerr<<"Empty output shader "<<WStringToUtf8(generatedSourceFilename)<<"\n";
-					exit(1001);
-				}
-				binaryMap[sbf] = std::make_tuple(startp, sz);
-			}
-			return true;
-		}
+		t,
+		pixelOutputFormat
+	);
+	// If no compiler provided, we can return now (perhaps we are only interested in
+	// the shader source)
+	if (compile_command.empty())
+	{
 		if(sfxOptions.verbose)
-			std::cout<<WStringToUtf8(compile_command).c_str()<<std::endl;
+				std::cout<<WStringToUtf8(generatedSourceFilename).c_str()<<"\n";
+		// But let's in that case, wrap up the GENERATED SOURCE in sfxb:
+		if (sfxOptions.wrapOutput)
+		{
+			//concatenate
+#ifdef _MSC_VER
+				std::ifstream if_c(generatedSourceFilename.c_str(), std::ios_base::binary);
+#else
+				std::ifstream if_c(WStringToUtf8(generatedSourceFilename).c_str(), std::ios_base::binary);
+#endif
+			if(!if_c.good())
+			{
+				SFX_BREAK("Failed to load generated shader source");
+				exit(1002);
+			}
+			std::streampos startp = combinedBinary.tellp();
+			combinedBinary << if_c.rdbuf();
+			std::streampos endp = combinedBinary.tellp();
+			size_t sz=endp - startp;
+			if(!sz)
+			{
+				SFX_BREAK("Empty output shader ");
+					std::cerr<<"Empty output shader "<<WStringToUtf8(generatedSourceFilename)<<"\n";
+				exit(1001);
+			}
+			binaryMap[sbf] = std::make_tuple(startp, sz);
+		}
+		return true;
+	}
+	if(sfxOptions.verbose)
+		std::cout<<WStringToUtf8(compile_command).c_str()<<std::endl;
 	}
 
 	// Run the provided .exe! 
@@ -1036,7 +1037,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 				{
 					if (terminate_command)
 						exit(2000);
-					Sleep(10);
+					sleep(10);
 				}
 				if(!if_c.good())
 				{

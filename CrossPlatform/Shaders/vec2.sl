@@ -235,4 +235,16 @@ typedef tvector2<double> vec2d;
 typedef tvector2<int> int2;
 typedef tvector2<unsigned int> uint2;
 
+// POD-compatible packed version for use in packed structs
+template <typename T>
+struct pvector2
+{
+	T x, y;
+};
+
+typedef pvector2<float> vec2_packed;
+typedef pvector2<double> vec2d_packed;
+typedef pvector2<int> int2_packed;
+typedef pvector2<unsigned int> uint2_packed;
+
 #endif

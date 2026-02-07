@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <regex>
+#include <string.h>
 
 using namespace std;
 #ifndef _MSC_VER

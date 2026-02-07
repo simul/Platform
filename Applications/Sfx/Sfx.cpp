@@ -59,6 +59,7 @@ typedef int errno_t;
 #include "SfxClasses.h"
 #include "Sfx.h"
 #include "SfxEffect.h"
+#include "Compiler.h"
 
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
@@ -106,7 +107,7 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8,uint64_t 
 	if(last_slash>0)
 		path=path.substr(0,last_slash);
 	shaderPathsUtf8.push_back(path);
-	datetime=FileLoader::GetFileDate(fullPathNameUtf8.c_str());
+	datetime=FileLoader::GetFileDateUnixTimeMs(fullPathNameUtf8.c_str());
 	return f;
 }
 
@@ -513,6 +514,13 @@ std::string GetExecutableDirectory()
 	}
 	else
 		str=L"";
+#else
+	char pBuf[512];
+	size_t len = sizeof(pBuf); 
+	int bytes = std::min((int)readlink("/proc/self/exe", pBuf, len), (int)len - 1);
+	if(bytes >= 0)
+		pBuf[bytes] = '\0';
+	return std::string(pBuf);
 #endif
 	return WStringToUtf8(str);
 }
@@ -602,13 +610,13 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		readlink("/proc/self/exe",exeNameUtf8,_MAX_PATH);
 		#endif
 		// start with the date that this exe was made, so new exe's rebuild the shaders.
-		uint64_t exe_datetime=FileLoader::GetFileDate(exeNameUtf8);
-		uint64_t platformfile_datetime=FileLoader::GetFileDate(config->platformFilename.c_str());
+		uint64_t exe_datetime=FileLoader::GetFileDateUnixTimeMs(exeNameUtf8);
+		uint64_t platformfile_datetime=FileLoader::GetFileDateUnixTimeMs(config->platformFilename.c_str());
 		latest_datetime= std::max(exe_datetime,platformfile_datetime);
 		latest_file=file;
 		if (!preprocess(file, config->define, sfxOptions->disableLineWrites))
 			return false;
-		uint64_t output_filedatetime = FileLoader::GetFileDate(sfxoFilename.c_str());
+		uint64_t output_filedatetime = FileLoader::GetFileDateUnixTimeMs(sfxoFilename.c_str());
 		bool recompile=false;
 		if(sfxOptions->force)
 		{
@@ -646,9 +654,6 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		if(sfxOptions->verbose)
 		{
 			char buffer[_MAX_PATH];
-			string wd="";
-			if(_getcwd(buffer,_MAX_PATH))
-				wd=string(buffer)+"/";
 			mkpath(sfxOptions->intermediateDirectory);
 			ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(file))+"_pp";
 			ofstream pps(ppfile);

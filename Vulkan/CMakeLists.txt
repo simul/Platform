@@ -39,6 +39,7 @@ set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/inc
 add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
 	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
+	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
 	if(PLATFORM_WINDOWS)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
 	endif()
@@ -47,6 +48,7 @@ if(SIMUL_SOURCE_BUILD)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
 	endif()
 	
+	message("target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC \"${Vulkan_INCLUDE_DIR}\"")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 	# For parallel_hashmap

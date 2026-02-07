@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/Core/MemoryInterface.h"
 #include "Platform/CrossPlatform/Export.h"
+#include "Platform/CrossPlatform/Resource.h"
 #include "Platform/CrossPlatform/PixelFormat.h"
 #include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include <vector>
@@ -323,7 +324,7 @@ namespace platform
 		};
 
 		/// A Texture base class.
-		class SIMUL_CROSSPLATFORM_EXPORT Texture
+		class SIMUL_CROSSPLATFORM_EXPORT Texture : public crossplatform::Resource
 		{
 		public:
 			Texture(const char *name=NULL);
