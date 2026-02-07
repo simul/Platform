@@ -24,7 +24,6 @@ jobs:
       uses: humbletim/install-vulkan-sdk@v1.1.1
       with:
         version: 1.3.296.0
-        cache: true
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory.
