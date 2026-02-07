@@ -331,9 +331,9 @@ namespace platform
 			vulkan::Texture*								mDummyTextureCube=nullptr;
 			vulkan::Texture*								mDummyTextureCubeArray=nullptr;
 			static crossplatform::PixelFormat				defaultColourFormat;
-			unsigned long long InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
-			std::map<unsigned long long,vk::Framebuffer>	mFramebuffers;
-			std::map<unsigned long long, crossplatform::TargetsAndViewport> mTargets;
+			uint64_t InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv);
+			std::map<uint64_t,vk::Framebuffer>	mFramebuffers;
+			std::map<uint64_t, crossplatform::TargetsAndViewport> mTargets;
 
 			vk::DeviceSize mCPUPreferredBlockSize = 0;
 			vk::DeviceSize mGPUPreferredBlockSize = 0;

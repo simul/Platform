@@ -631,7 +631,7 @@ void RewriteVulkanMessage( std::string &str)
 	{
 		string hex_addr=m[1].str();
 		std::stringstream sstr;
-		unsigned long long num;
+		uint64_t num;
 		sstr << std::hex << hex_addr.c_str();
 		sstr >> num;
 

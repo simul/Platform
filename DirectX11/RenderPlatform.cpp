@@ -1593,7 +1593,7 @@ void RenderPlatform::WaitForFencedResources(crossplatform::DeviceContext &device
 		// don't need to wait for a writeable texture. PROBABLY
 		if(slot<0||slot>=1000)
 			continue;
-		unsigned long long fence=ta.texture->GetFence();
+		uint64_t fence=ta.texture->GetFence();
 		if(fence)
 		{
 			((ID3D11DeviceContextX*)pContext)->InsertWaitOnFence(0,fence);

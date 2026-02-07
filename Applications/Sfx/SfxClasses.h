@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 #include <string>
 #include <sstream>
 #include <vector>
+#include <stdint.h>
 
 int sfxparse();
 int sfxlex();
@@ -38,7 +39,7 @@ namespace sfx
 {
 	typedef std::map<std::string, std::tuple<std::streampos, std::size_t>> BinaryMap;
 	/// This must track platform::crossplatform::ShaderResourceType
-	enum class ShaderResourceType : unsigned long long
+	enum class ShaderResourceType : uint64_t
 	{
 		UNKNOWN = 0
 		, RW = 1
