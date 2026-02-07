@@ -22,7 +22,7 @@ typedef stack<char*> StackPtrChar;
 	}
 	#define path_separator "\\"
 	#define path_sep_char  '\\'
-#elif defined(__ORBIS__)||defined(UNIX)||defined(__COMMODORE__) || defined(__SWITCH__)
+#else
 	#define path_separator "/"
 	#define path_sep_char  '/'
 
@@ -30,8 +30,6 @@ char *strtok_s(char * str, size_t * , const char * delim, char ** )
 {
 	return strtok(str,delim);
 }
-#else
-	#error define your compiler
 #endif
 
 // Macro off the string buffer manipulation functions.

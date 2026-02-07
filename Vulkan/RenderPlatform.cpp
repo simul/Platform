@@ -30,6 +30,27 @@
 bool platform::vulkan::debugUtilsSupported=false;
 bool platform::vulkan::debugMarkerSupported=false;
 
+size_t platform::vulkan::MemoryInterface::GetCurrentVideoBytesAllocated() const
+{
+	VmaTotalStatistics stat;
+	vmaCalculateStatistics(mGPUAllocator, &stat);
+	return stat.total.statistics.allocationBytes;
+}
+
+size_t platform::vulkan::MemoryInterface:: GetTotalVideoBytesAllocated() const
+{
+	VmaTotalStatistics stat;
+	vmaCalculateStatistics(mGPUAllocator, &stat);
+	return stat.total.statistics.allocationBytes;
+}
+
+size_t platform::vulkan::MemoryInterface::GetTotalVideoBytesFreed() const
+{
+	VmaTotalStatistics stat;
+	vmaCalculateStatistics(mGPUAllocator, &stat);
+	return 0;
+}
+
 namespace platform::vulkan
 {
 	static PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = nullptr;
@@ -42,12 +63,21 @@ using namespace platform;
 using namespace vulkan;
 
 RenderPlatform::RenderPlatform():
-	mDummy2D(nullptr)
+	vulkanMemoryInterface(mGPUAllocator)
+	,mDummy2D(nullptr)
 	,mDummy3D(nullptr)
 {
-	mirrorY	 = false;
-	mirrorY2	= false;
-	mirrorYText = false;
+	memoryInterface =&vulkanMemoryInterface;
+	mirrorY			= false;
+	mirrorY2		= false;
+	mirrorYText		= false;
+	for(int i=0;i<4;i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			lastDescriptorSet[i][j] = nullptr;
+		}
+	}
 }
 
 RenderPlatform::~RenderPlatform()
@@ -212,6 +242,63 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	for (int g= 0; g < 3; g++)
 	for (int i = 0; i < s_DescriptorSetCount; i++)
 		m_DescriptorSets_It[g][i] = m_DescriptorSets[g][i].begin();
+}
+
+void RenderPlatform::Defrag(crossplatform::GraphicsDeviceContext &deviceContext)
+{
+	uint8_t t=0;
+	t--;
+	if(t)
+		return;
+	VmaDefragmentationInfo defragInfo = {};
+	defragInfo.pool = VK_NULL_HANDLE;
+	defragInfo.flags = VMA_DEFRAGMENTATION_FLAG_ALGORITHM_FAST_BIT;
+
+	VmaDefragmentationContext defragCtx;
+	VkResult res = vmaBeginDefragmentation(mGPUAllocator, &defragInfo, &defragCtx);
+	// Check res...
+
+	for (;;)
+	{
+		VmaDefragmentationPassMoveInfo pass;
+		res = vmaBeginDefragmentationPass(mGPUAllocator, defragCtx, &pass);
+		if (res == VK_SUCCESS)
+			break;
+		else if (res != VK_INCOMPLETE)
+		{
+			break;
+		}
+
+		for (uint32_t i = 0; i < pass.moveCount; ++i)
+		{
+			// Inspect pass.pMoves[i].srcAllocation, identify what buffer/image it represents.
+			VmaAllocationInfo allocInfo;
+			vmaGetAllocationInfo(mGPUAllocator, pass.pMoves[i].srcAllocation, &allocInfo);
+			crossplatform::Resource *resData = (crossplatform::Resource *)allocInfo.pUserData;
+			resData->Reallocate(deviceContext,allocInfo.deviceMemory,pass.pMoves[i].dstTmpAllocation);
+		}
+
+		// Make sure the copy commands finished executing.
+	//	vkWaitForFences(...);
+
+		// Destroy old buffers/images bound with pass.pMoves[i].srcAllocation.
+		//for (uint32_t i = 0; i < pass.moveCount; ++i)
+		//{
+			// ...
+		//	vkDestroyImage(device, resData->img, nullptr);
+		//}
+
+		// Update appropriate descriptors to point to the new places...
+
+		res = vmaEndDefragmentationPass(mGPUAllocator, defragCtx, &pass);
+		if (res == VK_SUCCESS)
+			break;
+		else if (res != VK_INCOMPLETE)
+		{
+		}
+	}
+ 
+	vmaEndDefragmentation(mGPUAllocator, defragCtx, nullptr);
 }
 
 void RenderPlatform::CreateDescriptorPool(int g, int countPerFrame)
@@ -565,7 +652,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 		labelInfo.pLabelName = name;
 		labelInfo.color[0] = labelInfo.color[1] = labelInfo.color[2] = labelInfo.color[3] = 1.0f;
 
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdBeginDebugUtilsLabelEXT = vkCmdBeginDebugUtilsLabelEXT;
 		commandBuffer->beginDebugUtilsLabelEXT(&labelInfo, d);
 	}
@@ -577,7 +664,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext& deviceContext, con
 		markerInfo.pMarkerName = name;
 		markerInfo.color[0] = markerInfo.color[1] = markerInfo.color[2] = markerInfo.color[3] = 1.0f;
 
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdDebugMarkerBeginEXT = vkCmdDebugMarkerBeginEXT;
 		commandBuffer->debugMarkerBeginEXT(markerInfo, d);
 	}
@@ -588,14 +675,14 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext& deviceContext)
 	if (debugUtilsSupported)
 	{
 		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdEndDebugUtilsLabelEXT = vkCmdEndDebugUtilsLabelEXT;
 		commandBuffer->endDebugUtilsLabelEXT(d);
 	}
 	if (debugMarkerSupported)
 	{
 		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-		vk::DispatchLoaderDynamic d;
+		vk::detail::DispatchLoaderDynamic d;
 		d.vkCmdDebugMarkerEndEXT = vkCmdDebugMarkerEndEXT;
 		commandBuffer->debugMarkerEndEXT(d);
 	}
@@ -971,7 +1058,7 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter,vk::MemoryPropertyFl
 	 return 0;
 }
 
-void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, AllocationInfo& allocationInfo, const char *name)
+void RenderPlatform::CreateVulkanBuffer(crossplatform::Resource *res,vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer& buffer, AllocationInfo& allocationInfo, const char *name)
 {
 	vk::BufferCreateInfo bufferInfo = {};
 	bufferInfo.size = size;
@@ -988,7 +1075,7 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 	allocationCI.preferredFlags = 0;
 	allocationCI.memoryTypeBits = 0;
 	allocationCI.pool = VK_NULL_HANDLE;
-	allocationCI.pUserData = nullptr;
+	allocationCI.pUserData = res;
 
 	bool gpuMemory = (properties & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
 	allocationInfo.allocator = gpuMemory ? mGPUAllocator : mCPUAllocator;
@@ -1003,7 +1090,7 @@ void RenderPlatform::CreateVulkanBuffer(vk::DeviceSize size, vk::BufferUsageFlag
 	}
 }
 
-void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name)
+void RenderPlatform::CreateVulkanImage(crossplatform::Resource *res,vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name)
 {
 	VkImage _image = VK_NULL_HANDLE;
 	const VkImageCreateInfo &_imageCreateInfo = imageCreateInfo.operator const VkImageCreateInfo &();
@@ -1015,7 +1102,7 @@ void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk:
 	allocationCI.preferredFlags = 0;
 	allocationCI.memoryTypeBits = 0;
 	allocationCI.pool = VK_NULL_HANDLE;
-	allocationCI.pUserData = nullptr;
+	allocationCI.pUserData = res;
 
 	bool gpuMemory = (properties & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
 	allocationInfo.allocator = gpuMemory ? mGPUAllocator : mCPUAllocator;
@@ -1023,11 +1110,23 @@ void RenderPlatform::CreateVulkanImage(vk::ImageCreateInfo &imageCreateInfo, vk:
 	SIMUL_VK_CHECK((vk::Result)vmaCreateImage(allocationInfo.allocator, &_imageCreateInfo, &allocationCI, &_image, &allocationInfo.allocation, &allocationInfo.allocationInfo));
 	image = _image;
 
-	if (name)
+	if (name&&image)
 	{
 		SetVulkanName(this, image, name);
 		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
 	}
+	else
+	{
+		PLATFORM_WARN("Failed to create texture {}",name);
+	}
+}
+
+void RenderPlatform::ReallocVulkanImage(vk::ImageCreateInfo& imageCreateInfo, VmaAllocation &dstAllocation, vk::Image &newImg)
+{
+	vk::Result res = vulkanDevice->createImage(&imageCreateInfo, nullptr, &newImg);
+	SIMUL_VK_CHECK(res);
+	res=(vk::Result)vmaBindImageMemory(mGPUAllocator, dstAllocation, newImg);
+	SIMUL_VK_CHECK(res);
 }
 
 void RenderPlatform::InsertFences(crossplatform::DeviceContext& deviceContext)
@@ -1416,7 +1515,7 @@ vk::Format RenderPlatform::ToVulkanFormat(crossplatform::PixelFormat p,crossplat
 		case crossplatform::CompressionFormat::BC6H:
 			return vk::Format::eBc6HUfloatBlock;
 		default:
-		return vk::Format::eR16G16B16A16Sfloat;
+			return vk::Format::eR16G16B16A16Sfloat;
 		};
 	case RGBA_32_FLOAT:
 		return vk::Format::eR32G32B32A32Sfloat;

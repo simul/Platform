@@ -197,7 +197,7 @@ void FileLoader::AcquireFileContents(void*& pointer, unsigned int& bytes, const 
 	fclose(fp);
 }
 
-uint64_t FileLoader::GetFileDate(const char *filename_utf8)
+uint64_t FileLoader::GetFileDateUnixTimeMs(const char *filename_utf8)
 {
 	std::wstring filenamew=StringToWString(filename_utf8);
 	#ifdef _MSC_VER
@@ -208,7 +208,7 @@ uint64_t FileLoader::GetFileDate(const char *filename_utf8)
 	stat(filename_utf8, &buf);
 	#endif
 	buf.st_mtime;
-	time_t t = buf.st_mtime;
+	time_t t = buf.st_mtime*1000;
 	return static_cast<uint64_t>(t);
 }		
 

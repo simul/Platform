@@ -65,6 +65,29 @@ namespace platform
 		extern PLATFORM_CORE_EXPORT bool DebugBreaksEnabled();
 		extern PLATFORM_CORE_EXPORT void EnableDebugBreaks(bool b);
 		extern PLATFORM_CORE_EXPORT bool SimulInternalChecks;
+#if __cplusplus>=202002L
+		template <typename... Args>
+		void Error(const std::format_string<Args...> txt,const char *file, int line,  Args&&... args)
+		{
+			std::string str1 = std::format("{} ({}): warning: ", file, line);
+			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...) );
+			std::cerr << str1<<str2 << "\n";
+		}
+		template <typename... T>
+		void Warn(const std::format_string<T...> txt, const char *file, unsigned int line, const T &...args)
+		{
+			std::string str1 = std::format("{} ({}): warning: ", file, line);
+			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...) );
+			std::cerr << str1 << str2 << "\n";
+		}
+		template <typename... T>
+		void Info(const std::format_string<T...> txt, const char *file, unsigned int line, const T &...args)
+		{
+			std::string str1 = std::format("{} ({}): info: ", file, line);
+			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...) );
+			std::cerr << str1 << str2 << "\n";
+		}
+#else
 		template <typename... T>
 		void Error(const char *txt, const char* file, unsigned int line, const T &...args)
 		{
@@ -83,6 +106,7 @@ namespace platform
 			std::string str = fmt::format(txt, args...);
 			std::cout << fmt::format("{0} ({1}): info: {2}", file, line, str) << "\n";
 		}
+#endif
 		//! This is a throwable error class derived from std::runtime_error.
 		//! It is used in builds that have C++ exceptions enabled. As it always outputs to std::cerr,
 		//! it is easier to see the nature of the error than with runtime_error alone.

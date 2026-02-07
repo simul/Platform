@@ -51,7 +51,7 @@ bool Settings::LoadFileInternal()
 	SI_Error siError = m_Ini.LoadData(str);
 	if (siError < 0)
 	{
-		PLATFORM_ERROR("CSimpleIniA failed to load data from {} with error code {}.", m_Filename, siError);
+		PLATFORM_ERROR("CSimpleIniA failed to load data from {} with error code {}.", m_Filename, (int)siError);
 		return false;
 	}
 
@@ -68,7 +68,7 @@ bool Settings::SaveFileInternal()
 	SI_Error siError = m_Ini.Save(str);
 	if (siError < 0)
 	{
-		PLATFORM_ERROR("CSimpleIniA failed to save data to {} with error code {}.", m_Filename, siError);
+		PLATFORM_ERROR("CSimpleIniA failed to save data to {} with error code {}.", m_Filename, (int)siError);
 		return false;
 	}
 

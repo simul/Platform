@@ -2783,7 +2783,7 @@ void Vector::InsertAdd(const Vector3 &v,unsigned pos)
 	unsigned i;
 	for(i=0;i<3;++i)
 	{
-		Values[pos+i]+=v[i];
+		Values[pos+i]+=v.Values[i];
 	}
 }            
 //------------------------------------------------------------------------------

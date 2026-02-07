@@ -1094,7 +1094,7 @@ primary_exp : IDENTIFIER
 		{
 			buildFunction.declarations.insert(varName);
 			buildFunction.declareResource(varName);
-			if (cb=gEffect->GetNamedConstantBufferForMember(varName))
+			if (cb=gEffect->GetNamedConstantBufferForMember(varName);cb)
 				buildFunction.declareConstantBuffer(cb);
 		}
 		else if ((cb = gEffect->GetConstantBufferForMember(varName)) != nullptr)

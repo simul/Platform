@@ -147,6 +147,7 @@ function ( add_multiplatform_sfx_shader_project targetName )
 			else()
 				set(intermediate_folder ${sfx_INTERMEDIATE})
 			endif()
+			set (this_exe "${PLATFORM_SFX_EXECUTABLE}")
 			foreach(in_f ${sfx_SOURCES})
 				list(APPEND srcs ${in_f})
 				string(FIND ${in_f} ".sl" slpos REVERSE)
@@ -160,13 +161,15 @@ function ( add_multiplatform_sfx_shader_project targetName )
 					string(REPLACE ".sfx" ".sfxo" out_f ${name})
 					set(out_f "${out_folder}/${out_f}")
 					string(REPLACE ".sfxo" ".sfx_summary" main_output_file ${out_f})
-				#message("add_custom_command \"${PLATFORM_SFX_EXECUTABLE}\" ${in_f} ${INCLUDE_OPTS} -O\"${sfx_OUTPUT}\" ${SET_CONFIGS} ${EXTRA_OPTS_S}")
+					#message("add_custom_command sfx_OUTPUT ${sfx_OUTPUT}")
 					add_custom_command(OUTPUT ${main_output_file}
-						COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
+						COMMAND "${this_exe}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
 						MAIN_DEPENDENCY ${in_f}
 						WORKING_DIRECTORY ${out_folder}
 						DEPENDS ${PLATFORM_SFX_EXECUTABLE}
-						COMMENT "info: Sfx compiling ${in_f}"
+						COMMENT "\"${this_exe}\" ${in_f} ${INCLUDE_OPTS} -O\"${sfx_OUTPUT}\" ${SET_CONFIGS} ${EXTRA_OPTS_S}"
+						#VERBATIM
+						COMMAND_EXPAND_LISTS
 						)
 					list(APPEND outputs${targetName} ${out_f})
 				else()

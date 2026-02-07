@@ -1044,7 +1044,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	platform::core::find_and_replace(sfxbFilenameUtf8, ".sfxo", ".sfxb");
 
 	#if 0
-	uint64_t timestamp = platform::core::FileLoader::GetFileLoader()->GetFileDate(sfxbFilenameUtf8.c_str());
+	uint64_t timestamp = platform::core::FileLoader::GetFileLoader()->GetFileDateUnixTimeMs(sfxbFilenameUtf8.c_str());
+	uint64_t timestamp_s=timestamp/1000;
 	struct tm timeDate;
 	gmtime_s(&timeDate, (time_t *)&timestamp);
 	std::cout << sfxbFilenameUtf8 << " write time " <<
@@ -1088,8 +1089,13 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	string group_name,tech_name,pass_name;
 	int shaderCount=0;
 	bool platformChecked = false;
-	const std::regex re_resources("(\\b[a-z]):\\(([^\\)]*)\\)");
-	const std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
+	static const std::regex re_resources("(\\b[a-z]):\\(([^\\)]*)\\)");
+	static const std::regex element_re("([a-zA-Z]+[0-9]?)[\\s]+([a-zA-Z][a-zA-Z0-9_]*);");
+	static const std::string var_name_regex = "[a-z0-9A-Z_]+";
+	static const std::string var_val_regex = "[a-z0-9A-Z]+";
+	static const std::string var_combo_regex = "("s + var_name_regex + ")\\s*=\\s*(" + var_name_regex + ")";
+	static const std::string variant_regex = "(?:\\s*variant:\\(" + var_combo_regex + "(?:\\s*,\\s*" + var_combo_regex + ")*\\))?"s; //" + var_combo_regex+"(?:,"+var_combo_regex+")*
+	static const std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 	while(next>=0)
 	{
 		#ifdef UNIX
@@ -1481,11 +1487,6 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					uses=line.substr(cm+1,line.length()-cm-1);
 				platform::core::ClipWhitespace(uses);
 				platform::core::ClipWhitespace(type);
-				const std::string var_name_regex = "[a-z0-9A-Z_]+";
-				const std::string var_val_regex = "[a-z0-9A-Z]+";
-				const std::string var_combo_regex = "("s + var_name_regex + ")\\s*=\\s*(" + var_name_regex + ")";
-				const std::string variant_regex = "(?:\\s*variant:\\(" + var_combo_regex + "(?:\\s*,\\s*" + var_combo_regex + ")*\\))?"s; //" + var_combo_regex+"(?:,"+var_combo_regex+")*
-				const std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 				std::smatch fe_smatch;
 				
 				std::smatch sm;
@@ -1597,8 +1598,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 				}
 				else if(_stricmp(type.c_str(),"topology")==0)
 				{
-					Topology t=toTopology(name);
-					p->SetTopology(t);
+					Topology top=toTopology(name);
+					p->SetTopology(top);
 				}
 				else if (_stricmp(type.c_str(), "multiview") == 0)
 				{
@@ -1702,6 +1703,41 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 					{
 						SIMUL_BREAK("Unknown shader type or command: {}\n",type);
 						continue;
+					}
+					if(t!=crossplatform::ShaderType::SHADERTYPE_COUNT&&std::regex_search(line, sm, re_file_entry))
+					{
+						filenamestr= sm.str(1);
+						if(sm.length()>2)
+							entry_point= sm.str(2);
+						entry_point = sm.str(2);
+						if (entry_point.length()>0&&sm.length() > 4)
+						{
+							if (sm.length(3) && sm.length(4))
+							{
+								string inline_offset_str = sm.str(3);
+								string inline_length_str = sm.str(4);
+								inline_offset = std::stoul(inline_offset_str, nullptr, 16);
+								inline_length = std::stoul(inline_length_str, nullptr, 16);
+								if (!bin_ptr)
+								{
+									platform::core::FileLoader::GetFileLoader()->AcquireFileContents(bin_ptr, bin_num_bytes, sfxbFilenameUtf8.c_str(), true);
+									if (!bin_ptr)
+									{
+										SIMUL_BREAK("Failed to load combined shader binary: {}", sfxbFilenameUtf8);
+									}
+								}
+							}
+							{
+								int pos=5;
+								while(sm.length(pos+1)>0)
+								{
+									string var_name = sm.str(pos);
+									string var_value = sm.str(pos+1);
+									variantValues[var_name] = var_value;
+									pos+=2;
+								}
+							}
+						}
 					}
 					Shader *s = nullptr;
 					if(filenamestr.length()>0)

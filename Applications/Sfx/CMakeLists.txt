@@ -55,7 +55,4 @@ if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 			VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -I\"${CMAKE_SOURCE_DIR}/..\" -I\"${SIMUL_PLATFORM_DIR}/CrossPlatform/Shaders\" -o\"${CMAKE_BINARY_DIR}/Platform/shaderbin/$PLATFORM_NAME\" ${TEST_CONFIGS} -l -v ${SFX_TEST_DEFINES}"
 			)
 	endif()
-	if(PLATFORM_LINUX)
-		target_link_libraries(Sfx c++)
-	endif()
 endif()

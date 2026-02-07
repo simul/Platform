@@ -1,7 +1,3 @@
-
-/* Parts of this program are Copyright (c) 2011, Max Aizenshtein <max.sniffer@gmail.com>
-*/
-
 #include <stdio.h>
 #include <vector>
 #include <iomanip> // for setw
@@ -50,6 +46,7 @@ const SfxOptions &GetSfxOptions()
     return sfxOptions;
 }
 extern bool terminate_command;
+#ifdef _MSC_VER
 // A ctrl message handler to detect "close" events.
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
@@ -86,13 +83,14 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
         return FALSE;
     }
 }
+#endif
 std::string templateOutputFile;
 int main(int argc, char** argv) 
 {
+	#ifdef _MSC_VER
     if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
 	{
 	}
-	#ifdef _MSC_VER
 	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT);
 	_set_abort_behavior(0, _WRITE_ABORT_MSG);
 	#endif
@@ -127,6 +125,8 @@ int main(int argc, char** argv)
 		int a=0;
 		for(int i=1;i<argc;i++)
 		{
+			while(argv[i][0]==' ')
+				argv[i]++;
 			if(strlen(argv[i])>=2&&(argv[i][0]=='-'))
 			{
 				const char *arg=argv[i]+2;
@@ -241,6 +241,7 @@ int main(int argc, char** argv)
 		}
 		std::cout << std::setw(4)<< "info: building "<<sourceName<<" for "<<platformName<<"."<< std::endl;
 		SetEnv("PLATFORM_DIR",platform_dir.c_str());
+		std::cout<<"\n"<<GetEnv("BUILD_DIR")<<std::endl;
 		auto pathStrings=genericPathStrings;
 		pathStrings.push_back(json_path);
 		pathStrings.push_back(platform_dir+"/Shaders/SL"s);
