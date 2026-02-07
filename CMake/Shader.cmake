@@ -115,10 +115,8 @@ function ( add_multiplatform_sfx_shader_project targetName )
 				set( sfx_CONFIG_FILES ${sfx_CONFIG_FILES} "${SIMUL_PLATFORM_DIR}/${GRAPHICS_API}/Sfx/${GRAPHICS_API}.json" )
 			endforeach()
 		endif()
-		#message("sfx_CONFIG_FILES ${sfx_CONFIG_FILES}")
-		foreach(opt_cfg ${sfx_CONFIG_FILES})
-			set(SET_CONFIGS "${SET_CONFIGS} -P\"${opt_cfg}\"" )
-		endforeach() 
+		list(JOIN sfx_CONFIG_FILES "\" -P\"" SET_CONFIGS)
+		set(SET_CONFIGS "-P\"${SET_CONFIGS}\"" )
 		if(NOT "${SET_CONFIGS}" STREQUAL "")
 			#message("SET_CONFIGS ${SET_CONFIGS}")
 			set(EXTRA_OPTS)
@@ -164,7 +162,7 @@ function ( add_multiplatform_sfx_shader_project targetName )
 					add_custom_command(OUTPUT ${main_output_file}
 						COMMAND "${PLATFORM_SFX_EXECUTABLE}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
 						MAIN_DEPENDENCY ${in_f}
-						WORKING_DIRECTORY ${out_folder}
+						WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 						DEPENDS ${PLATFORM_SFX_EXECUTABLE}
 						COMMENT "info: Sfx compiling ${in_f}"
 						)

@@ -492,6 +492,7 @@ vector<string> SplitPath(const string &fullPath)
 
 #include <sstream>
 #include <iterator>
+#include <cstring>
 
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {

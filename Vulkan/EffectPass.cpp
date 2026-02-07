@@ -1003,7 +1003,7 @@ RenderPassHash EffectPass::GetHash(crossplatform::PixelFormat pixelFormat, int n
 RenderPassHash EffectPass::MakeRenderPassHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology, const crossplatform::Layout* layout,
 	const crossplatform::RenderState* blendState, const crossplatform::RenderState* depthStencilState, const crossplatform::RenderState* rasterizerState, bool multiview)
 {
-	unsigned long long hashval = (unsigned long long)pixelFormat * 1000 + (unsigned long long)numOfSamples * 10 + (unsigned long long)topology;
+	uint64_t hashval = (uint64_t)pixelFormat * 1000 + (uint64_t)numOfSamples * 10 + (uint64_t)topology;
 	if (layout)
 	{
 		hashval += layout->GetHash();

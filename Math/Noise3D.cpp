@@ -8,7 +8,7 @@
 
 using namespace platform::math;
 
-static float lerp(float t, float a, float b)
+static float xlerp(float t, float a, float b)
 {
 	return ( a + t * (b - a) );
 }
@@ -118,25 +118,25 @@ float platform::math::Noise3D::noise3(float pos[3]) const
 
 	u=value_at(i1,j1,k1);		// left bottom back
 	v=value_at(i2,j1,k1);		// right bottom front
-	a = lerp(sx, u, v);			// bottom back x=i1
+	a = std::lerp(u, v, sx);			// bottom back x=i1
 
 	u=value_at(i1,j2,k1);		// left bottom back
 	v=value_at(i2,j2,k1);		// right bottom front
-	b = lerp(sx, u, v);			// bottom front x=i2
+	b = std::lerp(u, v, sx);			// bottom front x=i2
 
-	c = lerp(sy, a, b);			// bottom, z=k1
+	c = std::lerp(a, b, sy);			// bottom, z=k1
 
 	u=value_at(i1,j1,k2);		// left top back
 	v=value_at(i2,j1,k2);		// right top front
-	a = lerp(sx, u, v);			// top back x=i1
+	a = std::lerp(u, v, sx);			// top back x=i1
 
 	u=value_at(i1,j2,k2);		// left top back
 	v=value_at(i2,j2,k2);		// right top front
-	b = lerp(sx, u, v);			// top front y=j
+	b = std::lerp(u, v, sx);			// top front y=j
 
-	d = lerp(sy, a, b);			// top, z=k2
+	d = std::lerp(a, b, sy);			// top, z=k2
 
-	return lerp(sz,c,d);
+	return std::lerp(c, d, sz);
 }
 
 float platform::math::Noise3D::PerlinNoise3D(float x,float y,float z) const

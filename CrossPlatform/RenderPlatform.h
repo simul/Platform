@@ -521,7 +521,7 @@ namespace platform
 			static uint32_t GetViewMaskFromRenderTargets(const GraphicsDeviceContext& deviceContext, uint32_t maxArrayLayerCount);
 			static bool SaveTextureDataToDisk(const char* filename, int width, int height, PixelFormat format, const void* data);
 			// Track resources for debugging:
-			static std::map<unsigned long long,std::string> ResourceMap;
+			static std::map<uint64_t,std::string> ResourceMap;
 			
 			float GetRecompileStatus(std::string &txt);
 			/// Asynchronously recompile the effects; the callback is called when the last one is complete.

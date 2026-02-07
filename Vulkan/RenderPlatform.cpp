@@ -1837,13 +1837,13 @@ void RenderPlatform::ActivateRenderTargets(crossplatform::GraphicsDeviceContext&
 		SIMUL_CERR << "Too many targets \n";
 		return;
 	}
-	unsigned long long hash=(unsigned long long)num;
+	uint64_t hash=(uint64_t)num;
 	for (int i = 0; i < num; i++)
 	{
-		hash+=(unsigned long long)targs[i]<<i;
+		hash+=(uint64_t)targs[i]<<i;
 	}
 	if (depth)
-		hash+=(unsigned long long)depth<<num;
+		hash+=(uint64_t)depth<<num;
 	auto &target=mTargets[hash];
 	target.num = num;
 	for (int i = 0; i < num; i++)
@@ -2003,11 +2003,11 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		crossplatform::TargetsAndViewport::TextureTarget& tt = tv->textureTargets[0];
 		vulkan::Texture* texture = (vulkan::Texture*)tt.texture;
 		// TODO: is AsVulkanImageView really necessary here?
-		hashval += (unsigned long long)(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(),tt.subresource.aspectMask, tt.subresource.mipLevel, uint32_t(1), tt.subresource.baseArrayLayer, tt.subresource.arrayLayerCount)))->operator VkImageView();
-		hashval += (unsigned long long)texture->width;	//Deal with resizing the framebuffer!
-		hashval += (unsigned long long)texture->length;
-		hashval += (unsigned long long)texture->GetArraySize();
-		hashval += (unsigned long long)texture->GetSampleCount();
+		hashval += (uint64_t)(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(),tt.subresource.aspectMask, tt.subresource.mipLevel, uint32_t(1), tt.subresource.baseArrayLayer, tt.subresource.arrayLayerCount)))->operator VkImageView();
+		hashval += (uint64_t)texture->width;	//Deal with resizing the framebuffer!
+		hashval += (uint64_t)texture->length;
+		hashval += (uint64_t)texture->GetArraySize();
+		hashval += (uint64_t)texture->GetSampleCount();
 	}
 	if (tv->depthTarget.texture)
 	{
@@ -2015,13 +2015,13 @@ RenderPassHash MakeTargetHash(crossplatform::TargetsAndViewport *tv)
 		crossplatform::TargetsAndViewport::TextureTarget& dt = tv->depthTarget;
 		vulkan::Texture* texture = (vulkan::Texture*)dt.texture;
 		// TODO: is AsVulkanImageView really necessary here?
-		hashval += (unsigned long long)(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(), dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount)))->operator VkImageView();
+		hashval += (uint64_t)(texture->AsVulkanImageView(MakeTextureView(texture->GetShaderResourceTypeForRTVAndDSV(), dt.subresource.aspectMask, dt.subresource.mipLevel, uint32_t(1), dt.subresource.baseArrayLayer, dt.subresource.arrayLayerCount)))->operator VkImageView();
 	}
 	hashval+=tv->num;
 	return hashval;
 }
 
-unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
+uint64_t RenderPlatform::InitFramebuffer(crossplatform::DeviceContext& deviceContext,crossplatform::TargetsAndViewport *tv)
 {
 	crossplatform::PixelFormat colourPF[16] = { crossplatform::PixelFormat::UNKNOWN };
 	int numOfSamples = 1;
@@ -2037,7 +2037,7 @@ unsigned long long RenderPlatform::InitFramebuffer(crossplatform::DeviceContext&
 	RenderPassHash hashval = MakeTargetHash(tv);
 	hashval += 5 * (effectPass ? effectPass->GetHash(colourPF[0], numOfSamples, deviceContext.contextState.topology, deviceContext.contextState.currentLayout) : 0);
 
-	std::map<unsigned long long, vk::Framebuffer>::iterator h = mFramebuffers.find(hashval);
+	std::map<uint64_t, vk::Framebuffer>::iterator h = mFramebuffers.find(hashval);
 	if (h == mFramebuffers.end() || !h->second || mFramebuffers.empty())
 	{
 		int count = tv->num + (tv->depthTarget.texture != nullptr && deviceContext.contextState.IsDepthActive());
@@ -2375,7 +2375,7 @@ vk::Framebuffer *RenderPlatform::GetCurrentVulkanFramebuffer(crossplatform::Grap
 	bool do_depth = (tv->depthTarget.texture != nullptr);
 	if(tv->textureTargets[0].texture!=nullptr)
 	{
-		unsigned long long hash = InitFramebuffer(deviceContext, tv);
+		uint64_t hash = InitFramebuffer(deviceContext, tv);
 		return &(mFramebuffers[hash]);
 	}
 	else

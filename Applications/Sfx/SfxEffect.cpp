@@ -3073,7 +3073,6 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 							find_and_replace(m, "{type}", member.type);
 							find_and_replace(m, "{name}", member.name);
 							std::string slotidx;
-							int cnt = 0;
 							if (member.semantic == "SV_TARGET")
 							{
 								slotidx = "0";
@@ -3112,8 +3111,6 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 							find_and_replace(str, "{members}", m + "\n");
 							theShader << str.c_str() << endl;
 							content += member.name + " = tmp." + member.name + ";\n";
-
-							cnt++;
 						}
 						find_and_replace(content, "return", function->returnType + " tmp = ");
 					}

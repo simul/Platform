@@ -288,7 +288,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
 				if (deviceContext.deviceContextType == barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
-					SIMUL_CERR << "Barrier error : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << ") (" << subRes << ") - " << D3D12ResourceStateToString(before) << " IS NOT " << D3D12ResourceStateToString(b.Transition.StateBefore) << std::endl;
+					SIMUL_CERR << "Barrier error : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << ") (" << subRes << ") - " << D3D12ResourceStateToString(before) << " IS NOT " << D3D12ResourceStateToString(b.Transition.StateBefore) << std::endl;
 				}
 #endif
 			}
@@ -301,7 +301,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
 					if (deviceContext.deviceContextType == barrierDeviceContextType)
 					{
 						GetD3DName(res, name, MAX_NAME_LENGTH);
-						SIMUL_COUT << "Barrier swapped:" << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << std::endl;
+						SIMUL_COUT << "Barrier swapped:" << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << std::endl;
 					}
 #endif
 				}
@@ -311,7 +311,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
 					if (deviceContext.deviceContextType == barrierDeviceContextType)
 					{
 						GetD3DName(res, name, MAX_NAME_LENGTH);
-						SIMUL_COUT << "Barrier removed : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << std::endl;
+						SIMUL_COUT << "Barrier removed : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << std::endl;
 					}
 #endif
 				}
@@ -323,7 +323,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
 				if (deviceContext.deviceContextType == barrierDeviceContextType)
 				{
 					GetD3DName(res, name, MAX_NAME_LENGTH);
-					SIMUL_COUT << "Barrier combined : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << std::endl;
+					SIMUL_COUT << "Barrier combined : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << std::endl;
 				}
 #endif
 				b.Transition.StateAfter = after;
@@ -338,7 +338,7 @@ void RenderPlatform::ResourceTransitionSimple(crossplatform::DeviceContext &devi
 		if (deviceContext.deviceContextType == barrierDeviceContextType)
 		{
 			GetD3DName(res, name, MAX_NAME_LENGTH);
-			SIMUL_COUT << "Barrier : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << " with context 0x" << (unsigned long long)deviceContext.asD3D12Context() << std::endl;
+			SIMUL_COUT << "Barrier : " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << "(" << subRes << ") from " << D3D12ResourceStateToString(before) << " to " << D3D12ResourceStateToString(after) << " with context 0x" << (uint64_t)deviceContext.asD3D12Context() << std::endl;
 		}
 #endif
 		barrier = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -369,7 +369,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext &deviceCont
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 
 #if PLATFORM_DEBUG_BARRIERS1
-	SIMUL_COUT << "Barrier : 0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << std::endl;
+	SIMUL_COUT << "Barrier : 0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << std::endl;
 #endif
 	/*	if (true)
 		{
@@ -397,7 +397,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext &deviceCont
 	barrier = CD3DX12_RESOURCE_BARRIER::UAV(res);
 
 #if PLATFORM_DEBUG_BARRIERS
-	SIMUL_COUT << "Barrier : 0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << std::endl;
+	SIMUL_COUT << "Barrier : 0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << std::endl;
 #endif
 	CheckBarriersForResize(deviceContext);
 #endif

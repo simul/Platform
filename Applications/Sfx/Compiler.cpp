@@ -1036,7 +1036,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 				{
 					if (terminate_command)
 						exit(2000);
-					Sleep(10);
+					sleep(10);
 				}
 				if(!if_c.good())
 				{
