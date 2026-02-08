@@ -3484,7 +3484,7 @@ shader_def : SHADER_COMMAND '(' shader_compile_or_instance ')' ';'
 	{
 		string shaderInstanceNames=$3.strs[0];
 		vector<string> shaderInstances;
-		for(const auto const &i:$3.children)
+		for(const auto &i:$3.children)
 		{
 			shaderInstances.push_back(i.strs[0]);
 		}

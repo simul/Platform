@@ -5,6 +5,7 @@
 #include "Platform/Math/Noise3D.h"
 #include "Platform/Math/RandomNumberGenerator.h"
 #include "Platform/Core/MemoryInterface.h"
+#include <math.h>
 
 using namespace platform::math;
 
