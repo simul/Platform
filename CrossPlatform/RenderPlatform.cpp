@@ -102,7 +102,8 @@ RenderPlatform::~RenderPlatform()
 	while (!(effectCompileThread.joinable() && recompileThreadFinished))
 	{
 	}
-	effectCompileThread.join();
+	if(effectCompileThread.joinable())
+		effectCompileThread.join();
 
 	allocator.Shutdown();
 	InvalidateDeviceObjects();

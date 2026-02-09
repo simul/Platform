@@ -9,6 +9,14 @@
 #include <linux/input.h>
 #endif
 #include <vulkan/vulkan.hpp>
+
+// Forward declare GLFW functions for Linux
+#ifndef _MSC_VER
+extern "C" {
+	void glfwGetWindowSize(GLFWwindow* window, int* width, int* height);
+	void glfwGetWindowPos(GLFWwindow* window, int* xpos, int* ypos);
+}
+#endif
 // Careless implementation by Vulkan requires this:
 #undef NOMINMAX
 // #include <vulkan/vk_sdk_platform.h>
@@ -854,7 +862,6 @@ void DisplaySurface::EndFrame()
 
 void DisplaySurface::Resize()
 {
-#ifdef _MSC_VER
 	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
 	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
@@ -863,10 +870,14 @@ void DisplaySurface::Resize()
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 
+	bool regen = false;
+	uint32_t W = 0;
+	uint32_t H = 0;
+
+#ifdef _MSC_VER
 	RECT rect = {};
 	if (!GetClientRect((HWND)mHwnd, &rect))
 		return;
-	bool regen = false;
 	RECT wrect = {};
 	if (GetWindowRect((HWND)mHwnd, &wrect))
 	{
@@ -877,8 +888,45 @@ void DisplaySurface::Resize()
 		lastWindow.z = wrect.right - wrect.left;
 		lastWindow.w = wrect.bottom - wrect.top;
 	}
-	UINT W = abs(rect.right - rect.left);
-	UINT H = abs(rect.bottom - rect.top);
+	W = abs(rect.right - rect.left);
+	H = abs(rect.bottom - rect.top);
+#else
+	// Linux/GLFW: Get window size from GLFW or use surface capabilities
+	if (mHwnd)
+	{
+		GLFWwindow* glfwWindow = (GLFWwindow*)mHwnd;
+		int width = 0, height = 0;
+		glfwGetWindowSize(glfwWindow, &width, &height);
+		W = (uint32_t)width;
+		H = (uint32_t)height;
+
+		// Check if window position changed
+		int x = 0, y = 0;
+		glfwGetWindowPos(glfwWindow, &x, &y);
+		if (x != lastWindow.x || y != lastWindow.y)
+			regen = true;
+		lastWindow.x = x;
+		lastWindow.y = y;
+		lastWindow.z = width;
+		lastWindow.w = height;
+	}
+	else
+	{
+		// Fallback: use surface capabilities
+		vk::SurfaceCapabilitiesKHR surfCapabilities;
+		vk::PhysicalDevice *gpu = GetGPU();
+		if (gpu && mSurface)
+		{
+			auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
+			if (result == vk::Result::eSuccess)
+			{
+				W = surfCapabilities.currentExtent.width;
+				H = surfCapabilities.currentExtent.height;
+			}
+		}
+	}
+#endif
+
 	if (viewport.w != W || viewport.h != H)
 		regen = true;
 	if (!regen)
@@ -892,5 +940,4 @@ void DisplaySurface::Resize()
 	viewport.y = 0;
 	if (renderer)
 		renderer->ResizeView(mViewId, W, H);
-#endif
 }

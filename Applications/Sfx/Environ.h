@@ -51,7 +51,7 @@ static void SetEnv(const std::string &name_utf8, const std::string &value_utf8)
 static std::string ProcessEnvironmentVariables(const std::string &str)
 {
 	std::string ret=str;
-	std::regex re("\\$([A-Z|a-z|0-9|_]+)");
+	std::regex re("[\\$%\\!]([A-Z|a-z|0-9|_]+)");
 	std::sregex_iterator next(str.begin(), str.end(), re);
 	std::sregex_iterator end;
 	while (next != end)
@@ -60,11 +60,12 @@ static std::string ProcessEnvironmentVariables(const std::string &str)
 		{
 			std::smatch match = *next;
 			std::string m=match[1].str();
-			std::regex re(std::string("\\$")+m);
+			std::regex re(std::string("[\\$%\\!]")+m);
 			ret=std::regex_replace(ret,re,GetEnv(m));
 			next++;
-		} catch (std::regex_error& )
+		} catch (std::regex_error& err)
 		{
+			std::cerr << "Regex error: " << err.what() << std::endl;
 	  // Syntax error in the regular expression
 		}
 	}

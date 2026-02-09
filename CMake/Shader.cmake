@@ -106,9 +106,8 @@ function ( add_multiplatform_sfx_shader_project targetName )
 			set(SET_DEFINES -E\"SCE_ORBIS_SDK_DIR=${SCE_ORBIS_SDK_DIR}\" )
 			string(REPLACE "_MT" "" targetName "${targetName}")
 		endif()
-		foreach(opt_d ${sfx_DEFINES})
-			set(SET_DEFINES "${SET_DEFINES} -E\"${opt_d}\"" )
-		endforeach() 
+		list(JOIN sfx_DEFINES "\" -E\"" SET_DEFINES)
+		set(SET_DEFINES "-E\"${SET_DEFINES}\"" )
 		set(SET_CONFIGS)
 		if("${sfx_CONFIG_FILES}" STREQUAL "")
 			foreach(GRAPHICS_API ${PLATFORM_GRAPHICS_APIS})
@@ -123,15 +122,17 @@ function ( add_multiplatform_sfx_shader_project targetName )
 			foreach(opt_in ${sfx_OPTIONS})
 				set(EXTRA_OPTS "${EXTRA_OPTS} ${opt_in}" )
 			endforeach()
+
 			set(INCLUDE_OPTS)
 			foreach(incl_path ${sfx_INCLUDES})
-				set(INCLUDE_OPTS ${INCLUDE_OPTS} -I"${incl_path}" )
+				list(APPEND INCLUDE_OPTS "-I${incl_path}")
 			endforeach()
+			message(INCLUDE_OPTS ${INCLUDE_OPTS})
 			if(NOT "${EXTRA_OPTS}" STREQUAL "")
 				string(REPLACE "\"" "" EXTRA_OPTS ${EXTRA_OPTS})
 			endif()
 			set(EXTRA_OPTS "${EXTRA_OPTS} ${SET_DEFINES}")
-			separate_arguments(EXTRA_OPTS_S WINDOWS_COMMAND "${EXTRA_OPTS}")
+			separate_arguments(EXTRA_OPTS_S NATIVE_COMMAND "${EXTRA_OPTS}")
 			if(SIMUL_DEBUG_SHADERS)
 				set(EXTRA_OPTS_S ${EXTRA_OPTS_S} -v -d)
 			endif()
@@ -159,13 +160,15 @@ function ( add_multiplatform_sfx_shader_project targetName )
 					string(REPLACE ".sfx" ".sfxo" out_f ${name})
 					set(out_f "${out_folder}/${out_f}")
 					string(REPLACE ".sfxo" ".sfx_summary" main_output_file ${out_f})
-					#message("add_custom_command sfx_OUTPUT ${sfx_OUTPUT}")
+					list(JOIN EXTRA_OPTS_S " " EXTRA_OPTS)
+					# Escape $ for the command line, otherwise CMake will try to expand it as a variable.
+					string(REPLACE "$" "%" sfx_OUTPUT ${sfx_OUTPUT})
 					add_custom_command(OUTPUT ${main_output_file}
-						COMMAND "${this_exe}" ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS_S}
+						COMMAND ${this_exe} ${in_f} ${INCLUDE_OPTS} -O${sfx_OUTPUT} ${SET_CONFIGS} ${EXTRA_OPTS}
 						MAIN_DEPENDENCY ${in_f}
 						WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 						DEPENDS ${PLATFORM_SFX_EXECUTABLE}
-						COMMENT "\"${this_exe}\" ${in_f} ${INCLUDE_OPTS} -O\"${sfx_OUTPUT}\" ${SET_CONFIGS} ${EXTRA_OPTS_S}"
+						COMMENT "\"${this_exe}\" ${in_f} ${INCLUDE_OPTS} -O\"${sfx_OUTPUT}\" ${SET_CONFIGS} ${EXTRA_OPTS}"
 						#VERBATIM
 						COMMAND_EXPAND_LISTS
 						)
