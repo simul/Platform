@@ -115,7 +115,6 @@ int main(int argc, char** argv)
 	std::vector<std::string> platformFilenames;
 	std::string optimization;
 	std::vector<std::string> genericPathStrings;
-	std::string outputFile=templateOutputFile;
 	std::string intermediateDirectory;
 	if(argc>1) 
 	{
@@ -125,6 +124,7 @@ int main(int argc, char** argv)
 		int a=0;
 		for(int i=1;i<argc;i++)
 		{
+			std::cout << "argv[" << i << "] " << argv[i] << std::endl;
 			while(argv[i][0]==' ')
 				argv[i]++;
 			if(strlen(argv[i])>=2&&(argv[i][0]=='-'))
@@ -159,7 +159,9 @@ int main(int argc, char** argv)
 					platformFilenames.push_back(std::filesystem::weakly_canonical(StripQuotes(arg)).generic_string());
 				}
 				else if (argtype == 'o' || argtype == 'O')
+				{
 					templateOutputFile = StripQuotes(arg);
+				}
 				else if (argtype == 'd' || argtype == 'D')
 				{
 					sfxOptions.debugInfo = true;
@@ -193,6 +195,7 @@ int main(int argc, char** argv)
 		paths[n]=0;
 		args[a]=0;
 	}
+	std::string outputFile=templateOutputFile;
 	for (auto e : environment)
 	{
 		SetEnv(e.first, e.second);
@@ -239,7 +242,6 @@ int main(int argc, char** argv)
 				break;
 			}
 		}
-		std::cout << std::setw(4)<< "info: building "<<sourceName<<" for "<<platformName<<"."<< std::endl;
 		SetEnv("PLATFORM_DIR",platform_dir.c_str());
 		std::cout<<"\n"<<GetEnv("BUILD_DIR")<<std::endl;
 		auto pathStrings=genericPathStrings;
@@ -320,7 +322,6 @@ int main(int argc, char** argv)
 					pathStrings.push_back(ProcessPath(ProcessEnvironmentVariables(b)));
 				}
 			}
-			outputFile=templateOutputFile;
 			if(outputFile.length()==0)
 			{
 				if(j.count("outputPath")>0)
@@ -329,15 +330,15 @@ int main(int argc, char** argv)
 				}
 				else
 				{
-					outputFile										="$BUILD_DIR/Shaders/"+platformName+"/shaderbin"s;
+					outputFile = "$BUILD_DIR/Shaders/" + platformName + "/shaderbin"s;
 				}
 			}
-			outputFile=ProcessEnvironmentVariables(outputFile);
-			if(intermediateDirectory.length()==0)
+			outputFile = ProcessEnvironmentVariables(outputFile);
+			if (intermediateDirectory.length() == 0)
 			{
-				if(j.count("intermediateDirectory")>0)
+				if (j.count("intermediateDirectory") > 0)
 				{
-					sfxOptions.intermediateDirectory				=ProcessEnvironmentVariables(j["intermediateDirectory"]);
+					sfxOptions.intermediateDirectory = ProcessEnvironmentVariables(j["intermediateDirectory"]);
 				}
 				else
 				{
@@ -597,9 +598,8 @@ int main(int argc, char** argv)
 	}
 	// write a summary output file, so we have a single output with the build time on it.
 	SetEnv("PLATFORM_NAME","");
-	templateOutputFile=ProcessEnvironmentVariables(templateOutputFile);
 	sourceName = sourceName.replace(sourceName.rfind("."), sourceName.length(), "");
-	std::string summaryFilename=templateOutputFile+"/"s+sourceName+".sfx_summary";
+	std::string summaryFilename=ProcessEnvironmentVariables(templateOutputFile)+"/"s+sourceName+".sfx_summary";
 	if(ret==0)
 	{
 		std::ofstream summary(summaryFilename);
