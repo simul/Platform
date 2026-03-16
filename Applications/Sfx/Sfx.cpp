@@ -647,7 +647,7 @@ bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std:
 		// if verbose, save the preprocessed text to a temporary file.
 		if(sfxOptions->verbose)
 		{
-			char buffer[_MAX_PATH];
+			//char buffer[_MAX_PATH];
 			mkpath(sfxOptions->intermediateDirectory);
 			ppfile=((string(sfxOptions->intermediateDirectory)+"/")+GetFilenameOnly(file))+"_pp";
 			ofstream pps(ppfile);

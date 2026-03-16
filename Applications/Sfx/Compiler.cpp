@@ -15,6 +15,8 @@
 #include <iostream>
 #include <regex>
 #include <functional>
+#include <chrono>
+#include <thread>
 
 #if PLATFORM_STD_FILESYSTEM==1
 #include <filesystem>
@@ -1037,7 +1039,7 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance
 				{
 					if (terminate_command)
 						exit(2000);
-					sleep(10);
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				}
 				if(!if_c.good())
 				{
