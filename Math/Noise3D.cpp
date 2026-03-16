@@ -6,6 +6,7 @@
 #include "Platform/Math/RandomNumberGenerator.h"
 #include "Platform/Core/MemoryInterface.h"
 #include <math.h>
+#include <cmath>
 
 using namespace platform::math;
 
