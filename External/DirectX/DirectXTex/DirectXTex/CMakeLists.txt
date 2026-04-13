@@ -5,7 +5,7 @@
 #
 # http://go.microsoft.com/fwlink/?LinkId=248926
 
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.12)
 project (DirectXTex_CMake LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14)
