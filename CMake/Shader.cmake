@@ -1,6 +1,6 @@
-
-
 function ( add_sfx_shader_project targetName configJsonFile )
+	message(DEPRECATION "add_sfx_shader_project() is deprecated and not maintained. Use add_multiplatform_sfx_shader_project() to build shaders for multiple platforms.")
+
 	if(SIMUL_BUILD_SHADERS)
 		cmake_parse_arguments(sfx "" "INTERMEDIATE;OUTPUT;FOLDER" "INCLUDES;SOURCES;OPTIONS;DEFINES" ${ARGN} )
 		if (NOT TARGET ${targetName})
@@ -97,45 +97,50 @@ function ( add_multiplatform_sfx_shader_project targetName )
 				set(sfx_FOLDER Shaders)
 			endif()
 		endif()
-		set(SET_DEFINES -E\"PLATFORM=${SIMUL_PLATFORM_DIR}\" )
+
+		set(SET_DEFINES)
 		if (PLATFORM_COMMODORE)
-			set(SET_DEFINES -E\"COMMODORE_SDK_DIR=${COMMODORE_SDK_DIR}\" )
+			list(APPEND SET_DEFINES "-E\"COMMODORE_SDK_DIR=${COMMODORE_SDK_DIR}\"")
 			string(REPLACE "_MT" "" targetName "${targetName}")
-		endif()
-		if (PLATFORM_PS4)
-			set(SET_DEFINES -E\"SCE_ORBIS_SDK_DIR=${SCE_ORBIS_SDK_DIR}\" )
+		elseif (PLATFORM_PS4)
+			list(APPEND SET_DEFINES "-E\"SCE_ORBIS_SDK_DIR=${SCE_ORBIS_SDK_DIR}\"")
 			string(REPLACE "_MT" "" targetName "${targetName}")
+		else()
+			list(APPEND SET_DEFINES -E\"PLATFORM=${SIMUL_PLATFORM_DIR}\" )
 		endif()
-		list(JOIN sfx_DEFINES "\" -E\"" SET_DEFINES)
-		set(SET_DEFINES "-E\"${SET_DEFINES}\"" )
+		foreach(define ${sfx_DEFINES})
+			list(APPEND SET_DEFINES "-E\"${define}\"")
+		endforeach()
+		#message(SET_DEFINES ${SET_DEFINES})
+
 		set(SET_CONFIGS)
 		if("${sfx_CONFIG_FILES}" STREQUAL "")
 			foreach(GRAPHICS_API ${PLATFORM_GRAPHICS_APIS})
-				set( sfx_CONFIG_FILES ${sfx_CONFIG_FILES} "${SIMUL_PLATFORM_DIR}/${GRAPHICS_API}/Sfx/${GRAPHICS_API}.json" )
+				list(APPEND SET_CONFIGS "-P\"${SIMUL_PLATFORM_DIR}/${GRAPHICS_API}/Sfx/${GRAPHICS_API}.json\"")
 			endforeach()
 		endif()
-		list(JOIN sfx_CONFIG_FILES "\" -P\"" SET_CONFIGS)
-		set(SET_CONFIGS "-P\"${SET_CONFIGS}\"" )
-		if(NOT "${SET_CONFIGS}" STREQUAL "")
-			#message("SET_CONFIGS ${SET_CONFIGS}")
-			set(EXTRA_OPTS)
-			foreach(opt_in ${sfx_OPTIONS})
-				set(EXTRA_OPTS "${EXTRA_OPTS} ${opt_in}" )
-			endforeach()
+		#message(SET_CONFIGS ${SET_CONFIGS})
 
+		if(NOT "${SET_CONFIGS}" STREQUAL "")
 			set(INCLUDE_OPTS)
 			foreach(incl_path ${sfx_INCLUDES})
-				list(APPEND INCLUDE_OPTS "-I${incl_path}")
+				list(APPEND INCLUDE_OPTS "-I\"${incl_path}\"")
 			endforeach()
-			message(INCLUDE_OPTS ${INCLUDE_OPTS})
+			#message(INCLUDE_OPTS ${INCLUDE_OPTS})
+			
+			set(EXTRA_OPTS)
+			foreach(opt_in ${sfx_OPTIONS})
+				list(APPEND EXTRA_OPTS "${opt_in}" )
+			endforeach()
 			if(NOT "${EXTRA_OPTS}" STREQUAL "")
 				string(REPLACE "\"" "" EXTRA_OPTS ${EXTRA_OPTS})
 			endif()
-			set(EXTRA_OPTS "${EXTRA_OPTS} ${SET_DEFINES}")
-			separate_arguments(EXTRA_OPTS_S NATIVE_COMMAND "${EXTRA_OPTS}")
+			list(APPEND EXTRA_OPTS "${SET_DEFINES}")
 			if(SIMUL_DEBUG_SHADERS)
-				set(EXTRA_OPTS_S ${EXTRA_OPTS_S} -v -d)
+				list(APPEND EXTRA_OPTS -v -d)
 			endif()
+			#message(EXTRA_OPTS ${EXTRA_OPTS})
+			
 			set(srcs_includes)
 			set(srcs_shaders)
 			set(srcs)
@@ -160,16 +165,15 @@ function ( add_multiplatform_sfx_shader_project targetName )
 					string(REPLACE ".sfx" ".sfxo" out_f ${name})
 					set(out_f "${out_folder}/${out_f}")
 					string(REPLACE ".sfxo" ".sfx_summary" main_output_file ${out_f})
-					list(JOIN EXTRA_OPTS_S " " EXTRA_OPTS)
 					# Escape $ for the command line, otherwise CMake will try to expand it as a variable.
 					string(REPLACE "$" "%" sfx_OUTPUT ${sfx_OUTPUT})
 					add_custom_command(OUTPUT ${main_output_file}
-						COMMAND ${this_exe} ${in_f} ${INCLUDE_OPTS} -O${sfx_OUTPUT} ${SET_CONFIGS} ${EXTRA_OPTS}
+						COMMAND ${this_exe} ${in_f} ${INCLUDE_OPTS} -O"${sfx_OUTPUT}" ${SET_CONFIGS} ${EXTRA_OPTS}
 						MAIN_DEPENDENCY ${in_f}
 						WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 						DEPENDS ${PLATFORM_SFX_EXECUTABLE}
 						COMMENT "\"${this_exe}\" ${in_f} ${INCLUDE_OPTS} -O\"${sfx_OUTPUT}\" ${SET_CONFIGS} ${EXTRA_OPTS}"
-						#VERBATIM
+						VERBATIM
 						COMMAND_EXPAND_LISTS
 						)
 					list(APPEND outputs${targetName} ${out_f})

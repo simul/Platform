@@ -242,8 +242,10 @@ int main(int argc, char** argv)
 				break;
 			}
 		}
+		std::cout << std::setw(4)<< "info: building "<<sourceName<<" for "<<platformName<<"."<< std::endl;
+
 		SetEnv("PLATFORM_DIR",platform_dir.c_str());
-		std::cout<<"\n"<<GetEnv("BUILD_DIR")<<std::endl;
+		//std::cout<<"\n"<<GetEnv("BUILD_DIR")<<std::endl;
 		auto pathStrings=genericPathStrings;
 		pathStrings.push_back(json_path);
 		pathStrings.push_back(platform_dir+"/Shaders/SL"s);
@@ -322,11 +324,12 @@ int main(int argc, char** argv)
 					pathStrings.push_back(ProcessPath(ProcessEnvironmentVariables(b)));
 				}
 			}
+			outputFile = templateOutputFile;
 			if(outputFile.length()==0)
 			{
 				if(j.count("outputPath")>0)
 				{
-					outputFile										=j["outputPath"];
+					outputFile = j["outputPath"];
 				}
 				else
 				{
@@ -342,10 +345,10 @@ int main(int argc, char** argv)
 				}
 				else
 				{
-					sfxOptions.intermediateDirectory				=ProcessEnvironmentVariables("$BUILD_DIR/Shaders/"+platformName+"/sfx_intermediate"s);
+					sfxOptions.intermediateDirectory = ProcessEnvironmentVariables("$BUILD_DIR/Shaders/"+platformName+"/sfx_intermediate"s);
 				}
 				if(j.count("intermediatePath")>0&&sfxOptions.intermediateDirectory.length()==0)
-					sfxOptions.intermediateDirectory				=ProcessEnvironmentVariables(j["intermediatePath"]);
+					sfxOptions.intermediateDirectory = ProcessEnvironmentVariables(j["intermediatePath"]);
 			}
 			else
 				sfxOptions.intermediateDirectory=intermediateDirectory;
@@ -595,6 +598,8 @@ int main(int argc, char** argv)
 			ret = 0;
 		}
 		sfxDeleteEffect(effect);
+
+		std::cerr << std::endl;
 	}
 	// write a summary output file, so we have a single output with the build time on it.
 	SetEnv("PLATFORM_NAME","");
