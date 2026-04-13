@@ -1244,9 +1244,9 @@ void Texture::Reallocate(crossplatform::GraphicsDeviceContext& deviceContext, co
 	vk::ImageLayout srcLayout = mCurrentImageLayout;
 	
 	int w=width,h=length;
-	for (uint32_t mip = 0; mip < mips; mip++)
+	for (uint32_t mip = 0; mip < static_cast<uint32_t>(mips); mip++)
 	{
-		for (uint32_t layer = 0; layer < arraySize; layer++)
+		for (uint32_t layer = 0; layer < static_cast<uint32_t>(arraySize); layer++)
 		{
 			if (mip >= mLoadedTextures.size())
 				continue;

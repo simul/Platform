@@ -139,7 +139,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	srvDesc.Buffer.Flags					= D3D12_BUFFER_SRV_FLAG_NONE;
 
 	mSrvViews.resize(mMaxApplyMod);
-	for (int v = 0; v < mMaxApplyMod; v++)
+	for (uint32_t v = 0; v < mMaxApplyMod; v++)
 	{
 		srvDesc.Buffer.FirstElement	= v * mNumElements;
 
@@ -161,7 +161,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 		uavDesc.Buffer.Flags						= D3D12_BUFFER_UAV_FLAG_NONE;
 		
 		mUavViews.resize(mMaxApplyMod);
-		for (int v = 0; v < mMaxApplyMod; v++)
+		for (uint32_t v = 0; v < mMaxApplyMod; v++)
 		{
 			uavDesc.Buffer.FirstElement = v * mNumElements;
 
@@ -370,7 +370,7 @@ void PlatformStructuredBuffer::UpdateBuffer(platform::crossplatform::DeviceConte
 
 	// First update the UPLOAD buffer at the apply offset:
 	UINT8* pBuffer  = nullptr;
-	UINT curOff     = mCurApplies * mUnitSize;
+	UINT64 curOff   = mCurApplies * mUnitSize;
 	const CD3DX12_RANGE readRange(0, 0);
 	HRESULT res = mUploadBuffer->Map(0, &readRange, (void**)&pBuffer);
 	if (res != S_OK)
