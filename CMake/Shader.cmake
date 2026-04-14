@@ -118,6 +118,8 @@ function ( add_multiplatform_sfx_shader_project targetName )
 			foreach(GRAPHICS_API ${PLATFORM_GRAPHICS_APIS})
 				list(APPEND SET_CONFIGS "-P\"${SIMUL_PLATFORM_DIR}/${GRAPHICS_API}/Sfx/${GRAPHICS_API}.json\"")
 			endforeach()
+		else()
+			set(SET_CONFIGS ${sfx_CONFIG_FILES})
 		endif()
 		#message(SET_CONFIGS ${SET_CONFIGS})
 
