@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
-name: CMake Build Windows x64 Debug/Release with Visual Studio 2022
+name: CMake Build Windows and Linux x64 Debug/Release
 
 on:
   push:
@@ -11,7 +11,12 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # Runs the job twice: once for Windows and once for Linux
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Clone Platform
