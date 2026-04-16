@@ -364,6 +364,7 @@ void Window::Release()
 DeviceManager::DeviceManager()
 	:d3dDevice(0)
 	,d3dDeviceContext(0)
+	,adapter(0)
 	,d3dDebug(NULL)
 	,infoQueue(NULL)
 {
