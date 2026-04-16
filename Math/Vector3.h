@@ -36,6 +36,8 @@ namespace platform
 			Vector3(float a,float b,float c);		///< Constructor, values are set to (a,b,c).
 			Vector3(const float *x);				///< Constructor, values are set to (x[0],x[1],x[2]).
 			
+			operator const float *() const;
+			operator float *();
 			void Define(float x,float y,float z);	///< Set the values to (x,y,z).
 			void DefineValues(const float *x);			///< Set the values to (x[0],x[1],x[2]).
 			void Zero();							///< Set all values to zero.

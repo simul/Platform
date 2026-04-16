@@ -85,6 +85,15 @@ Vector3::Vector3(const Vector3 &v)
 	operator=(v);
 }
 
+Vector3::operator const float *() const
+{
+	return Values;
+}
+Vector3::operator float *()
+{
+	return Values;
+}
+
 void Vector3::Define(float x,float y,float z)
 {
 	Values[0]=x;
