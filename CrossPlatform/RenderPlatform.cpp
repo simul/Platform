@@ -82,9 +82,9 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 {
 	immediateContext.renderPlatform=this;
 	computeContext.renderPlatform=this;
-#if defined(WIN32) && !defined(_GAMING_XBOX)
+
 	effectCompileThread = std::thread(&RenderPlatform::recompileAsync,this);
-#endif
+
 	numPlatforms++;
 	for(uint8_t i=0;i<4;i++)
 	{
