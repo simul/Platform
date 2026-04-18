@@ -153,6 +153,37 @@ namespace platform
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const int4 *vi,const Texture *t);
 
+		/// Frame pacing telemetry to diagnose CPU-GPU synchronization issues
+		struct SIMUL_CROSSPLATFORM_EXPORT FramePacingTelemetry
+		{
+			static constexpr int kHistorySize = 120; // 120 frames of history (~2 seconds at 60fps)
+
+			float frameTimeHistory[kHistorySize] = {0};  // Total frame time (wall clock)
+			float cpuTimeHistory[kHistorySize] = {0};     // CPU work time from profiler
+			float gpuTimeHistory[kHistorySize] = {0};     // GPU work time from profiler
+			int currentIndex = 0;
+
+			// Rolling statistics (computed each frame)
+			float avgFrameTime = 0.0f;
+			float maxFrameTime = 0.0f;
+			float minFrameTime = 0.0f;
+			float currentFPS = 0.0f;
+
+			float avgCPUTime = 0.0f;
+			float avgGPUTime = 0.0f;
+
+			// Frame pacing metrics
+			float cpuGpuOverlap = 0.0f;  // How much CPU and GPU work overlaps (0-100%)
+			float frameTimeBudgetUtilization = 0.0f; // % of 16.67ms used at 60fps target
+
+			// Per-frame tracking
+			double lastFrameEndTime = 0.0;  // Absolute time when last frame ended
+			double currentFrameStartTime = 0.0;  // When current frame started
+
+			void RecordFrame(float wallClockFrameTimeMs, float cpuTimeMs, float gpuTimeMs);
+			void Reset();
+		};
+
 		/*! RenderPlatform is an interface that allows Platform's rendering functions to be developed
 			in a cross-platform manner. By abstracting the common functionality of the different graphics API's
 			into an interface, we can write render code that need not know which API is being used. It is possible
@@ -266,6 +297,8 @@ namespace platform
 			virtual void EndFrame			();
 			bool						FrameStarted() const;
 			long long					GetFrameNumber() const;
+			//! Get frame pacing telemetry for performance analysis
+			FramePacingTelemetry&		GetFramePacingTelemetry();
 			//! Apply resources in the specified group. If SetResourceGroupLayout() has been used to specify any resources that should go in groups 1-3,
 			//! this must be called to apply them before any shader uses those resources. Group 0 is for per-pass resources.
 			void ApplyResourceGroup(DeviceContext &deviceContext, uint8_t g);
@@ -587,6 +620,7 @@ namespace platform
 			crossplatform::GpuProfiler		*gpuProfiler=nullptr;
 			bool							gpuProfileFrameStarted = false;
 			bool can_save_and_restore;
+			FramePacingTelemetry			framePacingTelemetry;
 			//! Last frame number
 			long long					mLastFrame=-1;
 			bool						frame_started=false;

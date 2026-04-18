@@ -702,8 +702,10 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	// swapchain is not as optimal as it could be, but the platform's
 	// presentation engine will still present the image correctly.
 	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
-	
-	vulkanDevice->waitIdle();
+
+	// REMOVED: vulkanDevice->waitIdle();
+	// This was causing severe performance issues by destroying CPU-GPU parallelism.
+	// The fence wait at line 681 already provides the necessary synchronization.
 
 	SwapchainImageResources &res = swapchain_image_resources[current_buffer];
 	auto &commandBuffer = res.cmd;
@@ -863,12 +865,6 @@ void DisplaySurface::EndFrame()
 void DisplaySurface::Resize()
 {
 	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
-	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
-	{
-		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-	}
 
 	bool regen = false;
 	uint32_t W = 0;

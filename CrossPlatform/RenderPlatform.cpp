@@ -779,6 +779,11 @@ void RenderPlatform::BeginFrame(long long f)
 	frameNumber = f;
 }
 
+crossplatform::FramePacingTelemetry& RenderPlatform::GetFramePacingTelemetry()
+{
+	return framePacingTelemetry;
+}
+
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
 	if (deviceContext.targetStack.empty() )
@@ -2477,6 +2482,87 @@ void platform::crossplatform::DrawGrid(GraphicsDeviceContext &deviceContext,vec3
 	}
 	deviceContext.renderPlatform->DrawLines(deviceContext,lines,2*numLines*2,false,true);
 	delete[] lines;
+}
+
+// FramePacingTelemetry implementation
+void crossplatform::FramePacingTelemetry::RecordFrame(float wallClockFrameTimeMs, float cpuTimeMs, float gpuTimeMs)
+{
+	// Store frame times in circular buffer
+	frameTimeHistory[currentIndex] = wallClockFrameTimeMs;
+	cpuTimeHistory[currentIndex] = cpuTimeMs;
+	gpuTimeHistory[currentIndex] = gpuTimeMs;
+
+	currentIndex = (currentIndex + 1) % kHistorySize;
+
+	// Calculate rolling averages and statistics
+	float sumFrameTime = 0.0f;
+	float sumCPUTime = 0.0f;
+	float sumGPUTime = 0.0f;
+	maxFrameTime = 0.0f;
+	minFrameTime = 1000000.0f;
+
+	for (int i = 0; i < kHistorySize; i++)
+	{
+		sumFrameTime += frameTimeHistory[i];
+		sumCPUTime += cpuTimeHistory[i];
+		sumGPUTime += gpuTimeHistory[i];
+
+		if (frameTimeHistory[i] > maxFrameTime)
+			maxFrameTime = frameTimeHistory[i];
+		if (frameTimeHistory[i] < minFrameTime && frameTimeHistory[i] > 0.0f)
+			minFrameTime = frameTimeHistory[i];
+	}
+
+	avgFrameTime = sumFrameTime / kHistorySize;
+	avgCPUTime = sumCPUTime / kHistorySize;
+	avgGPUTime = sumGPUTime / kHistorySize;
+
+	// Calculate FPS from average frame time
+	if (avgFrameTime > 0.0f)
+		currentFPS = 1000.0f / avgFrameTime;
+	else
+		currentFPS = 0.0f;
+
+	// Calculate CPU-GPU overlap
+	// If frame time is less than CPU + GPU, there's parallelism
+	// Perfect overlap: frameTime = max(CPU, GPU)
+	// No overlap: frameTime = CPU + GPU
+	float theoreticalSerialTime = avgCPUTime + avgGPUTime;
+	if (theoreticalSerialTime > 0.0f)
+	{
+		float parallelismSavings = theoreticalSerialTime - avgFrameTime;
+		cpuGpuOverlap = (parallelismSavings / theoreticalSerialTime) * 100.0f;
+		cpuGpuOverlap = std::max(0.0f, std::min(100.0f, cpuGpuOverlap));
+	}
+	else
+	{
+		cpuGpuOverlap = 0.0f;
+	}
+
+	// Calculate frame budget utilization (assuming 60fps = 16.67ms target)
+	const float targetFrameTime60fps = 16.67f;
+	frameTimeBudgetUtilization = (avgFrameTime / targetFrameTime60fps) * 100.0f;
+}
+
+void crossplatform::FramePacingTelemetry::Reset()
+{
+	for (int i = 0; i < kHistorySize; i++)
+	{
+		frameTimeHistory[i] = 0.0f;
+		cpuTimeHistory[i] = 0.0f;
+		gpuTimeHistory[i] = 0.0f;
+	}
+	currentIndex = 0;
+	avgFrameTime = 0.0f;
+	maxFrameTime = 0.0f;
+	minFrameTime = 0.0f;
+	currentFPS = 0.0f;
+	avgCPUTime = 0.0f;
+	avgGPUTime = 0.0f;
+	cpuGpuOverlap = 0.0f;
+	frameTimeBudgetUtilization = 0.0f;
+	lastFrameEndTime = 0.0;
+	currentFrameStartTime = 0.0;
 }
 
 void RenderPlatform::SetStandardRenderState	(DeviceContext &deviceContext,StandardRenderState s)
