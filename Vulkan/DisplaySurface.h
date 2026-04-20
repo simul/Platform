@@ -15,11 +15,16 @@ namespace platform
 		struct SwapchainImageResources
 		{
 			vk::Image image;
-			vk::CommandBuffer cmd;
-			vk::CommandBuffer graphics_to_present_cmd;
 			vk::ImageView view;
 			vk::Framebuffer framebuffer;
-		} ;
+		};
+		
+		struct CommandBufferResources
+		{
+			vk::CommandBuffer cmd;
+			vk::CommandBuffer graphics_to_present_cmd;
+		};
+
 		class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
 		{
 		public:
@@ -41,6 +46,7 @@ namespace platform
 			vk::ColorSpaceKHR colour_space;
 			vk::SwapchainKHR swapchain;
 			std::vector<SwapchainImageResources> swapchain_image_resources;
+			std::vector<CommandBufferResources> commandbuffer_resources;
 			vk::Queue graphics_queue,present_queue;
 			vk::CommandPool cmd_pool;
 			vk::CommandPool present_cmd_pool;
@@ -56,8 +62,8 @@ namespace platform
 			void CreateRenderPass();
 			void CreateFramebuffers();
 			void Present();
-			uint32_t frame_index = 0;
-			uint32_t current_buffer;
+			uint32_t frame_index = 0;	// Our internal frame index counter.
+			uint32_t image_index;		// Returned from Vulkan each frame.
 			uint32_t graphics_queue_family_index;
 			uint32_t present_queue_family_index;
 			vk::Instance *GetVulkanInstance();
