@@ -454,10 +454,12 @@ extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig,const SfxOptions &s
 		compiler_exe=compiler_exe.substr(0,space_pos);
 	}
 	size_t dot_pos=compiler_exe.find(".");
+#ifdef _WIN32
 	if(dot_pos>= compiler_exe.size())
 	{
 		compiler_exe+=".exe";
 	}
+#endif
 	for(const auto &p:sfxConfig.compilerPaths)
 	{
 		std::filesystem::path pth(p);

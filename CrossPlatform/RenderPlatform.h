@@ -314,6 +314,8 @@ namespace platform
 			virtual void DispatchComputeAuto	(DeviceContext &deviceContext,int3 d);
 			//! Execute the currently applied compute shader.
 			virtual void DispatchCompute	(DeviceContext &deviceContext,int w,int l,int d)=0;
+			//! Execute the currently applied compute shader with arguments sourced from a GPU buffer.
+			virtual void DispatchComputeIndirect(DeviceContext &deviceContext, PlatformStructuredBuffer *dispatchArgsBuf, uint32_t byteOffset) {}
 			//! Execute the currently applied raytracing shaders.
 			virtual void DispatchRays		(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable* sbt = nullptr){}
 			//! Add a signal command to the CPU thread or GPU queue.

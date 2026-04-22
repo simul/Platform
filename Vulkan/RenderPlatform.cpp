@@ -711,6 +711,26 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 	EndEvent(deviceContext);
 }
 
+void RenderPlatform::DispatchComputeIndirect(crossplatform::DeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *dispatchArgsBuf, uint32_t byteOffset)
+{
+	vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	if (!commandBuffer || !dispatchArgsBuf)
+		return;
+	EndRenderPass(deviceContext);
+
+	vulkan::EffectPass* vkEffectPass = ((vulkan::EffectPass*)deviceContext.contextState.currentEffectPass);
+	BeginEvent(deviceContext, vkEffectPass->name.c_str());
+	if (ApplyContextState(deviceContext))
+	{
+		auto* vkBuf = static_cast<vulkan::PlatformStructuredBuffer*>(dispatchArgsBuf);
+		vk::Buffer* buf = vkBuf->GetLastBuffer();
+		size_t baseOffset = vkBuf->GetLastOffset();
+		commandBuffer->dispatchIndirect(*buf, baseOffset + byteOffset);
+		InsertFences(deviceContext);
+	}
+	EndEvent(deviceContext);
+}
+
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex)
 {
 	EndRenderPass(deviceContext);

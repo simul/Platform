@@ -6,9 +6,9 @@
 #ifndef __COUNTER__
 	#define __COUNTER__ __LINE__
 #endif
-// LLVM claims Gcc compatibility (__GNUC__=4) but uses __FUNCTION__ instead of __FUNC__
+// LLVM defines __FUNC__ natively; GCC does not, so map it to __FUNCTION__.
 #ifndef __llvm__
-    #define __FUNCTION__ __FUNC__
+    #define __FUNC__ __FUNCTION__
 #endif
 // also, gcc does NOT handle the pasting operator ## well. avoid if possible.
 #endif

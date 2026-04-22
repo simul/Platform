@@ -72,6 +72,8 @@ namespace platform
 			virtual ~BaseStructuredBuffer() = default;
 			PlatformStructuredBuffer* platformStructuredBuffer=nullptr;
 			int count=0;
+			PlatformStructuredBuffer* GetPlatformStructuredBuffer() { return platformStructuredBuffer; }
+			const PlatformStructuredBuffer* GetPlatformStructuredBuffer() const { return platformStructuredBuffer; }
 		};
 		class PlatformStructuredBuffer;
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.

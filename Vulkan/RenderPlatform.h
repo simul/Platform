@@ -171,6 +171,7 @@ namespace platform
 			void									BeginEvent(crossplatform::DeviceContext& deviceContext, const char* name)override;
 			void									EndEvent(crossplatform::DeviceContext& deviceContext)override;
 			void									DispatchCompute(crossplatform::DeviceContext& deviceContext, int w, int l, int d) override;
+			void									DispatchComputeIndirect(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* dispatchArgsBuf, uint32_t byteOffset) override;
 			
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::Texture* tex) override;
 			void									ResourceBarrierUAV(crossplatform::DeviceContext& deviceContext, crossplatform::PlatformStructuredBuffer* sb) override;
