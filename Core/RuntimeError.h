@@ -11,15 +11,15 @@
 
 #include "Export.h"
 
+#include <assert.h>
+#include <cerrno>
+#include <iostream>
+#include <string.h>
 #include <string>
 #include <string_view>
-#include <string.h>
-#include <iostream>
-#include <cerrno>
-#include <assert.h>
 #if PLATFORM_CXX20_OR_ABOVE
-#include <format>
 #include <fmt/core.h>
+#include <format>
 #else
 #include <fmt/core.h>
 #endif
@@ -49,7 +49,6 @@
 #endif
 #include <stdexcept> // for runtime_error
 
-
 #define SIMUL_COUT \
 	std::cout << __FILE__ << "(" << std::dec << __LINE__ << "): info: "
 
@@ -65,31 +64,31 @@ namespace platform
 		extern PLATFORM_CORE_EXPORT bool DebugBreaksEnabled();
 		extern PLATFORM_CORE_EXPORT void EnableDebugBreaks(bool b);
 		extern PLATFORM_CORE_EXPORT bool SimulInternalChecks;
-#if __cplusplus>=202002L
+#if __cplusplus >= 202002L
 		template <typename... Args>
-		void Error(const std::format_string<Args...> txt,const char *file, int line,  Args&&... args)
+		void Error(const std::format_string<Args...> txt, const char *file, int line, Args &&...args)
 		{
 			std::string str1 = std::format("{} ({}): warning: ", file, line);
-			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...) );
-			std::cerr << str1<<str2 << "\n";
+			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...));
+			std::cerr << str1 << str2 << "\n";
 		}
 		template <typename... T>
 		void Warn(const std::format_string<T...> txt, const char *file, unsigned int line, const T &...args)
 		{
 			std::string str1 = std::format("{} ({}): warning: ", file, line);
-			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...) );
+			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...));
 			std::cerr << str1 << str2 << "\n";
 		}
 		template <typename... T>
 		void Info(const std::format_string<T...> txt, const char *file, unsigned int line, const T &...args)
 		{
 			std::string str1 = std::format("{} ({}): info: ", file, line);
-			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...) );
+			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...));
 			std::cerr << str1 << str2 << "\n";
 		}
 #else
 		template <typename... T>
-		void Error(const char *txt, const char* file, unsigned int line, const T &...args)
+		void Error(const char *txt, const char *file, unsigned int line, const T &...args)
 		{
 			std::string str = fmt::format(txt, args...);
 			std::cerr << fmt::format("{0} ({1}): error: {2}", file, line, str) << "\n";
@@ -150,24 +149,23 @@ namespace platform
 #endif
 #endif
 
-#define PLATFORM_ERROR(txt, ...) \
-	{\
-	std::string str = fmt::format(txt, ##__VA_ARGS__);\
-	std::cerr << fmt::format("{} ({}): error: {}", __FILE__, __LINE__, str) << "\n";\
+#define PLATFORM_ERROR(txt, ...)                                                         \
+	{                                                                                    \
+		std::string str = fmt::format(txt, ##__VA_ARGS__);                               \
+		std::cerr << fmt::format("{} ({}): error: {}", __FILE__, __LINE__, str) << "\n"; \
 	}
 
-#define PLATFORM_WARN(txt, ...) \
-	{\
-	std::string str = fmt::format(txt, ##__VA_ARGS__);\
-	std::cerr << fmt::format("{} ({}): warn: {}", __FILE__, __LINE__, str) << "\n";\
+#define PLATFORM_WARN(txt, ...)                                                         \
+	{                                                                                   \
+		std::string str = fmt::format(txt, ##__VA_ARGS__);                              \
+		std::cerr << fmt::format("{} ({}): warn: {}", __FILE__, __LINE__, str) << "\n"; \
 	}
 
-#define PLATFORM_LOG(txt, ...) \
-	{\
-		std::string str = fmt::format(txt, ##__VA_ARGS__);\
-		std::cout << fmt::format("{} ({}): info: {}", __FILE__, __LINE__, str) << "\n";\
+#define PLATFORM_LOG(txt, ...)                                                          \
+	{                                                                                   \
+		std::string str = fmt::format(txt, ##__VA_ARGS__);                              \
+		std::cout << fmt::format("{} ({}): info: {}", __FILE__, __LINE__, str) << "\n"; \
 	}
-
 
 #define SIMUL_INTERNAL_COUT                  \
 	if (platform::core::SimulInternalChecks) \
@@ -224,21 +222,21 @@ namespace platform
 #define SIMUL_ASSERT(value)
 #endif
 
-#define SIMUL_BREAK(msg, ...)                                          \
-	{                                                                  \
+#define SIMUL_BREAK(msg, ...)               \
+	{                                       \
 		PLATFORM_ERROR(msg, ##__VA_ARGS__); \
-		BREAK_IF_DEBUGGING                                             \
+		BREAK_IF_DEBUGGING                  \
 	}
 
-#define SIMUL_BREAK_ONCE(msg, ...)                                         \
-	{                                                                      \
-		static bool done = false;                                          \
-		if (!done)                                                         \
-		{                                                                  \
+#define SIMUL_BREAK_ONCE(msg, ...)              \
+	{                                           \
+		static bool done = false;               \
+		if (!done)                              \
+		{                                       \
 			PLATFORM_ERROR(msg, ##__VA_ARGS__); \
-			BREAK_IF_DEBUGGING;                                            \
-			done = true;                                                   \
-		}                                                                  \
+			BREAK_IF_DEBUGGING;                 \
+			done = true;                        \
+		}                                       \
 	}
 
 #if SIMUL_INTERNAL_CHECKS
@@ -352,30 +350,64 @@ namespace platform
 #endif
 #endif
 /// This errno check is always enabled, wherease ERRNO_CHECK can be disabled for production.
+#ifdef UNIX
+#define ALWAYS_ERRNO_CHECK                                                  \
+	if (errno != 0)                                                         \
+	{                                                                       \
+		char errno_e[101];                                                  \
+		int err = errno;                                                    \
+		errno_e[0] = 0;                                                     \
+		char *errorMsg = (char *)strerror_r(err, errno_e, 101);             \
+		const char *msg = errorMsg ? errorMsg : errno_e;                    \
+		std::cerr << __FILE__ << "(" << __LINE__ << "): warning B0001: "    \
+				  << "WARNING: errno==" << err << ": " << msg << std::endl; \
+		errno = 0;                                                          \
+		SIMUL_THROW(msg);                                                   \
+	}
+#else
 #define ALWAYS_ERRNO_CHECK                                                      \
 	if (errno != 0)                                                             \
 	{                                                                           \
 		char errno_e[101];                                                      \
 		int err = errno;                                                        \
-		strerror_r(err, errno_e, 100);                                          \
+		errno_e[0] = 0;                                                         \
+		strerror_r(err, errno_e, 101);                                          \
 		std::cerr << __FILE__ << "(" << __LINE__ << "): warning B0001: "        \
 				  << "WARNING: errno==" << err << ": " << errno_e << std::endl; \
 		errno = 0;                                                              \
 		SIMUL_THROW(errno_e);                                                   \
 	}
+#endif
 /// This errno check is only used to find specific bugs, then removed from the code.
 #if SIMUL_INTERNAL_CHECKS
+#ifdef UNIX
+#define ERRNO_BREAK                                                         \
+	if (errno != 0)                                                         \
+	{                                                                       \
+		char errno_e[401];                                                  \
+		int err = errno;                                                    \
+		errno_e[0] = 0;                                                     \
+		char *errorMsg = (char *)strerror_r(err, errno_e, 401);             \
+		const char *msg = errorMsg ? errorMsg : errno_e;                    \
+		std::cerr << __FILE__ << "(" << __LINE__ << "): warning B0001: "    \
+				  << "WARNING: errno==" << err << ": " << msg << std::endl; \
+		BREAK_IF_DEBUGGING                                                  \
+		errno = 0;                                                          \
+	}
+#else
 #define ERRNO_BREAK                                                             \
 	if (errno != 0)                                                             \
 	{                                                                           \
 		char errno_e[401];                                                      \
 		int err = errno;                                                        \
-		strerror_r(err, errno_e, 400);                                          \
+		errno_e[0] = 0;                                                         \
+		strerror_r(err, errno_e, 401);                                          \
 		std::cerr << __FILE__ << "(" << __LINE__ << "): warning B0001: "        \
 				  << "WARNING: errno==" << err << ": " << errno_e << std::endl; \
 		BREAK_IF_DEBUGGING                                                      \
 		errno = 0;                                                              \
 	}
+#endif
 #else
 #define ERRNO_BREAK \
 	{               \
@@ -385,4 +417,3 @@ namespace platform
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-

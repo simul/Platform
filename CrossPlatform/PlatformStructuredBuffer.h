@@ -1,20 +1,20 @@
 #pragma once
+#include "Platform/Core/RuntimeError.h"
+#include "Platform/CrossPlatform/DeviceContext.h"
 #include "Platform/CrossPlatform/Export.h"
-#include "Platform/CrossPlatform/Shaders/CppSl.sl"
-#include "Platform/CrossPlatform/Topology.h"
 #include "Platform/CrossPlatform/Layout.h"
 #include "Platform/CrossPlatform/PixelFormat.h"
-#include "Platform/CrossPlatform/Texture.h"
-#include "Platform/CrossPlatform/DeviceContext.h"
-#include "Platform/CrossPlatform/Resource.h"
-#include "Platform/Core/RuntimeError.h"
 #include "Platform/CrossPlatform/Query.h"
-#include <string>
+#include "Platform/CrossPlatform/Resource.h"
+#include "Platform/CrossPlatform/Shaders/CppSl.sl"
+#include "Platform/CrossPlatform/Texture.h"
+#include "Platform/CrossPlatform/Topology.h"
 #include <map>
 #include <parallel_hashmap/phmap.h>
-#include <vector>
 #include <set>
 #include <stdint.h>
+#include <string>
+#include <vector>
 struct ID3DX11Effect;
 struct ID3DX11EffectTechnique;
 struct ID3D11ShaderResourceView;
@@ -22,8 +22,8 @@ struct ID3D11UnorderedAccessView;
 typedef unsigned int GLuint;
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable:4251)
+#pragma warning(push)
+#pragma warning(disable : 4251)
 #endif
 namespace platform
 {
@@ -34,46 +34,48 @@ namespace platform
 		class SIMUL_CROSSPLATFORM_EXPORT PlatformStructuredBuffer
 		{
 		public:
-			platform::crossplatform::RenderPlatform* renderPlatform;
+			platform::crossplatform::RenderPlatform *renderPlatform;
+
 		protected:
-			int numCopies;	// for tracking when the data should be valid, i.e. when numCopies==Latency.
+			int numCopies; // for tracking when the data should be valid, i.e. when numCopies==Latency.
 			bool cpu_read;
 			std::string name;
-			ResourceUsageFrequency bufferUsageHint= ResourceUsageFrequency::MANY_PER_FRAME;
+			ResourceUsageFrequency bufferUsageHint = ResourceUsageFrequency::MANY_PER_FRAME;
+
 		public:
-			PlatformStructuredBuffer() :renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(ResourceUsageFrequency::MANY_PER_FRAME) {}
+			PlatformStructuredBuffer() : renderPlatform(nullptr), numCopies(0), cpu_read(false), bufferUsageHint(ResourceUsageFrequency::MANY_PER_FRAME) {}
 			virtual ~PlatformStructuredBuffer() = default;
-			virtual void RestoreDeviceObjects(RenderPlatform* r, int count, int unit_size, bool computable, bool cpu_read, void* init_data, const char* name, ResourceUsageFrequency usageHint) = 0;
+			virtual void RestoreDeviceObjects(RenderPlatform *r, int count, int unit_size, bool computable, bool cpu_read, void *init_data, const char *name, ResourceUsageFrequency usageHint) = 0;
 			virtual void InvalidateDeviceObjects() = 0;
-			virtual void Apply(DeviceContext& deviceContext, const ShaderResource& shaderResource);
-			virtual void ApplyAsUnorderedAccessView(DeviceContext& deviceContext, const ShaderResource& shaderResource);
-			virtual void Unbind(DeviceContext& deviceContext) = 0;
-			virtual void* GetBuffer(crossplatform::DeviceContext& deviceContext) = 0;
-			virtual const void* OpenReadBuffer(crossplatform::DeviceContext& deviceContext) = 0;
-			virtual void CloseReadBuffer(crossplatform::DeviceContext& deviceContext) = 0;
-			virtual void CopyToReadBuffer(crossplatform::DeviceContext& deviceContext) = 0;
-			virtual void SetData(crossplatform::DeviceContext& deviceContext, void* data) = 0;
-			virtual ID3D11ShaderResourceView* AsD3D11ShaderResourceView() { return NULL; }
-			virtual ID3D11UnorderedAccessView* AsD3D11UnorderedAccessView() { return NULL; }
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext&) { return NULL; }
-			virtual D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12UnorderedAccessView(crossplatform::DeviceContext&, int = 0) { return NULL; }
-			virtual ID3D12Resource* AsD3D12Resource(crossplatform::DeviceContext& deviceContext) { return NULL; }
+			virtual void Apply(DeviceContext &deviceContext, const ShaderResource &shaderResource);
+			virtual void ApplyAsUnorderedAccessView(DeviceContext &deviceContext, const ShaderResource &shaderResource);
+			virtual void Unbind(DeviceContext &deviceContext) = 0;
+			virtual void *GetBuffer(crossplatform::DeviceContext &deviceContext) = 0;
+			virtual const void *OpenReadBuffer(crossplatform::DeviceContext &deviceContext) = 0;
+			virtual void CloseReadBuffer(crossplatform::DeviceContext &deviceContext) = 0;
+			virtual void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext) = 0;
+			virtual void SetData(crossplatform::DeviceContext &deviceContext, void *data) = 0;
+			virtual ID3D11ShaderResourceView *AsD3D11ShaderResourceView() { return NULL; }
+			virtual ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView() { return NULL; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12ShaderResourceView(crossplatform::DeviceContext &) { return NULL; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE *AsD3D12UnorderedAccessView(crossplatform::DeviceContext &, int = 0) { return NULL; }
+			virtual ID3D12Resource *AsD3D12Resource(crossplatform::DeviceContext &deviceContext) { return NULL; }
 			void ResetCopies()
 			{
 				numCopies = 0;
 			}
 			/// For RenderPlatform's use only: do not call.
-			virtual void ActualApply(platform::crossplatform::DeviceContext& /*deviceContext*/, bool /*as uav*/) {}
+			virtual void ActualApply(platform::crossplatform::DeviceContext & /*deviceContext*/, bool /*as uav*/) {}
 		};
 
 		class SIMUL_CROSSPLATFORM_EXPORT BaseStructuredBuffer
 		{
 		public:
 			virtual ~BaseStructuredBuffer() = default;
-			PlatformStructuredBuffer* platformStructuredBuffer=nullptr;
-			int count=0;
-			PlatformStructuredBuffer* GetPlatformStructuredBuffer() { return platformStructuredBuffer; }
-			const PlatformStructuredBuffer* GetPlatformStructuredBuffer() const { return platformStructuredBuffer; }
+			PlatformStructuredBuffer *platformStructuredBuffer = nullptr;
+			int count = 0;
+			PlatformStructuredBuffer *GetPlatformStructuredBuffer() { return platformStructuredBuffer; }
+			const PlatformStructuredBuffer *GetPlatformStructuredBuffer() const { return platformStructuredBuffer; }
 		};
 		class PlatformStructuredBuffer;
 		/// Templated structured buffer, which uses platform-specific implementations of PlatformStructuredBuffer.
@@ -82,7 +84,8 @@ namespace platform
 		/// \code
 		/// 	StructuredBuffer<Example> example;
 		/// \endcode
-		template<class T, ResourceUsageFrequency bufferUsageHint = ResourceUsageFrequency::MANY_PER_FRAME> class StructuredBuffer : public BaseStructuredBuffer
+		template <class T, ResourceUsageFrequency bufferUsageHint = ResourceUsageFrequency::MANY_PER_FRAME>
+		class StructuredBuffer : public BaseStructuredBuffer
 		{
 		public:
 			StructuredBuffer()
@@ -92,26 +95,26 @@ namespace platform
 			{
 				InvalidateDeviceObjects();
 			}
-			void RestoreDeviceObjects(RenderPlatform* p, uint32_t ct, bool computable = false, bool cpu_read = true, T* data = nullptr, const char* n = nullptr);
-			T* GetBuffer(crossplatform::DeviceContext& deviceContext)
+			void RestoreDeviceObjects(RenderPlatform *p, uint32_t ct, bool computable = false, bool cpu_read = true, T *data = nullptr, const char *n = nullptr);
+			T *GetBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return NULL;
 				}
-				return (T*)platformStructuredBuffer->GetBuffer(deviceContext);
+				return (T *)platformStructuredBuffer->GetBuffer(deviceContext);
 			}
-			const T* OpenReadBuffer(crossplatform::DeviceContext& deviceContext)
+			const T *OpenReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return NULL;
 				}
-				return (const T*)platformStructuredBuffer->OpenReadBuffer(deviceContext);
+				return (const T *)platformStructuredBuffer->OpenReadBuffer(deviceContext);
 			}
-			void CloseReadBuffer(crossplatform::DeviceContext& deviceContext)
+			void CloseReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if (!platformStructuredBuffer)
 				{
@@ -120,7 +123,7 @@ namespace platform
 				}
 				platformStructuredBuffer->CloseReadBuffer(deviceContext);
 			}
-			void CopyToReadBuffer(crossplatform::DeviceContext& deviceContext)
+			void CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
 			{
 				if (!platformStructuredBuffer)
 				{
@@ -129,16 +132,16 @@ namespace platform
 				}
 				platformStructuredBuffer->CopyToReadBuffer(deviceContext);
 			}
-			void SetData(crossplatform::DeviceContext& deviceContext, T* data)
+			void SetData(crossplatform::DeviceContext &deviceContext, T *data)
 			{
 				if (!platformStructuredBuffer)
 				{
 					SIMUL_BREAK_ONCE("Null Platform structured buffer pointer.");
 					return;
 				}
-				platformStructuredBuffer->SetData(deviceContext, (void*)data);
+				platformStructuredBuffer->SetData(deviceContext, (void *)data);
 			}
-			ID3D11ShaderResourceView* AsD3D11ShaderResourceView()
+			ID3D11ShaderResourceView *AsD3D11ShaderResourceView()
 			{
 				if (!platformStructuredBuffer)
 				{
@@ -147,7 +150,7 @@ namespace platform
 				}
 				return platformStructuredBuffer->AsD3D11ShaderResourceView();
 			}
-			ID3D11UnorderedAccessView* AsD3D11UnorderedAccessView(int mip = 0)
+			ID3D11UnorderedAccessView *AsD3D11UnorderedAccessView(int mip = 0)
 			{
 				if (!platformStructuredBuffer)
 				{
@@ -157,7 +160,7 @@ namespace platform
 				return platformStructuredBuffer->AsD3D11UnorderedAccessView();
 			}
 			//[[deprecated("Preferred usage is now RenderPlatform::SetStructuredBuffer.")]]
-			void Apply(crossplatform::DeviceContext& pContext, const crossplatform::ShaderResource& shaderResource)
+			void Apply(crossplatform::DeviceContext &pContext, const crossplatform::ShaderResource &shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
@@ -167,7 +170,7 @@ namespace platform
 				platformStructuredBuffer->Apply(pContext, shaderResource);
 			}
 			//[[deprecated("Preferred usage is now RenderPlatform::SetStructuredBuffer.")]]
-			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext& pContext, const crossplatform::ShaderResource& shaderResource)
+			void ApplyAsUnorderedAccessView(crossplatform::DeviceContext &pContext, const crossplatform::ShaderResource &shaderResource)
 			{
 				if (!platformStructuredBuffer)
 				{
@@ -189,11 +192,15 @@ namespace platform
 				if (platformStructuredBuffer)
 					platformStructuredBuffer->ResetCopies();
 			}
+			PlatformStructuredBuffer *GetPlatformStructuredBuffer()
+			{
+				return platformStructuredBuffer;
+			}
 		};
 
 	}
 }
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+#pragma warning(pop)
 #endif
