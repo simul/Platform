@@ -199,6 +199,8 @@ namespace platform
 			void DispatchCompute(crossplatform::DeviceContext &deviceContext, int w, int l, int d) override;
 			void DispatchComputeIndirect(crossplatform::DeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) override;
 			void DispatchRays(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable *sbt = nullptr) override;
+			void DispatchMesh(crossplatform::GraphicsDeviceContext &deviceContext, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
+			void DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) override;
 			void Signal(crossplatform::DeviceContextType &type, crossplatform::Fence::Signaller signaller, crossplatform::Fence *fence) override;
 			void Wait(crossplatform::DeviceContextType &type, crossplatform::Fence::Waiter waiter, crossplatform::Fence *fence, uint64_t timeout_nanoseconds = UINT64_MAX) override;
 			bool GetFenceStatus(crossplatform::Fence *fence) override;

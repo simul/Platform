@@ -174,6 +174,8 @@ namespace platform
 			void EndEvent(crossplatform::DeviceContext &deviceContext) override;
 			void DispatchCompute(crossplatform::DeviceContext &deviceContext, int w, int l, int d) override;
 			void DispatchComputeIndirect(crossplatform::DeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) override;
+			void DispatchMesh(crossplatform::GraphicsDeviceContext &deviceContext, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
+			void DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) override;
 
 			void ResourceBarrierUAV(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *tex) override;
 			void ResourceBarrierUAV(crossplatform::DeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *sb) override;

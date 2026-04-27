@@ -24,34 +24,19 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 #pragma once
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
-#endif 
+#endif
 
 struct SfxConfig
 {
-	SfxConfig():
-		multiplePixelOutputFormats(false)
-		,identicalIOBlocks(false)
-		,supportInlineSamplerStates(true)
-		,lineDirectiveFilenames(true)
-		,passThroughSamplers(true)
-		,maintainSamplerDeclaration(true)
-		,failOnCerr(false)
-		,generateSlots(false)
-		,numTextureSlots(32)
-		,sharedSlots(true)
-		,combineTexturesSamplers(false)
-		,combineInShader(false)
-		,forceSM51(false)
-		,supportRaytracing(false)
-		,supportMultiview(false)
+	SfxConfig() : multiplePixelOutputFormats(false), identicalIOBlocks(false), supportInlineSamplerStates(true), lineDirectiveFilenames(true), passThroughSamplers(true), maintainSamplerDeclaration(true), failOnCerr(false), generateSlots(false), numTextureSlots(32), sharedSlots(true), combineTexturesSamplers(false), combineInShader(false), forceSM51(false), supportRaytracing(false), supportMultiview(false)
 	{
-		samplerDeclaration= "SamplerState {name}: register(s{slot});";
+		samplerDeclaration = "SamplerState {name}: register(s{slot});";
 	}
 	std::string platformFilename;
 	std::string api;
@@ -92,7 +77,7 @@ struct SfxConfig
 	//! This interacts with 'combineTexturesSamplers' if true, we can perform sampler2D(texHandle | samplerHandle)
 	//! otherwise we will need to send the handle combined API side
 	bool combineInShader;
-	bool supportsPercentOperator=true;
+	bool supportsPercentOperator = true;
 	//! Custom get size expression
 	std::string getSizeExpression;
 	std::string getRWSizeExpression;
@@ -121,15 +106,19 @@ struct SfxConfig
 	std::string optimizationLevelOption;
 	//! Preamble only for compute shaders
 	std::string computePreamble;
-	std::map<std::string,std::string> vertexSemantics;
-	std::map<std::string,std::string> pixelSemantics;
+	//! Preamble only for mesh shaders
+	std::string meshPreamble;
+	//! Preamble only for amplification (task) shaders
+	std::string amplificationPreamble;
+	std::map<std::string, std::string> vertexSemantics;
+	std::map<std::string, std::string> pixelSemantics;
 	std::map<std::string, std::string> vertexOutputAssignment;
 	std::map<std::string, std::string> fragmentOutputAssignment;
 	//! Mapping of semantics used in compute shaders
 	std::map<std::string, std::string> computeSemantics;
 	//! How the compute thread layout is represented
 	std::string computeLayout;
-	std::map<std::string,std::string> replace;
+	std::map<std::string, std::string> replace;
 	//! Macros to be defined
 	std::map<std::string, std::string> define;
 	//! keywords to be translated for compilation
@@ -155,8 +144,8 @@ struct SfxConfig
 	//! Holds list of parsed paths passed from the command line
 	std::vector<std::string> shaderPaths;
 	//! Maximum shader model number
-	double maxShaderModel=7.0;
-	int defaultResourceGroupIndex=3;
+	double maxShaderModel = 7.0;
+	int defaultResourceGroupIndex = 3;
 };
 
 struct SfxOptions
@@ -164,133 +153,130 @@ struct SfxOptions
 	SfxOptions()
 	{
 	}
-	bool force=false;
-	bool verbose=false;
-	bool debugInfo=false;
+	bool force = false;
+	bool verbose = false;
+	bool debugInfo = false;
 	//! If true, the output file will contain all the compiled binaries, with a table to point to their offsets.
-	bool wrapOutput=true;
+	bool wrapOutput = true;
 	//! If true, #line directives will not be put in, so that compile output will show the line number from the generated file.
-	bool disableLineWrites=false;
+	bool disableLineWrites = false;
 	std::string intermediateDirectory;
 	std::string outputFile;
-	int optimizationLevel=-1;
+	int optimizationLevel = -1;
 };
 extern const SfxOptions &GetSfxOptions();
 extern std::string ppfile;
-    /**************************************************
-* sfxGenEffect
-* Return value: Effect id
-**************************************************/
+/**************************************************
+ * sfxGenEffect
+ * Return value: Effect id
+ **************************************************/
 int sfxGenEffect();
 
 /**************************************************
-* sfxParseEffectFromFileSIMUL
-* Input:
-*	effect  -- sfx effect id
-*	src	-- File contents with includes inlined
-*	filenamesUtf8	-- File name list
-* Return value: Status
-**************************************************/
-bool sfxParseEffectFromTextSIMUL(int effect, const char* src,const char **filenamesUtf8);
+ * sfxParseEffectFromFileSIMUL
+ * Input:
+ *	effect  -- sfx effect id
+ *	src	-- File contents with includes inlined
+ *	filenamesUtf8	-- File name list
+ * Return value: Status
+ **************************************************/
+bool sfxParseEffectFromTextSIMUL(int effect, const char *src, const char **filenamesUtf8);
 /**************************************************
-* sfxCreateEffectFromFile
-* Input:
-*	effect  -- sfx effect id
-*	file	-- File name
-* Return value: Status
-**************************************************/
-bool sfxParseEffectFromFile( int effect, const char* file,const std::vector<std::string> &paths,const char *outputfile,SfxConfig *config,const SfxOptions *sfxOptions,const char **args);
+ * sfxCreateEffectFromFile
+ * Input:
+ *	effect  -- sfx effect id
+ *	file	-- File name
+ * Return value: Status
+ **************************************************/
+bool sfxParseEffectFromFile(int effect, const char *file, const std::vector<std::string> &paths, const char *outputfile, SfxConfig *config, const SfxOptions *sfxOptions, const char **args);
 
 /**************************************************
-* sfxCreateEffectFromMemory
-* Input:
-*	effect  -- sfx effect id
-*	src	-- Source
-* Return value: Status
-**************************************************/
-bool sfxParseEffectFromMemory( int effect, const char* src ,const char *filename,const char *output_filename,const SfxConfig *config,const SfxOptions *sfxOptions);
+ * sfxCreateEffectFromMemory
+ * Input:
+ *	effect  -- sfx effect id
+ *	src	-- Source
+ * Return value: Status
+ **************************************************/
+bool sfxParseEffectFromMemory(int effect, const char *src, const char *filename, const char *output_filename, const SfxConfig *config, const SfxOptions *sfxOptions);
 
 /**************************************************
-* sfxCompileProgram
-* Input:
-*	effect  -- sfx effect id
-*	program -- Program name
-* Return value: GL program id if success, 0 otherwise
-**************************************************/
-bool sfxCompileProgram(int effect, const char* program);
+ * sfxCompileProgram
+ * Input:
+ *	effect  -- sfx effect id
+ *	program -- Program name
+ * Return value: GL program id if success, 0 otherwise
+ **************************************************/
+bool sfxCompileProgram(int effect, const char *program);
 
 /**************************************************
-* sfxGetProgramCount
-* Return value: Number of programs
-**************************************************/
+ * sfxGetProgramCount
+ * Return value: Number of programs
+ **************************************************/
 int sfxGetProgramCount(int effect);
 
 /**************************************************
-* sfxGetProgramName
-* Input:
-*	effect  -- sfx effect id
-*	program -- Index of program
-*	name	-- Destination address
-*	bufSize -- Size of the buffer
-**************************************************/
-void sfxGetProgramName(int effect, int program, char* name, int bufSize);
+ * sfxGetProgramName
+ * Input:
+ *	effect  -- sfx effect id
+ *	program -- Index of program
+ *	name	-- Destination address
+ *	bufSize -- Size of the buffer
+ **************************************************/
+void sfxGetProgramName(int effect, int program, char *name, int bufSize);
 
 /**************************************************
-* sfxGetProgramIndex
-* Input:
-*	effect  -- sfx effect id
-*	name -- name of program
-**************************************************/
-size_t sfxGetProgramIndex(int effect, const char* name);
+ * sfxGetProgramIndex
+ * Input:
+ *	effect  -- sfx effect id
+ *	name -- name of program
+ **************************************************/
+size_t sfxGetProgramIndex(int effect, const char *name);
 
 /**************************************************
-* sfxGenerateSampler
-* Input:
-*	effect  -- sfx effect id
-*	sampler -- Sampler name
-* Return value: GL sampler id if success, -1 otherwise
-**************************************************/
-int sfxGenerateSampler(int effect, const char* sampler);
+ * sfxGenerateSampler
+ * Input:
+ *	effect  -- sfx effect id
+ *	sampler -- Sampler name
+ * Return value: GL sampler id if success, -1 otherwise
+ **************************************************/
+int sfxGenerateSampler(int effect, const char *sampler);
 
 /**************************************************
-* sfxGetEffectLog
-* Input:
-*	effect  -- sfx effect id
-*	log	 -- Destination address
-*	bufSize -- Size of the buffer
-**************************************************/
-void sfxGetEffectLog(int effect, char* log, int bufSize);
-
+ * sfxGetEffectLog
+ * Input:
+ *	effect  -- sfx effect id
+ *	log	 -- Destination address
+ *	bufSize -- Size of the buffer
+ **************************************************/
+void sfxGetEffectLog(int effect, char *log, int bufSize);
 
 /**************************************************
-* sfxDeleteEffect
-* Input:
-*	effect  -- sfx effect id
-**************************************************/
+ * sfxDeleteEffect
+ * Input:
+ *	effect  -- sfx effect id
+ **************************************************/
 void sfxDeleteEffect(int effect);
 
+/**************************************************
+ * sfxGetProgramName
+ * Input:
+ *	effect  -- sfx effect id
+ *	program -- Index of program
+ **************************************************/
+const char *sfxGetProgramName(int effect, int program);
 
 /**************************************************
-* sfxGetProgramName
-* Input:
-*	effect  -- sfx effect id
-*	program -- Index of program
-**************************************************/
-const char* sfxGetProgramName(int effect, int program);
+ * sfxGetProgramIndex
+ * Input:
+ *	effect  -- sfx effect id
+ *	name -- name of program
+ **************************************************/
+size_t sfxGetProgramIndex(int effect, const char *name);
 
 /**************************************************
-* sfxGetProgramIndex
-* Input:
-*	effect  -- sfx effect id
-*	name -- name of program
-**************************************************/
-size_t sfxGetProgramIndex(int effect, const char* name);
-
-/**************************************************
-* sfxGetEffectLog
-* Input:
-*	effect  -- sfx effect id
-* Return value: Log string
-**************************************************/
-const char* sfxGetEffectLog(int effect);
-
+ * sfxGetEffectLog
+ * Input:
+ *	effect  -- sfx effect id
+ * Return value: Log string
+ **************************************************/
+const char *sfxGetEffectLog(int effect);

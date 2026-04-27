@@ -952,6 +952,10 @@ string stringOf(ShaderCommand t)
 		return "intersection";
 	case SetExportShader:
 		return "export";
+	case SetMeshShader:
+		return "mesh";
+	case SetAmplificationShader:
+		return "amplification";
 	default:
 		return "";
 	};

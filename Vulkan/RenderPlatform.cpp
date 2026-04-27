@@ -57,6 +57,10 @@ namespace platform::vulkan
 	static PFN_vkCmdDebugMarkerBeginEXT vkCmdDebugMarkerBeginEXT = nullptr;
 	static PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT = nullptr;
 	static PFN_vkCmdDebugMarkerEndEXT vkCmdDebugMarkerEndEXT = nullptr;
+#if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
+	static PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT = nullptr;
+	static PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT = nullptr;
+#endif
 }
 
 using namespace platform;
@@ -123,6 +127,10 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	renderingFeatures = crossplatform::RenderingFeatures::None;
 	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
 		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Multiview);
+#if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
+	if (CheckDeviceExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME))
+		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::MeshShader);
+#endif
 
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 
@@ -137,6 +145,13 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 		vkCmdDebugMarkerBeginEXT = (PFN_vkCmdDebugMarkerBeginEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerBeginEXT");
 		vkCmdDebugMarkerEndEXT = (PFN_vkCmdDebugMarkerEndEXT)vulkanInstance->getProcAddr("vkCmdDebugMarkerEndEXT");
 	}
+#if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
+	if (HasRenderingFeatures(crossplatform::RenderingFeatures::MeshShader))
+	{
+		vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)vulkanInstance->getProcAddr("vkCmdDrawMeshTasksEXT");
+		vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)vulkanInstance->getProcAddr("vkCmdDrawMeshTasksIndirectEXT");
+	}
+#endif
 
 	// Vulkan Video decoding support:
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
@@ -747,6 +762,54 @@ void RenderPlatform::DispatchComputeIndirect(crossplatform::DeviceContext &devic
 		InsertFences(deviceContext);
 	}
 	EndEvent(deviceContext);
+}
+
+void RenderPlatform::DispatchMesh(crossplatform::GraphicsDeviceContext &deviceContext, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+#if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
+	if (!HasRenderingFeatures(crossplatform::RenderingFeatures::MeshShader) || !vkCmdDrawMeshTasksEXT)
+		return;
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	if (!commandBuffer)
+		return;
+
+	vulkan::EffectPass *vkEffectPass = ((vulkan::EffectPass *)deviceContext.contextState.currentEffectPass);
+	BeginEvent(deviceContext, vkEffectPass->name.c_str());
+	if (ApplyContextState(deviceContext))
+	{
+		vkCmdDrawMeshTasksEXT(static_cast<VkCommandBuffer>(*commandBuffer), groupCountX, groupCountY, groupCountZ);
+	}
+	EndEvent(deviceContext);
+#endif
+}
+
+void RenderPlatform::DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset)
+{
+#if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
+	if (!HasRenderingFeatures(crossplatform::RenderingFeatures::MeshShader) || !vkCmdDrawMeshTasksIndirectEXT)
+		return;
+	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	if (!commandBuffer || !argsBuffer)
+		return;
+
+	vulkan::PlatformStructuredBuffer *vkPsb = static_cast<vulkan::PlatformStructuredBuffer *>(argsBuffer);
+	vk::Buffer *pVkBuffer = vkPsb->GetLastBuffer();
+	if (!pVkBuffer || !*pVkBuffer)
+		return;
+	uint64_t totalOffset = vkPsb->GetLastOffset() + offset;
+
+	// The caller is responsible for arranging the compute-write -> indirect-read barrier on
+	// the args buffer (e.g. via ResourceBarrierUAV) before binding render targets; pipeline
+	// barriers cannot generally be issued from inside the active render pass.
+
+	vulkan::EffectPass *vkEffectPass = ((vulkan::EffectPass *)deviceContext.contextState.currentEffectPass);
+	BeginEvent(deviceContext, vkEffectPass->name.c_str());
+	if (ApplyContextState(deviceContext))
+	{
+		vkCmdDrawMeshTasksIndirectEXT(static_cast<VkCommandBuffer>(*commandBuffer), static_cast<VkBuffer>(*pVkBuffer), totalOffset, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+	}
+	EndEvent(deviceContext);
+#endif
 }
 
 void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *tex)

@@ -125,6 +125,7 @@ namespace platform
 			None = 0x0000,
 			Raytracing = 0x0001,
 			ViewInstancing = 0x0002,
+			MeshShader = 0x0004,
 
 			// Aliases
 			Multiview = ViewInstancing // D3D12: ViewInstancing and Vulkan: Multiview
@@ -325,6 +326,11 @@ namespace platform
 			virtual void DispatchComputeIndirect(DeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) {};
 			//! Execute the currently applied raytracing shaders.
 			virtual void DispatchRays(DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable *sbt = nullptr) {}
+			//! Execute the currently applied mesh-shader pipeline (amplification + mesh + pixel shaders).
+			virtual void DispatchMesh(GraphicsDeviceContext &deviceContext, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {}
+			//! Execute the currently applied mesh-shader pipeline using indirect arguments sourced from
+			//! a structured buffer. The offset is in bytes, relative to the start of the structured data.
+			virtual void DispatchMeshIndirect(GraphicsDeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) {}
 			//! Add a signal command to the CPU thread or GPU queue.
 			virtual void Signal(DeviceContextType &type, Fence::Signaller signaller, Fence *fence) {}
 			//! Add a wait command to the CPU thread or GPU queue.

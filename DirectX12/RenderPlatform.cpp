@@ -601,6 +601,14 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 				renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::ViewInstancing);
 		}
 #endif
+#if PLATFORM_SUPPORT_D3D12_MESHSHADER
+		D3D12_FEATURE_DATA_D3D12_OPTIONS7 featureDataOpt7 = {};
+		if (S_OK == m12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &featureDataOpt7, sizeof(featureDataOpt7)))
+		{
+			if (featureDataOpt7.MeshShaderTier != D3D12_MESH_SHADER_TIER_NOT_SUPPORTED)
+				renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::MeshShader);
+		}
+#endif
 	}
 	// Set up D3D12MA CPU and GPU allicators
 	IDXGIAdapter *adapter = nullptr;
@@ -1441,6 +1449,72 @@ void RenderPlatform::DispatchRays(crossplatform::DeviceContext &deviceContext, c
 	commandList->DispatchRays(&d3d12DispatchDesc);
 
 	m12Device5->Release();
+#endif
+}
+
+void RenderPlatform::DispatchMesh(crossplatform::GraphicsDeviceContext &deviceContext, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+#if PLATFORM_SUPPORT_D3D12_MESHSHADER
+	if (!HasRenderingFeatures(crossplatform::RenderingFeatures::MeshShader))
+		return;
+
+	ID3D12GraphicsCommandList6 *commandList6 = nullptr;
+	HRESULT res = deviceContext.asD3D12Context()->QueryInterface(SIMUL_PPV_ARGS(&commandList6));
+	if (res != S_OK || !commandList6)
+		return;
+
+	ApplyContextState(deviceContext);
+	commandList6->DispatchMesh(groupCountX, groupCountY, groupCountZ);
+	commandList6->Release();
+#endif
+}
+
+void RenderPlatform::DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset)
+{
+#if PLATFORM_SUPPORT_D3D12_MESHSHADER
+	if (!HasRenderingFeatures(crossplatform::RenderingFeatures::MeshShader))
+		return;
+	if (!argsBuffer)
+		return;
+	ID3D12Resource *bufferResource = argsBuffer->AsD3D12Resource(deviceContext);
+	if (!bufferResource)
+		return;
+
+	ID3D12GraphicsCommandList6 *commandList6 = nullptr;
+	HRESULT res = deviceContext.asD3D12Context()->QueryInterface(SIMUL_PPV_ARGS(&commandList6));
+	if (res != S_OK || !commandList6)
+		return;
+
+	ApplyContextState(deviceContext);
+
+	// The structured buffer was last bound as a UAV by the compute pass that wrote the args,
+	// so transition it to INDIRECT_ARGUMENT for the ExecuteIndirect read, then back afterwards.
+	ResourceTransitionSimple(deviceContext, bufferResource,
+							 D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+							 D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, true);
+
+	static ID3D12CommandSignature *dispatchMeshCommandSignature = nullptr;
+	if (!dispatchMeshCommandSignature)
+	{
+		D3D12_INDIRECT_ARGUMENT_DESC argumentDesc = {};
+		argumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
+
+		D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+		commandSignatureDesc.ByteStride = sizeof(D3D12_DISPATCH_MESH_ARGUMENTS);
+		commandSignatureDesc.NumArgumentDescs = 1;
+		commandSignatureDesc.pArgumentDescs = &argumentDesc;
+
+		ID3D12Device *d3d12Device = AsD3D12Device();
+		d3d12Device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchMeshCommandSignature));
+	}
+
+	commandList6->ExecuteIndirect(dispatchMeshCommandSignature, 1, bufferResource, offset, nullptr, 0);
+
+	ResourceTransitionSimple(deviceContext, bufferResource,
+							 D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+							 D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
+
+	commandList6->Release();
 #endif
 }
 
