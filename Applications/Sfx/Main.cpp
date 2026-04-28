@@ -588,6 +588,10 @@ int main(int argc, char **argv)
 			{
 				sfxConfig.supportMultiview = j["supportMultiview"];
 			}
+			if (j.count("minimumCompilerVersion") > 0)
+			{
+				sfxConfig.minimumCompilerVersion = j["minimumCompilerVersion"];
+			}
 		}
 		catch (std::exception &e)
 		{

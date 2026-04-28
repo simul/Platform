@@ -146,6 +146,8 @@ struct SfxConfig
 	//! Maximum shader model number
 	double maxShaderModel = 7.0;
 	int defaultResourceGroupIndex = 3;
+	//! Minimum compiler version required (e.g., "1.4.341.1" for glslangValidator)
+	std::string minimumCompilerVersion;
 };
 
 struct SfxOptions

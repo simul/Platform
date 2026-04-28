@@ -112,6 +112,113 @@ static void FixRelativePaths(std::string &str, const std::string &sourcePathUtf8
 }
 bool terminate_command = false;
 bool command_running = false;
+
+// Parse a version string in the format "major.minor.patch.build" into components
+// Returns true if successfully parsed, false otherwise
+static bool ParseVersionString(const std::string &versionStr, int &major, int &minor, int &patch, int &build)
+{
+	major = minor = patch = build = 0;
+	try
+	{
+		std::regex versionRegex(R"((\d+)\.(\d+)(?:\.(\d+))?(?:\.(\d+))?)");
+		std::smatch match;
+		if (std::regex_search(versionStr, match, versionRegex))
+		{
+			major = std::stoi(match[1].str());
+			minor = std::stoi(match[2].str());
+			if (match[3].matched)
+				patch = std::stoi(match[3].str());
+			if (match[4].matched)
+				build = std::stoi(match[4].str());
+			return true;
+		}
+	}
+	catch (...)
+	{
+		return false;
+	}
+	return false;
+}
+
+// Compare two version strings. Returns: < 0 if v1 < v2, 0 if equal, > 0 if v1 > v2
+static int CompareVersions(const std::string &v1Str, const std::string &v2Str)
+{
+	int v1_major, v1_minor, v1_patch, v1_build;
+	int v2_major, v2_minor, v2_patch, v2_build;
+
+	if (!ParseVersionString(v1Str, v1_major, v1_minor, v1_patch, v1_build))
+		return -1;
+	if (!ParseVersionString(v2Str, v2_major, v2_minor, v2_patch, v2_build))
+		return 1;
+
+	if (v1_major != v2_major)
+		return v1_major - v2_major;
+	if (v1_minor != v2_minor)
+		return v1_minor - v2_minor;
+	if (v1_patch != v2_patch)
+		return v1_patch - v2_patch;
+	return v1_build - v2_build;
+}
+
+// Extract compiler version from its version output
+// This is platform and compiler-specific, so it uses regex matching
+static std::string ExtractCompilerVersion(const std::string &compilerOutput, const std::string &compilerName)
+{
+	std::string versionStr;
+	try
+	{
+		// For glslangValidator, try to match patterns like "1.4.335.0" or "glslang 14.0.0"
+		// Priority: look for digit.digit.digit.digit first (semantic version with 4 parts)
+		std::regex versionRegex4(R"((\d+\.\d+\.\d+\.\d+))");
+		std::smatch match;
+
+		if (std::regex_search(compilerOutput, match, versionRegex4))
+		{
+			versionStr = match[1].str();
+			return versionStr;
+		}
+
+		// Then try digit.digit.digit (3 parts)
+		std::regex versionRegex3(R"((\d+\.\d+\.\d+))");
+		if (std::regex_search(compilerOutput, match, versionRegex3))
+		{
+			versionStr = match[1].str();
+			return versionStr;
+		}
+
+		// Finally try any version-like pattern with at least 2 digits
+		std::regex versionRegex2(R"((?:version\s+|v|V)?(\d+\.\d+))");
+		if (std::regex_search(compilerOutput, match, versionRegex2))
+		{
+			versionStr = match[1].str();
+		}
+	}
+	catch (...)
+	{
+	}
+	return versionStr;
+}
+
+// Check if the compiler version meets the minimum requirement
+// Returns: empty string if OK, or error message if version is too old
+static std::string CheckCompilerVersion(const std::string &compilerName, const std::string &compilerVersion, const std::string &minimumRequired)
+{
+	if (minimumRequired.empty())
+		return "";
+	if (compilerVersion.empty())
+		return ""; // Can't determine version, don't fail
+
+	int cmp = CompareVersions(compilerVersion, minimumRequired);
+	if (cmp < 0)
+	{
+		std::ostringstream oss;
+		oss << "ERROR: Compiler " << compilerName << " version " << compilerVersion
+			<< " is too old. Minimum required version is " << minimumRequired << ".";
+		return oss.str();
+	}
+	return "";
+}
+
 bool RunDOSCommand(const wchar_t *wcommand, const string &sourcePathUtf8, ostringstream &log, const SfxConfig &sfxConfig, OutputDelegate outputDelegate)
 {
 	if (terminate_command)
@@ -442,6 +549,38 @@ static std::map<std::string, std::string> useCompilerPath;
 
 static bool checkedCompilerPath = false;
 
+// Get compiler version by executing it with --version flag
+static std::string GetCompilerVersion(const std::string &compilerPath, const SfxConfig &sfxConfig)
+{
+	std::string versionOutput;
+#ifdef _WIN32
+	// On Windows, try to execute compiler --version and capture output
+	FILE *pipe = _popen((compilerPath + " --version").c_str(), "r");
+	if (pipe)
+	{
+		char buffer[256];
+		while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+		{
+			versionOutput += buffer;
+		}
+		_pclose(pipe);
+	}
+#else
+	// On Unix/Linux
+	FILE *pipe = popen((compilerPath + " --version").c_str(), "r");
+	if (pipe)
+	{
+		char buffer[256];
+		while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+		{
+			versionOutput += buffer;
+		}
+		pclose(pipe);
+	}
+#endif
+	return ExtractCompilerVersion(versionOutput, fs::path(compilerPath).filename().string());
+}
+
 extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig, const SfxOptions &sfxOptions)
 {
 	std::string usePath = "";
@@ -469,6 +608,26 @@ extern void CalcCompilerPathToUse(const SfxConfig &sfxConfig, const SfxOptions &
 		{
 			if (sfxOptions.verbose)
 				std::cout << "Using: " << pth.generic_string().c_str() << std::endl;
+
+			// Check compiler version if minimum is specified
+			if (!sfxConfig.minimumCompilerVersion.empty())
+			{
+				std::string compilerVersion = GetCompilerVersion(pth.generic_string(), sfxConfig);
+				std::string versionError = CheckCompilerVersion(compiler_exe, compilerVersion, sfxConfig.minimumCompilerVersion);
+
+				if (!versionError.empty())
+				{
+					std::cerr << versionError << std::endl;
+					if (sfxOptions.verbose)
+						std::cerr << "Detected version: " << compilerVersion << std::endl;
+					continue; // Try next path
+				}
+				else if (sfxOptions.verbose && !compilerVersion.empty())
+				{
+					std::cout << "Compiler version check passed: " << compilerVersion << " >= " << sfxConfig.minimumCompilerVersion << std::endl;
+				}
+			}
+
 			useCompilerPath[sfxConfig.api] = usePath = p;
 			break;
 		}
