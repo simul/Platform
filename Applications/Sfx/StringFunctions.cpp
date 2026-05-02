@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <regex>
+#include <string.h>
 
 using namespace std;
 #ifndef _MSC_VER
@@ -492,6 +493,7 @@ vector<string> SplitPath(const string &fullPath)
 
 #include <sstream>
 #include <iterator>
+#include <cstring>
 
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {

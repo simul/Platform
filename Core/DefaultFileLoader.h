@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/Export.h"
 #if defined(__ANDROID__)
@@ -16,7 +17,7 @@ namespace platform
 			~DefaultFileLoader() = default;
 			bool FileExists(const char *filename_utf8) const override;
 			void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text) override;
-			uint64_t GetFileDate(const char* filename_utf8) const override;
+			uint64_t GetFileDateUnixTimeMs(const char* filename_utf8) const override;
 			void ReleaseFileContents(void* pointer) override;
 			bool Save(const void* pointer, unsigned int bytes, const char* filename_utf8,bool save_as_text) override;
 		};

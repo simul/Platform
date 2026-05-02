@@ -7,6 +7,7 @@
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/CrossPlatform/Shaders/CppSl.sl"
 #include "Platform/CrossPlatform/Frustum.h"
+#include "AxesStandard.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -147,6 +148,7 @@ namespace platform
 		void SIMUL_CROSSPLATFORM_EXPORT GetCubeMatrixAtPosition(float *mat4x4,int i,vec3 cam_pos,bool ReverseDepth,bool ReverseDirection);
 		
 		void SIMUL_CROSSPLATFORM_EXPORT GetCubeInvViewProjMatrix(float *mat4x4,int i,bool ReverseDepth,bool ReverseDirection);
+		void SIMUL_CROSSPLATFORM_EXPORT GetCubeInvViewProjMatrix(float *mat4x4,int i,bool ReverseDepth,bool ReverseDirection,AxesStandard axesStandard);
 
 		extern SIMUL_CROSSPLATFORM_EXPORT math::Matrix4x4 MakeOrthoProjectionMatrix(float left,
  																					float right,

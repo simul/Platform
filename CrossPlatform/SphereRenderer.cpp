@@ -139,7 +139,7 @@ void SphereRenderer::DrawLatLongSphere(GraphicsDeviceContext &deviceContext,int 
 	crossplatform::GetCameraPosVector(deviceContext.viewStruct.view,(float*)&cam_pos,(float*)&view_dir);
 	crossplatform::EffectTechnique*		tech		=effect->GetTechniqueByName("draw_lat_long_sphere");
 	
-	sphereConstants.sphereCamPos	=cam_pos;
+	sphereConstants.sphereCamPos	=*(vec3*)&cam_pos;
 	sphereConstants.latitudes		=lat;
 	sphereConstants.longitudes		=longt;
 	static int loop=100;
@@ -229,7 +229,7 @@ void SphereRenderer::DrawColouredSphere(GraphicsDeviceContext &deviceContext, ve
 	// sphereConstants.quaternion		=orient_quat;
 	sphereConstants.radius = sph_rad;
 	sphereConstants.debugColour = clr;
-	sphereConstants.sphereCamPos = cam_pos;
+	sphereConstants.sphereCamPos = *(vec3 *)&cam_pos;
 	sphereConstants.debugViewDir = view_dir;
 	sphereConstants.multiplier = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	renderPlatform->SetConstantBuffer(deviceContext, &sphereConstants);
@@ -266,7 +266,7 @@ void SphereRenderer::DrawTexturedSphere(GraphicsDeviceContext &deviceContext,vec
 	//sphereConstants.quaternion		=orient_quat;
 	sphereConstants.radius			=sph_rad;
 	sphereConstants.debugColour		=clr;
-	sphereConstants.sphereCamPos	=cam_pos;
+	sphereConstants.sphereCamPos	=*(vec3*)&cam_pos;
 	sphereConstants.debugViewDir	=view_dir;
 	sphereConstants.multiplier		=vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	renderPlatform->SetConstantBuffer(deviceContext,&sphereConstants);

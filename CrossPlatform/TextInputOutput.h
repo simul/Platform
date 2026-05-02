@@ -36,9 +36,9 @@ namespace platform
 			//! Integer value of the specified element.
 			virtual uint Get(const char *name,uint default_)=0;
 			//! 64-bit integer value of the specified element.
-			virtual long long Get(const char* name, long long default_) = 0;
+			virtual int64_t Get(const char* name, int64_t default_) = 0;
 			//! 64-bit integer value of the specified element.
-			virtual unsigned long long Get(const char* name, unsigned long long default_) = 0;
+			virtual uint64_t Get(const char* name, uint64_t default_) = 0;
 			//! Floating-point value of the specified element.
 			virtual double Get(const char *name,double default_)=0;
 			//! Floating-point value of the specified element.
@@ -88,7 +88,7 @@ namespace platform
 			virtual void Set(const char *name,int value)=0;
 			virtual void Set(const char *name,uint value)=0;
 			virtual void Set(const char* name,long long value) = 0;
-			virtual void Set(const char* name,unsigned long long value) = 0;
+			virtual void Set(const char* name,uint64_t value) = 0;
 			virtual void Set(const char *name,double value)=0;
 			virtual void Set(const char *name,float value)=0;
 			// Unsigned Integer value of the specified element.
@@ -138,9 +138,9 @@ namespace platform
 			// Integer value of the specified element.
 			uint Get(const char *name,uint default_);
 			// Integer value of the specified element.
-			long long Get(const char* name, long long default_);
+			int64_t Get(const char* name, int64_t default_);
 			// Integer value of the specified element.
-			unsigned long long Get(const char* name, unsigned long long default_);
+			uint64_t Get(const char* name, uint64_t default_);
 			// Floating-point value of the specified element.
 			double Get(const char *name,double default_);
 			// Floating-point value of the specified element.
@@ -198,7 +198,7 @@ namespace platform
 			void Set(const char *name,int value);
 			void Set(const char *name,uint value);
 			void Set(const char* name, long long value);
-			void Set(const char* name, unsigned long long value);
+			void Set(const char* name, uint64_t value);
 			void Set(const char *name,double value);
 			void Set(const char *name,float value);
 			void Set(const char* name, uint2 value);

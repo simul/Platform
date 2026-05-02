@@ -49,7 +49,7 @@ namespace platform
 		struct TextureFence
 		{
 			crossplatform::Texture *texture;
-			unsigned long long label;
+			uint64_t label;
 		};
 		struct TextureAssignment
 		{

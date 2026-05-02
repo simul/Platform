@@ -1,9 +1,11 @@
 #pragma once
 #include <set>
+#include <memory>
 #include "Sfx.h"
 #include "SfxParser.h"
 #include "Function.h"
 #include "ShaderInstance.h"
+#include <memory>
 
 namespace sfx
 {

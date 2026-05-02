@@ -49,7 +49,7 @@ int LensFlare::GetNumArtifacts() const
 
 const float *LensFlare::GetArtifactPosition(int i) const
 {
-	return artifacts[i].pos;
+	return artifacts[i].pos.Values;
 }
 
 float LensFlare::GetArtifactSize(int i) const

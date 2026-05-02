@@ -2079,7 +2079,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext,D3D12_RESOUR
 void Texture::AssumeLayout(D3D12_RESOURCE_STATES state)
 {
 #if SIMUL_DEBUG_BARRIERS
-	SIMUL_COUT << name.c_str() << " 0x" << std::hex << (unsigned long long)mTextureDefault << " assumed as layout " << dx12::RenderPlatform::D3D12ResourceStateToString(state).c_str() << std::endl;
+	SIMUL_COUT << name.c_str() << " 0x" << std::hex << (uint64_t)mTextureDefault << " assumed as layout " << dx12::RenderPlatform::D3D12ResourceStateToString(state).c_str() << std::endl;
 #endif
 	mResourceState = state;
 	// And set all the subresources to that state

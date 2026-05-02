@@ -9,6 +9,14 @@
 #include <linux/input.h>
 #endif
 #include <vulkan/vulkan.hpp>
+
+// Forward declare GLFW functions for Linux
+#ifndef _MSC_VER
+extern "C" {
+	void glfwGetWindowSize(GLFWwindow* window, int* width, int* height);
+	void glfwGetWindowPos(GLFWwindow* window, int* xpos, int* ypos);
+}
+#endif
 // Careless implementation by Vulkan requires this:
 #undef NOMINMAX
 // #include <vulkan/vk_sdk_platform.h>
@@ -43,7 +51,7 @@ static const char *GetErr()
 #endif
 
 DisplaySurface::DisplaySurface(int view_id)
-	: crossplatform::DisplaySurface(view_id), pixelFormat(crossplatform::UNKNOWN), current_buffer(0)
+	: crossplatform::DisplaySurface(view_id), pixelFormat(crossplatform::UNKNOWN), image_index(0)
 {
 }
 
@@ -153,12 +161,15 @@ void DisplaySurface::InvalidateDeviceObjects()
 	if (vulkanDevice)
 	{
 		vulkanDevice->waitIdle();
-		for (auto i : swapchain_image_resources)
+		for (auto i : commandbuffer_resources)
 		{
-			vulkanDevice->destroyFramebuffer(i.framebuffer, nullptr);
 			vulkanDevice->freeCommandBuffers(cmd_pool, 1, &i.cmd);
 			if (present_cmd_pool)
 				vulkanDevice->freeCommandBuffers(present_cmd_pool, 1, &i.graphics_to_present_cmd);
+		}
+		for (auto i : swapchain_image_resources)
+		{
+			vulkanDevice->destroyFramebuffer(i.framebuffer, nullptr);
 			vulkanDevice->destroyImageView(i.view, nullptr);
 			// vulkanDevice->destroyImage(i.image); part of swapchain?
 		}
@@ -172,6 +183,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 			vulkanDevice->destroySemaphore(draw_complete_semaphores[i], nullptr);
 			vulkanDevice->destroySemaphore(image_ownership_semaphores[i], nullptr);
 			vulkanDevice->destroyFence(fences[i], nullptr);
+			fences[i]=nullptr;
 		}
 		vulkanDevice->destroyRenderPass(render_pass, nullptr);
 	}
@@ -490,6 +502,7 @@ void DisplaySurface::InitSwapChain()
 		}
 	}
 	swapchain_image_resources.resize(swapchainImages.size());
+	commandbuffer_resources.resize(swapchainImages.size());
 
 	if (swapchain_image_resources.size() > SIMUL_VULKAN_FRAME_LAG + 1)
 	{
@@ -559,7 +572,7 @@ void DisplaySurface::InitSwapChain()
 
 		for (uint32_t i = 0; i < swapchainImages.size(); ++i)
 		{
-			result = vulkanDevice->allocateCommandBuffers(&cmdAllocInfo, &swapchain_image_resources[i].cmd);
+			result = vulkanDevice->allocateCommandBuffers(&cmdAllocInfo, &commandbuffer_resources[i].cmd);
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
 		}
 		if (present_queue_family_index != graphics_queue_family_index)
@@ -582,12 +595,12 @@ void DisplaySurface::InitSwapChain()
 
 			for (uint32_t i = 0; i < swapchainImages.size(); i++)
 			{
-				result = vulkanDevice->allocateCommandBuffers(&present_cmd, &swapchain_image_resources[i].graphics_to_present_cmd);
+				result = vulkanDevice->allocateCommandBuffers(&present_cmd, &commandbuffer_resources[i].graphics_to_present_cmd);
 				SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 				{
 					auto const cmd_buf_info = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-					auto result = swapchain_image_resources[i].graphics_to_present_cmd.begin(&cmd_buf_info);
+					auto result = commandbuffer_resources[i].graphics_to_present_cmd.begin(&cmd_buf_info);
 					SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 					auto const image_ownership_barrier =
@@ -601,11 +614,11 @@ void DisplaySurface::InitSwapChain()
 							.setImage(swapchain_image_resources[i].image)
 							.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-					swapchain_image_resources[i].graphics_to_present_cmd.pipelineBarrier(
+					commandbuffer_resources[i].graphics_to_present_cmd.pipelineBarrier(
 						vk::PipelineStageFlagBits::eBottomOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe, vk::DependencyFlagBits(), 0, nullptr, 0,
 						nullptr, 1, &image_ownership_barrier);
 					// result =
-					swapchain_image_resources[i].graphics_to_present_cmd.end();
+					commandbuffer_resources[i].graphics_to_present_cmd.end();
 					SIMUL_ASSERT(result == vk::Result::eSuccess);
 				}
 			}
@@ -679,7 +692,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	{
 		SIMUL_CERR << "Vulkan operation failed\n";
 	}
-	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &current_buffer);
+	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &image_index);
 	if (result == vk::Result::eErrorOutOfDateKHR)
 	{
 		// demo->swapchain is out of date (e.g. the window was resized) and
@@ -693,12 +706,9 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	// swapchain is not as optimal as it could be, but the platform's
 	// presentation engine will still present the image correctly.
 	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
-	
-	vulkanDevice->waitIdle();
 
-	SwapchainImageResources &res = swapchain_image_resources[current_buffer];
-	auto &commandBuffer = res.cmd;
-	auto &fb = res.framebuffer;
+	auto &commandBuffer = commandbuffer_resources[frame_index].cmd;
+	auto &framebuffer = swapchain_image_resources[image_index].framebuffer;
 
 	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 	result = commandBuffer.begin(&commandInfo);
@@ -714,7 +724,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	{
 		auto *rp = (vulkan::RenderPlatform *)renderPlatform;
 		rp->SetDefaultColourFormat(pixelFormat);
-		renderer->Render(mViewId, deferredContext.platform_context, &fb, viewport.w, viewport.h, frameNumber);
+		renderer->Render(mViewId, deferredContext.platform_context, &framebuffer, viewport.w, viewport.h, frameNumber);
 	}
 
 	EnsureImagePresentLayout();
@@ -728,7 +738,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 
 void DisplaySurface::EnsureImageLayout()
 {
-	vk::Image &image = swapchain_image_resources[current_buffer].image;
+	vk::Image &image = swapchain_image_resources[image_index].image;
 
 	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
 	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
@@ -745,12 +755,12 @@ void DisplaySurface::EnsureImageLayout()
 					   .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 					   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 					   .setImage(image);
-	swapchain_image_resources[current_buffer].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+	commandbuffer_resources[frame_index].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 void DisplaySurface::EnsureImagePresentLayout()
 {
-	vk::Image &image = swapchain_image_resources[current_buffer].image;
+	vk::Image &image = swapchain_image_resources[image_index].image;
 
 	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
 	vk::AccessFlags srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
@@ -767,7 +777,7 @@ void DisplaySurface::EnsureImagePresentLayout()
 					   .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 					   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 					   .setImage(image);
-	swapchain_image_resources[current_buffer].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
+	commandbuffer_resources[frame_index].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 void DisplaySurface::Present()
@@ -786,9 +796,9 @@ void DisplaySurface::Present()
 								 .setWaitSemaphoreCount(1)
 								 .setPWaitSemaphores(&image_acquired_semaphores[frame_index])
 								 .setCommandBufferCount(1)
-								 .setPCommandBuffers(&swapchain_image_resources[current_buffer].cmd)
+								 .setPCommandBuffers(&commandbuffer_resources[frame_index].cmd)
 								 .setSignalSemaphoreCount(1)
-								 .setPSignalSemaphores(&draw_complete_semaphores[frame_index]);
+								 .setPSignalSemaphores(&draw_complete_semaphores[image_index]); //https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_discussion_of_solution
 
 	vk::Result result = graphics_queue.submit(1, &submit_info, fences[frame_index]);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -803,11 +813,11 @@ void DisplaySurface::Present()
 		auto const present_submit_info = vk::SubmitInfo()
 											 .setPWaitDstStageMask(&pipe_stage_flags)
 											 .setWaitSemaphoreCount(1)
-											 .setPWaitSemaphores(&draw_complete_semaphores[frame_index])
+											 .setPWaitSemaphores(&draw_complete_semaphores[image_index])
 											 .setCommandBufferCount(1)
-											 .setPCommandBuffers(&swapchain_image_resources[current_buffer].graphics_to_present_cmd)
+											 .setPCommandBuffers(&commandbuffer_resources[frame_index].graphics_to_present_cmd)
 											 .setSignalSemaphoreCount(1)
-											 .setPSignalSemaphores(&image_ownership_semaphores[frame_index]);
+											 .setPSignalSemaphores(&image_ownership_semaphores[image_index]);
 
 		result = present_queue.submit(1, &present_submit_info, vk::Fence());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -817,10 +827,10 @@ void DisplaySurface::Present()
 	// otherwise wait for draw complete
 	auto const presentInfo = vk::PresentInfoKHR()
 								 .setWaitSemaphoreCount(1)
-								 .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index] : &draw_complete_semaphores[frame_index])
+								 .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[image_index] : &draw_complete_semaphores[image_index])
 								 .setSwapchainCount(1)
 								 .setPSwapchains(&swapchain)
-								 .setPImageIndices(&current_buffer);
+								 .setPImageIndices(&image_index);
 
 	result = present_queue.presentKHR(&presentInfo);
 	if (result == vk::Result::eErrorOutOfDateKHR)
@@ -853,19 +863,16 @@ void DisplaySurface::EndFrame()
 
 void DisplaySurface::Resize()
 {
-#ifdef _MSC_VER
 	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
-	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
-	{
-		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-	}
 
+	bool regen = false;
+	uint32_t W = 0;
+	uint32_t H = 0;
+
+#ifdef _MSC_VER
 	RECT rect = {};
 	if (!GetClientRect((HWND)mHwnd, &rect))
 		return;
-	bool regen = false;
 	RECT wrect = {};
 	if (GetWindowRect((HWND)mHwnd, &wrect))
 	{
@@ -876,8 +883,45 @@ void DisplaySurface::Resize()
 		lastWindow.z = wrect.right - wrect.left;
 		lastWindow.w = wrect.bottom - wrect.top;
 	}
-	UINT W = abs(rect.right - rect.left);
-	UINT H = abs(rect.bottom - rect.top);
+	W = abs(rect.right - rect.left);
+	H = abs(rect.bottom - rect.top);
+#else
+	// Linux/GLFW: Get window size from GLFW or use surface capabilities
+	if (mHwnd)
+	{
+		GLFWwindow* glfwWindow = (GLFWwindow*)mHwnd;
+		int width = 0, height = 0;
+		glfwGetWindowSize(glfwWindow, &width, &height);
+		W = (uint32_t)width;
+		H = (uint32_t)height;
+
+		// Check if window position changed
+		int x = 0, y = 0;
+		glfwGetWindowPos(glfwWindow, &x, &y);
+		if (x != lastWindow.x || y != lastWindow.y)
+			regen = true;
+		lastWindow.x = x;
+		lastWindow.y = y;
+		lastWindow.z = width;
+		lastWindow.w = height;
+	}
+	else
+	{
+		// Fallback: use surface capabilities
+		vk::SurfaceCapabilitiesKHR surfCapabilities;
+		vk::PhysicalDevice *gpu = GetGPU();
+		if (gpu && mSurface)
+		{
+			auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
+			if (result == vk::Result::eSuccess)
+			{
+				W = surfCapabilities.currentExtent.width;
+				H = surfCapabilities.currentExtent.height;
+			}
+		}
+	}
+#endif
+
 	if (viewport.w != W || viewport.h != H)
 		regen = true;
 	if (!regen)
@@ -891,5 +935,4 @@ void DisplaySurface::Resize()
 	viewport.y = 0;
 	if (renderer)
 		renderer->ResizeView(mViewId, W, H);
-#endif
 }

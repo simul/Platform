@@ -99,7 +99,7 @@ const char* Texture::GetName() const
 	return name.c_str();
 }
 
-unsigned long long Texture::GetFence(DeviceContext &deviceContext) const
+uint64_t Texture::GetFence(DeviceContext &deviceContext) const
 {
 	const auto &i=deviceContext.contextState.fenceMap.find((const Texture*)this);
 	if(i!=deviceContext.contextState.fenceMap.end())
@@ -107,7 +107,7 @@ unsigned long long Texture::GetFence(DeviceContext &deviceContext) const
 	return 0;
 }
 
-void Texture::SetFence(DeviceContext &deviceContext,unsigned long long f)
+void Texture::SetFence(DeviceContext &deviceContext,uint64_t f)
 {
 	auto i=deviceContext.contextState.fenceMap.find(this);
 	if(i!=deviceContext.contextState.fenceMap.end())

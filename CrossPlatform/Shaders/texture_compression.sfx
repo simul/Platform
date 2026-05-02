@@ -994,7 +994,7 @@ groupshared BufferShared shared_temp[THREAD_GROUP_SIZE];
 
 uint4 quantize(uint4 color, uint uPrec)
 {
-	return (((color << 8) + color) * ((1 << uPrec) - 1) + 32768) >> 16;
+	return (((color << 8u) + color) * ((1u << uPrec) - 1u) + 32768u) >> 16u;
 }
 
 uint4 unquantize(uint4 color, uint uPrec)

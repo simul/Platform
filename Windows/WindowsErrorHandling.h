@@ -15,9 +15,9 @@
 
 namespace platform::windows
 {
+#if defined(_WIN32)
 	std::string GetLastErrorToString(DWORD error)
 	{
-#if defined(_WIN32)
 		if (error != 0)
 		{
 			char *formatedMessage = nullptr;
@@ -32,7 +32,7 @@ namespace platform::windows
 				return result;
 			}
 		}
-#endif
 		return std::string();
 	}
+#endif
 }

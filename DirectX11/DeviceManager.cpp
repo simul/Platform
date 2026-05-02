@@ -364,6 +364,7 @@ void Window::Release()
 DeviceManager::DeviceManager()
 	:d3dDevice(0)
 	,d3dDeviceContext(0)
+	,adapter(0)
 	,d3dDebug(NULL)
 	,infoQueue(NULL)
 {
@@ -648,7 +649,7 @@ void DeviceManager::Shutdown()
 				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 			}
 #endif
-			PLATFORM_WARN("There are {0} reported unfreed references remain in DirectX 11.", references);
+			PLATFORM_WARN("There are {} reported unfreed references remain in DirectX 11.", (int)references);
 		}
 #ifndef _XBOX_ONE
 		SAFE_RELEASE(d3dDebug);

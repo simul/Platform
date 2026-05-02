@@ -18,13 +18,13 @@ if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles")
 	# If you want to disable line directives in Flex, use -L. For Bison, use -l.
 	set(FLEX_FLAGS "")
-	set(BISON_FLAGS "" )	# use  for Bison to debug shift-reduce conflicts.
+	set(BISON_FLAGS "-Wno-conflicts-sr -Wno-conflicts-rr")	# use -Wno-conflicts-sr; -Wno-conflicts-rr for Bison to debug shift-reduce conflicts.
 	# specify FULL PATH to Preprocessor.lpp etc, so Flex and Bison will give us clickable warning/error messages.
-	flex_target(PreprocessorLexer ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessor.lpp ${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorLexer.cpp DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorLexer.h" COMPILE_FLAGS ${FLEX_FLAGS}  )
+	flex_target(PreprocessorLexer ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessor.lpp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorLexer.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorLexer.h" COMPILE_FLAGS ${FLEX_FLAGS} )
 	bison_target(PreprocessorParser ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessor.ypp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorParser.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/PreprocessorParser.h" COMPILE_FLAGS ${BISON_FLAGS} )
 
-	flex_target(SfxScanner ${CMAKE_CURRENT_SOURCE_DIR}/Sfx.lpp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxScanner.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxScanner.h"  COMPILE_FLAGS ${FLEX_FLAGS}  )
-	bison_target(SfxLALRParser ${CMAKE_CURRENT_SOURCE_DIR}/Sfx.ypp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxLALRParser.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxLALRParser.hpp" COMPILE_FLAGS ${BISON_FLAGS}  )
+	flex_target(SfxScanner ${CMAKE_CURRENT_SOURCE_DIR}/Sfx.lpp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxScanner.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxScanner.h" COMPILE_FLAGS ${FLEX_FLAGS} )
+	bison_target(SfxLALRParser ${CMAKE_CURRENT_SOURCE_DIR}/Sfx.ypp "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxLALRParser.cpp" DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/GeneratedFiles/SfxLALRParser.hpp" COMPILE_FLAGS ${BISON_FLAGS} )
 
 	ADD_FLEX_BISON_DEPENDENCY(PreprocessorLexer PreprocessorParser)
 	ADD_FLEX_BISON_DEPENDENCY(SfxScanner SfxLALRParser)
@@ -55,7 +55,19 @@ if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 			VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -I\"${CMAKE_SOURCE_DIR}/..\" -I\"${SIMUL_PLATFORM_DIR}/CrossPlatform/Shaders\" -o\"${CMAKE_BINARY_DIR}/Platform/shaderbin/$PLATFORM_NAME\" ${TEST_CONFIGS} -l -v ${SFX_TEST_DEFINES}"
 			)
 	endif()
-	if(PLATFORM_LINUX)
-		target_link_libraries(Sfx c++)
-	endif()
+
+	# Mesh-shader regression test. Runs Sfx against a small effect that exercises
+	# amplification (task), mesh and pixel passes using a stub platform config
+	# whose compiler field is empty, so the back-end compiler is not invoked.
+	set(SFX_MESH_TEST_SHADER "${CMAKE_CURRENT_SOURCE_DIR}/Tests/mesh_test.sfx")
+	set(SFX_MESH_TEST_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/Tests/mesh_test_stub.json")
+	add_test(NAME Sfx_mesh_shader_regression
+		COMMAND $<TARGET_FILE:Sfx>
+			"${SFX_MESH_TEST_SHADER}"
+			"-I${CMAKE_SOURCE_DIR}/Platform"
+			"-I${CMAKE_SOURCE_DIR}/Platform/CrossPlatform/Shaders"
+			"-P${SFX_MESH_TEST_CONFIG}"
+			"-o${CMAKE_CURRENT_BINARY_DIR}/Tests/mesh_shader_out"
+			"-l"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 endif()

@@ -16,9 +16,12 @@ using namespace platform::core;
 #else
 	#define LARGE_INTEGER long
 #endif
-#if defined(__ORBIS__) | defined(__COMMODORE__)
-#include <perf.h>
-static uint64_t performanceCounter()
+#if defined(__ORBIS__) || defined(__COMMODORE__) || defined(UNIX)
+	#include <time.h>
+	#if defined(__ORBIS__)
+		#include <perf.h>
+	#endif
+	static uint64_t performanceCounter()
 	{
 		uint64_t result = 0;
 		timespec ts;
@@ -26,7 +29,7 @@ static uint64_t performanceCounter()
 		result = (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
 		return result;
 	}
-	uint64_t performanceFrequency()
+	static uint64_t performanceFrequency()
 	{
 		uint64_t result = 1;
 		result = 1000000000LL;
@@ -84,8 +87,8 @@ void Timer::StartTime()
 	LARGE_INTEGER &tStart=*(reinterpret_cast<LARGE_INTEGER*>(&iStart));
 	QueryPerformanceCounter(&tStart);
 #endif
-#if defined(__ORBIS__) | defined(__COMMODORE__)
-	iStart=(double)performanceCounter();
+#if defined(__ORBIS__) || defined(__COMMODORE__) || defined(UNIX)
+	iStart=performanceCounter();
 #endif
 }
 
@@ -101,8 +104,8 @@ float Timer::FinishTime()
 		Time=((float)(tStop.QuadPart-tStart.QuadPart-Oht))/(float)dPerfFreq;
 	TimeSum+=Time;
 #endif
-#if defined(__ORBIS__) | defined(__COMMODORE__)
-	iStop=(double)performanceCounter();
+#if defined(__ORBIS__) || defined(__COMMODORE__) || defined(UNIX)
+	iStop=performanceCounter();
 	Time=(float)(1000.0*(double)(iStop-iStart)/(double)performanceFrequency());
 	iStart=iStop;
 	TimeSum+=Time;
@@ -122,7 +125,7 @@ float Timer::AbsoluteTimeMS()
 	else
 		t=((float)(tStop.QuadPart-tStart.QuadPart))/(float)dPerfFreq;
 #endif
-#ifdef __ORBIS__
+#if defined(__ORBIS__) || defined(__COMMODORE__) || defined(UNIX)
 	return (float)(1000.0*(double)performanceCounter()/(double)performanceFrequency());
 #endif
 	return t;

@@ -5,6 +5,13 @@ namespace platform
 {
 	namespace crossplatform
 	{
+		struct GraphicsDeviceContext;
+		class Resource
+		{
+		public:
+			virtual void Reallocate(GraphicsDeviceContext &dev,const void *src,const void *dest){};
+		};
+
 		static const int PER_PASS_RESOURCE_GROUP=3;
 		//! The grouping for shader resources. Using this grouping we can ensure that
 		//! resource layouts are not uploaded more often than necessary. See ConstantBuffer<>.

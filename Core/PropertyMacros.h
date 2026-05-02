@@ -6,9 +6,9 @@
 #ifndef __COUNTER__
 	#define __COUNTER__ __LINE__
 #endif
-// LLVM claims Gcc compatibility (__GNUC__=4) but uses __FUNCTION__ instead of __FUNC__
+// LLVM defines __FUNC__ natively; GCC does not, so map it to __FUNCTION__.
 #ifndef __llvm__
-    #define __FUNCTION__ __FUNC__
+    #define __FUNC__ __FUNCTION__
 #endif
 // also, gcc does NOT handle the pasting operator ## well. avoid if possible.
 #endif
@@ -119,7 +119,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		static type GetMinimumOf##propname()							\
 		{																\
 			return (minimum);											\
-		}
+		}																\
+		static_assert(true)
 
 #if !defined(DOXYGEN)
 #define META_DeclareEnforceRange(type, propname, minimum, maximum)	\
@@ -128,8 +129,9 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		{															\
 			META_Limit<type>(propname, minimum, maximum);			\
 		}															\
-		META_DeclareMaxAndMin(type, propname, minimum, maximum)
-		
+		META_DeclareMaxAndMin(type, propname, minimum, maximum);	\
+		static_assert(true)
+
 #define META_PropertyGet(type, propname,info)								\
 	protected:																			\
 		type propname;																	\
@@ -138,7 +140,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		const type &Get##propname() const												\
 		{																				\
 			return propname;															\
-		}		
+		}																				\
+		static_assert(true)
 
 #define META_PropertyGetAndSet(type, propname,info)										\
 	protected:																			\
@@ -153,7 +156,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		void Set##propname(const type &value)											\
 		{																				\
 			propname=value;																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_PropertyGetAndSetOverride(type, propname,info)										\
 	protected:																			\
@@ -168,7 +172,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		void Set##propname(const type &value)											\
 		{																				\
 			propname=value;																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_PropertyGetSetAndCall(type, propname, call_on_set)					\
 	protected:																			\
@@ -186,7 +191,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 				return;																	\
 			propname=value;																\
 			call_on_set();																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_Get(type, propname)												\
 	protected:																			\
@@ -207,7 +213,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		void Init##propname(const type &value)													\
 		{																				\
 			propname=value;																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_GetAndSet(type, propname)										\
 	protected:																			\
@@ -227,7 +234,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		void Init##propname(const type &value)													\
 		{																				\
 			propname=value;																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_GetSetAndCall(type, propname, call_on_set)						\
 	protected:																			\
@@ -251,7 +259,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		{																				\
 			propname=value;																\
 			call_on_set();																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_GetSetAndCall2(type, propname, call_on_set1, call_on_set2)		\
 	protected:																			\
@@ -277,7 +286,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			propname=value;																\
 			call_on_set1();																\
 			call_on_set2();																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_RangeGetAndSet(type, propname, minimum, maximum)					\
 	protected:																				\
@@ -288,7 +298,7 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		{																					\
 			return propname;																\
 		}																					\
-		META_DeclareMaxAndMin(type, propname, minimum, maximum)								\
+		META_DeclareMaxAndMin(type, propname, minimum, maximum);							\
 		/*! Set the value of propname, then call call_on_set1() and call_on_set2(). */		\
 		void Set##propname(const type &value)														\
 		{																					\
@@ -305,7 +315,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		void Init##propname(const type &value)														\
 		{																					\
 			propname=value;																	\
-		}
+		}																					\
+		static_assert(true)
 
 
 #define META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum)	\
@@ -317,7 +328,7 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		{																					\
 			return propname;																\
 		}																					\
-		META_DeclareMaxAndMin(type, propname, minimum, maximum)								\
+		META_DeclareMaxAndMin(type, propname, minimum, maximum);							\
 		/*! Set the value of propname, then call call_on_set1() and call_on_set2(). */		\
 		void Set##propname( const type &value)												\
 		{																					\
@@ -336,18 +347,20 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		{																					\
 			propname=value;																	\
 			call_on_set();																	\
-		}
+		}																					\
+		static_assert(true)
 
 
 #else
-#define META_DeclareEnforceRange(type, propname, minimum, maximum)
+#define META_DeclareEnforceRange(type, propname, minimum, maximum) static_assert(true)
 
 #define META_PropertyGet(type, propname,info)		\
 	protected:																			\
 		/*! info.
 			Read-only, use Get##propname() to access. */								\
-		type propname;	
-		
+		type propname;																	\
+		static_assert(true)
+
 #define META_PropertyGetAndSet(type, propname, info)								\
 	protected:																			\
 		type propname;																	\
@@ -355,8 +368,9 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! Get the value of propname (info).*/											\
 		const type &Get##propname() const;												\
 		/*! Set the value of propname (info).*/											\
-		void Set##propname(const type &value);
-		
+		void Set##propname(const type &value);											\
+		static_assert(true)
+
 #define META_PropertyGetAndSetOverride(type, propname, info)							\
 	protected:																			\
 		type propname;																	\
@@ -370,7 +384,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		void Set##propname(const type &value)											\
 		{																				\
 			propname=value;																\
-		}
+		}																				\
+		static_assert(true)
 
 #define META_PropertyGetSetAndCall(type, propname, call_on_set)					\
 	protected:																			\
@@ -379,7 +394,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! Get the value of propname.*/												\
 		const type &Get##propname() const;												\
 		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);
+		void Set##propname(const type &value);											\
+		static_assert(true)
 
 #define META_Get(type, propname)												\
 	protected:																			\
@@ -391,7 +407,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		void Set##propname(const type &value);													\
 	public:																				\
 		/*! Set the value of propname.*/												\
-		void Init##propname(const type &value);
+		void Init##propname(const type &value);													\
+		static_assert(true)
 
 #define META_GetAndSet(type, propname)										\
 	protected:																			\
@@ -400,7 +417,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! Get the value of propname.*/												\
 		const type &Get##propname() const;														\
 		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);
+		void Set##propname(const type &value);													\
+		static_assert(true)
 
 #define META_GetSetAndCall(type, propname, call_on_set)						\
 	protected:																			\
@@ -409,7 +427,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! Get the value of propname.*/												\
 		const type &Get##propname() const;														\
 		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);
+		void Set##propname(const type &value);													\
+		static_assert(true)
 
 #define META_GetSetAndCall2(type, propname, call_on_set1, call_on_set2)		\
 	protected:																				\
@@ -418,7 +437,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! Get the value of propname.*/												\
 		const type &Get##propname() const;														\
 		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);
+		void Set##propname(const type &value);													\
+		static_assert(true)
 
 #define META_RangeGetAndSet(type, propname, minimum, maximum)				\
 	protected:																				\
@@ -427,7 +447,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! Get the value of propname.*/												\
 		const type &Get##propname() const;														\
 		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);
+		void Set##propname(const type &value);													\
+		static_assert(true)
 
 #define META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum)	\
 	protected:																				\
@@ -436,7 +457,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! Get the value of propname.*/													\
 		const type &Get##propname() const;															\
 		/*! Set the value of propname.*/													\
-		void Set##propname(const type &value);
+		void Set##propname(const type &value);														\
+		static_assert(true)
 
 #endif
 			
@@ -451,7 +473,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 	}																							\
 	private: template<int N> void Templ_AccumulateStreamIn(std::istream &)						\
 	{																							\
-	}
+	}																							\
+	static_assert(true)
 
 
 #define META_AccumulateStreaming(type, propname)											\
@@ -474,9 +497,10 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			type temp##propname;																	\
 			StreamingHelperTemplate<type>::StreamIn(is, temp##propname);							\
 			Set##propname(temp##propname);															\
-		};
+		};																							\
+		static_assert(true)
 
-					
+
 #define META_AccumulateStreamingAndInit(type, propname, initial)							\
 		static unsigned GetOrdinalOf##propname()													\
 		{																							\
@@ -498,13 +522,14 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			type temp##propname;																	\
 			StreamingHelperTemplate<type>::StreamIn(is, temp##propname);							\
 			Set##propname(temp##propname);															\
-		};
+		};																							\
+		static_assert(true)
 
 #else
-#define META_BeginProperties
-#define META_AccumulateStreaming(type, propname)
-#define META_AccumulateStreamingAndInit(type, propname, initial)
-	
+#define META_BeginProperties static_assert(true)
+#define META_AccumulateStreaming(type, propname) static_assert(true)
+#define META_AccumulateStreamingAndInit(type, propname, initial) static_assert(true)
+
 #endif
 
 #if !defined(DOXYGEN) && defined(_MSC_VER)
@@ -521,7 +546,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 	void InitializeProperties()												\
 	{																					\
 		Templ_AccumulateSetInitial<__COUNTER__-8>();							\
-	}
+	}																					\
+	static_assert(true)
 
 #else
 #define META_EndProperties												\
@@ -534,7 +560,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 	}																					\
 	void InitializeProperties()												\
 	{																					\
-	}
+	}																					\
+	static_assert(true)
 #endif
 
 
@@ -543,9 +570,10 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 	static const char *GetInfoFor##propname()											\
 	{																					\
 		return info;																	\
-	}
+	}																					\
+	static_assert(true)
 #else
-#define META_Info(propname, info)
+#define META_Info(propname, info) static_assert(true)
 
 #endif
 
@@ -554,19 +582,21 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! info */																	\
 		/*! \name Property: type propname	*/										\
 		/*@{*/																		\
-		META_PropertyGetAndSet(type, propname,info)									\
-		META_AccumulateStreaming(type, propname)									\
-		META_Info(propname, info)													\
-		/*@}*/ 
+		META_PropertyGetAndSet(type, propname,info);								\
+		META_AccumulateStreaming(type, propname);									\
+		META_Info(propname, info);													\
+		/*@}*/																		\
+		static_assert(true)
 
 #define META_PropertyOverride(type, propname, info)											\
 		/*! info */																	\
 		/*! \name Property: type propname	*/										\
 		/*@{*/																		\
-		META_PropertyGetAndSetOverride(type, propname,info)									\
-		META_AccumulateStreaming(type, propname)									\
-		META_Info(propname, info)													\
-		/*@}*/ 
+		META_PropertyGetAndSetOverride(type, propname,info);						\
+		META_AccumulateStreaming(type, propname);									\
+		META_Info(propname, info);													\
+		/*@}*/																		\
+		static_assert(true)
 
 
 #define META_PropertyReadOnly(type, propname, info)									\
@@ -578,10 +608,11 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! info */																	\
 		/*! \name Property: type propname	*/										\
 		/*@{*/																		\
-		META_PropertyGet(type, propname, info)										\
-		META_AccumulateStreaming(type, propname)									\
-		META_Info(propname, info)													\
-		/*@}*/ 
+		META_PropertyGet(type, propname, info);										\
+		META_AccumulateStreaming(type, propname);									\
+		META_Info(propname, info);													\
+		/*@}*/																		\
+		static_assert(true)
 
 
 #define VIRTUAL_Get(type, propname, info)					\
@@ -591,8 +622,9 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*@{*/													\
 		/*! Get the value of propname (info) */					\
 		virtual const type &Get##propname() const = 0;					\
-		META_Info(propname, info)								\
-		/*@}*/
+		META_Info(propname, info);								\
+		/*@}*/													\
+		static_assert(true)
 
 #define VIRTUAL_Set(type, propname, info)					\
 	public:														\
@@ -601,8 +633,9 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*@{*/													\
 		/*! Set the value of propname (info). */				\
 		virtual void Set##propname(const type &value) = 0;				\
-		META_Info(propname, info)								\
-		/*@}*/
+		META_Info(propname, info);								\
+		/*@}*/													\
+		static_assert(true)
 
 #define VIRTUAL_GetAndSetNOINFO(type, propname)			\
 	public:														\
@@ -613,7 +646,8 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		virtual const type &Get##propname() const = 0;					\
 		/*! Set the value of propname. */						\
 		virtual void Set##propname(const type &value) = 0;				\
-		/*@}*/
+		/*@}*/													\
+		static_assert(true)
 
 #define VIRTUAL_GetAndSet(type, propname, info)			\
 	public:														\
@@ -624,8 +658,9 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		virtual const type &Get##propname() const = 0;			\
 		/*! Set the value of propname (info) */					\
 		virtual void Set##propname(const type &value) = 0;		\
-		META_Info(propname, info)								\
-		/*@}*/
+		META_Info(propname, info);								\
+		/*@}*/													\
+		static_assert(true)
 
 
 
@@ -643,9 +678,10 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		template<> void Templ_AccumulateStreamIn<__COUNTER__>(std::istream &is)			\
 		{																							\
 			Templ_AccumulateStreamIn<__COUNTER__-8>(is);									\
-		};
+		};																							\
+		static_assert(true)
 #else
-	#define META_PassOnStreaming		
+	#define META_PassOnStreaming static_assert(true)
 #endif
 	#define META_Category(category)												\
 	/*! \name Category: category	*/														\
@@ -664,15 +700,15 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			}																				\
 			META_PassOnStreaming
 #else
-	
-	#define META_PassOnStreaming		
+
+	#define META_PassOnStreaming static_assert(true)
 
 	#define META_Category(category) \
-	/*! \name Category: category	*/
+	/*! \name Category: category	*/ static_assert(true)
 
-		
+
 	#define META_EndCategory(category) \
-	/*! \name General	*/
+	/*! \name General	*/ static_assert(true)
 
 #endif
 
@@ -682,73 +718,80 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		/*! info */																				\
 		/*! \name Property: type propname	*/													\
 		/*@{*/																					\
-		META_RangeGetAndSet(type, propname, minimum, maximum)						\
-		META_AccumulateStreamingAndInit(type, propname, initial)							\
-		META_Info(propname, info)																\
-		/*@}*/ 
+		META_RangeGetAndSet(type, propname, minimum, maximum);								\
+		META_AccumulateStreamingAndInit(type, propname, initial);							\
+		META_Info(propname, info);															\
+		/*@}*/																				\
+		static_assert(true)
 
 #define META_RangePropertyWithSetCall(type, propname, minimum, maximum, call_on_set, info)	\
 		/*! info */																								\
 		/*! \name Property: type propname	*/																	\
 		/*@{*/																									\
-		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum)						\
-		META_AccumulateStreaming(type, propname)														\
-		META_Info(propname, info)																				\
-		/*@}*/
-			
+		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum);									\
+		META_AccumulateStreaming(type, propname);																\
+		META_Info(propname, info);																				\
+		/*@}*/																									\
+		static_assert(true)
+
 
 #define META_RangePropertyWithInitAndSetCall(type, propname, initial, minimum, maximum, call_on_set, info)	\
 		/*! info */																								\
 		/*! \name Property: type propname	*/																	\
 		/*@{*/																									\
-		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum)						\
-		META_AccumulateStreamingAndInit(type, propname, initial)											\
-		META_Info(propname, info)																				\
-		/*@}*/
+		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum);									\
+		META_AccumulateStreamingAndInit(type, propname, initial);												\
+		META_Info(propname, info);																				\
+		/*@}*/																									\
+		static_assert(true)
 
 #define META_PropertyWithSetCall(type, propname, call_on_set, info)							\
 		/*! info */																				\
 		/*! \name Property: type propname	*/													\
 		/*@{*/																					\
-		META_PropertyGetSetAndCall(type, propname, call_on_set)									\
-		META_AccumulateStreaming(type, propname)												\
-		META_Info(propname, info)																\
-		/*@}*/ 
+		META_PropertyGetSetAndCall(type, propname, call_on_set);								\
+		META_AccumulateStreaming(type, propname);												\
+		META_Info(propname, info);																\
+		/*@}*/																					\
+		static_assert(true)
 
-		
+
 #define META_OpenProperty(type, propname, info)												\
 		/*! info */																				\
 		/*! \name Property: type propname	*/													\
 		/*@{*/																					\
-		META_PropertyGetAndSet(type, propname, info)											\
-		META_AccumulateStreaming(type, propname)												\
-		META_Info(propname, info)																\
+		META_PropertyGetAndSet(type, propname, info);											\
+		META_AccumulateStreaming(type, propname);												\
+		META_Info(propname, info);																\
 	public:																						\
 		type &Get##propname()																	\
 		{																						\
 			return propname;																	\
 		}																						\
-		/*@}*/ 
+		/*@}*/																					\
+		static_assert(true)
 
 
 #define META_PropertyWithInit(type, propname, initial, info)									\
 		/*! info */																			\
 		/*! \name Property: type propname	*/												\
 		/*@{*/																				\
-		META_GetAndSet(type, propname)														\
-		META_AccumulateStreamingAndInit(type, propname, Definition, initial)					\
-		META_Info(propname, info)															\
-		/*@}*/ 
+		META_GetAndSet(type, propname);														\
+		META_AccumulateStreamingAndInit(type, propname, Definition, initial);				\
+		META_Info(propname, info);															\
+		/*@}*/																				\
+		static_assert(true)
 
 
 #define META_PropertyWithInitAndSetCall(type, propname, initial, call_on_set, info)			\
 		/*! info */																			\
 		/*! \name Property: type propname	*/												\
 		/*@{*/																				\
-		META_GetSetAndCall(type, propname, call_on_set)										\
-		META_AccumulateStreamingAndInit(type, propname, Definition, initial)					\
-		META_Info(propname, info)															\
-		/*@}*/ 
+		META_GetSetAndCall(type, propname, call_on_set);									\
+		META_AccumulateStreamingAndInit(type, propname, Definition, initial);				\
+		META_Info(propname, info);															\
+		/*@}*/																				\
+		static_assert(true)
 		
 
 #define VIRTUAL_(propname)															\
@@ -777,7 +820,7 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			{														\
 				return __COUNTER__;									\
 			}														\
-			META_PassOnStreaming(Definition)						\
+			META_PassOnStreaming;									\
 			void DoAction##action_name();
 
 
@@ -788,7 +831,7 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			{														\
 				return __COUNTER__;									\
 			}														\
-			META_PassOnStreaming(State)								\
+			META_PassOnStreaming;									\
 			void DoAction##action_name();
 
 #else

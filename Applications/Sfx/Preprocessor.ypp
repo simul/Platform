@@ -20,6 +20,7 @@
 	#include <sstream>		// For std::ostringstream
 	#include <vector>		// For std::vector
 	#include <string>		// For std::string
+	#include <cstdint>
 	#include "Preprocessor.h"
 	extern void prepro_error(const char *s);
 	extern void prepro_warning(const char *s);

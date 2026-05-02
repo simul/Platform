@@ -137,7 +137,7 @@ inline void GetD3DName(ID3D12Object *obj, std::string& name)
 
 #if PLATFORM_DEBUG_BARRIERS
 	#define LOG_BARRIER_INFO(name, res, before, after);\
-	SIMUL_CERR << "Barrier: " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (unsigned long long)res << ") - from "\
+	SIMUL_CERR << "Barrier: " << name << "(0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)res << ") - from "\
 	<< RenderPlatform::D3D12ResourceStateToString(before) << " to " << RenderPlatform::D3D12ResourceStateToString(after) << std::endl;
 #else
 	#define LOG_BARRIER_INFO(name, res, before, after)

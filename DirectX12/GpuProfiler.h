@@ -29,7 +29,7 @@ namespace platform
 			void				EndFrame(crossplatform::DeviceContext &deviceContext);
 			
 			void				GetTimestampQueryHeap(crossplatform::DeviceContext &deviceContext,ID3D12QueryHeap** heap,int *offset);
-			unsigned long long	GetTimestampQueryData(crossplatform::DeviceContext& deviceContext,int offset);
+			uint64_t			GetTimestampQueryData(crossplatform::DeviceContext& deviceContext,int offset);
 		private:
 			crossplatform::RenderPlatform *renderPlatform=nullptr;
 			ID3D12QueryHeap*			mTimestampQueryHeap[5];
@@ -43,8 +43,8 @@ namespace platform
 			int							mTimestampQueryCurrFrame=0;
 
 			//! Readback buffer to read data from the query
-			unsigned long long*					mTimestampQueryData=nullptr;
-			unsigned long long last_frame_number=0;
+			uint64_t*					mTimestampQueryData=nullptr;
+			uint64_t last_frame_number=0;
 		};
 
 		

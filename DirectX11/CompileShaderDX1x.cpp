@@ -116,7 +116,7 @@ ERRNO_CHECK
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;
-		uint64_t timestamp= platform::core::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
+		uint64_t timestamp= platform::core::FileLoader::GetFileLoader()->GetFileDateUnixTimeMs(finalPathUtf8.c_str());
 		if(timestamp>newest)
 			newest=timestamp;
 		if(timestamp>lastCompileTime)

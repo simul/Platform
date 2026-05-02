@@ -9,7 +9,9 @@
 #include "Platform/CrossPlatform/RenderDelegater.h"
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/Core/Timer.h"
+#ifdef _WIN32
 #include <tchar.h>
+#endif
 #ifdef _MSC_VER
 #include "Platform/Windows/VisualStudioDebugOutput.h"
 VisualStudioDebugOutput debug_buffer(true, NULL, 128);
@@ -34,9 +36,11 @@ platform::core::CommandLineParams commandLineParams;
 platform::crossplatform::RenderPlatform* renderPlatform = nullptr;
 
 // Forward declarations of helper functions
+#ifdef _WIN32
 bool CreateDevice(HWND hWnd);
 void CleanupDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 
 class PlatformRenderer:public crossplatform::RenderDelegatorInterface
@@ -70,7 +74,7 @@ public:
         deviceContext.defaultTargetsAndViewport.rtFormats[0] = crossplatform::UNKNOWN; //To be later defined in the pipeline
         deviceContext.defaultTargetsAndViewport.m_dt = nullptr;
         deviceContext.defaultTargetsAndViewport.depthFormat = crossplatform::UNKNOWN;
-        deviceContext.defaultTargetsAndViewport.viewport = { 0,0,w,h };
+        deviceContext.defaultTargetsAndViewport.viewport = crossplatform::Viewport{0,0,w,h};
     
         deviceContext.platform_context = context;
         deviceContext.renderPlatform = renderPlatform;
@@ -107,6 +111,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 int main(int, char**)
 #endif
 {
+#ifdef _WIN32
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
@@ -238,12 +243,14 @@ int main(int, char**)
     CleanupDevice();
     ::DestroyWindow(hwnd);
     ::UnregisterClass(wc.lpszClassName, wc.hInstance);
+#endif // _WIN32
 
     return 0;
 }
 
 // Helper functions
 
+#ifdef _WIN32
 bool CreateDevice(HWND hWnd)
 {
 #if PLATFORM_SUPPORT_D3D11
@@ -312,3 +319,4 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
+#endif // _WIN32

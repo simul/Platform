@@ -20,10 +20,10 @@ namespace platform
 		{
 		private:
 			static __int64 OverheadTicks;			// overhead  in calling timer
-		#if defined(__ORBIS__) | defined(__COMMODORE__)
+		#if defined(__ORBIS__) || defined(__COMMODORE__) || defined(UNIX)
 			uint64_t iStart,iStop;
 		#endif
-		#ifdef _MSC_VER     
+		#ifdef _MSC_VER
 			Int64 iStart,iStop;
 			int PerfFreqAdjust;			// in case Freq is too big
 			float dPerfFreq;			// ticks per second

@@ -1,4 +1,5 @@
 #pragma once
+#include "Platform/CrossPlatform/Resource.h"
 #include "vk_mem_alloc.h"
 
 namespace platform::vulkan

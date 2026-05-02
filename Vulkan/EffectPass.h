@@ -14,7 +14,7 @@ namespace platform
 {
 	namespace vulkan
 	{
-		typedef unsigned long long RenderPassHash;
+		typedef uint64_t RenderPassHash;
 
 		class SIMUL_VULKAN_EXPORT EffectPass : public platform::crossplatform::EffectPass
 		{

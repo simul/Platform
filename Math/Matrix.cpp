@@ -428,7 +428,6 @@ void Matrix::MakeSymmetricFromUpper(void)
                       
 void Matrix::MakeSymmetricFromLower(void)
 {
-#ifndef PLAYSTATION2
 	unsigned i,j;
 	for(i=0;i<Height;i++)
 	{
@@ -437,39 +436,6 @@ void Matrix::MakeSymmetricFromLower(void)
 			Values[i*W16+j]=Values[j*W16+i];
 		}
 	}
-#else	
-	unsigned Stride=4*W16;
-	asm __volatile__
-	(
-	"
-		.set noreorder
-		lw t9,12(%0)
-		blez t9,Escape
-		xor s0,s0
-		lw t0,0(%0)					// Result(i,i)
-		iLoopSymmetry:
-			add s1,zero,s0
-			addi s1,1
-			add t1,zero,t0			// Result(i,j)
-			addi t1,4				// Result(i,j)
-			add t2,%1,t0			// Result(j,i)
-			jLoopSymmetry:
-				lwc1 f1,0(t2)
-				swc1 f1,0(t1)
-				add t2,%1			// Result(j,i)
-				addi s1,1
-			blt s1,t9,jLoopSymmetry
-				addi t1,4			// Result(i,j)
-			add t0,%1
-			addi s0,1
-		blt s0,t9,iLoopSymmetry
-			addi t0,4
-		Escape:
-	"	:
-		: "g"(this),"g"(Stride)
-		: "s0","s1","s2","s3","s4","s5","s6","s7"
-	);
-#endif
 }
 
 #ifndef SIMD

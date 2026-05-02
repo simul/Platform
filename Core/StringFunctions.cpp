@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <algorithm>
-#ifdef UNIX
 #include <string.h> // for strlen
-#endif
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif

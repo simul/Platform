@@ -307,25 +307,25 @@ uint TextFileInput::Get(const char* name, uint dflt)
 	return (uint)strtoul(properties[name].c_str(),nullptr,0);
 }
 
-long long TextFileInput::Get(const char* name, long long dflt)
+int64_t TextFileInput::Get(const char* name, int64_t dflt)
 {
 	if (properties.find(name) == properties.end())
 		return dflt;
 	if (_stricmp(properties[name].c_str(), "true") == 0)
-		return (long long)1;
+		return (int64_t)1;
 	if (_stricmp(properties[name].c_str(), "false") == 0)
-		return (long long)0;
+		return (int64_t)0;
 	return atoll(properties[name].c_str());
 }
 
-unsigned long long TextFileInput::Get(const char* name, unsigned long long dflt)
+uint64_t TextFileInput::Get(const char* name, uint64_t dflt)
 {
 	if (properties.find(name) == properties.end())
 		return dflt;
 	if (_stricmp(properties[name].c_str(), "true") == 0)
-		return (unsigned long long)1;
+		return (uint64_t)1;
 	if (_stricmp(properties[name].c_str(), "false") == 0)
-		return (unsigned long long)0;
+		return (uint64_t)0;
 	return strtoull(properties[name].c_str(),nullptr,0);
 }
 
@@ -755,7 +755,7 @@ void TextFileOutput::Set(const char* name, long long value)
 	properties[name] = core::stringFormat("%lld", value);
 }
 
-void TextFileOutput::Set(const char* name, unsigned long long value)
+void TextFileOutput::Set(const char* name, uint64_t value)
 {
 	properties[name] = core::stringFormat("%llu", value);
 }

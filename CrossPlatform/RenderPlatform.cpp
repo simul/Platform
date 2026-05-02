@@ -64,7 +64,7 @@ namespace platform
 using namespace platform;
 using namespace crossplatform;
 
-std::map<unsigned long long,std::string> RenderPlatform::ResourceMap;
+std::map<uint64_t,std::string> RenderPlatform::ResourceMap;
 std::atomic<int> RenderPlatform::numPlatforms=0;
 
 RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
@@ -82,9 +82,9 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 {
 	immediateContext.renderPlatform=this;
 	computeContext.renderPlatform=this;
-#if defined(WIN32) && !defined(_GAMING_XBOX)
+
 	effectCompileThread = std::thread(&RenderPlatform::recompileAsync,this);
-#endif
+
 	numPlatforms++;
 	for(uint8_t i=0;i<4;i++)
 	{
@@ -102,7 +102,8 @@ RenderPlatform::~RenderPlatform()
 	while (!(effectCompileThread.joinable() && recompileThreadFinished))
 	{
 	}
-	effectCompileThread.join();
+	if(effectCompileThread.joinable())
+		effectCompileThread.join();
 
 	allocator.Shutdown();
 	InvalidateDeviceObjects();
@@ -700,6 +701,7 @@ void RenderPlatform::ContextFrameBegin(GraphicsDeviceContext &deviceContext)
 {
 	if (!frame_started)
 		BeginFrame();
+	//Defrag(deviceContext);
 	if(gpuProfiler && !gpuProfileFrameStarted)
 	{
 		gpuProfiler->StartFrame(deviceContext);
@@ -777,9 +779,14 @@ void RenderPlatform::BeginFrame(long long f)
 	frameNumber = f;
 }
 
+crossplatform::FramePacingTelemetry& RenderPlatform::GetFramePacingTelemetry()
+{
+	return framePacingTelemetry;
+}
+
 void RenderPlatform::Clear(GraphicsDeviceContext &deviceContext,vec4 colour_rgba)
 {
-	if (deviceContext.targetStack.empty() && deviceContext.defaultTargetsAndViewport.m_rt)
+	if (deviceContext.targetStack.empty() )
 	{
 		crossplatform::EffectTechnique *clearTechnique = debugEffect->GetTechniqueByName("clear");
 		if (deviceContext.AsMultiviewGraphicsDeviceContext())
@@ -1039,8 +1046,102 @@ bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int 
 	uint64_t texelSize = elementCount * elementSize;
 	uint64_t size = texelCount * texelSize;
 
-	std::vector<uint8_t> imageData;
-	imageData.reserve(texelCount * elementCount);
+	// Check if we should save as HDR format
+	std::string filenameStr(filename);
+	bool saveAsHDR = (filenameStr.find(".hdr") != std::string::npos);
+
+	if (saveAsHDR)
+	{
+		// For HDR format, we need to preserve floating point data
+		std::vector<float> hdrData;
+		hdrData.reserve(texelCount * 3); // RGB only for HDR
+
+		if (data)
+		{
+			for (uint64_t i = 0; i < size; i += elementSize)
+			{
+				float floatValue = 0.0f;
+				void* _ptr = (void*)((uint64_t)data + i);
+
+				switch (type)
+				{
+					using namespace crossplatform;
+					case PixelFormatType::DOUBLE:
+					{
+						floatValue = static_cast<float>(*(double*)_ptr);
+						break;
+					}
+					case PixelFormatType::FLOAT:
+					{
+						floatValue = *(float*)_ptr;
+						break;
+					}
+					case PixelFormatType::HALF:
+					{
+						floatValue = math::ToFloat32(*(uint16_t*)_ptr);
+						break;
+					}
+					case PixelFormatType::UINT:
+					{
+						uint32_t value = *(uint32_t*)_ptr;
+						floatValue = static_cast<float>(value) / static_cast<float>(UINT32_MAX);
+						break;
+					}
+					case PixelFormatType::USHORT:
+					{
+						uint16_t value = *(uint16_t*)_ptr;
+						floatValue = static_cast<float>(value) / static_cast<float>(UINT16_MAX);
+						break;
+					}
+					case PixelFormatType::UCHAR:
+					{
+						uint8_t value = *(uint8_t*)_ptr;
+						floatValue = static_cast<float>(value) / 255.0f;
+						break;
+					}
+					case PixelFormatType::INT:
+					{
+						int32_t value = std::max(0, *(int32_t*)_ptr);
+						floatValue = static_cast<float>(value) / static_cast<float>(INT32_MAX);
+						break;
+					}
+					case PixelFormatType::SHORT:
+					{
+						int16_t value = std::max<int16_t>(0, *(int16_t*)_ptr);
+						floatValue = static_cast<float>(value) / static_cast<float>(INT16_MAX);
+						break;
+					}
+					case PixelFormatType::CHAR:
+					{
+						int8_t value = std::max<int8_t>(0, *(int8_t*)_ptr);
+						floatValue = static_cast<float>(value) / static_cast<float>(INT8_MAX);
+						break;
+					}
+				}
+
+				// For HDR, we only store RGB (skip alpha if present)
+				uint64_t componentIndex = (i / elementSize) % elementCount;
+				if (componentIndex < 3) // R, G, B only
+				{
+					hdrData.push_back(floatValue);
+				}
+			}
+		}
+
+		// Write HDR file using stb_image_write
+		int res = stbi_write_hdr(filename, width, height, 3, hdrData.data());
+		if (res != 1)
+		{
+			SIMUL_BREAK_ONCE("Failed to save HDR data to disk.");
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		// Original PNG saving code
+		std::vector<uint8_t> imageData;
+		imageData.reserve(texelCount * elementCount);
 
 	if (data)
 	{
@@ -1109,13 +1210,14 @@ bool RenderPlatform::SaveTextureDataToDisk(const char* filename, int width, int 
 		}
 	}
 
-	int res = stbi_write_png(filename, width, height, (int)elementCount, imageData.data(), (int)(elementCount * width));
-	if (res != 1)
-	{
-		SIMUL_BREAK_ONCE("Failed to save screenshot data to disk.");
-		return false;
-	}
-	return true;
+		int res = stbi_write_png(filename, width, height, (int)elementCount, imageData.data(), (int)(elementCount * width));
+		if (res != 1)
+		{
+			SIMUL_BREAK_ONCE("Failed to save screenshot data to disk.");
+			return false;
+		}
+		return true;
+	} // End of else block
 }
 
 void RenderPlatform::DrawLine(GraphicsDeviceContext &deviceContext,vec3 startp, vec3 endp, vec4 colour,float width)
@@ -1226,15 +1328,15 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 {
 	vec3 direction(dir);
 	direction = normalize(direction);
-	vec3 z(0, 0, 1.f);
-	vec3 y(0, 1.f, 0);
-	vec3 x = cross(z, direction);
-	if (length(x) > .1f)
-		x = normalize(x);
+	vec3 z(0,0,1.f);
+	vec3 y(0,1.f,0);
+	vec3 x=cross(z,direction);
+	if(length(x)>.1f)
+		x=normalize(x);
 	else
-		x = cross(direction, y);
-	x *= radius;
-	y = cross(direction, x);
+		x=cross(direction,y);
+	x*=radius;
+	y = cross(direction , x);
 
 	mat4 wvp;
 	if (view_centred)
@@ -1325,13 +1427,13 @@ crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,
 	if (i != textures.end())
 		return i->second;
 
-	crossplatform::Texture* t = CreateTexture(filename, gen_mips);
+	crossplatform::Texture* t=CreateTexture(filename, gen_mips);
 	textures[filename] = t;
 
 	// special textures:
 	if (std::string(filename) == "white")
 	{
-		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
+		t->ensureTexture2DSizeAndFormat(this,1,1, 1,PixelFormat::RGBA_8_UNORM,false,false,false,1,0,true,vec4(1.f,1.f,1.f,1.f));
 		uint8_t dataWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 		t->setTexels(GetImmediateContext(), &dataWhite, 0, 1);
 	}
@@ -1386,9 +1488,9 @@ ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
 Mesh *RenderPlatform::CreateMesh()
 {
 	return new Mesh(this);
-}
+}			
 
-Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8, bool gen_mips)
+Texture* RenderPlatform::CreateTexture(const char* fileNameUtf8, bool gen_mips)
 {
 	crossplatform::Texture* tex = createTexture();
 	if (fileNameUtf8 && strlen(fileNameUtf8) > 0)
@@ -1410,7 +1512,7 @@ Texture* RenderPlatform::CreateTexture(const char *fileNameUtf8, bool gen_mips)
 	return tex;
 }
 
-void RenderPlatform::InvalidatingTexture(Texture* t)
+void RenderPlatform::InvalidatingTexture(Texture *t)
 {
 	for(auto i:unfinishedTextures)
 	{
@@ -1418,7 +1520,7 @@ void RenderPlatform::InvalidatingTexture(Texture* t)
 		{
 			unfinishedTextures.erase(i.first);
 			break;
-		}
+}
 	}
 }
 
@@ -1654,7 +1756,7 @@ int2 RenderPlatform::DrawTexture(GraphicsDeviceContext &deviceContext, int x1, i
 	}
 
 	static int frames = 25;
-	static unsigned long long framenumber = 0;
+	static uint64_t framenumber = 0;
 
 	float displayMip = mip;
 	static int _mip = 0;
@@ -2380,6 +2482,87 @@ void platform::crossplatform::DrawGrid(GraphicsDeviceContext &deviceContext,vec3
 	}
 	deviceContext.renderPlatform->DrawLines(deviceContext,lines,2*numLines*2,false,true);
 	delete[] lines;
+}
+
+// FramePacingTelemetry implementation
+void crossplatform::FramePacingTelemetry::RecordFrame(float wallClockFrameTimeMs, float cpuTimeMs, float gpuTimeMs)
+{
+	// Store frame times in circular buffer
+	frameTimeHistory[currentIndex] = wallClockFrameTimeMs;
+	cpuTimeHistory[currentIndex] = cpuTimeMs;
+	gpuTimeHistory[currentIndex] = gpuTimeMs;
+
+	currentIndex = (currentIndex + 1) % kHistorySize;
+
+	// Calculate rolling averages and statistics
+	float sumFrameTime = 0.0f;
+	float sumCPUTime = 0.0f;
+	float sumGPUTime = 0.0f;
+	maxFrameTime = 0.0f;
+	minFrameTime = 1000000.0f;
+
+	for (int i = 0; i < kHistorySize; i++)
+	{
+		sumFrameTime += frameTimeHistory[i];
+		sumCPUTime += cpuTimeHistory[i];
+		sumGPUTime += gpuTimeHistory[i];
+
+		if (frameTimeHistory[i] > maxFrameTime)
+			maxFrameTime = frameTimeHistory[i];
+		if (frameTimeHistory[i] < minFrameTime && frameTimeHistory[i] > 0.0f)
+			minFrameTime = frameTimeHistory[i];
+	}
+
+	avgFrameTime = sumFrameTime / kHistorySize;
+	avgCPUTime = sumCPUTime / kHistorySize;
+	avgGPUTime = sumGPUTime / kHistorySize;
+
+	// Calculate FPS from average frame time
+	if (avgFrameTime > 0.0f)
+		currentFPS = 1000.0f / avgFrameTime;
+	else
+		currentFPS = 0.0f;
+
+	// Calculate CPU-GPU overlap
+	// If frame time is less than CPU + GPU, there's parallelism
+	// Perfect overlap: frameTime = max(CPU, GPU)
+	// No overlap: frameTime = CPU + GPU
+	float theoreticalSerialTime = avgCPUTime + avgGPUTime;
+	if (theoreticalSerialTime > 0.0f)
+	{
+		float parallelismSavings = theoreticalSerialTime - avgFrameTime;
+		cpuGpuOverlap = (parallelismSavings / theoreticalSerialTime) * 100.0f;
+		cpuGpuOverlap = std::max(0.0f, std::min(100.0f, cpuGpuOverlap));
+	}
+	else
+	{
+		cpuGpuOverlap = 0.0f;
+	}
+
+	// Calculate frame budget utilization (assuming 60fps = 16.67ms target)
+	const float targetFrameTime60fps = 16.67f;
+	frameTimeBudgetUtilization = (avgFrameTime / targetFrameTime60fps) * 100.0f;
+}
+
+void crossplatform::FramePacingTelemetry::Reset()
+{
+	for (int i = 0; i < kHistorySize; i++)
+	{
+		frameTimeHistory[i] = 0.0f;
+		cpuTimeHistory[i] = 0.0f;
+		gpuTimeHistory[i] = 0.0f;
+	}
+	currentIndex = 0;
+	avgFrameTime = 0.0f;
+	maxFrameTime = 0.0f;
+	minFrameTime = 0.0f;
+	currentFPS = 0.0f;
+	avgCPUTime = 0.0f;
+	avgGPUTime = 0.0f;
+	cpuGpuOverlap = 0.0f;
+	frameTimeBudgetUtilization = 0.0f;
+	lastFrameEndTime = 0.0;
+	currentFrameStartTime = 0.0;
 }
 
 void RenderPlatform::SetStandardRenderState	(DeviceContext &deviceContext,StandardRenderState s)

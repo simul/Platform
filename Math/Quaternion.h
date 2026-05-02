@@ -105,21 +105,10 @@ namespace platform
 			/// Assignment operator. Set this Quaternion equal to q.
 			Quaternion& operator=(const Quaternion &q)
 			{
-			#ifndef PLAYSTATION_2
 				x=q.x;
 				y=q.y;
 				z=q.z;
 				s=q.s;
-			#else
-				const float *Q2=&(q.x);
-				asm __volatile__("  
-						.set noreorder
-					lqc2			vf1,0(%1)			// Load q's float address into vf1
-					sqc2			vf1,0(%0)			// Load vf1 into r's float address
-					"					: /* Outputs. */
-										: /* Inputs */ "r" (this), "r" (Q2)
-										: /* Clobber */ "$vf1");
-			#endif
 				return *this;
 			}
 			//------------------------------------------------------------------------------
