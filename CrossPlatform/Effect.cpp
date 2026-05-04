@@ -1070,7 +1070,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	// Load all the .sb's
 	int pos					=0;
 	int next				=(int)str.find('\n',pos+1);
-	//int line_number			=0;
+
 	enum Level
 	{
 		OUTSIDE=0,GROUP=1,TECHNIQUE=2,VARIANT_PASS=3,PASS=4,LAYOUT=5,HITGROUP=6,MISS_SHADERS=6,CALLABLE_SHADERS=6,RAYTRACING_CONFIG=6,TOO_FAR=7
@@ -1098,11 +1098,11 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	static const std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 	while(next>=0)
 	{
-		#ifdef UNIX
+#if UNIX
 		string line		=str.substr(pos,next-pos);
-		#else
+#else
 		string line		=str.substr(pos,next-pos-1);
-		#endif
+#endif
 		platform::core::ClipWhitespace(line);
 		if (!platformChecked)
 		{
@@ -1937,7 +1937,8 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 			{
 				if(shaderCount==0)
 				{
-					SIMUL_CERR<<"No shaders in pass "<<pass_name.c_str()<<" of technique "<<tech->name<<" of effect "<<filename_utf8<<std::endl;
+					// It's ok to have a pass with no shaders if it's not compatible with current settings.
+					//SIMUL_CERR<<"No shaders in pass "<<pass_name.c_str()<<" of technique "<<tech->name<<" of effect "<<filename_utf8<<std::endl;
 				}
 			}
 			if(level==HITGROUP||level==MISS_SHADERS||level==CALLABLE_SHADERS||level==RAYTRACING_CONFIG)

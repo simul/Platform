@@ -58,6 +58,12 @@ if(SIMUL_SOURCE_BUILD)
 	# For VMA
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include")
 
+	# Link against GLFW library for window functions
+	target_link_libraries(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC glfw)
+
+	# Suppress nullability extension warning for external VMA header
+	target_compile_options(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE -Wno-nullability-extension)
+
 endif()
 
 if (SIMUL_DLL_SDK_LIBRARY)

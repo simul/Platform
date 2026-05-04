@@ -30,7 +30,9 @@ namespace fs = std::experimental::filesystem;
 
 static int do_mkdir(const char *path_utf8)
 {
-	ALWAYS_ERRNO_CHECK
+	// Clear any errno leaked from unrelated libc/3rd-party calls (e.g. OpenXR loader
+	// leaving EAGAIN set on Linux); we own and clear errno on exit below.
+	errno = 0;
 	int status = 0;
 	// TO-DO: this
 #ifndef NN_NINTENDO_SDK
