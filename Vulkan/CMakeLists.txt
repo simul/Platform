@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 
 option(PLATFORM_SUPPORT_VULKAN_MULTIVIEW "" OFF)
 option(PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR "" OFF)
+option(PLATFORM_SUPPORT_VULKAN_MESH_SHADER "" ON)
 option(PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS "" OFF)
 
 file(GLOB SOURCES "*.cpp" )
@@ -23,6 +24,7 @@ source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 set(VK_DEFS SIMUL_VULKAN_DLL=1 VK_PROTOTYPES)
 set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_MULTIVIEW=$<BOOL:${PLATFORM_SUPPORT_VULKAN_MULTIVIEW}>)
 set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR=$<BOOL:${PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR}>)
+set(VK_DEFS ${VK_DEFS} PLATFORM_SUPPORT_VULKAN_MESH_SHADER=$<BOOL:${PLATFORM_SUPPORT_VULKAN_MESH_SHADER}>)
 set(VK_DEFS ${VK_DEFS} PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS=$<BOOL:${PLATFORM_VULKAN_ENABLE_DEBUG_UTILS_MARKERS}>)
 
 # Get Vulkan Memory Allocator library into [PLATFORM_Source]/External/VulkanMemoryAllocator
@@ -48,7 +50,6 @@ if(SIMUL_SOURCE_BUILD)
 		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
 	endif()
 	
-	#message("target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC \"${Vulkan_INCLUDE_DIR}\"")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 	# For parallel_hashmap
@@ -56,6 +57,12 @@ if(SIMUL_SOURCE_BUILD)
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
 	# For VMA
 	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include")
+
+	# Link against GLFW library for window functions
+	target_link_libraries(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC glfw)
+
+	# Suppress nullability extension warning for external VMA header
+	target_compile_options(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE -Wno-nullability-extension)
 
 endif()
 

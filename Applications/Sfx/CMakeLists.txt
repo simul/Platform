@@ -55,4 +55,19 @@ if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
 			VS_DEBUGGER_COMMAND_ARGUMENTS "${SFX_TEST_FILE} -I\"${CMAKE_SOURCE_DIR}/..\" -I\"${SIMUL_PLATFORM_DIR}/CrossPlatform/Shaders\" -o\"${CMAKE_BINARY_DIR}/Platform/shaderbin/$PLATFORM_NAME\" ${TEST_CONFIGS} -l -v ${SFX_TEST_DEFINES}"
 			)
 	endif()
+
+	# Mesh-shader regression test. Runs Sfx against a small effect that exercises
+	# amplification (task), mesh and pixel passes using a stub platform config
+	# whose compiler field is empty, so the back-end compiler is not invoked.
+	set(SFX_MESH_TEST_SHADER "${CMAKE_CURRENT_SOURCE_DIR}/Tests/mesh_test.sfx")
+	set(SFX_MESH_TEST_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/Tests/mesh_test_stub.json")
+	add_test(NAME Sfx_mesh_shader_regression
+		COMMAND $<TARGET_FILE:Sfx>
+			"${SFX_MESH_TEST_SHADER}"
+			"-I${CMAKE_SOURCE_DIR}/Platform"
+			"-I${CMAKE_SOURCE_DIR}/Platform/CrossPlatform/Shaders"
+			"-P${SFX_MESH_TEST_CONFIG}"
+			"-o${CMAKE_CURRENT_BINARY_DIR}/Tests/mesh_shader_out"
+			"-l"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 endif()

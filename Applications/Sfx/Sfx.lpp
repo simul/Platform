@@ -540,6 +540,36 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 														stdReturn(SHADER_COMMAND);
 													}
 												}
+<INITIAL,IN_SHADER>"SetMeshShader"				{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.sType=MESH_SHADER;
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_COMMAND);
+													}
+												}
+<INITIAL,IN_SHADER>"SetAmplificationShader"		{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.sType=AMPLIFICATION_SHADER;
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_COMMAND);
+													}
+												}
+<INITIAL,IN_SHADER>"SetTaskShader"				{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.sType=AMPLIFICATION_SHADER;
+														SetLexStartState(IN_SHADER_COMPILE);
+														stdReturn(SHADER_COMMAND);
+													}
+												}
 <INITIAL,IN_SHADER>"SetRasterizerState"			{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
@@ -612,6 +642,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 <INITIAL>"PixelShader"							{ sfxlval.lineno=yylineno;	sfxlval.sType=FRAGMENT_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
 <INITIAL>"FragmentShader"						{ sfxlval.lineno=yylineno;	sfxlval.sType=FRAGMENT_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
 <INITIAL>"ComputeShader"						{ sfxlval.lineno=yylineno;	sfxlval.sType=COMPUTE_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
+<INITIAL>"MeshShader"							{ sfxlval.lineno=yylineno;	sfxlval.sType=MESH_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
+<INITIAL>"AmplificationShader"					{ sfxlval.lineno=yylineno;	sfxlval.sType=AMPLIFICATION_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
+<INITIAL>"TaskShader"							{ sfxlval.lineno=yylineno;	sfxlval.sType=AMPLIFICATION_SHADER;	SetLexStartState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER); }
 
 <IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 													// Write an empty statement: preserve line numbers
@@ -1151,6 +1184,21 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.strs[0]=yytext;
 													stdReturn(STORAGEQ);
 												}
+<INITIAL>"payload"|"vertices"|"indices"|"primitives"	{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													else
+													{
+														sfxlval.lineno=yylineno;
+														sfxlval.strs[0]=yytext;
+														// These keywords can be used as storage qualifiers in mesh shader parameters
+														// (e.g., "out vertices SomeType name") OR as regular identifiers in global
+														// resource declarations (e.g., "StructuredBuffer<Type> vertices;").
+														// Return STORAGEQ: the parser will treat them as keywords when needed,
+														// and the grammar allows them to fall through as identifiers when not in
+														// a storage-qualifier context (via optional_uniform resource_type rules).
+														stdReturn(STORAGEQ);
+													}
+												}
 
 <INITIAL>"TriangleBuffer"|"TriangleStream"		{
 													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
@@ -1278,6 +1326,16 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 												}
 <IN_LAYOUT>"MAX_VERTEX_COUNT"					{
 													modReturn(MAX_VERTEX_COUNT, "MaxVertexCount");
+												}
+<IN_LAYOUT>"outputtopology"						{
+													modReturn(OUTPUT_TOPOLOGY, "outputtopology");
+												}
+<IN_LAYOUT>"OUTPUT_TOPOLOGY"					{
+													modReturn(OUTPUT_TOPOLOGY, "outputtopology");
+												}
+<IN_LAYOUT>{STR_BLCK}							{
+													sfxlval.strs[0]=yytext;
+													stdReturn(QUOTED_STRING);
 												}
 <IN_LAYOUT>"ResourceGroup"						{
 													stdReturn(RESOURCE_GROUP_DECLARATION);

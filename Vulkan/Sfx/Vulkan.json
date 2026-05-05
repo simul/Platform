@@ -1,21 +1,24 @@
 {
 	"compiler": {
 		"command": "glslangValidator -V -S {stage}",
-		"commandPaths": [ "$VULKAN_SDK/Bin/" ],
+		"commandPaths": [ "$VULKAN_SDK/bin/", "$VULKAN_SDK/Bin/" ],
 		"stages": {
 			"vertex": "vert",
 			"geometry": "geom",
 			"pixel": "frag",
-			"compute": "comp"
+			"compute": "comp",
+			"mesh": "mesh",
+			"task": "task"
 		}
 	},
+	"minimumCompilerVersion": "1.4.341.1",
 	"api": "Vulkan",
 	"defaultOptions": "-Os",
 	"outputExtension": "spirv",
 	"sourceExtension": "glsl",
 	"outputOption": "-o ",
 	"includeOption": "",
-	"entryPointOption": "--target-env vulkan1.1 --entry-point {name} --source-entrypoint main",
+	"entryPointOption": "--target-env vulkan1.3 --entry-point {name} --source-entrypoint main",
 	"debugOption": "-gVS -Od",
 	"debugOptionSometimesFailsToGenerateSpirV": "-gVS",
 	"multiplePixelOutputFormats": false,
@@ -59,6 +62,8 @@
 	"compilerMessageRegex": [ "(ERROR|WARNING):[\\S]*(.*):[\\S]*([0-9]+)[\\S]*:[ ]*(.*)", "$2($3): $1: $4" ],
 	"preamble": "#version 450\n#extension GL_EXT_debug_printf : enable\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_int16 : enable\n#extension GL_EXT_control_flow_attributes: enable\n",
 	"computePreamble": "#extension GL_KHR_shader_subgroup_quad : enable\n#extension GL_KHR_shader_subgroup_shuffle: enable\n#extension GL_KHR_shader_subgroup_vote : enable\n#extension GL_KHR_shader_subgroup_ballot : enable\n#extension GL_KHR_shader_subgroup_arithmetic : enable\n#extension GL_KHR_shader_subgroup_basic : enable\n#extension GL_ARB_gpu_shader_int64 : enable\n#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n#extension GL_ARB_gpu_shader_int64 : enable\n",
+	"meshPreamble": "#extension GL_EXT_mesh_shader : require\n#extension GL_KHR_shader_subgroup_basic : enable\n#extension GL_KHR_shader_subgroup_ballot : require\n#extension GL_KHR_shader_subgroup_arithmetic : enable\n#define USE_MESH_SHADER 1\n",
+	"amplificationPreamble": "#extension GL_EXT_mesh_shader : require\n#extension GL_KHR_shader_subgroup_basic : enable\n#extension GL_KHR_shader_subgroup_ballot : require\n#extension GL_KHR_shader_subgroup_arithmetic : enable\n#define USE_AMPLIFICATION_SHADER 1\n",
 	"vertexSemantics": {
 		"SV_VertexId": "gl_VertexIndex",
 		"SV_VertexID": "gl_VertexIndex",
@@ -235,6 +240,8 @@
 		"QuadReadAcrossDiagonal": "subgroupQuadSwapDiagonal",
 		"QuadReadAcrossX": "subgroupQuadSwapHorizontal",
 		"QuadReadAcrossY": "subgroupQuadSwapVertical",
+		"SetMeshOutputCounts": "SetMeshOutputsEXT",
+		"DispatchMesh": "EmitMeshTasksEXT",
 		"InterlockedAdd": "atomicAdd",
 		"InterlockedAnd": "atomicAnd",
 		"InterlockedOr": "atomicOr",

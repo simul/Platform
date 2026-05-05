@@ -10,13 +10,6 @@
 #endif
 #include <vulkan/vulkan.hpp>
 
-// Forward declare GLFW functions for Linux
-#ifndef _MSC_VER
-extern "C" {
-	void glfwGetWindowSize(GLFWwindow* window, int* width, int* height);
-	void glfwGetWindowPos(GLFWwindow* window, int* xpos, int* ypos);
-}
-#endif
 // Careless implementation by Vulkan requires this:
 #undef NOMINMAX
 // #include <vulkan/vk_sdk_platform.h>
@@ -886,48 +879,29 @@ void DisplaySurface::Resize()
 	W = abs(rect.right - rect.left);
 	H = abs(rect.bottom - rect.top);
 #else
-	// Linux/GLFW: Get window size from GLFW or use surface capabilities
-	if (mHwnd)
+	// On Linux the cp_hwnd is a VkSurfaceKHR* (see RestoreDeviceObjects, XCB path),
+	// not a GLFWwindow*, so use the Vulkan surface capabilities to drive resize.
+	vk::SurfaceCapabilitiesKHR surfCapabilities;
+	vk::PhysicalDevice *gpu = GetGPU();
+	if (gpu && mSurface)
 	{
-		GLFWwindow* glfwWindow = (GLFWwindow*)mHwnd;
-		int width = 0, height = 0;
-		glfwGetWindowSize(glfwWindow, &width, &height);
-		W = (uint32_t)width;
-		H = (uint32_t)height;
-
-		// Check if window position changed
-		int x = 0, y = 0;
-		glfwGetWindowPos(glfwWindow, &x, &y);
-		if (x != lastWindow.x || y != lastWindow.y)
-			regen = true;
-		lastWindow.x = x;
-		lastWindow.y = y;
-		lastWindow.z = width;
-		lastWindow.w = height;
-	}
-	else
-	{
-		// Fallback: use surface capabilities
-		vk::SurfaceCapabilitiesKHR surfCapabilities;
-		vk::PhysicalDevice *gpu = GetGPU();
-		if (gpu && mSurface)
+		auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
+		if (result == vk::Result::eSuccess && surfCapabilities.currentExtent.width != (uint32_t)-1)
 		{
-			auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
-			if (result == vk::Result::eSuccess)
-			{
-				W = surfCapabilities.currentExtent.width;
-				H = surfCapabilities.currentExtent.height;
-			}
+			W = surfCapabilities.currentExtent.width;
+			H = surfCapabilities.currentExtent.height;
 		}
 	}
 #endif
 
+	// If we couldn't determine a new size, leave the existing swapchain alone.
+	if (W == 0 || H == 0)
+		return;
 	if (viewport.w != W || viewport.h != H)
 		regen = true;
 	if (!regen)
 		return;
-	if (W * H > 0)
-		InitSwapChain();
+	InitSwapChain();
 
 	viewport.w = W;
 	viewport.h = H;

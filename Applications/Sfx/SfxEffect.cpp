@@ -952,6 +952,10 @@ string stringOf(ShaderCommand t)
 		return "intersection";
 	case SetExportShader:
 		return "export";
+	case SetMeshShader:
+		return "mesh";
+	case SetAmplificationShader:
+		return "amplification";
 	default:
 		return "";
 	};
@@ -2804,7 +2808,13 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	}
 	for (auto v = vars.begin(); v != vars.end(); v++)
 	{
-		theShader << v.operator*()->original << std::endl;
+		std::string varOrig = v.operator*()->original;
+		if (gEffect->GetConfig()->api == "Vulkan" &&
+			shaderInstance->shaderType == AMPLIFICATION_SHADER)
+		{
+			find_and_replace(varOrig, "shared ", "taskPayloadSharedEXT ");
+		}
+		theShader << varOrig << std::endl;
 	}
 	for (auto u = ordered_fns.begin(); u != ordered_fns.end(); u++)
 	{
@@ -2861,6 +2871,96 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		find_and_replace(dec, shaderName, "main");
 	}
 
+	// Vulkan mesh shader payload handling: convert HLSL "in payload Type var"
+	// to Vulkan GLSL. In Vulkan, payloads are accessed via taskPayloadSharedEXT.
+	std::string vulkanPayloadParamName;
+	std::string vulkanPayloadType;
+	// Mesh output info extracted during parameter processing, used when emitting layout declarations.
+	std::string vulkanMeshVertexType;
+	std::string vulkanMeshVertexName;
+	int vulkanMeshMaxVertices = 0;
+	int vulkanMeshMaxPrimitives = 0;
+	std::string vulkanMeshIndicesType;
+	std::string vulkanMeshIndicesName;
+	if (config->api == "Vulkan")
+	{
+		if (shaderInstance->shaderType == MESH_SHADER)
+		{
+			// Match and extract "in payload PayloadType payloadVar" patterns
+			// Also handle commas that might follow the parameter
+			std::regex payloadRegex(R"(\bin\s+payload\s+(\w+)\s+(\w+)\s*,?)");
+			std::smatch match;
+			std::string tempDec = dec;
+			if (std::regex_search(tempDec, match, payloadRegex))
+			{
+				// Extract the payload type and parameter name so we can use them later
+				vulkanPayloadType = match[1];
+				vulkanPayloadParamName = match[2];
+				std::string fullMatch = match[0];
+				// Remove the matched text and clean up any excess whitespace
+				find_and_replace(dec, fullMatch, "");
+				// Clean up double spaces that might result from removal
+				std::regex doubleSpace(R"(\s{2,})");
+				dec = std::regex_replace(dec, doubleSpace, " ");
+			}
+
+			// Also remove "out vertices/indices/primitives Type name[size]" parameters
+			// These are emitted as global arrays instead
+			std::regex verticesRegex(R"(\bout\s+vertices\s+(\w+)\s+(\w+)\s*\[\s*(\d+)\s*\]\s*,?)");
+			std::regex indicesRegex(R"(\bout\s+indices\s+(\w+)\s+(\w+)\s*\[\s*(\d+)\s*\]\s*,?)");
+			std::regex primitivesRegex(R"(\bout\s+primitives\s+(\w+)\s+(\w+)\s*\[\s*(\d+)\s*\]\s*,?)");
+
+			tempDec = dec;
+			while (std::regex_search(tempDec, match, verticesRegex))
+			{
+				vulkanMeshVertexType = match[1].str();
+				vulkanMeshVertexName = match[2].str();
+				try
+				{
+					vulkanMeshMaxVertices = std::stoi(match[3].str());
+				}
+				catch (...)
+				{
+					vulkanMeshMaxVertices = 0;
+				}
+				find_and_replace(dec, match[0].str(), "");
+				tempDec = dec;
+			}
+
+			tempDec = dec;
+			while (std::regex_search(tempDec, match, indicesRegex))
+			{
+				vulkanMeshIndicesType = match[1].str();
+				vulkanMeshIndicesName = match[2].str();
+				try
+				{
+					vulkanMeshMaxPrimitives = std::stoi(match[3].str());
+				}
+				catch (...)
+				{
+					vulkanMeshMaxPrimitives = 0;
+				}
+				find_and_replace(dec, match[0].str(), "");
+				tempDec = dec;
+			}
+
+			tempDec = dec;
+			while (std::regex_search(tempDec, match, primitivesRegex))
+			{
+				// Primitives are handled similarly
+				find_and_replace(dec, match[0].str(), "");
+				tempDec = dec;
+			}
+
+			// Clean up any resulting excess whitespace
+			std::regex doubleSpace(R"(\s{2,})");
+			dec = std::regex_replace(dec, doubleSpace, " ");
+		}
+		// For task shaders in Vulkan, we don't remove parameters here because we need
+		// to process them during content transformation. The semantic-based replacements
+		// will happen in the content section below.
+	}
+
 	// in square brackets [] is the definition for ONE member.
 	string memberDeclaration;
 	// find_and_replace(memberDeclaration,"{blockname}",blockname);
@@ -2889,6 +2989,161 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		}
 	}
 	string content = function->content;
+
+	// Apply Vulkan-specific transformations for mesh/task shaders
+	if (config->api == "Vulkan")
+	{
+		// Handle AMPLIFICATION_SHADER (task shader) semantic-based parameter translation
+		if (shaderInstance->shaderType == AMPLIFICATION_SHADER)
+		{
+			// For task shaders, we keep parameters in the signature but replace their
+			// usages in the content with Vulkan GLSL built-ins based on semantics.
+			// This allows the signature to remain valid while content uses the right built-ins.
+
+			// Trim the 4-argument EmitMeshTasksEXT to the 3-argument GLSL form.
+			// FinalizeFunction already ran sfxConfig.replace, renaming DispatchMesh →
+			// EmitMeshTasksEXT, so we match the final name here.
+			std::regex emitMeshTasksRegex(
+				R"(EmitMeshTasksEXT\s*\(\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*,\s*\w+\s*\))");
+			content = std::regex_replace(content, emitMeshTasksRegex,
+										 "EmitMeshTasksEXT($1, $2, $3)");
+
+			// For task shaders, replace semantic-based parameters with GLSL built-ins
+			// (Similar to compute shader handling)
+			const auto &semantics = sfxConfig.computeSemantics;
+			for (auto &param : function->parameters)
+			{
+				std::string replacement;
+				auto sem = semantics.find(param.semantic);
+				if (sem != semantics.end())
+				{
+					replacement = sem->second;
+				}
+				else
+				{
+					replacement = param.semantic;
+				}
+
+				// Replace parameter.member with built-in
+				// e.g., dtid.x -> gl_GlobalInvocationID.x
+				find_and_replace(content, param.identifier + ".", replacement + ".");
+				// Replace bare parameter with built-in
+				find_and_replace(content, param.identifier, replacement);
+			}
+
+			// Fallback: also do direct replacements for common task shader semantics
+			// in case function->parameters is empty or semantics lookup fails
+			find_and_replace(content, "dtid.", "gl_GlobalInvocationID.");
+			find_and_replace(content, "dtid", "gl_GlobalInvocationID");
+			find_and_replace(content, "gtid.", "gl_LocalInvocationIndex.");
+			find_and_replace(content, "gtid", "gl_LocalInvocationIndex");
+
+			// For Vulkan task shaders, fix subgroupBallot*BitCount calls.
+			// In DirectX, WaveActiveCountBits(bool) and WavePrefixCountBits(bool) take bool predicates.
+			// In Vulkan GLSL, subgroupBallotBitCount and subgroupBallotExclusiveBitCount expect
+			// a uint4 from subgroupBallot(). Also fix case sensitivity: subgroupBallotBitcount → subgroupBallotBitCount
+
+			// First fix case sensitivity: subgroupBallotBitcount → subgroupBallotBitCount
+			find_and_replace(content, "subgroupBallotBitcount", "subgroupBallotBitCount");
+
+			// Now fix the parameter wrapping for both functions
+			std::regex waveCountFixRegex(R"(subgroupBallotBitCount\s*\(\s*(\w+)\s*\))");
+			std::smatch match;
+			std::string tempContent = content;
+			while (std::regex_search(tempContent, match, waveCountFixRegex))
+			{
+				std::string varName = match[1].str();
+				// Only wrap if this looks like a bool variable name (doesn't already contain subgroupBallot)
+				if (varName.find("subgroupBallot") == std::string::npos)
+				{
+					std::string replacement = "subgroupBallotBitCount(subgroupBallot(" + varName + "))";
+					find_and_replace(content, match[0].str(), replacement);
+					tempContent = content;
+				}
+				else
+				{
+					// Skip past this match to avoid infinite loops
+					tempContent = tempContent.substr(match.position() + match.length());
+				}
+			}
+
+			// Fix subgroupBallotExclusiveBitCount parameter wrapping
+			std::regex wavePrefixFixRegex(R"(subgroupBallotExclusiveBitCount\s*\(\s*(\w+)\s*\))");
+			tempContent = content;
+			while (std::regex_search(tempContent, match, wavePrefixFixRegex))
+			{
+				std::string varName = match[1].str();
+				// Only wrap if this looks like a bool variable name (doesn't already contain subgroupBallot)
+				if (varName.find("subgroupBallot") == std::string::npos)
+				{
+					std::string replacement = "subgroupBallotExclusiveBitCount(subgroupBallot(" + varName + "))";
+					find_and_replace(content, match[0].str(), replacement);
+					tempContent = content;
+				}
+				else
+				{
+					// Skip past this match to avoid infinite loops
+					tempContent = tempContent.substr(match.position() + match.length());
+				}
+			}
+		}
+		else if (shaderInstance->shaderType == MESH_SHADER)
+		{
+			// Replace payload parameter references with the taskPayloadSharedEXT variable.
+			if (!vulkanPayloadParamName.empty())
+			{
+				find_and_replace(content, vulkanPayloadParamName + ".", "s_payload.");
+				find_and_replace(content, vulkanPayloadParamName, "s_payload");
+			}
+
+			// Replace semantic parameters (gid, gtid, …) with GLSL built-ins, and
+			// extract mesh output parameter metadata for later layout emission.
+			const auto &semantics = sfxConfig.computeSemantics;
+			for (const auto &param : function->parameters)
+			{
+				if (param.storage == "vertices")
+				{
+					vulkanMeshVertexType = param.type;
+					vulkanMeshVertexName = param.identifier;
+					vulkanMeshMaxVertices = param.num;
+				}
+				else if (param.storage == "indices")
+				{
+					vulkanMeshMaxPrimitives = param.num;
+					vulkanMeshIndicesType = param.type;
+					vulkanMeshIndicesName = param.identifier;
+					// Redirect per-primitive index writes to the GLSL built-in array.
+					find_and_replace(content, param.identifier + "[",
+									 "gl_PrimitiveTriangleIndicesEXT[");
+				}
+				else if (param.storage == "primitives")
+				{
+					vulkanMeshMaxPrimitives = param.num;
+					// Redirect primitives array to the built-in if applicable
+					find_and_replace(content, param.identifier + "[",
+									 "gl_PrimitiveTriangleIndicesEXT[");
+				}
+				else if (!param.semantic.empty())
+				{
+					auto sem = semantics.find(param.semantic);
+					if (sem != semantics.end())
+					{
+						find_and_replace(content, param.identifier + ".",
+										 sem->second + ".");
+						find_and_replace(content, param.identifier, sem->second);
+					}
+				}
+			}
+
+			// Fallback: also do direct replacements for common mesh shader semantics
+			// if the parameter parsing above didn't catch them.
+			// Redirect index array writes to the built-in.
+			find_and_replace(content, "tris[", "gl_PrimitiveTriangleIndicesEXT[");
+			find_and_replace(content, "indices[", "gl_PrimitiveTriangleIndicesEXT[");
+			find_and_replace(content, "primitives[", "gl_PrimitiveTriangleIndicesEXT[");
+		}
+	}
+
 	string str = inputDeclaration;
 	process_member_decl(str, memberDeclaration);
 	string blockname = "ioblock";
@@ -3302,6 +3557,66 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	if (shaderInstance->shaderType == GEOMETRY_SHADER)
 	{
 		theShader << gEffect->m_gslayout[shaderName] << "\n";
+	}
+	// Mesh shader: emit payload variable, workgroup size, output layout, and
+	// per-vertex output array declaration.
+	if (shaderInstance->shaderType == MESH_SHADER && config->api == "Vulkan")
+	{
+		if (!vulkanPayloadType.empty())
+			theShader << "taskPayloadSharedEXT " << vulkanPayloadType
+					  << " s_payload;\n";
+
+		if (!sfxConfig.computeLayout.empty() && function->numThreads[0] > 0)
+		{
+			std::string meshLayout = sfxConfig.computeLayout;
+			find_and_replace(meshLayout, "$1",
+							 std::to_string(function->numThreads[0]));
+			find_and_replace(meshLayout, "$2",
+							 std::to_string(function->numThreads[1]));
+			find_and_replace(meshLayout, "$3",
+							 std::to_string(function->numThreads[2]));
+			theShader << meshLayout << "\n";
+		}
+
+		if (vulkanMeshMaxVertices > 0 && vulkanMeshMaxPrimitives > 0)
+		{
+			// m_gslayout stores "[outputtopology("triangle")]"; extract the keyword.
+			std::string topology = "triangles";
+			const std::string &gsLayout = gEffect->m_gslayout[shaderName];
+			std::regex topologyRegex(R"regex(outputtopology\s*\(\s*"(\w+)"\s*\))regex");
+			std::smatch topMatch;
+			if (std::regex_search(gsLayout, topMatch, topologyRegex))
+			{
+				std::string t = topMatch[1].str();
+				if (t == "triangle")
+					topology = "triangles";
+				else if (t == "line")
+					topology = "lines";
+				else if (t == "point")
+					topology = "points";
+				else
+					topology = t;
+			}
+			theShader << "layout(" << topology
+					  << ", max_vertices=" << vulkanMeshMaxVertices
+					  << ", max_primitives=" << vulkanMeshMaxPrimitives
+					  << ") out;\n";
+		}
+
+		if (!vulkanMeshVertexType.empty() && !vulkanMeshVertexName.empty())
+		{
+			// Emit vertex array with layout qualifiers for Vulkan
+			theShader << "layout(location = 0) out " << vulkanMeshVertexType << " "
+					  << vulkanMeshVertexName << "[];\n";
+		}
+
+		if (!vulkanMeshIndicesType.empty() && !vulkanMeshIndicesName.empty())
+		{
+			// Note: Indices are redirected to gl_PrimitiveTriangleIndicesEXT which is a built-in
+			// So we don't need to declare a custom indices array
+			// theShader << "out " << vulkanMeshIndicesType << " "
+			//          << vulkanMeshIndicesName << "[];\n";
+		}
 	}
 	// Add the root signature:
 	if (!sfxConfig.graphicsRootSignatureSource.empty())
