@@ -67,12 +67,33 @@ static int do_mkdir(const char *path_utf8)
 static int mkpath(std::string filename_utf8)
 {
 	int status = 0;
+#if PLATFORM_STD_FILESYSTEM > 0
+	// Use std::filesystem::create_directories() which properly creates all parent directories
+	try
+	{
+		// Get the directory path (everything except the filename)
+		fs::path filePath(filename_utf8);
+		fs::path dirPath = filePath.parent_path();
+
+		if (!dirPath.empty())
+		{
+			fs::create_directories(dirPath);
+		}
+	}
+	catch (const std::exception& e)
+	{
+		SIMUL_CERR << "Failed to create directory path for " << filename_utf8 << ": " << e.what() << std::endl;
+		status = -1;
+	}
+#else
+	// Fallback to the original implementation for platforms without std::filesystem
 	int pos = 0;
 	while (status == 0 && (pos = FileLoader::NextSlash(filename_utf8, pos)) >= 0)
 	{
 		status = do_mkdir(filename_utf8.substr(0, pos).c_str());
 		pos++;
 	}
+#endif
 	return (status);
 }
 
