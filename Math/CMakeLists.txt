@@ -8,10 +8,10 @@ file(GLOB HEADERS
     "*.h"
 )
 
-add_static_library( SimulMath SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_static_library( PlatformMath SOURCES ${SOURCES} ${HEADERS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 
 
 
 if (SIMUL_DLL_SDK_LIBRARY)
-	AddDLLCompileDefinitions( SimulMath${STATIC_LINK_SUFFIX} )
+	AddDLLCompileDefinitions( PlatformMath${STATIC_LINK_SUFFIX} )
 endif()

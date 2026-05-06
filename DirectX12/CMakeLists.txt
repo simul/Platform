@@ -67,19 +67,19 @@ endif()
 set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include/D3D12MemAlloc.h")
 set(SOURCES ${SOURCES} "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
 
-add_static_library( SimulDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
+add_static_library( PlatformDirectX12 SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${DX12_DEFS} PROPERTIES FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX}
 	INCLUDES "${SIMUL_PLATFORM_DIR}/External/DirectX/DirectXTex/DirectXTex" PUBLICINCLUDES "${SIMUL_PLATFORM_DIR}/DirectX12")
-add_dependencies(SimulDirectX12${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
+add_dependencies(PlatformDirectX12${STATIC_LINK_SUFFIX} PlatformCrossPlatform${STATIC_LINK_SUFFIX})
 
 # For D3D12MA
 if(SIMUL_SOURCE_BUILD)
-	target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
+	target_include_directories(PlatformDirectX12${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
 else()
-	target_include_directories(SimulDirectX12${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
+	target_include_directories(PlatformDirectX12${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External/D3D12MemoryAllocator/include")
 endif()
 
 if (SIMUL_DLL_SDK_LIBRARY)
-	AddDLLCompileDefinitions( SimulDirectX12${STATIC_LINK_SUFFIX} )
+	AddDLLCompileDefinitions( PlatformDirectX12${STATIC_LINK_SUFFIX} )
 endif()
 
 option( PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
@@ -104,7 +104,7 @@ if(SIMUL_SOURCE_BUILD)
 			set(out_RootSignatureFolder "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME")
 		# Create the target directory for the cso file:
 			file(MAKE_DIRECTORY ${out_RootSignatureFolder})
-			add_custom_command(TARGET SimulDirectX12${STATIC_LINK_SUFFIX}
+			add_custom_command(TARGET PlatformDirectX12${STATIC_LINK_SUFFIX}
 						COMMAND ${GDK_BIN_PATH}/dxc.exe /T rootsig_1_0 /E"GFXRS" /I"Sfx" /Fo"${out_RootSignatureFolder}/GFX.cso" /nologo ${in_RootSignature}
 						MAIN_DEPENDENCY ${in_RootSignature}
 						WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
