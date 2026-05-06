@@ -234,4 +234,35 @@ uint3 UnflattenArrayIndex(uint idx, uint2 size)
 	return uint3(x, y, z);
 }
 
+// Uses f32tof16 to pack x into the lower 16 bits and y into the upper 16 bits
+uint PackTwoFloatsToUint(float x, float y)
+{
+	return f32tof16(x) | (f32tof16(y) << 16);
+}
+
+// Uses f32tof16 to pack x into the lower 16 bits and y into the upper 16 bits
+uint PackTwoFloatsToUint(float2 xy)
+{
+	return PackTwoFloatsToUint(xy.x, xy.y);
+}
+
+// Uses f16tof32 to unpack p into to two floats
+// float x from the lower 16 bits 
+// float y from the upper 16 bits
+float2 UnpackTwoFloatsFromUint(uint p)
+{
+	return float2(f16tof32(p & 0xFFFF), f16tof32(p >> 16));
+}
+
+// Uses f16tof32 to unpack p into to two floats
+// float x from the lower 16 bits 
+// float y from the upper 16 bits
+void UnpackTwoFloatsFromUint(uint p, out float x, out float y)
+{
+	float2 xy = UnpackTwoFloatsFromUint(p);
+	x = xy.x;
+	y = xy.y;
+
+}
+
 #endif
