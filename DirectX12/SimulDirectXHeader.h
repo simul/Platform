@@ -17,9 +17,9 @@
 	#endif
 	#if defined(_GAMING_XBOX_XBOXONE)
 		#undef PLATFORM_SUPPORT_D3D12_RAYTRACING
-		#define PLATFORM_SUPPORT_D3D12_RAYTRACING 0 //Xbox One X/S do not support Ray Tracing.
+		#define PLATFORM_SUPPORT_D3D12_RAYTRACING 0 //Xbox One X|S do not support Ray Tracing.
 		#undef PLATFORM_SUPPORT_D3D12_VIEWINSTANCING
-		#define PLATFORM_SUPPORT_D3D12_VIEWINSTANCING 0 //Xbox One X/S do not support View Instancing.
+		#define PLATFORM_SUPPORT_D3D12_VIEWINSTANCING 0 //Xbox One X|S do not support View Instancing.
 	#endif
 	#define MONOLITHIC 1
 	#define SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT 1 

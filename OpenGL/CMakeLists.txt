@@ -25,15 +25,15 @@ file(GLOB SHADER_DEFS
 source_group("Shaders" FILES  ${SHADERS} )
 source_group("Shader Includes" FILES ${SHADER_INCLUDES} )
 
-add_static_library(SimulOpenGL SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_static_library(PlatformOpenGL SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
-	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../External/stb")
-	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")
-	target_include_directories(SimulOpenGL${STATIC_LINK_SUFFIX} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/include")
+	target_include_directories(PlatformOpenGL${STATIC_LINK_SUFFIX} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../External/stb")
+	target_include_directories(PlatformOpenGL${STATIC_LINK_SUFFIX} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../OpenGL")
+	target_include_directories(PlatformOpenGL${STATIC_LINK_SUFFIX} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../External/glfw/include")
 
 	set( JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Sfx/OpenGL.json" )
 endif()
 
 if (SIMUL_DLL_SDK_LIBRARY)
-	AddDLLCompileDefinitions( SimulOpenGL${STATIC_LINK_SUFFIX} )
+	AddDLLCompileDefinitions( PlatformOpenGL${STATIC_LINK_SUFFIX} )
 endif()

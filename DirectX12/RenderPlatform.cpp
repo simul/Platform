@@ -23,6 +23,9 @@
 #include <algorithm>
 #include <iomanip>
 
+#define STRING_OF_MACRO1(x) #x
+#define STRING_OF_MACRO(x) STRING_OF_MACRO1(x)
+
 #if PLATFORM_ENABLE_PIX
 
 #if defined(_GAMING_XBOX)
@@ -34,6 +37,12 @@
 #pragma comment(lib, "pixevt.lib")
 #else // Windows
 static HMODULE hWinPixEventRuntime;
+
+typedef HRESULT(WINAPI *PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList *, UINT64, _In_ PCSTR);
+PFN_PIXBeginEventOnCommandList PIXBeginEventOnCommandList;
+
+typedef HRESULT(WINAPI *PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList *);
+PFN_PIXEndEventOnCommandList PIXEndEventOnCommandList;
 #endif
 
 #endif
@@ -132,9 +141,16 @@ RenderPlatform::RenderPlatform()
 #if PLATFORM_ENABLE_PIX && !defined(PLATFORM_PIX_XBOX)
 	// We need a better way to load binaries from the Platform submodules. It can't just be a relative directory.
 	if (hWinPixEventRuntime == 0)
-		hWinPixEventRuntime = LoadLibraryA("../../Platform/External/PIX/lib/WinPixEventRuntime.dll");
-	if (hWinPixEventRuntime == 0)
-		hWinPixEventRuntime = LoadLibraryA("../firstParty/Platform/External/PIX/lib/WinPixEventRuntime.dll");
+	{
+		std::string platformSourceDir = STRING_OF_MACRO(PLATFORM_SOURCE_DIR);
+		platformSourceDir += "/External/PIX/lib/WinPixEventRuntime.dll";
+		hWinPixEventRuntime = LoadLibraryA(platformSourceDir.c_str());
+	}	
+	if (hWinPixEventRuntime)
+	{
+		PIXBeginEventOnCommandList = (PFN_PIXBeginEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXBeginEventOnCommandList");
+		PIXEndEventOnCommandList = (PFN_PIXEndEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXEndEventOnCommandList");
+	}
 #endif
 }
 
@@ -142,6 +158,9 @@ RenderPlatform::~RenderPlatform()
 {
 	InvalidateDeviceObjects();
 #if PLATFORM_ENABLE_PIX && !defined(PLATFORM_PIX_XBOX)
+	PIXBeginEventOnCommandList = nullptr;
+	PIXEndEventOnCommandList = nullptr;
+
 	if (hWinPixEventRuntime != 0)
 	{
 		if (!FreeLibrary(hWinPixEventRuntime))
@@ -1174,14 +1193,9 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, con
 #if defined(PLATFORM_PIX_XBOX)
 	PIXBeginEvent(deviceContext.asD3D12Context(), 0, name);
 #else
-	typedef HRESULT(WINAPI * PFN_PIXBeginEventOnCommandList)(ID3D12GraphicsCommandList *, UINT64, _In_ PCSTR);
-	if (hWinPixEventRuntime != 0)
+	if (hWinPixEventRuntime != 0 && PIXBeginEventOnCommandList)
 	{
-		PFN_PIXBeginEventOnCommandList PIXBeginEventOnCommandList = (PFN_PIXBeginEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXBeginEventOnCommandList");
-		if (PIXBeginEventOnCommandList)
-		{
-			PIXBeginEventOnCommandList(deviceContext.asD3D12Context(), 0, name);
-		}
+		PIXBeginEventOnCommandList(deviceContext.asD3D12Context(), 0, name);
 	}
 #endif
 #endif
@@ -1193,14 +1207,9 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 #if defined(PLATFORM_PIX_XBOX)
 	PIXEndEvent(deviceContext.asD3D12Context());
 #else
-	typedef HRESULT(WINAPI * PFN_PIXEndEventOnCommandList)(ID3D12GraphicsCommandList *);
-	if (hWinPixEventRuntime != 0)
+	if (hWinPixEventRuntime != 0&& PIXEndEventOnCommandList)
 	{
-		PFN_PIXEndEventOnCommandList PIXEndEventOnCommandList = (PFN_PIXEndEventOnCommandList)GetProcAddress(hWinPixEventRuntime, "PIXEndEventOnCommandList");
-		if (PIXEndEventOnCommandList)
-		{
-			PIXEndEventOnCommandList(deviceContext.asD3D12Context());
-		}
+		PIXEndEventOnCommandList(deviceContext.asD3D12Context());
 	}
 #endif
 #endif

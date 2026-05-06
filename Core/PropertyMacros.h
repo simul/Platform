@@ -77,18 +77,18 @@ template<> struct StreamingHelperTemplate<bool>
 };
 
 // overloaded in META_EndProperties	
-inline void StreamOutAutoProperties(std::ostream &)		
-{															
-}															
-inline void StreamInAutoProperties(std::istream &)				
-{															
-}								
+inline void StreamOutAutoProperties(std::ostream &)
+{
+}
+inline void StreamInAutoProperties(std::istream &)
+{
+}
 /*
-inline void StreamOutAutoPropertiesState(std::ostream &)		
-{															
-}															
-inline void StreamInAutoPropertiesState(std::istream &)				
-{															
+inline void StreamOutAutoPropertiesState(std::ostream &)
+{
+}
+inline void StreamInAutoPropertiesState(std::istream &)
+{
 }*/
 
 template<class T> void META_Limit(T &t, T minimum, T maximum)
@@ -107,20 +107,20 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 		t=maximum;
 }
 
-#define META_DeclareMaxAndMin(type, propname, minimum, maximum)			\
-	public:																\
-		/*! Get the largest value of propname for this class.*/			\
-		static type GetMaximumOf##propname()							\
-		{																\
-			return (maximum);											\
-		}																\
-	public:																\
-		/*! Get the smallest value of propname for this class.*/		\
-		static type GetMinimumOf##propname()							\
-		{																\
-			return (minimum);											\
-		}																\
-		static_assert(true)
+#define META_DeclareMaxAndMin(type, propname, minimum, maximum)		\
+	public:															\
+		/*! Get the largest value of propname for this class.*/		\
+		static type GetMaximumOf##propname()						\
+		{															\
+			return (maximum);										\
+		}															\
+	public:															\
+		/*! Get the smallest value of propname for this class.*/	\
+		static type GetMinimumOf##propname()						\
+		{															\
+			return (minimum);										\
+		}															\
+		static_assert(true);
 
 #if !defined(DOXYGEN)
 #define META_DeclareEnforceRange(type, propname, minimum, maximum)	\
@@ -130,149 +130,149 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			META_Limit<type>(propname, minimum, maximum);			\
 		}															\
 		META_DeclareMaxAndMin(type, propname, minimum, maximum);	\
-		static_assert(true)
+		static_assert(true);
 
-#define META_PropertyGet(type, propname,info)								\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname (info) */											\
-		const type &Get##propname() const												\
-		{																				\
-			return propname;															\
-		}																				\
-		static_assert(true)
+#define META_PropertyGet(type, propname,info)						\
+	protected:														\
+		type propname;												\
+	public:															\
+		/*! Get the value of propname (info) */						\
+		const type &Get##propname() const							\
+		{															\
+			return propname;										\
+		}															\
+		static_assert(true);
 
-#define META_PropertyGetAndSet(type, propname,info)										\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname (info) */											\
-		const type &Get##propname() const												\
-		{																				\
-			return propname;															\
-		}																				\
-		/*! Set the value of propname (info) */											\
-		void Set##propname(const type &value)											\
-		{																				\
-			propname=value;																\
-		}																				\
-		static_assert(true)
+#define META_PropertyGetAndSet(type, propname,info)					\
+	protected:														\
+		type propname;												\
+	public:															\
+		/*! Get the value of propname (info) */						\
+		const type &Get##propname() const							\
+		{															\
+			return propname;										\
+		}															\
+		/*! Set the value of propname (info) */						\
+		void Set##propname(const type &value)						\
+		{															\
+			propname=value;											\
+		}															\
+		static_assert(true);
 
-#define META_PropertyGetAndSetOverride(type, propname,info)										\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname (info) */											\
-		const type &Get##propname() const override										\
-		{																				\
-			return propname;															\
-		}																				\
-		/*! Set the value of propname (info) */											\
-		void Set##propname(const type &value)											\
-		{																				\
-			propname=value;																\
-		}																				\
-		static_assert(true)
+#define META_PropertyGetAndSetOverride(type, propname,info)			\
+	protected:														\
+		type propname;												\
+	public:															\
+		/*! Get the value of propname (info) */						\
+		const type &Get##propname() const override					\
+		{															\
+			return propname;										\
+		}															\
+		/*! Set the value of propname (info) */						\
+		void Set##propname(const type &value)						\
+		{															\
+			propname=value;											\
+		}															\
+		static_assert(true);
 
-#define META_PropertyGetSetAndCall(type, propname, call_on_set)					\
+#define META_PropertyGetSetAndCall(type, propname, call_on_set)		\
+	protected:														\
+		type propname;												\
+	public:															\
+		/*! Get the value of propname.*/							\
+		const type &Get##propname() const							\
+		{															\
+			return propname;										\
+		}															\
+		/*! Set the value of propname, then call call_on_set().  */	\
+		void Set##propname(const type &value)						\
+		{															\
+			if(propname==value)										\
+				return;												\
+			propname=value;											\
+			call_on_set();											\
+		}															\
+		static_assert(true);
+
+#define META_Get(type, propname)									\
+	protected:														\
+		type propname;												\
+	public:															\
+		/*! Get the value of propname.*/							\
+		const type &Get##propname() const							\
+		{															\
+			return propname;										\
+		}															\
+	private:														\
+		void Set##propname(const type &value)						\
+		{															\
+			propname=value;											\
+		}															\
+	public:															\
+		/*! Set the value of propname.*/							\
+		void Init##propname(const type &value)						\
+		{															\
+			propname=value;											\
+		}															\
+		static_assert(true);
+
+#define META_GetAndSet(type, propname)								\
+	protected:														\
+		type propname;												\
+	public:															\
+		/*! Get the value of propname.*/							\
+		const type &Get##propname() const							\
+		{															\
+			return propname;										\
+		}															\
+		/*! Set the value of propname.*/							\
+		void Set##propname(const type &value)						\
+		{															\
+			propname=value;											\
+		}															\
+		/*! Set the value of propname.*/							\
+		void Init##propname(const type &value)						\
+		{															\
+			propname=value;											\
+		}															\
+		static_assert(true);
+
+#define META_GetSetAndCall(type, propname, call_on_set)				\
+	protected:														\
+		type propname;												\
+	public:															\
+		/*! Get the value of propname.*/							\
+		const type &Get##propname() const							\
+		{															\
+			return propname;										\
+		}															\
+		/*! Set the value of propname, then call call_on_set().  */	\
+		void Set##propname(const type &value)						\
+		{															\
+			if(propname==value)										\
+				return;												\
+			propname=value;											\
+			call_on_set();											\
+		}															\
+		/*! Set the value of propname, then call call_on_set().  */	\
+		void Init##propname(const type &value)						\
+		{															\
+			propname=value;											\
+			call_on_set();											\
+		}															\
+		static_assert(true);
+
+#define META_GetSetAndCall2(type, propname, call_on_set1, call_on_set2)					\
 	protected:																			\
 		type propname;																	\
 	public:																				\
 		/*! Get the value of propname.*/												\
 		const type &Get##propname() const												\
-		{																				\
-			return propname;															\
-		}																				\
-		/*! Set the value of propname, then call call_on_set().  */						\
-		void Set##propname(const type &value)											\
-		{																				\
-			if(propname==value)															\
-				return;																	\
-			propname=value;																\
-			call_on_set();																\
-		}																				\
-		static_assert(true)
-
-#define META_Get(type, propname)												\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const														\
-		{																				\
-			return propname;															\
-		}																				\
-	private:																			\
-		void Set##propname(const type &value)													\
-		{																				\
-			propname=value;																\
-		}																				\
-	public:																				\
-		/*! Set the value of propname.*/												\
-		void Init##propname(const type &value)													\
-		{																				\
-			propname=value;																\
-		}																				\
-		static_assert(true)
-
-#define META_GetAndSet(type, propname)										\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const														\
-		{																				\
-			return propname;															\
-		}																				\
-		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value)													\
-		{																				\
-			propname=value;																\
-		}																				\
-		/*! Set the value of propname.*/												\
-		void Init##propname(const type &value)													\
-		{																				\
-			propname=value;																\
-		}																				\
-		static_assert(true)
-
-#define META_GetSetAndCall(type, propname, call_on_set)						\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const														\
-		{																				\
-			return propname;															\
-		}																				\
-		/*! Set the value of propname, then call call_on_set().  */						\
-		void Set##propname(const type &value)													\
-		{																				\
-			if(propname==value)															\
-				return;																	\
-			propname=value;																\
-			call_on_set();																\
-		}																				\
-		/*! Set the value of propname, then call call_on_set().  */						\
-		void Init##propname(const type &value)													\
-		{																				\
-			propname=value;																\
-			call_on_set();																\
-		}																				\
-		static_assert(true)
-
-#define META_GetSetAndCall2(type, propname, call_on_set1, call_on_set2)		\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const														\
 		{																				\
 			return propname;															\
 		}																				\
 		/*! Set the value of propname, then call call_on_set1() and call_on_set2(). */	\
-		void Set##propname(const type &value)													\
+		void Set##propname(const type &value)											\
 		{																				\
 			if(propname==value)															\
 				return;																	\
@@ -281,50 +281,50 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			call_on_set2();																\
 		}																				\
 		/*! Set the value of propname, then call call_on_set1() and call_on_set2(). */	\
-		void Init##propname(const type &value)													\
+		void Init##propname(const type &value)											\
 		{																				\
 			propname=value;																\
 			call_on_set1();																\
 			call_on_set2();																\
 		}																				\
-		static_assert(true)
+		static_assert(true);
 
-#define META_RangeGetAndSet(type, propname, minimum, maximum)					\
+#define META_RangeGetAndSet(type, propname, minimum, maximum)								\
 	protected:																				\
 		type propname;																		\
 	public:																					\
 		/*! Get the value of propname.*/													\
-		const type &Get##propname() const															\
+		const type &Get##propname() const													\
 		{																					\
 			return propname;																\
 		}																					\
 		META_DeclareMaxAndMin(type, propname, minimum, maximum);							\
 		/*! Set the value of propname, then call call_on_set1() and call_on_set2(). */		\
-		void Set##propname(const type &value)														\
+		void Set##propname(const type &value)												\
 		{																					\
 			type v=value; \
-			if(v<minimum)																\
-				v=minimum;																\
-			if(v>maximum)																\
-				v=maximum;																\
-			if(propname==v)																\
+			if(v<minimum)																	\
+				v=minimum;																	\
+			if(v>maximum)																	\
+				v=maximum;																	\
+			if(propname==v)																	\
 				return;																		\
 			propname=value;																	\
 		}																					\
-		/*! Set the value of propname, then call call_on_set(). */		\
-		void Init##propname(const type &value)														\
+		/*! Set the value of propname, then call call_on_set(). */							\
+		void Init##propname(const type &value)												\
 		{																					\
 			propname=value;																	\
 		}																					\
-		static_assert(true)
+		static_assert(true);
 
 
-#define META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum)	\
+#define META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum)				\
 	protected:																				\
 		type propname;																		\
 	public:																					\
 		/*! Get the value of propname.*/													\
-		const type &Get##propname() const															\
+		const type &Get##propname() const													\
 		{																					\
 			return propname;																\
 		}																					\
@@ -343,347 +343,346 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			call_on_set();																	\
 		}																					\
 		/*! Set the value of propname, then call call_on_set(). */							\
-		void Init##propname(const type &value)														\
+		void Init##propname(const type &value)												\
 		{																					\
 			propname=value;																	\
 			call_on_set();																	\
 		}																					\
-		static_assert(true)
+		static_assert(true);
 
 
 #else
-#define META_DeclareEnforceRange(type, propname, minimum, maximum) static_assert(true)
+#define META_DeclareEnforceRange(type, propname, minimum, maximum) static_assert(true);
 
-#define META_PropertyGet(type, propname,info)		\
-	protected:																			\
-		/*! info.
-			Read-only, use Get##propname() to access. */								\
-		type propname;																	\
-		static_assert(true)
+#define META_PropertyGet(type, propname,info)									\
+	protected:																	\
+		/*! info. Read-only, use Get##propname() to access. */					\
+		type propname;															\
+		static_assert(true);
 
-#define META_PropertyGetAndSet(type, propname, info)								\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname (info).*/											\
-		const type &Get##propname() const;												\
-		/*! Set the value of propname (info).*/											\
-		void Set##propname(const type &value);											\
-		static_assert(true)
+#define META_PropertyGetAndSet(type, propname, info)							\
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname (info).*/									\
+		const type &Get##propname() const;										\
+		/*! Set the value of propname (info).*/									\
+		void Set##propname(const type &value);									\
+		static_assert(true);
 
-#define META_PropertyGetAndSetOverride(type, propname, info)							\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname (info) */											\
-		const type &Get##propname() const override										\
-		{																				\
-			return propname;															\
-		}																				\
-		/*! Set the value of propname (info) */											\
-		void Set##propname(const type &value)											\
-		{																				\
-			propname=value;																\
-		}																				\
-		static_assert(true)
+#define META_PropertyGetAndSetOverride(type, propname, info)					\
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname (info) */									\
+		const type &Get##propname() const override								\
+		{																		\
+			return propname;													\
+		}																		\
+		/*! Set the value of propname (info) */									\
+		void Set##propname(const type &value)									\
+		{																		\
+			propname=value;														\
+		}																		\
+		static_assert(true);
 
 #define META_PropertyGetSetAndCall(type, propname, call_on_set)					\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const;												\
-		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);											\
-		static_assert(true)
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname.*/										\
+		const type &Get##propname() const;										\
+		/*! Set the value of propname.*/										\
+		void Set##propname(const type &value);									\
+		static_assert(true);
 
 #define META_Get(type, propname)												\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const;														\
-	private:																			\
-		void Set##propname(const type &value);													\
-	public:																				\
-		/*! Set the value of propname.*/												\
-		void Init##propname(const type &value);													\
-		static_assert(true)
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname.*/										\
+		const type &Get##propname() const;										\
+	private:																	\
+		void Set##propname(const type &value);									\
+	public:																		\
+		/*! Set the value of propname.*/										\
+		void Init##propname(const type &value);									\
+		static_assert(true);
 
-#define META_GetAndSet(type, propname)										\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const;														\
-		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);													\
-		static_assert(true)
+#define META_GetAndSet(type, propname)											\
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname.*/										\
+		const type &Get##propname() const;										\
+		/*! Set the value of propname.*/										\
+		void Set##propname(const type &value);									\
+		static_assert(true);
 
-#define META_GetSetAndCall(type, propname, call_on_set)						\
-	protected:																			\
-		type propname;																	\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const;														\
-		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);													\
-		static_assert(true)
+#define META_GetSetAndCall(type, propname, call_on_set)							\
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname.*/										\
+		const type &Get##propname() const;										\
+		/*! Set the value of propname.*/										\
+		void Set##propname(const type &value);									\
+		static_assert(true);
 
-#define META_GetSetAndCall2(type, propname, call_on_set1, call_on_set2)		\
-	protected:																				\
-		type propname;																		\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const;														\
-		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);													\
-		static_assert(true)
+#define META_GetSetAndCall2(type, propname, call_on_set1, call_on_set2)			\
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname.*/										\
+		const type &Get##propname() const;										\
+		/*! Set the value of propname.*/										\
+		void Set##propname(const type &value);									\
+		static_assert(true);
 
-#define META_RangeGetAndSet(type, propname, minimum, maximum)				\
-	protected:																				\
-		type propname;																		\
-	public:																				\
-		/*! Get the value of propname.*/												\
-		const type &Get##propname() const;														\
-		/*! Set the value of propname.*/												\
-		void Set##propname(const type &value);													\
-		static_assert(true)
+#define META_RangeGetAndSet(type, propname, minimum, maximum)					\
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname.*/										\
+		const type &Get##propname() const;										\
+		/*! Set the value of propname.*/										\
+		void Set##propname(const type &value);									\
+		static_assert(true);
 
 #define META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum)	\
-	protected:																				\
-		type propname;																		\
-	public:																					\
-		/*! Get the value of propname.*/													\
-		const type &Get##propname() const;															\
-		/*! Set the value of propname.*/													\
-		void Set##propname(const type &value);														\
-		static_assert(true)
+	protected:																	\
+		type propname;															\
+	public:																		\
+		/*! Get the value of propname.*/										\
+		const type &Get##propname() const;										\
+		/*! Set the value of propname.*/										\
+		void Set##propname(const type &value);									\
+		static_assert(true);
 
 #endif
 			
 // we want to accumulate a function that saves each property.
 #if !defined(DOXYGEN) && defined(_MSC_VER)
-#define META_BeginProperties																	\
-	private: template<int N> void Templ_AccumulateSetInitial()									\
-	{																							\
-	}																							\
-	private: template<int N> void Templ_AccumulateStreamOut(std::ostream &) const				\
-	{																							\
-	}																							\
-	private: template<int N> void Templ_AccumulateStreamIn(std::istream &)						\
-	{																							\
-	}																							\
-	static_assert(true)
+#define META_BeginProperties																\
+	private: template<int N> void Templ_AccumulateSetInitial()								\
+	{																						\
+	}																						\
+	private: template<int N> void Templ_AccumulateStreamOut(std::ostream &) const			\
+	{																						\
+	}																						\
+	private: template<int N> void Templ_AccumulateStreamIn(std::istream &)					\
+	{																						\
+	}																						\
+	static_assert(true);
 
 
 #define META_AccumulateStreaming(type, propname)											\
-		static unsigned GetOrdinalOf##propname()													\
-		{																							\
-			return __COUNTER__;																		\
-		}																							\
+		static unsigned GetOrdinalOf##propname()											\
+		{																					\
+			return __COUNTER__;																\
+		}																					\
 		template<> void Templ_AccumulateSetInitial<__COUNTER__>()							\
-		{																							\
+		{																					\
 			Templ_AccumulateSetInitial<__COUNTER__-8>();									\
-		}																							\
+		}																					\
 		template<> void Templ_AccumulateStreamOut<__COUNTER__>(std::ostream &os)	const	\
-		{																							\
+		{																					\
 			Templ_AccumulateStreamOut<__COUNTER__-8>(os);									\
-			StreamingHelperTemplate<type>::StreamOut(os, propname);									\
-		};																							\
-		template<> void Templ_AccumulateStreamIn<__COUNTER__>(std::istream &is)			\
-		{																							\
+			StreamingHelperTemplate<type>::StreamOut(os, propname);							\
+		};																					\
+		template<> void Templ_AccumulateStreamIn<__COUNTER__>(std::istream &is)				\
+		{																					\
 			Templ_AccumulateStreamIn<__COUNTER__-8>(is);									\
-			type temp##propname;																	\
-			StreamingHelperTemplate<type>::StreamIn(is, temp##propname);							\
-			Set##propname(temp##propname);															\
-		};																							\
-		static_assert(true)
+			type temp##propname;															\
+			StreamingHelperTemplate<type>::StreamIn(is, temp##propname);					\
+			Set##propname(temp##propname);													\
+		};																					\
+		static_assert(true);
 
 
 #define META_AccumulateStreamingAndInit(type, propname, initial)							\
-		static unsigned GetOrdinalOf##propname()													\
-		{																							\
-			return __COUNTER__;																		\
-		}																							\
+		static unsigned GetOrdinalOf##propname()											\
+		{																					\
+			return __COUNTER__;																\
+		}																					\
 		template<> void Templ_AccumulateSetInitial<__COUNTER__>()							\
-		{																							\
+		{																					\
 			Templ_AccumulateSetInitial<__COUNTER__-8>();									\
-			Init##propname(initial);																\
-		};																							\
+			Init##propname(initial);														\
+		};																					\
 		template<> void Templ_AccumulateStreamOut<__COUNTER__>(std::ostream &os)	const	\
-		{																							\
+		{																					\
 			Templ_AccumulateStreamOut<__COUNTER__-8>(os);									\
-			StreamingHelperTemplate<type>::StreamOut(os, propname);									\
-		};																							\
-		template<> void Templ_AccumulateStreamIn<__COUNTER__>(std::istream &is)			\
-		{																							\
+			StreamingHelperTemplate<type>::StreamOut(os, propname);							\
+		};																					\
+		template<> void Templ_AccumulateStreamIn<__COUNTER__>(std::istream &is)				\
+		{																					\
 			Templ_AccumulateStreamIn<__COUNTER__-8>(is);									\
-			type temp##propname;																	\
-			StreamingHelperTemplate<type>::StreamIn(is, temp##propname);							\
-			Set##propname(temp##propname);															\
-		};																							\
-		static_assert(true)
+			type temp##propname;															\
+			StreamingHelperTemplate<type>::StreamIn(is, temp##propname);					\
+			Set##propname(temp##propname);													\
+		};																					\
+		static_assert(true);
 
 #else
-#define META_BeginProperties static_assert(true)
-#define META_AccumulateStreaming(type, propname) static_assert(true)
-#define META_AccumulateStreamingAndInit(type, propname, initial) static_assert(true)
+#define META_BeginProperties static_assert(true);
+#define META_AccumulateStreaming(type, propname) static_assert(true);
+#define META_AccumulateStreamingAndInit(type, propname, initial) static_assert(true);
 
 #endif
 
 #if !defined(DOXYGEN) && defined(_MSC_VER)
-#define META_EndProperties												\
-	public:																				\
-	void StreamOutAutoProperties(std::ostream &os) const						\
-	{																					\
-		Templ_AccumulateStreamOut<__COUNTER__-4>(os);							\
-	}																					\
-	void StreamInAutoProperties(std::istream &is)								\
-	{																					\
-		Templ_AccumulateStreamIn<__COUNTER__-3>(is);							\
-	}																					\
-	void InitializeProperties()												\
-	{																					\
-		Templ_AccumulateSetInitial<__COUNTER__-8>();							\
-	}																					\
-	static_assert(true)
+#define META_EndProperties										\
+	public:														\
+	void StreamOutAutoProperties(std::ostream &os) const		\
+	{															\
+		Templ_AccumulateStreamOut<__COUNTER__-4>(os);			\
+	}															\
+	void StreamInAutoProperties(std::istream &is)				\
+	{															\
+		Templ_AccumulateStreamIn<__COUNTER__-3>(is);			\
+	}															\
+	void InitializeProperties()									\
+	{															\
+		Templ_AccumulateSetInitial<__COUNTER__-8>();			\
+	}															\
+	static_assert(true);
 
 #else
-#define META_EndProperties												\
-	public:																				\
-	void StreamOutAutoProperties(std::ostream &) const						\
-	{																					\
-	}																					\
-	void StreamInAutoProperties(std::istream &)								\
-	{																					\
-	}																					\
-	void InitializeProperties()												\
-	{																					\
-	}																					\
-	static_assert(true)
+#define META_EndProperties										\
+	public:														\
+	void StreamOutAutoProperties(std::ostream &) const			\
+	{															\
+	}															\
+	void StreamInAutoProperties(std::istream &)					\
+	{															\
+	}															\
+	void InitializeProperties()									\
+	{															\
+	}															\
+	static_assert(true);
 #endif
 
 
 #ifndef DOXYGEN
-#define META_Info(propname, info)														\
-	static const char *GetInfoFor##propname()											\
-	{																					\
-		return info;																	\
-	}																					\
-	static_assert(true)
+#define META_Info(propname, info)								\
+	static const char *GetInfoFor##propname()					\
+	{															\
+		return info;											\
+	}															\
+	static_assert(true);
 #else
-#define META_Info(propname, info) static_assert(true)
+#define META_Info(propname, info) static_assert(true);
 
 #endif
 
 
-#define META_Property(type, propname, info)											\
-		/*! info */																	\
-		/*! \name Property: type propname	*/										\
-		/*@{*/																		\
-		META_PropertyGetAndSet(type, propname,info);								\
-		META_AccumulateStreaming(type, propname);									\
-		META_Info(propname, info);													\
-		/*@}*/																		\
-		static_assert(true)
+#define META_Property(type, propname, info)						\
+		/*! info */												\
+		/*! \name Property: type propname	*/					\
+		/*@{*/													\
+		META_PropertyGetAndSet(type, propname,info);			\
+		META_AccumulateStreaming(type, propname);				\
+		META_Info(propname, info);								\
+		/*@}*/													\
+		static_assert(true);
 
-#define META_PropertyOverride(type, propname, info)											\
-		/*! info */																	\
-		/*! \name Property: type propname	*/										\
-		/*@{*/																		\
-		META_PropertyGetAndSetOverride(type, propname,info);						\
-		META_AccumulateStreaming(type, propname);									\
-		META_Info(propname, info);													\
-		/*@}*/																		\
-		static_assert(true)
+#define META_PropertyOverride(type, propname, info)				\
+		/*! info */												\
+		/*! \name Property: type propname	*/					\
+		/*@{*/													\
+		META_PropertyGetAndSetOverride(type, propname,info);	\
+		META_AccumulateStreaming(type, propname);				\
+		META_Info(propname, info);								\
+		/*@}*/													\
+		static_assert(true);
 
 
-#define META_PropertyReadOnly(type, propname, info)									\
-		protected:																	\
-		void Set##propname(const type &value)										\
-		{																			\
-			propname=value;															\
-		}																			\
-		/*! info */																	\
-		/*! \name Property: type propname	*/										\
-		/*@{*/																		\
-		META_PropertyGet(type, propname, info);										\
-		META_AccumulateStreaming(type, propname);									\
-		META_Info(propname, info);													\
-		/*@}*/																		\
-		static_assert(true)
+#define META_PropertyReadOnly(type, propname, info)				\
+		protected:												\
+		void Set##propname(const type &value)					\
+		{														\
+			propname=value;										\
+		}														\
+		/*! info */												\
+		/*! \name Property: type propname	*/					\
+		/*@{*/													\
+		META_PropertyGet(type, propname, info);					\
+		META_AccumulateStreaming(type, propname);				\
+		META_Info(propname, info);								\
+		/*@}*/													\
+		static_assert(true);
 
 
 #define VIRTUAL_Get(type, propname, info)					\
-	public:														\
-		/*! info */												\
-		/*! \name Property: type propname	*/					\
-		/*@{*/													\
-		/*! Get the value of propname (info) */					\
-		virtual const type &Get##propname() const = 0;					\
-		META_Info(propname, info);								\
-		/*@}*/													\
-		static_assert(true)
+	public:													\
+		/*! info */											\
+		/*! \name Property: type propname	*/				\
+		/*@{*/												\
+		/*! Get the value of propname (info) */				\
+		virtual const type &Get##propname() const = 0;		\
+		META_Info(propname, info);							\
+		/*@}*/												\
+		static_assert(true);
 
 #define VIRTUAL_Set(type, propname, info)					\
-	public:														\
-		/*! info */												\
-		/*! \name Property: type propname	*/					\
-		/*@{*/													\
-		/*! Set the value of propname (info). */				\
-		virtual void Set##propname(const type &value) = 0;				\
-		META_Info(propname, info);								\
-		/*@}*/													\
-		static_assert(true)
+	public:													\
+		/*! info */											\
+		/*! \name Property: type propname	*/				\
+		/*@{*/												\
+		/*! Set the value of propname (info). */			\
+		virtual void Set##propname(const type &value) = 0;	\
+		META_Info(propname, info);							\
+		/*@}*/												\
+		static_assert(true);
 
-#define VIRTUAL_GetAndSetNOINFO(type, propname)			\
-	public:														\
-		/*! info */												\
-		/*! \name Property: type propname	*/					\
-		/*@{*/													\
-		/*! Get the value of propname. */						\
-		virtual const type &Get##propname() const = 0;					\
-		/*! Set the value of propname. */						\
-		virtual void Set##propname(const type &value) = 0;				\
-		/*@}*/													\
-		static_assert(true)
+#define VIRTUAL_GetAndSetNOINFO(type, propname)				\
+	public:													\
+		/*! info */											\
+		/*! \name Property: type propname	*/				\
+		/*@{*/												\
+		/*! Get the value of propname. */					\
+		virtual const type &Get##propname() const = 0;		\
+		/*! Set the value of propname. */					\
+		virtual void Set##propname(const type &value) = 0;	\
+		/*@}*/												\
+		static_assert(true);
 
-#define VIRTUAL_GetAndSet(type, propname, info)			\
-	public:														\
-		/*! info */												\
-		/*! \name Property: type propname	*/					\
-		/*@{*/													\
-		/*! Get the value of propname (info) */					\
-		virtual const type &Get##propname() const = 0;			\
-		/*! Set the value of propname (info) */					\
-		virtual void Set##propname(const type &value) = 0;		\
-		META_Info(propname, info);								\
-		/*@}*/													\
-		static_assert(true)
+#define VIRTUAL_GetAndSet(type, propname, info)				\
+	public:													\
+		/*! info */											\
+		/*! \name Property: type propname	*/				\
+		/*@{*/												\
+		/*! Get the value of propname (info) */				\
+		virtual const type &Get##propname() const = 0;		\
+		/*! Set the value of propname (info) */				\
+		virtual void Set##propname(const type &value) = 0;	\
+		META_Info(propname, info);							\
+		/*@}*/												\
+		static_assert(true);
 
 
 
 #if !defined(DOXYGEN)
 #ifdef _MSC_VER
-#define META_PassOnStreaming															\
+#define META_PassOnStreaming																\
 		template<> void Templ_AccumulateSetInitial<__COUNTER__>()							\
-		{																							\
+		{																					\
 			Templ_AccumulateSetInitial<__COUNTER__-8>();									\
-		}																							\
+		}																					\
 		template<> void Templ_AccumulateStreamOut<__COUNTER__>(std::ostream &os)	const	\
-		{																							\
+		{																					\
 			Templ_AccumulateStreamOut<__COUNTER__-8>(os);									\
-		};																							\
-		template<> void Templ_AccumulateStreamIn<__COUNTER__>(std::istream &is)			\
-		{																							\
+		};																					\
+		template<> void Templ_AccumulateStreamIn<__COUNTER__>(std::istream &is)				\
+		{																					\
 			Templ_AccumulateStreamIn<__COUNTER__-8>(is);									\
-		};																							\
-		static_assert(true)
+		};																					\
+		static_assert(true);
 #else
-	#define META_PassOnStreaming static_assert(true)
+	#define META_PassOnStreaming static_assert(true);
 #endif
-	#define META_Category(category)												\
+	#define META_Category(category)															\
 	/*! \name Category: category	*/														\
 		public:																				\
 			static unsigned BeginOrdinalOfCategory##category()								\
@@ -692,7 +691,7 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			}																				\
 			META_PassOnStreaming
 
-	#define META_EndCategory(category)											\
+	#define META_EndCategory(category)														\
 		public:																				\
 			static unsigned EndOrdinalOfCategory##category()								\
 			{																				\
@@ -701,97 +700,97 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 			META_PassOnStreaming
 #else
 
-	#define META_PassOnStreaming static_assert(true)
+	#define META_PassOnStreaming static_assert(true);
 
 	#define META_Category(category) \
-	/*! \name Category: category	*/ static_assert(true)
+	/*! \name Category: category	*/ static_assert(true);
 
 
 	#define META_EndCategory(category) \
-	/*! \name General	*/ static_assert(true)
+	/*! \name General	*/ static_assert(true);
 
 #endif
 
 
 
 #define META_RangeProperty(type, propname, initial, minimum, maximum, info)	\
-		/*! info */																				\
-		/*! \name Property: type propname	*/													\
-		/*@{*/																					\
-		META_RangeGetAndSet(type, propname, minimum, maximum);								\
-		META_AccumulateStreamingAndInit(type, propname, initial);							\
-		META_Info(propname, info);															\
-		/*@}*/																				\
-		static_assert(true)
+		/*! info */															\
+		/*! \name Property: type propname	*/								\
+		/*@{*/																\
+		META_RangeGetAndSet(type, propname, minimum, maximum);				\
+		META_AccumulateStreamingAndInit(type, propname, initial);			\
+		META_Info(propname, info);											\
+		/*@}*/																\
+		static_assert(true);
 
 #define META_RangePropertyWithSetCall(type, propname, minimum, maximum, call_on_set, info)	\
-		/*! info */																								\
-		/*! \name Property: type propname	*/																	\
-		/*@{*/																									\
-		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum);									\
-		META_AccumulateStreaming(type, propname);																\
-		META_Info(propname, info);																				\
-		/*@}*/																									\
-		static_assert(true)
+		/*! info */																			\
+		/*! \name Property: type propname	*/												\
+		/*@{*/																				\
+		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum);				\
+		META_AccumulateStreaming(type, propname);											\
+		META_Info(propname, info);															\
+		/*@}*/																				\
+		static_assert(true);
 
 
 #define META_RangePropertyWithInitAndSetCall(type, propname, initial, minimum, maximum, call_on_set, info)	\
-		/*! info */																								\
-		/*! \name Property: type propname	*/																	\
-		/*@{*/																									\
-		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum);									\
-		META_AccumulateStreamingAndInit(type, propname, initial);												\
-		META_Info(propname, info);																				\
-		/*@}*/																									\
-		static_assert(true)
+		/*! info */																							\
+		/*! \name Property: type propname	*/																\
+		/*@{*/																								\
+		META_RangeGetSetAndCall(type, propname, call_on_set, minimum, maximum);								\
+		META_AccumulateStreamingAndInit(type, propname, initial);											\
+		META_Info(propname, info);																			\
+		/*@}*/																								\
+		static_assert(true);
 
-#define META_PropertyWithSetCall(type, propname, call_on_set, info)							\
-		/*! info */																				\
-		/*! \name Property: type propname	*/													\
-		/*@{*/																					\
-		META_PropertyGetSetAndCall(type, propname, call_on_set);								\
-		META_AccumulateStreaming(type, propname);												\
-		META_Info(propname, info);																\
-		/*@}*/																					\
-		static_assert(true)
-
-
-#define META_OpenProperty(type, propname, info)												\
-		/*! info */																				\
-		/*! \name Property: type propname	*/													\
-		/*@{*/																					\
-		META_PropertyGetAndSet(type, propname, info);											\
-		META_AccumulateStreaming(type, propname);												\
-		META_Info(propname, info);																\
-	public:																						\
-		type &Get##propname()																	\
-		{																						\
-			return propname;																	\
-		}																						\
-		/*@}*/																					\
-		static_assert(true)
+#define META_PropertyWithSetCall(type, propname, call_on_set, info)	\
+		/*! info */													\
+		/*! \name Property: type propname	*/						\
+		/*@{*/														\
+		META_PropertyGetSetAndCall(type, propname, call_on_set);	\
+		META_AccumulateStreaming(type, propname);					\
+		META_Info(propname, info);									\
+		/*@}*/														\
+		static_assert(true);
 
 
-#define META_PropertyWithInit(type, propname, initial, info)									\
-		/*! info */																			\
-		/*! \name Property: type propname	*/												\
-		/*@{*/																				\
-		META_GetAndSet(type, propname);														\
-		META_AccumulateStreamingAndInit(type, propname, Definition, initial);				\
-		META_Info(propname, info);															\
-		/*@}*/																				\
-		static_assert(true)
+#define META_OpenProperty(type, propname, info)			\
+		/*! info */										\
+		/*! \name Property: type propname	*/			\
+		/*@{*/											\
+		META_PropertyGetAndSet(type, propname, info);	\
+		META_AccumulateStreaming(type, propname);		\
+		META_Info(propname, info);						\
+	public:												\
+		type &Get##propname()							\
+		{												\
+			return propname;							\
+		}												\
+		/*@}*/											\
+		static_assert(true);
 
 
-#define META_PropertyWithInitAndSetCall(type, propname, initial, call_on_set, info)			\
-		/*! info */																			\
-		/*! \name Property: type propname	*/												\
-		/*@{*/																				\
-		META_GetSetAndCall(type, propname, call_on_set);									\
-		META_AccumulateStreamingAndInit(type, propname, Definition, initial);				\
-		META_Info(propname, info);															\
-		/*@}*/																				\
-		static_assert(true)
+#define META_PropertyWithInit(type, propname, initial, info)					\
+		/*! info */																\
+		/*! \name Property: type propname	*/									\
+		/*@{*/																	\
+		META_GetAndSet(type, propname);											\
+		META_AccumulateStreamingAndInit(type, propname, Definition, initial);	\
+		META_Info(propname, info);												\
+		/*@}*/																	\
+		static_assert(true);
+
+
+#define META_PropertyWithInitAndSetCall(type, propname, initial, call_on_set, info)	\
+		/*! info */																	\
+		/*! \name Property: type propname	*/										\
+		/*@{*/																		\
+		META_GetSetAndCall(type, propname, call_on_set);							\
+		META_AccumulateStreamingAndInit(type, propname, Definition, initial);		\
+		META_Info(propname, info);													\
+		/*@}*/																		\
+		static_assert(true);
 		
 
 #define VIRTUAL_(propname)															\
@@ -879,29 +878,29 @@ template<class T, T minimum, T maximum> void META_StaticLimit(T &t)
 #endif
 
 #if 0
-#define SIMUL_BIT_FLAG(Enum,T)															\
-inline Enum operator|(const Enum &a, const Enum &b)										\
-{																						\
-	return static_cast<Enum>(static_cast<T>(a) | static_cast<T>(b));					\
-}																						\
-inline Enum operator&(const Enum &a, const Enum &b)										\
-{																						\
-	return static_cast<Enum>(static_cast<T>(a) & static_cast<T>(b));					\
-}																						\
-inline const Enum &operator&=(Enum &a, const Enum &b)									\
-{																						\
-	a = a&b;																			\
-	return a;																			\
-}																						\
-inline const Enum &operator|=(Enum &a, const Enum &b)									\
-{																						\
-	a = a | b;																			\
-	return a;																			\
-}																						\
-inline Enum operator~(const Enum &a)													\
-{																						\
-	Enum b = static_cast<Enum>(~static_cast<T>(a));										\
-	return b;																			\
+#define SIMUL_BIT_FLAG(Enum,T)											\
+inline Enum operator|(const Enum &a, const Enum &b)						\
+{																		\
+	return static_cast<Enum>(static_cast<T>(a) | static_cast<T>(b));	\
+}																		\
+inline Enum operator&(const Enum &a, const Enum &b)						\
+{																		\
+	return static_cast<Enum>(static_cast<T>(a) & static_cast<T>(b));	\
+}																		\
+inline const Enum &operator&=(Enum &a, const Enum &b)					\
+{																		\
+	a = a&b;															\
+	return a;															\
+}																		\
+inline const Enum &operator|=(Enum &a, const Enum &b)					\
+{																		\
+	a = a | b;															\
+	return a;															\
+}																		\
+inline Enum operator~(const Enum &a)									\
+{																		\
+	Enum b = static_cast<Enum>(~static_cast<T>(a));						\
+	return b;															\
 }
 #else
 #define SIMUL_BIT_FLAG(Enum, T)

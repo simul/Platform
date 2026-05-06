@@ -38,34 +38,36 @@ endif()
 # Add in vk_mem_alloc.h
 set(HEADERS ${HEADERS} "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include/vk_mem_alloc.h")
 
-add_static_library( SimulVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
+add_static_library( PlatformVulkan SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${SHADER_DEFS} DEFINITIONS ${VK_DEFS} FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX})
 if(SIMUL_SOURCE_BUILD)
-	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
-	add_dependencies(SimulVulkan${STATIC_LINK_SUFFIX} SimulCrossPlatform${STATIC_LINK_SUFFIX})
+	add_dependencies(PlatformVulkan${STATIC_LINK_SUFFIX} PlatformCrossPlatform${STATIC_LINK_SUFFIX})
+	add_dependencies(PlatformVulkan${STATIC_LINK_SUFFIX} PlatformCrossPlatform${STATIC_LINK_SUFFIX})
 	if(PLATFORM_WINDOWS)
-		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
+		target_compile_definitions(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_WIN32_KHR  )
 	endif()
 	# Support for X11
 	if(PLATFORM_LINUX)
-		target_compile_definitions(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
+		target_compile_definitions(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
 	endif()
 	
-	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
-	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
+	target_include_directories(PlatformVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
+	target_include_directories(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
 	# For parallel_hashmap
-	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
-	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
+	target_include_directories(PlatformVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
+	target_include_directories(PlatformVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/Vulkan")
 	# For VMA
-	target_include_directories(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include")
+	target_include_directories(PlatformVulkan${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External/VulkanMemoryAllocator/include")
 
 	# Link against GLFW library for window functions
-	target_link_libraries(SimulVulkan${STATIC_LINK_SUFFIX} PUBLIC glfw)
+	target_link_libraries(PlatformVulkan${STATIC_LINK_SUFFIX} PUBLIC glfw)
 
 	# Suppress nullability extension warning for external VMA header
-	target_compile_options(SimulVulkan${STATIC_LINK_SUFFIX} PRIVATE -Wno-nullability-extension)
+	if(PLATFORM_LINUX)
+		target_compile_options(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE -Wno-nullability-extension)
+	endif()
 
 endif()
 
 if (SIMUL_DLL_SDK_LIBRARY)
-	AddDLLCompileDefinitions( SimulVulkan${STATIC_LINK_SUFFIX} )
+	AddDLLCompileDefinitions( PlatformVulkan${STATIC_LINK_SUFFIX} )
 endif()

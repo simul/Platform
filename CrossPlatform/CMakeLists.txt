@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.24)
 
 file(GLOB SOURCES "*.cpp" )
 
@@ -50,17 +50,15 @@ endif()
 option(PLATFORM_DEBUG_PROFILING_LEVELS "Whether to do the (slow) debugging of profiling levels - for finding mismatched Begin()/End() pairs." OFF)
 option(PLATFORM_IMPLEMENT_STB_IMAGE "Whether to include stb_image and stb_image_write code in CrossPlatform/RenderPlatform.cpp. Disable if included elsewhere to avoid linker errors." ON)
 
-#set(SIMUL_TRUESKY TRUE)
-#if (NOT CMAKE_PROJECT_NAME STREQUAL "Simul")
-	set(SIMUL_TRUESKY FALSE)
-#endif()
 
+set(SIMUL_TRUESKY FALSE)
+ 
 # Setup and build the static library.
-add_static_library( SimulCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES}
+add_static_library( PlatformCrossPlatform SOURCES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES}
 	DEFINITIONS PLATFORM_LOAD_RENDERDOC=$<BOOL:${PLATFORM_LOAD_RENDERDOC}> PLATFORM_LOAD_WINPIXGPUCAPTURER=$<BOOL:${PLATFORM_LOAD_WINPIXGPUCAPTURER}> PLATFORM_USE_ASSIMP=$<BOOL:${PLATFORM_USE_ASSIMP}> PLATFORM_STD_CHARCONV=$<BOOL:${PLATFORM_STD_CHARCONV}> PLATFORM_DEBUG_PROFILING_LEVELS=$<BOOL:${PLATFORM_DEBUG_PROFILING_LEVELS}> PLATFORM_IMPLEMENT_STB_IMAGE=$<BOOL:${PLATFORM_IMPLEMENT_STB_IMAGE}>
 	FOLDER ${SIMUL_PLATFORM_FOLDER_PREFIX} DEPENDENCIES ${ADDITIONAL_LIBS} INCLUDES ${INCLUDE_DIRS} )
 
-add_multiplatform_sfx_shader_project( SimulCrossPlatform${STATIC_LINK_SUFFIX} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
+add_multiplatform_sfx_shader_project( PlatformCrossPlatform${STATIC_LINK_SUFFIX} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
 								"${SIMUL_PLATFORM_DIR}/.."
 							SOURCES ${SHADERS} ${SHADER_INCLUDES} DEFINES VULKAN_SDK=${VULKAN_SDK_DIR} CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR} 
 							OPTIONS -GSIMUL_TRUESKY=$<BOOL:${SIMUL_TRUESKY}>
@@ -68,15 +66,15 @@ add_multiplatform_sfx_shader_project( SimulCrossPlatform${STATIC_LINK_SUFFIX} IN
 
 # For parallel_hashmap
 if(SIMUL_SOURCE_BUILD)
-	target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
+	target_include_directories(PlatformCrossPlatform${STATIC_LINK_SUFFIX} PUBLIC "${SIMUL_PLATFORM_DIR}/External")
 else()
-	target_include_directories(SimulCrossPlatform${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External")
+	target_include_directories(PlatformCrossPlatform${STATIC_LINK_SUFFIX} INTERFACE "${SIMUL_PLATFORM_DIR}/External")
 endif()
 
 if (SIMUL_DLL_SDK_LIBRARY)
-	AddDLLCompileDefinitions( SimulCrossPlatform${STATIC_LINK_SUFFIX} )
+	AddDLLCompileDefinitions( PlatformCrossPlatform${STATIC_LINK_SUFFIX} )
 endif()
 
 if(PLATFORM_USE_ASSIMP)
-	add_compile_definitions(SimulCrossPlatform${STATIC_LINK_SUFFIX} PRIVATE ASSIMP_LIBNAME="${ASSIMP_LIBNAME}.dll")
+	add_compile_definitions(PlatformCrossPlatform${STATIC_LINK_SUFFIX} PRIVATE ASSIMP_LIBNAME="${ASSIMP_LIBNAME}.dll")
 endif()
