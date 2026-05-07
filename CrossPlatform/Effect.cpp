@@ -1684,6 +1684,10 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 						t=crossplatform::SHADERTYPE_ANY_HIT;
 					else if(_stricmp(type.c_str(),"intersection")==0)
 						t=crossplatform::SHADERTYPE_INTERSECTION;
+					else if(_stricmp(type.c_str(),"mesh")==0)
+						t=crossplatform::SHADERTYPE_MESH;
+					else if(_stricmp(type.c_str(),"amplification")==0)
+						t=crossplatform::SHADERTYPE_AMPLIFICATION;
 					else if (_stricmp(type.c_str(), "maxpayloadsize") == 0)
 					{
 						std::string str_num = line.substr(std::string("maxpayloadsize: ").size());

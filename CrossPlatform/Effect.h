@@ -30,7 +30,7 @@ namespace platform
 	namespace crossplatform
 	{
 		/*!
-				OpenGL					|	Direct3D
+				Vulkan					|	Direct3D 12
 				-------------------------------------------
 				Vertex Shader			|	Vertex Shader
 				Tessellation Control	|	Hull Shader
@@ -38,25 +38,33 @@ namespace platform
 				Geometry Shader			|	Geometry Shader
 				Fragment Shader			|	Pixel Shader
 				Compute Shader			|	Compute Shader
+				Ray Generation Shader	|	Ray Generation Shader
+				Miss Sahder				|	Miss Sahder
+				Callable Shader			|	Callable Shader
+				Closest Hit Shader		|	Closest Hit Shader
+				Any Hit Shader			|	Any Hit Shader
+				Intersection Shader		|	Intersection Shader
+				Mesh Shader				|	Mesh Shader
+				Amplification Shader	|	Task Shader
 		*/
 		enum ShaderType
 		{
 			SHADERTYPE_UNKNOWN = 0,
-			SHADERTYPE_VERTEX,
-			SHADERTYPE_HULL,   // tesselation control.
-			SHADERTYPE_DOMAIN, // tesselation evaluation.
-			SHADERTYPE_GEOMETRY,
-			SHADERTYPE_PIXEL,
-			SHADERTYPE_COMPUTE,
-			SHADERTYPE_RAY_GENERATION, // Raytrace shader types
-			SHADERTYPE_MISS,
-			SHADERTYPE_CALLABLE,
-			SHADERTYPE_CLOSEST_HIT,
-			SHADERTYPE_ANY_HIT,
-			SHADERTYPE_INTERSECTION,
-			SHADERTYPE_EXPORT,				 // not generally used.
-			SHADERTYPE_MESH,				 // Mesh shader (requires DirectX 12 or Vulkan).
-			SHADERTYPE_AMPLIFICATION_SHADER, // Task shader / Amplification shader (Vulkan term).
+			SHADERTYPE_VERTEX,			// Graphics Pre-Rasterisation
+			SHADERTYPE_HULL,			// Graphics Pre-Rasterisation
+			SHADERTYPE_DOMAIN,			// Graphics Pre-Rasterisation
+			SHADERTYPE_GEOMETRY,		// Graphics Pre-Rasterisation
+			SHADERTYPE_PIXEL,			// Graphics Post-Rasterisation
+			SHADERTYPE_COMPUTE,			// Compute
+			SHADERTYPE_RAY_GENERATION,	// Raytrace shader types
+			SHADERTYPE_MISS,			// Raytrace shader types
+			SHADERTYPE_CALLABLE,		// Raytrace shader types
+			SHADERTYPE_CLOSEST_HIT,		// Raytrace shader types
+			SHADERTYPE_ANY_HIT,			// Raytrace shader types
+			SHADERTYPE_INTERSECTION,	// Raytrace shader types
+			SHADERTYPE_EXPORT,			// not generally used.
+			SHADERTYPE_MESH,			// Requires DirectX 12 or Vulkan.
+			SHADERTYPE_AMPLIFICATION,	// Requires DirectX 12 or Vulkan.
 			SHADERTYPE_COUNT
 		};
 		//! Tells the renderer what to do with shader source to get binaries. values can be combined, e.g. ALWAYS_BUILD|TRY_AGAIN_ON_FAIL
