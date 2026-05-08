@@ -1336,8 +1336,10 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 		x=normalize(x);
 	else
 		x=cross(direction,y);
-	x*=radius;
 	y = cross(direction , x);
+	
+	x*=radius;
+	y*=radius;
 
 	mat4 wvp;
 	if (view_centred)
@@ -1378,8 +1380,10 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const doub
 		x = normalize(x);
 	else
 		x = cross(direction, y);
-	x *= radius;
 	y = cross(direction, x);
+
+	x *= radius;
+	y *= radius;
 
 	mat4 wvp;
 	if (view_centred)
