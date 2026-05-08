@@ -776,9 +776,11 @@ unsigned Effect::CompileAllShaders(string sfxoFilename, const string &sharedCode
 		std::shared_ptr<ShaderInstance> shaderInstance = (*i);
 		// Hold on, is this even supported?
 		std::string profile_text = shaderInstance->m_profile;
-		find_and_replace(profile_text, "ps_", "");
 		find_and_replace(profile_text, "vs_", "");
+		find_and_replace(profile_text, "ps_", "");
 		find_and_replace(profile_text, "cs_", "");
+		find_and_replace(profile_text, "ms_", "");
+		find_and_replace(profile_text, "as_", "");
 		find_and_replace(profile_text, "_", ".");
 		double profile_number = atof(profile_text.c_str());
 		if (profile_number > sfxConfig.maxShaderModel)
@@ -3492,8 +3494,10 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 			theShader << vertexOutputDeclaration.c_str() << endl;
 		}
 	}
-	// Add the CS layout:
-	if (shaderInstance->shaderType == COMPUTE_SHADER)
+	// Add the CS/MS/AS layout:
+	if (shaderInstance->shaderType == COMPUTE_SHADER
+		|| shaderInstance->shaderType == MESH_SHADER
+		|| shaderInstance->shaderType == AMPLIFICATION_SHADER)
 	{
 		std::string csLayout = gEffect->m_cslayout[shaderName];
 		// Convert the compute layout
@@ -3560,62 +3564,57 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	}
 	// Mesh shader: emit payload variable, workgroup size, output layout, and
 	// per-vertex output array declaration.
-	if (shaderInstance->shaderType == MESH_SHADER && config->api == "Vulkan")
+	if (shaderInstance->shaderType == MESH_SHADER)
 	{
-		if (!vulkanPayloadType.empty())
-			theShader << "taskPayloadSharedEXT " << vulkanPayloadType
-					  << " s_payload;\n";
-
-		if (!sfxConfig.computeLayout.empty() && function->numThreads[0] > 0)
+		if (config->api == "Vulkan")
 		{
-			std::string meshLayout = sfxConfig.computeLayout;
-			find_and_replace(meshLayout, "$1",
-							 std::to_string(function->numThreads[0]));
-			find_and_replace(meshLayout, "$2",
-							 std::to_string(function->numThreads[1]));
-			find_and_replace(meshLayout, "$3",
-							 std::to_string(function->numThreads[2]));
-			theShader << meshLayout << "\n";
-		}
-
-		if (vulkanMeshMaxVertices > 0 && vulkanMeshMaxPrimitives > 0)
-		{
-			// m_gslayout stores "[outputtopology("triangle")]"; extract the keyword.
-			std::string topology = "triangles";
-			const std::string &gsLayout = gEffect->m_gslayout[shaderName];
-			std::regex topologyRegex(R"regex(outputtopology\s*\(\s*"(\w+)"\s*\))regex");
-			std::smatch topMatch;
-			if (std::regex_search(gsLayout, topMatch, topologyRegex))
+			if (vulkanMeshMaxVertices > 0 && vulkanMeshMaxPrimitives > 0)
 			{
-				std::string t = topMatch[1].str();
-				if (t == "triangle")
-					topology = "triangles";
-				else if (t == "line")
-					topology = "lines";
-				else if (t == "point")
-					topology = "points";
-				else
-					topology = t;
+				// m_gslayout stores "[outputtopology("triangle")]"; extract the keyword.
+				std::string topology = "triangles";
+				const std::string& gsLayout = gEffect->m_gslayout[shaderName];
+				std::regex topologyRegex(R"regex(outputtopology\s*\(\s*"(\w+)"\s*\))regex");
+				std::smatch topMatch;
+				if (std::regex_search(gsLayout, topMatch, topologyRegex))
+				{
+					std::string t = topMatch[1].str();
+					if (t == "triangle")
+						topology = "triangles";
+					else if (t == "line")
+						topology = "lines";
+					else if (t == "point")
+						topology = "points";
+					else
+						topology = t;
+				}
+				theShader << "layout(" << topology
+						  << ", max_vertices=" << vulkanMeshMaxVertices
+						  << ", max_primitives=" << vulkanMeshMaxPrimitives
+						  << ") out;\n";
 			}
-			theShader << "layout(" << topology
-					  << ", max_vertices=" << vulkanMeshMaxVertices
-					  << ", max_primitives=" << vulkanMeshMaxPrimitives
-					  << ") out;\n";
-		}
 
-		if (!vulkanMeshVertexType.empty() && !vulkanMeshVertexName.empty())
-		{
-			// Emit vertex array with layout qualifiers for Vulkan
-			theShader << "layout(location = 0) out " << vulkanMeshVertexType << " "
-					  << vulkanMeshVertexName << "[];\n";
-		}
+			if (!vulkanMeshVertexType.empty() && !vulkanMeshVertexName.empty())
+			{
+				// Emit vertex array with layout qualifiers for Vulkan
+				theShader << "layout(location = 0) out " << vulkanMeshVertexType << " "
+						  << vulkanMeshVertexName << "[];\n";
+			}
 
-		if (!vulkanMeshIndicesType.empty() && !vulkanMeshIndicesName.empty())
+			if (!vulkanMeshIndicesType.empty() && !vulkanMeshIndicesName.empty())
+			{
+				// Note: Indices are redirected to gl_PrimitiveTriangleIndicesEXT which is a built-in
+				// So we don't need to declare a custom indices array
+				// theShader << "out " << vulkanMeshIndicesType << " "
+				//          << vulkanMeshIndicesName << "[];\n";
+			}
+
+			if (!vulkanPayloadType.empty())
+				theShader << "taskPayloadSharedEXT " << vulkanPayloadType
+						  << " s_payload;\n";
+		}
+		if (config->api == "DirectX 12")
 		{
-			// Note: Indices are redirected to gl_PrimitiveTriangleIndicesEXT which is a built-in
-			// So we don't need to declare a custom indices array
-			// theShader << "out " << vulkanMeshIndicesType << " "
-			//          << vulkanMeshIndicesName << "[];\n";
+			theShader << gEffect->m_gslayout[shaderName] << "\n";
 		}
 	}
 	// Add the root signature:
