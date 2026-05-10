@@ -1,7 +1,6 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
-#include <fmt/core.h>
 #include <fstream>
 #include <map>
 #include <regex>

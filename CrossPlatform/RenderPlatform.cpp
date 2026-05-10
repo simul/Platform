@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <format>
 
 using namespace std::literals;
 using namespace std::string_literals;
@@ -271,14 +272,14 @@ bool RenderPlatform::RecompileEffect(std::string effect_filename)
 	std::string name=std::string(GetName());
 	std::string json_file=PLATFORM+"/"s+GetSfxConfigFilename();
 	std::string this_platform_dir=std::filesystem::path(json_file).parent_path().generic_string();
-	std::string command=sfxcmd+fmt::format(" -I\"{PLATFORM}/../..;{PLATFORM}/..;{PLATFORM};{this_platform_dir};{PLATFORM}/CrossPlatform/Shaders\""
-											" -O\"{shaderbin}\""
-												" -P\"{json_file}\""
-												" -m\"{shaderbin}/intermediate\" "
-												,fmt::arg("PLATFORM", PLATFORM)
-												,fmt::arg("this_platform_dir",this_platform_dir)
-												,fmt::arg("shaderbin", shaderbin)
-												,fmt::arg("json_file", json_file));
+	std::string command=sfxcmd+std::format(" -I\"{0}/../..;{0}/..;{0};{1};{0}/CrossPlatform/Shaders\""
+											" -O\"{2}\""
+												" -P\"{3}\""
+												" -m\"{2}/intermediate\" "
+												,PLATFORM
+												,this_platform_dir
+												,shaderbin
+												,json_file);
 	command+= std::string(" -EPLATFORM=") + PLATFORM;
 	if ((buildMode & crossplatform::ALWAYS_BUILD) != 0)
 		command+=" -F";
