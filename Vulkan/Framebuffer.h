@@ -30,6 +30,7 @@ namespace platform
 			void Deactivate(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			void DeactivateDepth(crossplatform::GraphicsDeviceContext &deviceContext) override;
 			void SetAsCubemap(int face_size, int num_mips = 1, crossplatform::PixelFormat f = crossplatform::RGBA_MAX_FLOAT) override;
+			void SetWidthAndHeight(int w, int h, int num_mips = 1) override;
 			void SetFormat(crossplatform::PixelFormat) override;
 			void SetDepthFormat(crossplatform::PixelFormat) override;
 			bool IsValid() const override;
