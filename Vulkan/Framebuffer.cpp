@@ -33,6 +33,15 @@ void Framebuffer::SetAsCubemap(int w, int num_mips, crossplatform::PixelFormat f
 	is_cubemap = true;
 }
 
+void Framebuffer::SetWidthAndHeight(int w, int h, int m)
+{
+	if (Width != w || Height != h || mips != m)
+	{
+		crossplatform::Framebuffer::SetWidthAndHeight(w, h, m);
+		InvalidateFramebuffers();
+	}
+}
+
 void Framebuffer::SetFormat(crossplatform::PixelFormat f)
 {
 	if (target_format == f)

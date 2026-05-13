@@ -17,12 +17,7 @@
 #include <string.h>
 #include <string>
 #include <string_view>
-#if PLATFORM_CXX20_OR_ABOVE
-#include <fmt/core.h>
 #include <format>
-#else
-#include <fmt/core.h>
-#endif
 
 #ifndef SIMUL_INTERNAL_CHECKS
 #define SIMUL_INTERNAL_CHECKS 0
@@ -64,11 +59,16 @@ namespace platform
 		extern PLATFORM_CORE_EXPORT bool DebugBreaksEnabled();
 		extern PLATFORM_CORE_EXPORT void EnableDebugBreaks(bool b);
 		extern PLATFORM_CORE_EXPORT bool SimulInternalChecks;
-#if __cplusplus >= 202002L
+		//! Helper that wraps std::vformat so format args can be passed via macros (binds args as lvalues).
+		template <typename... Args>
+		inline std::string PlatformFormat(std::string_view fmt, Args &&...args)
+		{
+			return std::vformat(fmt, std::make_format_args(args...));
+		}
 		template <typename... Args>
 		void Error(const std::format_string<Args...> txt, const char *file, int line, Args &&...args)
 		{
-			std::string str1 = std::format("{} ({}): warning: ", file, line);
+			std::string str1 = std::format("{} ({}): error: ", file, line);
 			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...));
 			std::cerr << str1 << str2 << "\n";
 		}
@@ -86,26 +86,6 @@ namespace platform
 			std::string str2 = std::vformat(txt.get(), std::make_format_args(args...));
 			std::cerr << str1 << str2 << "\n";
 		}
-#else
-		template <typename... T>
-		void Error(const char *txt, const char *file, unsigned int line, const T &...args)
-		{
-			std::string str = fmt::format(txt, args...);
-			std::cerr << fmt::format("{0} ({1}): error: {2}", file, line, str) << "\n";
-		}
-		template <typename... T>
-		void Warn(const char *txt, const char *file, unsigned int line, const T &...args)
-		{
-			std::string str = fmt::format(txt, args...);
-			std::cerr << fmt::format("{0} ({1}): warn: {2}", file, line, str) << "\n";
-		}
-		template <typename... T>
-		void Info(const char *txt, const char *file, unsigned int line, const T &...args)
-		{
-			std::string str = fmt::format(txt, args...);
-			std::cout << fmt::format("{0} ({1}): info: {2}", file, line, str) << "\n";
-		}
-#endif
 		//! This is a throwable error class derived from std::runtime_error.
 		//! It is used in builds that have C++ exceptions enabled. As it always outputs to std::cerr,
 		//! it is easier to see the nature of the error than with runtime_error alone.
@@ -151,20 +131,20 @@ namespace platform
 
 #define PLATFORM_ERROR(txt, ...)                                                         \
 	{                                                                                    \
-		std::string str = fmt::format(txt, ##__VA_ARGS__);                               \
-		std::cerr << fmt::format("{} ({}): error: {}", __FILE__, __LINE__, str) << "\n"; \
+		std::string str = platform::core::PlatformFormat(txt, ##__VA_ARGS__);            \
+		std::cerr << std::format("{} ({}): error: {}", __FILE__, __LINE__, str) << "\n"; \
 	}
 
 #define PLATFORM_WARN(txt, ...)                                                         \
 	{                                                                                   \
-		std::string str = fmt::format(txt, ##__VA_ARGS__);                              \
-		std::cerr << fmt::format("{} ({}): warn: {}", __FILE__, __LINE__, str) << "\n"; \
+		std::string str = platform::core::PlatformFormat(txt, ##__VA_ARGS__);           \
+		std::cerr << std::format("{} ({}): warn: {}", __FILE__, __LINE__, str) << "\n"; \
 	}
 
 #define PLATFORM_LOG(txt, ...)                                                          \
 	{                                                                                   \
-		std::string str = fmt::format(txt, ##__VA_ARGS__);                              \
-		std::cout << fmt::format("{} ({}): info: {}", __FILE__, __LINE__, str) << "\n"; \
+		std::string str = platform::core::PlatformFormat(txt, ##__VA_ARGS__);           \
+		std::cout << std::format("{} ({}): info: {}", __FILE__, __LINE__, str) << "\n"; \
 	}
 
 #define SIMUL_INTERNAL_COUT                  \

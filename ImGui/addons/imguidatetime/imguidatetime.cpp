@@ -4,7 +4,7 @@
 #include <time.h>  // very simple and common plain C header file (it's NOT the c++ <sys/time.h>). If not available it's probably better to implement it yourself rather than modifying this file.
 #include <ctype.h> // toupper()
 #include <chrono>
-#include <fmt/core.h>
+#include <format>
 //    namespace chr = std::chrono;
 #ifdef _MSC_VER
 #include "ThisPlatform/DateTime.h"
@@ -267,9 +267,9 @@ namespace ImGui
                     if (!sunday_first && (dw > 0 && d.tm_wday == 0 && row == 0)) // 1st == synday case
                         TextUnformatted(" ");
                     if (cday < 9)
-						cur_day_str=fmt::format( " {0}", (unsigned char)cday + 1);
+						cur_day_str=std::format( " {0}", (unsigned char)cday + 1);
                     else
-						cur_day_str=fmt::format("{0}", (unsigned char)cday + 1);
+						cur_day_str=std::format("{0}", (unsigned char)cday + 1);
 
                     // Highligth input date and today
                     bool is_today = cday + 1 == cur_date.tm_mday && SameMonth(cur_date, d);

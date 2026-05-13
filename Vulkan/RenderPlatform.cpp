@@ -21,6 +21,7 @@
 #include <vulkan/vulkan_to_string.hpp>
 #endif
 #include <cstdint>
+#include <format>
 
 #pragma optimize("", off)
 #ifndef _countof
@@ -291,7 +292,7 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 		// Create the "Descriptor Set Layout":
 		result = vulkanDevice->createDescriptorSetLayout(&descriptorSetLayoutCI, nullptr, &descriptorSetLayouts[i]);
 		SIMUL_VK_CHECK(result);
-		SetVulkanName(this, descriptorSetLayouts[i], fmt::format("Descriptor layout for octave {0}", i));
+		SetVulkanName(this, descriptorSetLayouts[i], std::format("Descriptor layout for octave {0}", i));
 	}
 	for (int g = 0; g < 3; g++)
 		for (int i = 0; i < s_DescriptorSetCount; i++)
@@ -382,7 +383,7 @@ void RenderPlatform::CreateDescriptorPool(int g, int countPerFrame)
 		const vk::DescriptorPoolCreateInfo descriptorPoolCI = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount * countPerFrame).setPoolSizeCount(poolSizeIdx).setPPoolSizes(poolSizes);
 		vk::Result result = vulkanDevice->createDescriptorPool(&descriptorPoolCI, nullptr, &mDescriptorPools[g]);
 		SIMUL_VK_CHECK(result);
-		SetVulkanName(this, mDescriptorPools[g], fmt::format("Descriptor pool octave {0}", g));
+		SetVulkanName(this, mDescriptorPools[g], std::format("Descriptor pool octave {0}", g));
 		delete[] poolSizes;
 	}
 }
@@ -2377,7 +2378,7 @@ void RenderPlatform::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet, co
 		vk::Result result = vulkanDevice->allocateDescriptorSets(&alloc_info, &descriptorSet);
 		if (result == vk::Result::eSuccess)
 		{
-			SetVulkanName(this, descriptorSet, fmt::format("Shared Descriptor set {0}", g));
+			SetVulkanName(this, descriptorSet, std::format("Shared Descriptor set {0}", g));
 		}
 		else if (result == vk::Result::eErrorOutOfPoolMemory)
 		{
