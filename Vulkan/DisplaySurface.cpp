@@ -428,7 +428,7 @@ void DisplaySurface::InitSwapChain()
 
 	for (size_t i = 0; i < swapchainImages.size(); i++)
 	{
-		SetVulkanName(renderPlatform, swapchainImages[i], fmt::format("Swapchain Image {}", i));
+		SetVulkanName(renderPlatform, swapchainImages[i], std::format("Swapchain Image {}", i));
 	}
 
 	cmdBufferResources.resize(swapchainImages.size());
@@ -451,7 +451,7 @@ void DisplaySurface::InitSwapChain()
 
 		result = device->createImageView(&colourImageView, nullptr, &swapchainImageResources[i].view);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform, swapchainImages[i], fmt::format("Swapchain ImageView {}", i));
+		SetVulkanName(renderPlatform, swapchainImages[i], std::format("Swapchain ImageView {}", i));
 	}
 
 	GetQueues();
@@ -556,7 +556,7 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS)
 		SIMUL_ASSERT(cmdPool != nullptr);
-		SetVulkanName(renderPlatform, cmdPool, fmt::format("Command Pool ({})", queueFamilyIndex));
+		SetVulkanName(renderPlatform, cmdPool, std::format("Command Pool ({})", queueFamilyIndex));
 
 		const vk::CommandBufferAllocateInfo cmdBufferAI = vk::CommandBufferAllocateInfo()
 			.setCommandPool(cmdPool)
@@ -572,7 +572,7 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 
 			cmdBuffer = (VkCommandBuffer)vulkanRenderPlatform->CreateCommandList(crossplatform::DeviceContextType::GRAPHICS, cmdPool);
 			SIMUL_ASSERT(cmdBuffer != nullptr);
-			SetVulkanName(renderPlatform, cmdBufferResources[i].cmdBuffer, fmt::format("Command Buffer {}", i));
+			SetVulkanName(renderPlatform, cmdBufferResources[i].cmdBuffer, std::format("Command Buffer {}", i));
 		}
 	};
 
@@ -645,7 +645,7 @@ void DisplaySurface::CreateFramebuffers()
 		attachment = swapchainImageResources[i].view;
 		vk::Result result = device->createFramebuffer(&framebufferCI, nullptr, &swapchainImageResources[i].framebuffer);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
-		SetVulkanName(renderPlatform, swapchainImageResources[i].framebuffer, fmt::format("Framebuffer {}", i));
+		SetVulkanName(renderPlatform, swapchainImageResources[i].framebuffer, std::format("Framebuffer {}", i));
 	}
 
 	if (renderer)
