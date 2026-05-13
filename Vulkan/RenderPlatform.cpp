@@ -96,6 +96,44 @@ const char *RenderPlatform::GetName() const
 	return "Vulkan";
 }
 
+std::vector<vk::QueueFamilyProperties> RenderPlatform::GetQueueProperties(vk::PhysicalDevice* gpu)
+{
+	std::vector<vk::QueueFamilyProperties> queueFamilyProperties;
+	uint32_t queueFamilyPropertiesCount;
+	gpu->getQueueFamilyProperties(&queueFamilyPropertiesCount, nullptr);
+	queueFamilyProperties.resize(queueFamilyPropertiesCount);
+	gpu->getQueueFamilyProperties(&queueFamilyPropertiesCount, queueFamilyProperties.data());
+
+	return queueFamilyProperties;
+}
+
+uint32_t RenderPlatform::GetQueueFamilyIndex(crossplatform::DeviceContextType type)
+{
+	uint32_t index = 0;
+	for (const vk::QueueFamilyProperties& queueFamilyProps : mQueueFamilyProperties)
+	{
+		bool graphicsFlag = (queueFamilyProps.queueFlags & vk::QueueFlagBits::eGraphics) == vk::QueueFlagBits::eGraphics;
+		bool computeFlag = (queueFamilyProps.queueFlags & vk::QueueFlagBits::eCompute) == vk::QueueFlagBits::eCompute;
+		bool transferFlag = (queueFamilyProps.queueFlags & vk::QueueFlagBits::eTransfer) == vk::QueueFlagBits::eTransfer;
+
+		if (graphicsFlag && type == crossplatform::DeviceContextType::GRAPHICS)
+		{
+			return index;
+		}
+		if (computeFlag && !graphicsFlag && type == crossplatform::DeviceContextType::COMPUTE)
+		{
+			return index;
+		}
+		if (transferFlag && !computeFlag && !graphicsFlag && type == crossplatform::DeviceContextType::COPY)
+		{
+			return index;
+		}
+
+		index++;
+	}
+	return 0; // Default Queue Family Index
+};
+
 void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 {
 	ERRNO_BREAK
@@ -103,8 +141,12 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	vulkanDevice = (vk::Device*)ptr[0];
 	vulkanInstance = (vk::Instance*)ptr[1];
 	vulkanGpu = (vk::PhysicalDevice*)ptr[2];
-	//immediateContext.platform_context = nullptr;
 
+	// Init Command Queues
+	mQueueFamilyProperties = GetQueueProperties(vulkanGpu);
+	mGraphicsQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::DeviceContextType::GRAPHICS), 0);
+	mComputeQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::DeviceContextType::COMPUTE), 0);
+	mTransferQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::DeviceContextType::COPY), 0);
 
 	// Set up VMA CPU and GPU allicators
 	VmaAllocatorCreateInfo allocatorCreateInfo;
@@ -410,6 +452,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 	ClearReleaseManager(true);
 
+	mQueueFamilyProperties.clear();
+	mGraphicsQueue = nullptr;
+	mComputeQueue = nullptr;
+	mTransferQueue = nullptr;
+
 	vmaDestroyAllocator(mGPUAllocator);
 	mGPUAllocator = 0;
 	vmaDestroyAllocator(mCPUAllocator);
@@ -455,7 +502,7 @@ bool RenderPlatform::CheckInstanceExtension(const std::string &instanceExtension
 	if (instanceExtensionName.empty() || deviceManager == nullptr)
 		return false;
 
-	for (const auto &instance_extension_name : deviceManager->instance_extension_names)
+	for (const auto &instance_extension_name : deviceManager->instanceExtensionNames)
 	{
 		if (instance_extension_name.compare(instanceExtensionName) == 0)
 			return true;
@@ -468,7 +515,7 @@ bool RenderPlatform::CheckDeviceExtension(const std::string &deviceExtensionName
 	if (deviceExtensionName.empty() || deviceManager == nullptr)
 		return false;
 
-	for (const auto &device_extension_name : deviceManager->device_extension_names)
+	for (const auto &device_extension_name : deviceManager->deviceExtensionNames)
 	{
 		if (device_extension_name.compare(deviceExtensionName) == 0)
 			return true;
@@ -476,8 +523,42 @@ bool RenderPlatform::CheckDeviceExtension(const std::string &deviceExtensionName
 	return false;
 }
 
-static vk::CommandPool cmdPool;
-static vk::CommandBuffer cmdBuffer;
+void* RenderPlatform::GetCommandQueue(crossplatform::DeviceContextType deviceContextType)
+{
+	switch (deviceContextType)
+	{
+	default:
+	case platform::crossplatform::DeviceContextType::GRAPHICS:
+		return mGraphicsQueue;
+	case platform::crossplatform::DeviceContextType::COMPUTE:
+		return mComputeQueue;
+	case platform::crossplatform::DeviceContextType::COPY:
+		return mTransferQueue;
+	}
+}
+
+void* RenderPlatform::CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType)
+{
+	vk::CommandPoolCreateInfo cmdPoolCI = vk::CommandPoolCreateInfo()
+		.setPNext(nullptr)
+		.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+		.setQueueFamilyIndex(GetQueueFamilyIndex(deviceContextType));
+	vk::CommandPool cmdPool = vulkanDevice->createCommandPool(cmdPoolCI);
+	return cmdPool;
+}
+
+void* RenderPlatform::CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator)
+{
+	vk::CommandPool cmdPool = (VkCommandPool)commandAllocator;
+	vk::CommandBufferAllocateInfo cmdBufferAI = vk::CommandBufferAllocateInfo()
+		.setPNext(nullptr)
+		.setLevel(vk::CommandBufferLevel::ePrimary)
+		.setCommandPool(cmdPool)
+		.setCommandBufferCount(1);
+
+	vk::CommandBuffer cmdBuffer = vulkanDevice->allocateCommandBuffers(cmdBufferAI)[0];
+	return cmdBuffer;
+}
 
 void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)
 {
@@ -584,8 +665,8 @@ void RenderPlatform::BeginFrame()
 		return;
 	crossplatform::RenderPlatform::BeginFrame();
 	auto *vulkanDevice = AsVulkanDevice();
-	// vulkanDevice->waitForFences(1, &deviceManagerInternal->fences[frame_index], VK_TRUE, UINT64_MAX);
-	// vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frame_index]);
+	// vulkanDevice->waitForFences(1, &deviceManagerInternal->fences[frameIndex], VK_TRUE, UINT64_MAX);
+	// vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frameIndex]);
 }
 
 void RenderPlatform::EndFrame()

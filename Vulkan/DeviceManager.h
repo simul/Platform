@@ -18,11 +18,10 @@ namespace platform
 	}
 	namespace vulkan
 	{
-		extern void InitQueueProperties(const vk::PhysicalDevice& gpu, std::vector<vk::QueueFamilyProperties>& queue_props);
 		class RenderPlatform;
 		class DeviceManagerInternal;
-		class SIMUL_VULKAN_EXPORT DeviceManager
-			: public crossplatform::GraphicsDeviceInterface
+
+		class SIMUL_VULKAN_EXPORT DeviceManager : public crossplatform::GraphicsDeviceInterface
 		{
 		public:
 			DeviceManager();
@@ -38,46 +37,29 @@ namespace platform
 			crossplatform::Output	GetOutput(int i) override;
 			crossplatform::GPUInfo	GetGPUInfo() override;
 
-			void RestoreDeviceObjects(crossplatform::RenderPlatform *r);
-			void InvalidateDeviceObjects();
-
-			void Activate();
-
-			void ReloadTextures();
-
-			std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats(vk::SurfaceKHR *surface);
-			std::vector<vk::Image> GetSwapchainImages(vk::SwapchainKHR *swapchain);
 			vk::PhysicalDevice *GetGPU();
 			vk::Device *GetVulkanDevice();
 			vk::Instance *GetVulkanInstance();
-			uint32_t QueueFamilyCount() const
-			{
-				return queue_family_count;
-			}
-			const std::vector<vk::QueueFamilyProperties> &GetQueueProperties() const
-			{
-				return queue_props;
-			}
-		protected:
-			void CreateDevice();
-			void SetupDebugCallback(bool debugUtils, bool debugReport, bool debugMarker);
-			void RenderDepthBuffers(crossplatform::GraphicsDeviceContext &deviceContext,int x0,int y0,int w,int h);
-			
-			std::vector<vk::LayerProperties> instance_layers;
-			std::vector<vk::ExtensionProperties> instance_extensions;
-			std::vector<vk::LayerProperties> device_layers;
-			std::vector<vk::ExtensionProperties> device_extensions;
-			
-			std::vector<std::string> instance_layer_names;
-			std::vector<std::string> instance_extension_names;
-			std::vector<std::string> device_layer_names;
-			std::vector<std::string> device_extension_names;
 
-			bool device_initialized;
-			DeviceManagerInternal *deviceManagerInternal;
-			bool separate_present_queue;
-			uint32_t queue_family_count;
-			std::vector<vk::QueueFamilyProperties> queue_props;
+		protected:
+			void CreateInstance(bool use_debug, std::vector<std::string> required_instance_extensions);
+			void CreateDevice(bool use_debug, std::vector<std::string> required_device_extensions);
+			void SetupDebugCallback(bool debugUtils, bool debugReport, bool debugMarker);
+
+			uint32_t apiVersion;
+
+			std::vector<vk::LayerProperties> instanceLayers;
+			std::vector<vk::ExtensionProperties> instanceExtensions;
+			std::vector<vk::LayerProperties> deviceLayers;
+			std::vector<vk::ExtensionProperties> deviceExtensions;
+
+			std::vector<std::string> instanceLayerNames;
+			std::vector<std::string> instanceExtensionNames;
+			std::vector<std::string> deviceLayerNames;
+			std::vector<std::string> deviceExtensionNames;
+
+			bool deviceInitialized;
+			std::unique_ptr<DeviceManagerInternal> deviceManagerInternal;
 
 			vk::DebugReportCallbackEXT debugReportCallback;
 			vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCI;
@@ -89,11 +71,25 @@ namespace platform
 			vk::PhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures;
 			vk::PhysicalDeviceMultiviewProperties physicalDeviceMultiviewProperties;
 
-			vk::PhysicalDeviceShaderFloat16Int8Features physicalDeviceShaderFloat16Int8Features;
+			vk::PhysicalDeviceMeshShaderFeaturesEXT physicalDeviceMeshShaderFeatures;
+			vk::PhysicalDeviceMeshShaderPropertiesEXT physicalDeviceMeshShaderProperties;
 
-			friend platform::vulkan::RenderPlatform;
+			vk::PhysicalDeviceVulkan14Features physicalDeviceVulkan14Features;
+			vk::PhysicalDeviceVulkan14Properties physicalDeviceVulkan14Properties;
+
+			vk::PhysicalDeviceVulkan13Features physicalDeviceVulkan13Features;
+			vk::PhysicalDeviceVulkan13Properties physicalDeviceVulkan13Properties;
+
+			vk::PhysicalDeviceVulkan12Features physicalDeviceVulkan12Features;
+			vk::PhysicalDeviceVulkan12Properties physicalDeviceVulkan12Properties;
+
+			vk::PhysicalDeviceVulkan11Features physicalDeviceVulkan11Features;
+			vk::PhysicalDeviceVulkan11Properties physicalDeviceVulkan11Properties;
+
+
+			friend vulkan::RenderPlatform;
 		};
-		extern DeviceManager *deviceManager;
+		extern DeviceManager* deviceManager;
 	}
 }
 #ifdef _MSC_VER

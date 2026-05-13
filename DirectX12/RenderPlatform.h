@@ -118,20 +118,7 @@ namespace platform
 #if !defined(_GAMING_XBOX_XBOXONE)
 			ID3D12Device5 *AsD3D12Device5();
 #endif
-			//! Returns the queue created during RestoreDeviceObjects
-			ID3D12CommandQueue *GetCommandQueue(crossplatform::DeviceContextType type = crossplatform::DeviceContextType::GRAPHICS)
-			{
-				switch (type)
-				{
-				default:
-				case platform::crossplatform::DeviceContextType::GRAPHICS:
-					return mGraphicsQueue;
-				case platform::crossplatform::DeviceContextType::COMPUTE:
-					return mComputeQueue;
-				case platform::crossplatform::DeviceContextType::COPY:
-					return mCopyQueue;
-				}
-			}
+			
 			//! Method to transition a resource from one state to another. We can provide a subresource index
 			//! to only update that subresource, leave as default if updating the hole resource. Transitions will be stored
 			//! and executed all at once before important calls. Set flush to true to perform the action immediatly
@@ -184,6 +171,9 @@ namespace platform
 			void Signal(crossplatform::DeviceContextType &type, crossplatform::Fence::Signaller signaller, crossplatform::Fence *fence) override;
 			void Wait(crossplatform::DeviceContextType &type, crossplatform::Fence::Waiter waiter, crossplatform::Fence *fence, uint64_t timeout_nanoseconds = UINT64_MAX) override;
 			bool GetFenceStatus(crossplatform::Fence *fence) override;
+			void* GetCommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS) override;
+			void* CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType) override;
+			void* CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator) override;
 			void ExecuteCommands(crossplatform::DeviceContext &deviceContext) override;
 			void RestartCommands(crossplatform::DeviceContext &deviceContext) override;
 			void Draw(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext, int num_verts, int start_vert);
@@ -259,6 +249,7 @@ namespace platform
 			//! Executes the provided commandList on the provided commandQueue, alongwith executing the internal immediate commandlist on the graphics queue.
 			//! Passing nullptr for both parameters will only execute the immediate commandlist.
 			void ExecuteCommandList(ID3D12CommandQueue *commandQueue, ID3D12GraphicsCommandList *const commandList);
+			ID3D12CommandQueue* GetID3D12CommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS);
 
 			DXGI_SAMPLE_DESC GetMSAAInfo();
 
@@ -297,6 +288,7 @@ namespace platform
 			friend class CommandListController;
 			static ID3D12CommandQueue *CreateCommandQueue(ID3D12Device *device, D3D12_COMMAND_LIST_TYPE type, const char *name);
 			static void FlushCommandQueue(ID3D12Device *device, ID3D12CommandQueue *queue);
+
 			// D3D12-specific things
 			virtual void ContextFrameBegin(crossplatform::GraphicsDeviceContext &) override;
 			crossplatform::Texture *createTexture() override;

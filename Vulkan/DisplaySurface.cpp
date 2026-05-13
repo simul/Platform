@@ -10,20 +10,11 @@
 #endif
 #include <vulkan/vulkan.hpp>
 
-// Careless implementation by Vulkan requires this:
-#undef NOMINMAX
-// #include <vulkan/vk_sdk_platform.h>
-#define NOMINMAX
-
-#ifndef _countof
-#define _countof(a) (sizeof(a) / sizeof(*(a)))
-#endif
-
 using namespace platform;
 using namespace vulkan;
 
 #ifdef _MSC_VER
-static const char *GetErr()
+static const char* GetErr()
 {
 	LPVOID lpMsgBuf;
 	DWORD err = GetLastError();
@@ -37,14 +28,14 @@ static const char *GetErr()
 				  0,
 				  NULL);
 	if (lpMsgBuf)
-		return (const char *)lpMsgBuf;
+		return (const char*)lpMsgBuf;
 	else
 		return "";
 }
 #endif
 
 DisplaySurface::DisplaySurface(int view_id)
-	: crossplatform::DisplaySurface(view_id), pixelFormat(crossplatform::UNKNOWN), image_index(0)
+	: crossplatform::DisplaySurface(view_id), pixelFormat(crossplatform::UNKNOWN), imageIndex(0)
 {
 }
 
@@ -53,40 +44,7 @@ DisplaySurface::~DisplaySurface()
 	InvalidateDeviceObjects();
 }
 
-vk::Instance *DisplaySurface::GetVulkanInstance()
-{
-	auto rv = (vulkan::RenderPlatform *)renderPlatform;
-	vk::Instance *inst = nullptr;
-	if (rv)
-	{
-		inst = rv->AsVulkanInstance();
-	}
-	return inst;
-}
-
-vk::Device *DisplaySurface::GetVulkanDevice()
-{
-	auto rv = (vulkan::RenderPlatform *)renderPlatform;
-	vk::Device *dev = nullptr;
-	if (rv)
-	{
-		dev = rv->AsVulkanDevice();
-	}
-	return dev;
-}
-
-vk::PhysicalDevice *DisplaySurface::GetGPU()
-{
-	auto rv = (vulkan::RenderPlatform *)renderPlatform;
-	vk::PhysicalDevice *gpu = nullptr;
-	if (rv)
-	{
-		gpu = rv->GetVulkanGPU();
-	}
-	return gpu;
-}
-
-void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform *r, bool vsync, crossplatform::PixelFormat outFmt)
+void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* r, bool vsync, crossplatform::PixelFormat outFmt)
 {
 	if (mHwnd && mHwnd == handle)
 	{
@@ -101,19 +59,18 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 	auto hInstance = GetModuleHandle(nullptr);
 	vk::Win32SurfaceCreateInfoKHR createInfo = vk::Win32SurfaceCreateInfoKHR()
-												.setHinstance(hInstance)
-												.setHwnd(mHwnd);
-	auto rv = (vulkan::RenderPlatform *)renderPlatform;
-	vk::Instance *inst = GetVulkanInstance();
-	if (inst)
+		.setHinstance(hInstance)
+		.setHwnd(mHwnd);
+	auto rv = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Instance* instance = GetVulkanInstance();
+	if (instance)
 	{
-		auto result = inst->createWin32SurfaceKHR(&createInfo, nullptr, &mSurface);
+		vk::Result result = instance->createWin32SurfaceKHR(&createInfo, nullptr, &surface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 #endif
 #ifdef VK_USE_PLATFORM_XCB_KHR
 #if 0
-
 		memset(&sci, 0, sizeof(sci));
 		sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
 		sci.connection = connection;
@@ -127,20 +84,20 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	vk::Instance* inst = GetVulkanInstance();
 	if (inst)
 	{
-		auto result = inst->createXcbSurfaceKHR(&createInfo, nullptr, &mSurface);
+		auto result = inst->createXcbSurfaceKHR(&createInfo, nullptr, &surface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 #else
-	mSurface = *((VkSurfaceKHR *)handle);
+	surface = *((VkSurfaceKHR*)handle);
 #endif
 #endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()
-													 .setWindow((ANativeWindow *)mHwnd);
-	vk::Instance *inst = GetVulkanInstance();
+													 .setWindow((ANativeWindow*)mHwnd);
+	vk::Instance* inst = GetVulkanInstance();
 	if (inst)
 	{
-		auto result = inst->createAndroidSurfaceKHR(&createInfo, nullptr, &mSurface);
+		auto result = inst->createAndroidSurfaceKHR(&createInfo, nullptr, &surface);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 
@@ -149,134 +106,126 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 
 void DisplaySurface::InvalidateDeviceObjects()
 {
-	vk::Device *vulkanDevice = GetVulkanDevice();
-	if (vulkanDevice)
+	vk::Device* vulkanDevice = GetVulkanDevice();
+	vk::Instance* vulkanInstanace = GetVulkanInstance();
+	if (vulkanDevice && vulkanInstanace)
 	{
 		vulkanDevice->waitIdle();
-		for (auto i : commandbuffer_resources)
+		for (CommandBufferResources& cmdBufferResource : cmdBufferResources)
 		{
-			vulkanDevice->freeCommandBuffers(cmd_pool, 1, &i.cmd);
-			if (present_cmd_pool)
-				vulkanDevice->freeCommandBuffers(present_cmd_pool, 1, &i.graphics_to_present_cmd);
+			vulkanDevice->freeCommandBuffers(cmdPool, 1, &cmdBufferResource.cmdBuffer);
+			if (presentCmdPool)
+				vulkanDevice->freeCommandBuffers(presentCmdPool, 1, &cmdBufferResource.graphicsToPresentCmdBuffer);
 		}
-		for (auto i : swapchain_image_resources)
+		cmdBufferResources.clear();
+
+		for (SwapchainImageResources& swapchainImageResource : swapchainImageResources)
 		{
-			vulkanDevice->destroyFramebuffer(i.framebuffer, nullptr);
-			vulkanDevice->destroyImageView(i.view, nullptr);
-			// vulkanDevice->destroyImage(i.image); part of swapchain?
+			vulkanDevice->destroyFramebuffer(swapchainImageResource.framebuffer, nullptr);
+			vulkanDevice->destroyImageView(swapchainImageResource.view, nullptr);
+			// swapchainImageResource.image is owned by the swapchain
 		}
-		swapchain_image_resources.clear();
-		vulkanDevice->destroyCommandPool(cmd_pool, nullptr);
-		vulkanDevice->destroyCommandPool(present_cmd_pool, nullptr);
+		swapchainImageResources.clear();
+
+		vulkanDevice->destroyRenderPass(renderPass, nullptr);
+
+		vulkanDevice->destroyCommandPool(cmdPool, nullptr);
+		vulkanDevice->destroyCommandPool(presentCmdPool, nullptr);
+
 		vulkanDevice->destroySwapchainKHR(swapchain, nullptr);
-		for (int i = 0; i < SIMUL_VULKAN_FRAME_LAG + 1; i++)
+		vulkanInstanace->destroySurfaceKHR(surface, nullptr);
+
+		for (size_t i = 0; i < FrameCount; i++)
 		{
-			vulkanDevice->destroySemaphore(image_acquired_semaphores[i], nullptr);
-			vulkanDevice->destroySemaphore(draw_complete_semaphores[i], nullptr);
-			vulkanDevice->destroySemaphore(image_ownership_semaphores[i], nullptr);
+			vulkanDevice->destroySemaphore(imageAcquiredSemaphores[i], nullptr);
+			vulkanDevice->destroySemaphore(drawCompleteSemaphores[i], nullptr);
+			vulkanDevice->destroySemaphore(imageOwnershipSemaphores[i], nullptr);
 			vulkanDevice->destroyFence(fences[i], nullptr);
-			fences[i]=nullptr;
+			
+			imageAcquiredSemaphores[i] = nullptr;
+			drawCompleteSemaphores[i] = nullptr;
+			imageOwnershipSemaphores[i] = nullptr;
+			fences[i] = nullptr;
 		}
-		vulkanDevice->destroyRenderPass(render_pass, nullptr);
 	}
-	// vulkanDevice->destroysurface(mSurface,nullptr);
 }
 
-void DisplaySurface::GetQueues()
+void DisplaySurface::Render(platform::core::ReadWriteMutex* delegatorReadWriteMutex, long long frameNumber)
 {
-	auto vkGpu = GetGPU();
-	std::vector<vk::QueueFamilyProperties> queue_props;
-
+	if (delegatorReadWriteMutex)
 	{
-		InitQueueProperties(*vulkanRenderPlatform->GetVulkanGPU(), queue_props);
-	}
-	uint32_t queue_family_count = (uint32_t)queue_props.size();
-	// Iterate over each queue to learn whether it supports presenting:
-	std::vector<vk::Bool32> supportsPresent(queue_family_count);
-	for (uint32_t i = 0; i < queue_family_count; i++)
-	{
-		vk::Result result = vkGpu->getSurfaceSupportKHR(i, mSurface, &supportsPresent[i]);
-		if (result != vk::Result::eSuccess)
-		{
-			SIMUL_CERR << "Vulkan operation failed\n";
-		}
+		if (delegatorReadWriteMutex->locked())
+			return;
+		delegatorReadWriteMutex->lock_for_write();
 	}
 
-	uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
-	uint32_t presentQueueFamilyIndex = UINT32_MAX;
-	for (uint32_t i = 0; i < queue_family_count; i++)
-	{
-		if (queue_props[i].queueFlags & vk::QueueFlagBits::eGraphics)
-		{
-			if (graphicsQueueFamilyIndex == UINT32_MAX)
-			{
-				graphicsQueueFamilyIndex = i;
-			}
+	if (!swapchain)
+		InitSwapChain();
 
-			if (supportsPresent[i] == VK_TRUE)
-			{
-				graphicsQueueFamilyIndex = i;
-				presentQueueFamilyIndex = i;
-				break;
-			}
-		}
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device* vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
+
+	vk::Result result = vulkanDevice->waitForFences(1, &fences[frameIndex], VK_TRUE, UINT64_MAX);
+	if (result != vk::Result::eSuccess)
+	{
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
+	result = vulkanDevice->resetFences(1, &fences[frameIndex]);
+	if (result != vk::Result::eSuccess)
+	{
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
+	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, imageAcquiredSemaphores[frameIndex], vk::Fence(), &imageIndex);
+	if (result == vk::Result::eErrorOutOfDateKHR)
+	{
+		// Swapchain is out of date (e.g. the window was resized) and must be recreated:
+		vulkanDevice->waitIdle();
+		Resize();
+		if (delegatorReadWriteMutex)
+			delegatorReadWriteMutex->unlock_from_write();
+		return;
+	}
+	// swapchain is not as optimal as it could be, but the platform's presentation engine will still present the image correctly.
+	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
+
+	vk::CommandBuffer& commandBuffer = cmdBufferResources[frameIndex].cmdBuffer;
+	vk::Framebuffer& framebuffer = swapchainImageResources[imageIndex].framebuffer;
+
+	const vk::CommandBufferBeginInfo commandInfo = vk::CommandBufferBeginInfo()
+		.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	result = commandBuffer.begin(&commandInfo);
+	SIMUL_VK_CHECK(result);
+
+	EnsureImageLayout();
+
+	ERRNO_BREAK
+	if (renderer)
+	{
+		vulkanRenderPlatform->SetDefaultColourFormat(pixelFormat);
+		renderer->Render(mViewId, &commandBuffer, &framebuffer, viewport.w, viewport.h, frameNumber);
 	}
 
-	if (presentQueueFamilyIndex == UINT32_MAX)
-	{
-		// If didn't find a queue that supports both graphics and present,
-		// then
-		// find a separate present queue.
-		for (uint32_t i = 0; i < queue_family_count; ++i)
-		{
-			if (supportsPresent[i] == VK_TRUE)
-			{
-				presentQueueFamilyIndex = i;
-				break;
-			}
-		}
-	}
+	EnsureImagePresentLayout();
+	commandBuffer.end();
 
-	// Generate error if could not find both a graphics and a present queue
-	if (graphicsQueueFamilyIndex == UINT32_MAX || presentQueueFamilyIndex == UINT32_MAX)
-	{
-		SIMUL_BREAK("Could not find both graphics and present queues\nSwapchain Initialization Failure");
-	}
+	Present();
 
-	graphics_queue_family_index = graphicsQueueFamilyIndex;
-	present_queue_family_index = presentQueueFamilyIndex;
+	if (delegatorReadWriteMutex)
+		delegatorReadWriteMutex->unlock_from_write();
+}
 
-	bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
-
-	vk::Device *vulkanDevice = GetVulkanDevice();
-	vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
-	if (!separate_present_queue)
-	{
-		present_queue = graphics_queue;
-	}
-	else
-	{
-		vulkanDevice->getQueue(present_queue_family_index, 0, &present_queue);
-	}
-
-	vulkanDevice->getQueue(graphics_queue_family_index, 0, &graphics_queue);
-	if (!separate_present_queue)
-	{
-		present_queue = graphics_queue;
-	}
-	else
-	{
-		vulkanDevice->getQueue(present_queue_family_index, 0, &present_queue);
-	}
-
-	// vkGpu->getMemoryProperties(&memory_properties);
+void DisplaySurface::EndFrame()
+{
+	RestoreDeviceObjects(mHwnd, renderPlatform, false, pixelFormat);
+	// We check for resize here, because we must manage the SwapChain from the main thread.
+	// we may have to do it after executing the command list, because Resize destroys the CL, and we don't want to lose commands.
+	Resize();
 }
 
 void DisplaySurface::InitSwapChain()
 {
 #if defined(WINVER)
 	RECT rect;
-
 	GetClientRect((HWND)mHwnd, &rect);
 
 	int screenWidth = abs(rect.right - rect.left);
@@ -288,17 +237,33 @@ void DisplaySurface::InitSwapChain()
 	viewport.x = 0;
 	viewport.y = 0;
 
-	if (!mSurface)
+	if (!surface)
 		return;
+
+	vk::Result result;
+	vk::Device* device = GetVulkanDevice();
+	vk::PhysicalDevice* gpu = GetGPU();
+
+	// If we just re-created an existing swapchain, we should destroy the old swapchain at this point.
+	// Note: destroying the swapchain also cleans up all its associated presentable images once the platform is done with them.
+	if (swapchain)
+	{
+		device->destroySwapchainKHR(swapchain, nullptr);
+	}
+
 	// what formats are supported?
 	uint32_t surfaceformats = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, nullptr);
-	std::vector<VkSurfaceFormatKHR> vkSurfaceFormats;
-	vkSurfaceFormats.resize(surfaceformats);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, vkSurfaceFormats.data());
+	result = gpu->getSurfaceFormatsKHR(surface, &surfaceformats, nullptr);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	std::vector<vk::SurfaceFormatKHR> vkSurfaceFormats(surfaceformats);
+	result = gpu->getSurfaceFormatsKHR(surface, &surfaceformats, vkSurfaceFormats.data());
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+	
 	vulkanFormat = vk::Format::eUndefined;
-	colour_space = vk::ColorSpaceKHR::eSrgbNonlinear;
+	colourSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 	pixelFormat = requestedPixelFormat;
+
 	// Initialize the swap chain description. Let's try to find a format/colourspace combo that matches our specified pixelFormat.
 	{
 		for (int i = 0; i < vkSurfaceFormats.size(); i++)
@@ -307,7 +272,7 @@ void DisplaySurface::InitSwapChain()
 			if (RenderPlatform::ToVulkanFormat(pixelFormat) == vf)
 			{
 				vulkanFormat = vf;
-				colour_space = (vk::ColorSpaceKHR)vkSurfaceFormats[i].colorSpace;
+				colourSpace = (vk::ColorSpaceKHR)vkSurfaceFormats[i].colorSpace;
 				break;
 			}
 		}
@@ -321,12 +286,12 @@ void DisplaySurface::InitSwapChain()
 				if (pixelFormat != crossplatform::PixelFormat::UNKNOWN)
 				{
 					vulkanFormat = vf;
-					colour_space = (vk::ColorSpaceKHR)vkSurfaceFormats[i].colorSpace;
+					colourSpace = (vk::ColorSpaceKHR)vkSurfaceFormats[i].colorSpace;
 					break;
 				}
 			}
 		}
-		switch (colour_space)
+		switch (colourSpace)
 		{
 		case vk::ColorSpaceKHR::eSrgbNonlinear:
 		case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT:
@@ -335,7 +300,7 @@ void DisplaySurface::InitSwapChain()
 		case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:
 		case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:
 		case vk::ColorSpaceKHR::eHdr10St2084EXT:
-		//case vk::ColorSpaceKHR::eDolbyvisionEXT:
+		// case vk::ColorSpaceKHR::eDolbyvisionEXT:
 		case vk::ColorSpaceKHR::eHdr10HlgEXT:
 			swapChainIsGammaEncoded = true;
 			break;
@@ -349,39 +314,34 @@ void DisplaySurface::InitSwapChain()
 		default:
 			swapChainIsGammaEncoded = false;
 			break;
-
 		};
 	}
 
-	// if(!swapchain)
-	//		swapchain.swap(new vk::SwapchainKHR);
-	vk::SwapchainKHR oldSwapchain = swapchain;
-	// Check the mSurface capabilities and formats
+	// Check the surface capabilities and formats
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
-	vk::PhysicalDevice *gpu = GetGPU();
-	auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
+	result = gpu->getSurfaceCapabilitiesKHR(surface, &surfCapabilities);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	uint32_t presentModeCount;
-	auto result2 = gpu->getSurfacePresentModesKHR(mSurface, &presentModeCount, (vk::PresentModeKHR *)nullptr);
-	SIMUL_ASSERT(result2 == vk::Result::eSuccess);
+	result = gpu->getSurfacePresentModesKHR(surface, &presentModeCount, nullptr);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
-	std::unique_ptr<vk::PresentModeKHR[]> presentModes(new vk::PresentModeKHR[presentModeCount]);
-	result = gpu->getSurfacePresentModesKHR(mSurface, &presentModeCount, presentModes.get());
+	std::vector<vk::PresentModeKHR> presentModes(presentModeCount);
+	result = gpu->getSurfacePresentModesKHR(surface, &presentModeCount, presentModes.data());
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	vk::Extent2D swapchainExtent;
 	// width and height are either both -1, or both not -1.
 	if (surfCapabilities.currentExtent.width == (uint32_t)-1)
 	{
-		// If the mSurface size is undefined, the size is set to
+		// If the surface size is undefined, the size is set to
 		// the size of the images requested.
 		swapchainExtent.width = viewport.w;
 		swapchainExtent.height = viewport.h;
 	}
 	else
 	{
-		// If the mSurface size is defined, the swap chain size must match
+		// If the surface size is defined, the swap chain size must match
 		swapchainExtent = surfCapabilities.currentExtent;
 		viewport.w = surfCapabilities.currentExtent.width;
 		viewport.h = surfCapabilities.currentExtent.height;
@@ -427,7 +387,7 @@ void DisplaySurface::InitSwapChain()
 		vk::CompositeAlphaFlagBitsKHR::ePostMultiplied,
 		vk::CompositeAlphaFlagBitsKHR::eInherit,
 	};
-	for (uint32_t i = 0; i < _countof(compositeAlphaFlags); i++)
+	for (uint32_t i = 0; i < std::size(compositeAlphaFlags); i++)
 	{
 		if (surfCapabilities.supportedCompositeAlpha & compositeAlphaFlags[i])
 		{
@@ -435,189 +395,220 @@ void DisplaySurface::InitSwapChain()
 			break;
 		}
 	}
-	//	gpu->GetPhysicalDeviceSurfaceSupportKHR(mSurface);
-	auto const swapchain_ci = vk::SwapchainCreateInfoKHR()
-								  .setSurface(mSurface)
-								  .setMinImageCount(desiredNumOfSwapchainImages)
-								  .setImageFormat(vulkanFormat)
-								  .setImageColorSpace(colour_space)
-								  .setImageExtent({swapchainExtent.width, swapchainExtent.height})
-								  .setImageArrayLayers(1)
-								  .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-								  .setImageSharingMode(vk::SharingMode::eExclusive)
-								  .setQueueFamilyIndexCount(0)
-								  .setPQueueFamilyIndices(nullptr)
-								  .setPreTransform(preTransform)
-								  .setCompositeAlpha(compositeAlpha)
-								  .setPresentMode(mIsVSYNC ? swapchainPresentMode : vk::PresentModeKHR::eImmediate) // Use vk::PresentModeKHR::eImmediate for no v-sync.
-								  .setClipped(true)
-								  .setOldSwapchain(oldSwapchain);
-	int supported = 0;
-	vkGetPhysicalDeviceSurfaceSupportKHR(*vulkanRenderPlatform->GetVulkanGPU(), 0, mSurface, (vk::Bool32 *)&supported);
-	SIMUL_ASSERT(supported != 0);
 
-	// MUST do GetQueues before creating the swapchain, because getSurfaceSupportKHR is treated as a PREREQUISITE
-	// to create the device, even though it's defined as a TEST. This is bad API design.
-	GetQueues();
-	result = gpu->getSurfaceSupportKHR(0, mSurface, (vk::Bool32 *)&supported);
-	SIMUL_ASSERT(result == vk::Result::eSuccess);
-	SIMUL_ASSERT(supported != 0);
-	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
+	// Create Swapchain
+	const vk::SwapchainCreateInfoKHR swapchainCI = vk::SwapchainCreateInfoKHR()
+		.setMinImageCount(desiredNumOfSwapchainImages)
+		.setSurface(surface)
+		.setImageFormat(vulkanFormat)
+		.setImageColorSpace(colourSpace)
+		.setImageExtent({swapchainExtent.width, swapchainExtent.height})
+		.setImageArrayLayers(1)
+		.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+		.setImageSharingMode(vk::SharingMode::eExclusive)
+		.setQueueFamilyIndexCount(0)
+		.setPQueueFamilyIndices(nullptr)
+		.setPreTransform(preTransform)
+		.setCompositeAlpha(compositeAlpha)
+		.setPresentMode(mIsVSYNC ? swapchainPresentMode : vk::PresentModeKHR::eImmediate) // Use vk::PresentModeKHR::eImmediate for no v-sync.
+		.setClipped(true)
+		.setOldSwapchain(VK_NULL_HANDLE);
+	result = device->createSwapchainKHR(&swapchainCI, nullptr, &swapchain);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SetVulkanName(renderPlatform, swapchain, "Swapchain");
 
-	// If we just re-created an existing swapchain, we should destroy the
-	// old
-	// swapchain at this point.
-	// Note: destroying the swapchain also cleans up all its associated
-	// presentable images once the platform is done with them.
-	if (oldSwapchain)
+	// Get Swapchain Images
+	uint32_t swapchainImageCount;
+	result = device->getSwapchainImagesKHR(swapchain, (uint32_t*)&swapchainImageCount, (vk::Image*)nullptr);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	std::vector<vk::Image> swapchainImages(swapchainImageCount);
+	result = device->getSwapchainImagesKHR(swapchain, (uint32_t*)&swapchainImageCount, swapchainImages.data());
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	for (size_t i = 0; i < swapchainImages.size(); i++)
 	{
-		vulkanDevice->destroySwapchainKHR(oldSwapchain, nullptr);
+		SetVulkanName(renderPlatform, swapchainImages[i], fmt::format("Swapchain Image {}", i));
 	}
 
-	std::vector<vk::Image> swapchainImages;
+	cmdBufferResources.resize(swapchainImages.size());
+	swapchainImageResources.resize(swapchainImages.size());
 
+	if (swapchainImageResources.size() > FrameCount)
 	{
-		uint32_t swapchainImageCount;
-		auto result = vulkanRenderPlatform->AsVulkanDevice()->getSwapchainImagesKHR(swapchain, (uint32_t *)&swapchainImageCount, (vk::Image *)nullptr);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		swapchainImages.resize(swapchainImageCount);
-		result = vulkanRenderPlatform->AsVulkanDevice()->getSwapchainImagesKHR(swapchain, (uint32_t *)&swapchainImageCount, swapchainImages.data());
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		for (int i = 0; i < swapchainImages.size(); i++)
-		{
-			SetVulkanName(renderPlatform, swapchainImages[i], platform::core::QuickFormat("Swapchain %d", i));
-		}
-	}
-	swapchain_image_resources.resize(swapchainImages.size());
-	commandbuffer_resources.resize(swapchainImages.size());
-
-	if (swapchain_image_resources.size() > SIMUL_VULKAN_FRAME_LAG + 1)
-	{
-		SIMUL_BREAK("swapchain_image_resources.size() is too large");
+		SIMUL_BREAK("swapchainImageResources is larger than FrameCount");
 	}
 
-	for (uint32_t i = 0; i < swapchainImages.size(); ++i)
+	for (uint32_t i = 0; i < swapchainImages.size(); i++)
 	{
-		auto color_image_view = vk::ImageViewCreateInfo()
-									.setViewType(vk::ImageViewType::e2D)
-									.setFormat(vulkanFormat)
-									.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+		vk::ImageViewCreateInfo colourImageView = vk::ImageViewCreateInfo()
+			.setViewType(vk::ImageViewType::e2D)
+			.setFormat(vulkanFormat)
+			.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-		swapchain_image_resources[i].image = swapchainImages[i];
+		swapchainImageResources[i].image = swapchainImages[i];
+		colourImageView.image = swapchainImageResources[i].image;
 
-		color_image_view.image = swapchain_image_resources[i].image;
-
-		result = vulkanDevice->createImageView(&color_image_view, nullptr, &swapchain_image_resources[i].view);
+		result = device->createImageView(&colourImageView, nullptr, &swapchainImageResources[i].view);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SetVulkanName(renderPlatform, swapchainImages[i], fmt::format("Swapchain ImageView {}", i));
 	}
 
-	bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
+	GetQueues();
 
-	// Create semaphores to synchronize acquiring presentable buffers before
-	// rendering and waiting for drawing to be complete before presenting
-	auto const semaphoreCreateInfo = vk::SemaphoreCreateInfo();
-	// Create fences that we can use to throttle if we get too far
-	// ahead of the image presents
-	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
-	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
-	{
-		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
+	CreateSyncObjects();
+	CreateCommandPoolsAndBuffers();
 
-		result = vulkanDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &image_acquired_semaphores[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		result = vulkanDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &draw_complete_semaphores[i]);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		if (separate_present_queue)
-		{
-			result = vulkanDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &image_ownership_semaphores[i]);
-			SIMUL_ASSERT(result == vk::Result::eSuccess);
-		}
-	}
-
-	// Init command buffers / pools:
-	{
-		//Before Creating/Recreating Command Buffers/Pool, we must ensure that they are not being used on the GPU. When a pool is destroyed, all command buffers allocated from the pool are freed.
-		if (cmd_pool)
-		{
-			vulkanDevice->waitIdle();
-			vulkanDevice->destroyCommandPool(cmd_pool, nullptr);
-		}
-
-		auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index).setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-		auto result = vulkanDevice->createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		auto const cmdAllocInfo = vk::CommandBufferAllocateInfo()
-									.setCommandPool(cmd_pool)
-									.setLevel(vk::CommandBufferLevel::ePrimary)
-									.setCommandBufferCount(1);
-
-		SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-		for (uint32_t i = 0; i < swapchainImages.size(); ++i)
-		{
-			result = vulkanDevice->allocateCommandBuffers(&cmdAllocInfo, &commandbuffer_resources[i].cmd);
-			SIMUL_ASSERT(result == vk::Result::eSuccess);
-		}
-		if (present_queue_family_index != graphics_queue_family_index)
-		{
-			// Before Creating/Recreating Command Buffers/Pool, we must ensure that they are not being used on the GPU. When a pool is destroyed, all command buffers allocated from the pool are freed.
-			if (present_cmd_pool)
-			{
-				vulkanDevice->waitIdle();
-				vulkanDevice->destroyCommandPool(present_cmd_pool, nullptr);
-			}
-
-			auto const present_cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(present_queue_family_index).setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-			result = vulkanDevice->createCommandPool(&present_cmd_pool_info, nullptr, &present_cmd_pool);
-			SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-			auto const present_cmd = vk::CommandBufferAllocateInfo()
-										 .setCommandPool(present_cmd_pool)
-										 .setLevel(vk::CommandBufferLevel::ePrimary)
-										 .setCommandBufferCount(1);
-
-			for (uint32_t i = 0; i < swapchainImages.size(); i++)
-			{
-				result = vulkanDevice->allocateCommandBuffers(&present_cmd, &commandbuffer_resources[i].graphics_to_present_cmd);
-				SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-				{
-					auto const cmd_buf_info = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-					auto result = commandbuffer_resources[i].graphics_to_present_cmd.begin(&cmd_buf_info);
-					SIMUL_ASSERT(result == vk::Result::eSuccess);
-
-					auto const image_ownership_barrier =
-						vk::ImageMemoryBarrier()
-							.setSrcAccessMask(vk::AccessFlags())
-							.setDstAccessMask(vk::AccessFlags())
-							.setOldLayout(vk::ImageLayout::ePresentSrcKHR)
-							.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
-							.setSrcQueueFamilyIndex(graphics_queue_family_index)
-							.setDstQueueFamilyIndex(present_queue_family_index)
-							.setImage(swapchain_image_resources[i].image)
-							.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
-
-					commandbuffer_resources[i].graphics_to_present_cmd.pipelineBarrier(
-						vk::PipelineStageFlagBits::eBottomOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe, vk::DependencyFlagBits(), 0, nullptr, 0,
-						nullptr, 1, &image_ownership_barrier);
-					// result =
-					commandbuffer_resources[i].graphics_to_present_cmd.end();
-					SIMUL_ASSERT(result == vk::Result::eSuccess);
-				}
-			}
-		}
-	}
 	CreateRenderPass();
 	CreateFramebuffers();
+}
+
+void DisplaySurface::GetQueues()
+{
+	vk::Device* vulkanDevice = GetVulkanDevice();
+	vk::PhysicalDevice* gpu = GetGPU();
+
+	graphicsQueueFamilyIndex = UINT32_MAX;
+	presentQueueFamilyIndex = UINT32_MAX;
+
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	graphicsQueueFamilyIndex = vulkanRenderPlatform->GetQueueFamilyIndex(crossplatform::DeviceContextType::GRAPHICS);
+
+	// Iterate over each queue to learn whether it supports presenting:
+	for (uint32_t i = 0; i < (uint32_t)vulkanRenderPlatform->GetQueueProperties().size(); i++)
+	{
+		vk::Bool32 supportsPresent = VK_FALSE;
+		vk::Result result = gpu->getSurfaceSupportKHR(i, surface, &supportsPresent);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		if (supportsPresent)
+		{
+			presentQueueFamilyIndex = i;
+			break;
+		}
+	}
+
+	// Generate error if could not find both a graphics and a present queue
+	if (graphicsQueueFamilyIndex == UINT32_MAX || presentQueueFamilyIndex == UINT32_MAX)
+	{
+		SIMUL_BREAK("Could not find both graphics and present queues.");
+	}
+
+	vulkanDevice->getQueue(graphicsQueueFamilyIndex, 0, &graphicsQueue);
+	bool separatePresentQueue = (graphicsQueueFamilyIndex != presentQueueFamilyIndex);
+	if (separatePresentQueue)
+	{
+		vulkanDevice->getQueue(presentQueueFamilyIndex, 0, &presentQueue);
+	}
+	else
+	{
+		presentQueue = graphicsQueue;
+	}
+}
+
+void DisplaySurface::CreateSyncObjects()
+{
+	vk::Device* device = GetVulkanDevice();
+
+	// Create semaphores to synchronize acquiring presentable buffers before rendering and waiting for drawing to be complete before presenting
+	const auto semaphoreCI = vk::SemaphoreCreateInfo();
+	// Create fences that we can use to throttle if we get too far ahead of the image presents
+	const auto fenceCI = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
+
+	for (uint32_t i = 0; i < swapchainImageResources.size(); i++)
+	{
+		auto result = device->createFence(&fenceCI, nullptr, &fences[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		result = device->createSemaphore(&semaphoreCI, nullptr, &imageAcquiredSemaphores[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		result = device->createSemaphore(&semaphoreCI, nullptr, &drawCompleteSemaphores[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+		bool separatePresentQueue = (graphicsQueueFamilyIndex != presentQueueFamilyIndex);
+		if (separatePresentQueue)
+		{
+			result = device->createSemaphore(&semaphoreCI, nullptr, &imageOwnershipSemaphores[i]);
+			SIMUL_ASSERT(result == vk::Result::eSuccess);
+		}
+	}
+}
+
+void DisplaySurface::CreateCommandPoolsAndBuffers()
+{
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device* device = GetVulkanDevice();
+
+	bool separatePresentQueue = (graphicsQueueFamilyIndex != presentQueueFamilyIndex);
+
+	// Before Creating/Recreating Command Buffers/Pool, we must ensure that they are not being used on the GPU.
+	// When a pool is destroyed, all command buffers allocated from the pool are freed.
+	auto CreateCommandPoolAndBuffers = [&device, &vulkanRenderPlatform, this](vk::CommandPool& cmdPool, uint32_t queueFamilyIndex)
+	{
+		if (cmdPool)
+		{
+			device->waitIdle();
+			device->destroyCommandPool(cmdPool, nullptr);
+		}
+
+		const vk::CommandPoolCreateInfo cmdPoolCI = vk::CommandPoolCreateInfo()
+			.setQueueFamilyIndex(queueFamilyIndex)
+			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS)
+		SIMUL_ASSERT(cmdPool != nullptr);
+		SetVulkanName(renderPlatform, cmdPool, fmt::format("Command Pool ({})", queueFamilyIndex));
+
+		const vk::CommandBufferAllocateInfo cmdBufferAI = vk::CommandBufferAllocateInfo()
+			.setCommandPool(cmdPool)
+			.setLevel(vk::CommandBufferLevel::ePrimary)
+			.setCommandBufferCount(1);
+		for (size_t i = 0; i < cmdBufferResources.size(); ++i)
+		{
+			vk::CommandBuffer& cmdBuffer = cmdBufferResources[i].cmdBuffer;
+			if (presentQueueFamilyIndex == queueFamilyIndex)
+			{
+				cmdBuffer = cmdBufferResources[i].graphicsToPresentCmdBuffer;
+			}
+
+			cmdBuffer = (VkCommandBuffer)vulkanRenderPlatform->CreateCommandList(crossplatform::DeviceContextType::GRAPHICS, cmdPool);
+			SIMUL_ASSERT(cmdBuffer != nullptr);
+			SetVulkanName(renderPlatform, cmdBufferResources[i].cmdBuffer, fmt::format("Command Buffer {}", i));
+		}
+	};
+
+	CreateCommandPoolAndBuffers(cmdPool, graphicsQueueFamilyIndex);
+
+	if (separatePresentQueue)
+	{
+		CreateCommandPoolAndBuffers(presentCmdPool, presentQueueFamilyIndex);
+
+		// Create Image Ownership transfer command buffers for later execution.
+		for (uint32_t i = 0; i < cmdBufferResources.size(); i++)
+		{
+			const vk::CommandBufferBeginInfo cmdBufferBI = vk::CommandBufferBeginInfo()
+				.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+			
+			vk::Result result = cmdBufferResources[i].graphicsToPresentCmdBuffer.begin(&cmdBufferBI);
+			SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+			const vk::ImageMemoryBarrier imageOwnershipBarrier = vk::ImageMemoryBarrier()
+					.setSrcAccessMask(vk::AccessFlags())
+					.setDstAccessMask(vk::AccessFlags())
+					.setOldLayout(vk::ImageLayout::ePresentSrcKHR)
+					.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+					.setSrcQueueFamilyIndex(graphicsQueueFamilyIndex)
+					.setDstQueueFamilyIndex(presentQueueFamilyIndex)
+					.setImage(swapchainImageResources[i].image)
+					.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+			cmdBufferResources[i].graphicsToPresentCmdBuffer.pipelineBarrier(
+				vk::PipelineStageFlagBits::eBottomOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe,
+				vk::DependencyFlagBits(),
+				0, nullptr, 0, nullptr, 1, &imageOwnershipBarrier);
+
+			cmdBufferResources[i].graphicsToPresentCmdBuffer.end();
+		}
+	}
 }
 
 void DisplaySurface::CreateRenderPass()
@@ -631,27 +622,32 @@ void DisplaySurface::CreateRenderPass()
 	// LAYOUT_PRESENT_SRC_KHR to be ready to present.  This is all done as part of
 	// the renderpass, no barriers are necessary.
 
-	vulkanRenderPlatform->CreateVulkanRenderpass(deferredContext, render_pass, 1, &pixelFormat);
+	crossplatform::DeviceContext deviceContext;
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext, renderPass, 1, &pixelFormat);
 }
 
 void DisplaySurface::CreateFramebuffers()
 {
-	vk::ImageView attachments[1];
+	vk::Device* device = GetVulkanDevice();
 
-	auto const fb_info = vk::FramebufferCreateInfo()
-							 .setRenderPass(render_pass)
-							 .setAttachmentCount(1)
-							 .setPAttachments(attachments)
-							 .setWidth((uint32_t)viewport.w)
-							 .setHeight((uint32_t)viewport.h)
-							 .setLayers(1);
+	vk::ImageView attachment;
+	const vk::FramebufferCreateInfo framebufferCI = vk::FramebufferCreateInfo()
+		.setRenderPass(renderPass)
+		.setAttachmentCount(1)
+		.setPAttachments(&attachment)
+		.setWidth((uint32_t)viewport.w)
+		.setHeight((uint32_t)viewport.h)
+		.setLayers(1);
 
-	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
+	for (size_t i = 0; i < swapchainImageResources.size(); i++)
 	{
-		attachments[0] = swapchain_image_resources[i].view;
-		auto const result = GetVulkanDevice()->createFramebuffer(&fb_info, nullptr, &swapchain_image_resources[i].framebuffer);
+		attachment = swapchainImageResources[i].view;
+		vk::Result result = device->createFramebuffer(&framebufferCI, nullptr, &swapchainImageResources[i].framebuffer);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		SetVulkanName(renderPlatform, swapchainImageResources[i].framebuffer, fmt::format("Framebuffer {}", i));
 	}
+
 	if (renderer)
 	{
 		if (mViewId < 0)
@@ -660,216 +656,90 @@ void DisplaySurface::CreateFramebuffers()
 	}
 }
 
-void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex, long long frameNumber)
-{
-	if (delegatorReadWriteMutex)
-	{
-		if(delegatorReadWriteMutex->locked())
- 			return;
-		delegatorReadWriteMutex->lock_for_write();
-	}
-
-	if (!swapchain)
-		InitSwapChain();
-
-	auto *vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
-
-	vk::Result result = vulkanDevice->waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
-	if (result != vk::Result::eSuccess)
-	{
-		SIMUL_CERR << "Vulkan operation failed\n";
-	}
-	result = vulkanDevice->resetFences(1, &fences[frame_index]);
-	if (result != vk::Result::eSuccess)
-	{
-		SIMUL_CERR << "Vulkan operation failed\n";
-	}
-	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index], vk::Fence(), &image_index);
-	if (result == vk::Result::eErrorOutOfDateKHR)
-	{
-		// demo->swapchain is out of date (e.g. the window was resized) and
-		// must be recreated:
-		vulkanDevice->waitIdle();
-		Resize();
-		if (delegatorReadWriteMutex)
-			delegatorReadWriteMutex->unlock_from_write();
-		return;
-	}
-	// swapchain is not as optimal as it could be, but the platform's
-	// presentation engine will still present the image correctly.
-	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
-
-	auto &commandBuffer = commandbuffer_resources[frame_index].cmd;
-	auto &framebuffer = swapchain_image_resources[image_index].framebuffer;
-
-	auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-	result = commandBuffer.begin(&commandInfo);
-	SIMUL_VK_CHECK(result);
-
-	deferredContext.platform_context = &commandBuffer;
-	deferredContext.renderPlatform = renderPlatform;
-
-	EnsureImageLayout();
-
-	ERRNO_BREAK
-	if (renderer)
-	{
-		auto *rp = (vulkan::RenderPlatform *)renderPlatform;
-		rp->SetDefaultColourFormat(pixelFormat);
-		renderer->Render(mViewId, deferredContext.platform_context, &framebuffer, viewport.w, viewport.h, frameNumber);
-	}
-
-	EnsureImagePresentLayout();
-	commandBuffer.end();
-
-	Present();
-
-	if (delegatorReadWriteMutex)
-		delegatorReadWriteMutex->unlock_from_write();
-}
-
-void DisplaySurface::EnsureImageLayout()
-{
-	vk::Image &image = swapchain_image_resources[image_index].image;
-
-	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
-	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
-	vk::AccessFlags dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eBottomOfPipe;
-	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eAllCommands; // very general..
-
-	auto barrier = vk::ImageMemoryBarrier()
-					   .setSrcAccessMask(srcAccessMask)
-					   .setDstAccessMask(dstAccessMask)
-					   .setOldLayout(vk::ImageLayout::eUndefined)
-					   .setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
-					   .setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
-					   .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-					   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-					   .setImage(image);
-	commandbuffer_resources[frame_index].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
-}
-
-void DisplaySurface::EnsureImagePresentLayout()
-{
-	vk::Image &image = swapchain_image_resources[image_index].image;
-
-	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
-	vk::AccessFlags srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-	vk::AccessFlags dstAccessMask = vk::AccessFlagBits();
-	vk::PipelineStageFlags src_stages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	vk::PipelineStageFlags dest_stages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-
-	auto barrier = vk::ImageMemoryBarrier()
-					   .setSrcAccessMask(srcAccessMask)
-					   .setDstAccessMask(dstAccessMask)
-					   .setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
-					   .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
-					   .setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
-					   .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-					   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-					   .setImage(image);
-	commandbuffer_resources[frame_index].cmd.pipelineBarrier(src_stages, dest_stages, vk::DependencyFlagBits::eDeviceGroup, 0, nullptr, 0, nullptr, 1, &barrier);
-}
-
 void DisplaySurface::Present()
 {
-	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	vk::Device* device = GetVulkanDevice();
+	vk::Result result;
 
-	// update_data_buffer();
+	bool separatePresentQueue = (graphicsQueueFamilyIndex != presentQueueFamilyIndex);
 
-	// Wait for the image acquired semaphore to be signaled to ensure
-	// that the image won't be rendered to until the presentation
-	// engine has fully released ownership to the application, and it is
-	// okay to render to the image.
-	vk::PipelineStageFlags const pipe_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	auto const submit_info = vk::SubmitInfo()
-								 .setPWaitDstStageMask(&pipe_stage_flags)
-								 .setWaitSemaphoreCount(1)
-								 .setPWaitSemaphores(&image_acquired_semaphores[frame_index])
-								 .setCommandBufferCount(1)
-								 .setPCommandBuffers(&commandbuffer_resources[frame_index].cmd)
-								 .setSignalSemaphoreCount(1)
-								 .setPSignalSemaphores(&draw_complete_semaphores[image_index]); //https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_discussion_of_solution
-
-	vk::Result result = graphics_queue.submit(1, &submit_info, fences[frame_index]);
+	// https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_discussion_of_solution
+	// Wait for the image acquired semaphore to be signaled to ensure that the image won't be rendered to until the presentation
+	// engine has fully released ownership to the application, and it is  okay to render to the image.
+	const vk::PipelineStageFlags pipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	const vk::SubmitInfo submitInfo = vk::SubmitInfo()
+		.setPWaitDstStageMask(&pipelineStageFlags)
+		.setWaitSemaphoreCount(1)
+		.setPWaitSemaphores(&imageAcquiredSemaphores[frameIndex])
+		.setCommandBufferCount(1)
+		.setPCommandBuffers(&cmdBufferResources[frameIndex].cmdBuffer)
+		.setSignalSemaphoreCount(1)
+		.setPSignalSemaphores(&drawCompleteSemaphores[imageIndex]); 
+	result = graphicsQueue.submit(1, &submitInfo, fences[frameIndex]);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
-	bool separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
-	if (separate_present_queue)
+	if (separatePresentQueue)
 	{
-		// If we are using separate queues, change image ownership to the
-		// present queue before presenting, waiting for the draw complete
-		// semaphore and signalling the ownership released semaphore when
-		// finished
-		auto const present_submit_info = vk::SubmitInfo()
-											 .setPWaitDstStageMask(&pipe_stage_flags)
-											 .setWaitSemaphoreCount(1)
-											 .setPWaitSemaphores(&draw_complete_semaphores[image_index])
-											 .setCommandBufferCount(1)
-											 .setPCommandBuffers(&commandbuffer_resources[frame_index].graphics_to_present_cmd)
-											 .setSignalSemaphoreCount(1)
-											 .setPSignalSemaphores(&image_ownership_semaphores[image_index]);
-
-		result = present_queue.submit(1, &present_submit_info, vk::Fence());
+		// If we are using separate queues, change image ownership to the present queue before presenting,
+		// waiting for the draw complete semaphore and signalling the ownership released semaphore when finished.
+		const vk::SubmitInfo presentSubmitInfo = vk::SubmitInfo()
+			.setPWaitDstStageMask(&pipelineStageFlags)
+			.setWaitSemaphoreCount(1)
+			.setPWaitSemaphores(&drawCompleteSemaphores[imageIndex])
+			.setCommandBufferCount(1)
+			.setPCommandBuffers(&cmdBufferResources[frameIndex].graphicsToPresentCmdBuffer)
+			.setSignalSemaphoreCount(1)
+			.setPSignalSemaphores(&imageOwnershipSemaphores[imageIndex]);
+		result = presentQueue.submit(1, &presentSubmitInfo, vk::Fence());
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 
-	// If we are using separate queues we have to wait for image ownership,
-	// otherwise wait for draw complete
-	auto const presentInfo = vk::PresentInfoKHR()
-								 .setWaitSemaphoreCount(1)
-								 .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[image_index] : &draw_complete_semaphores[image_index])
-								 .setSwapchainCount(1)
-								 .setPSwapchains(&swapchain)
-								 .setPImageIndices(&image_index);
+	// If we are using separate queues we have to wait for image ownership, otherwise wait for draw complete
+	const auto presentInfo = vk::PresentInfoKHR()
+		.setWaitSemaphoreCount(1)
+		.setPWaitSemaphores(separatePresentQueue ? &imageOwnershipSemaphores[imageIndex] : &drawCompleteSemaphores[imageIndex])
+		.setSwapchainCount(1)
+		.setPSwapchains(&swapchain)
+		.setPImageIndices(&imageIndex);
+	result = presentQueue.presentKHR(&presentInfo);
 
-	result = present_queue.presentKHR(&presentInfo);
 	if (result == vk::Result::eErrorOutOfDateKHR)
 	{
-		// swapchain is out of date (e.g. the window was resized) and
-		// must be recreated:
+		// swapchain is out of date (e.g. the window was resized) and must be recreated:
 		//	Resize();
 	}
 	else if (result == vk::Result::eSuboptimalKHR)
 	{
-		// swapchain is not as optimal as it could be, but the platform's
-		// presentation engine will still present the image correctly.
+		// swapchain is not as optimal as it could be, but the platform's presentation engine will still present the image correctly.
 	}
 	else
 	{
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 	}
 
-	frame_index += 1;
-	frame_index %= swapchain_image_resources.size();
-}
-
-void DisplaySurface::EndFrame()
-{
-	RestoreDeviceObjects(mHwnd, renderPlatform, false, pixelFormat);
-	// We check for resize here, because we must manage the SwapChain from the main thread.
-	// we may have to do it after executing the command list, because Resize destroys the CL, and we don't want to lose commands.
-	Resize();
+	frameIndex += 1;
+	frameIndex %= swapchainImageResources.size();
 }
 
 void DisplaySurface::Resize()
 {
-	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	auto* vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
 
-	bool regen = false;
+	bool recreate = false;
 	uint32_t W = 0;
 	uint32_t H = 0;
 
 #ifdef _MSC_VER
 	RECT rect = {};
 	if (!GetClientRect((HWND)mHwnd, &rect))
+	{
 		return;
+	}
 	RECT wrect = {};
 	if (GetWindowRect((HWND)mHwnd, &wrect))
 	{
 		if (wrect.left != lastWindow.x || wrect.top != lastWindow.y)
-			regen = true;
+			recreate = true;
 		lastWindow.x = wrect.left;
 		lastWindow.y = wrect.top;
 		lastWindow.z = wrect.right - wrect.left;
@@ -881,10 +751,10 @@ void DisplaySurface::Resize()
 	// On Linux the cp_hwnd is a VkSurfaceKHR* (see RestoreDeviceObjects, XCB path),
 	// not a GLFWwindow*, so use the Vulkan surface capabilities to drive resize.
 	vk::SurfaceCapabilitiesKHR surfCapabilities;
-	vk::PhysicalDevice *gpu = GetGPU();
-	if (gpu && mSurface)
+	vk::PhysicalDevice* gpu = GetGPU();
+	if (gpu && surface)
 	{
-		auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
+		auto result = gpu->getSurfaceCapabilitiesKHR(surface, &surfCapabilities);
 		if (result == vk::Result::eSuccess && surfCapabilities.currentExtent.width != (uint32_t)-1)
 		{
 			W = surfCapabilities.currentExtent.width;
@@ -897,15 +767,99 @@ void DisplaySurface::Resize()
 	if (W == 0 || H == 0)
 		return;
 	if (viewport.w != W || viewport.h != H)
-		regen = true;
-	if (!regen)
+		recreate = true;
+	if (!recreate)
 		return;
+
 	InitSwapChain();
 
 	viewport.w = W;
 	viewport.h = H;
 	viewport.x = 0;
 	viewport.y = 0;
+
 	if (renderer)
 		renderer->ResizeView(mViewId, W, H);
+}
+
+void DisplaySurface::EnsureImageLayout()
+{
+	vk::Image& image = swapchainImageResources[imageIndex].image;
+
+	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
+	vk::AccessFlags srcAccessMask = vk::AccessFlagBits();
+	vk::AccessFlags dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	vk::PipelineStageFlags srcStages = vk::PipelineStageFlagBits::eBottomOfPipe;
+	vk::PipelineStageFlags dstStages = vk::PipelineStageFlagBits::eAllCommands; // very general..
+
+	vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
+		.setSrcAccessMask(srcAccessMask)
+		.setDstAccessMask(dstAccessMask)
+		.setOldLayout(vk::ImageLayout::eUndefined)
+		.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
+		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setImage(image);
+
+	cmdBufferResources[frameIndex].cmdBuffer.pipelineBarrier(
+		srcStages, dstStages,
+		vk::DependencyFlagBits::eDeviceGroup,
+		0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+void DisplaySurface::EnsureImagePresentLayout()
+{
+	vk::Image& image = swapchainImageResources[imageIndex].image;
+
+	vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
+	vk::AccessFlags srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	vk::AccessFlags dstAccessMask = vk::AccessFlagBits();
+	vk::PipelineStageFlags srcStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	vk::PipelineStageFlags dstStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+	vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
+		.setSrcAccessMask(srcAccessMask)
+		.setDstAccessMask(dstAccessMask)
+		.setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+		.setSubresourceRange(vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1))
+		.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		.setImage(image);
+
+	cmdBufferResources[frameIndex].cmdBuffer.pipelineBarrier(
+		srcStages, dstStages,
+		vk::DependencyFlagBits::eDeviceGroup,
+		0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+vk::Instance* DisplaySurface::GetVulkanInstance()
+{
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	if (vulkanRenderPlatform)
+	{
+		return vulkanRenderPlatform->AsVulkanInstance();
+	}
+	return nullptr;
+}
+
+vk::Device* DisplaySurface::GetVulkanDevice()
+{
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	if (vulkanRenderPlatform)
+	{
+		return vulkanRenderPlatform->AsVulkanDevice();
+	}
+	return nullptr;
+}
+
+vk::PhysicalDevice* DisplaySurface::GetGPU()
+{
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	if (vulkanRenderPlatform)
+	{
+		return vulkanRenderPlatform->GetVulkanGPU();
+	}
+	return nullptr;
 }

@@ -69,15 +69,18 @@ namespace platform
 			RenderPlatform();
 			virtual ~RenderPlatform() override;
 
-			vk::Device *AsVulkanDevice();
-
-			vk::Instance *AsVulkanInstance() override;
-			vk::PhysicalDevice *GetVulkanGPU();
+			vk::Device* AsVulkanDevice();
+			vk::Instance* AsVulkanInstance() override;
+			vk::PhysicalDevice* GetVulkanGPU();
 
 			uint32_t GetInstanceAPIVersion();
 			uint32_t GetPhysicalDeviceAPIVersion();
 			bool CheckInstanceExtension(const std::string &instanceExtensionName);
 			bool CheckDeviceExtension(const std::string &deviceExtensionName);
+
+			static std::vector<vk::QueueFamilyProperties> GetQueueProperties(vk::PhysicalDevice* gpu);
+			const std::vector<vk::QueueFamilyProperties>& GetQueueProperties() { return mQueueFamilyProperties; }
+			uint32_t GetQueueFamilyIndex(crossplatform::DeviceContextType type);
 
 			template <typename T>
 			void FillPhysicalDeviceFeatures2ExtensionStructure(T &_structure)
@@ -117,6 +120,9 @@ namespace platform
 				}
 			}
 
+			void* GetCommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS) override;
+			void* CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType) override;
+			void* CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator) override;
 			void ExecuteCommands(crossplatform::DeviceContext &deviceContext) override;
 			void RestartCommands(crossplatform::DeviceContext &deviceContext) override;
 
@@ -344,6 +350,12 @@ namespace platform
 			vk::DeviceSize mGPUPreferredBlockSize = 0;
 			VmaAllocator mCPUAllocator = 0;
 			VmaAllocator mGPUAllocator = 0;
+
+			vk::Queue mGraphicsQueue = nullptr;
+			vk::Queue mComputeQueue = nullptr;
+			vk::Queue mTransferQueue = nullptr;
+
+			std::vector<vk::QueueFamilyProperties> mQueueFamilyProperties;
 
 			//! Vulkan-specific apply resource group, called from ApplyContextState().
 			vk::DescriptorSet *GetDescriptorSetForResourceGroup(crossplatform::DeviceContext &deviceContext, uint8_t g);

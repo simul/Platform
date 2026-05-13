@@ -31,7 +31,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	mCpuRead = cpu_read;
 	mSlots = ((mTotalSize + (kBufferAlign - 1)) & ~(kBufferAlign - 1)) / kBufferAlign;
 
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device *vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
 	AddPerFrameBuffer(init_data);
 	firstBuffer = perFrameBuffers.begin();
 	for (unsigned int i = 1; i < kNumBuffers; i++)
@@ -61,9 +62,12 @@ void PlatformStructuredBuffer::AddPerFrameBuffer(const void *init_data)
 		usageFlags |= vk::BufferUsageFlagBits::eTransferSrc;
 	int buffer_aligned_size = mSlots * kBufferAlign;
 	int alloc_size = buffer_aligned_size * mMaxApplyCount;
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device *vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
 	perFrameBuffers.push_back(PerFrameBuffer());
 	PerFrameBuffer &perFrameBuffer = perFrameBuffers.back();
+	
 	vulkanRenderPlatform->CreateVulkanBuffer(nullptr, alloc_size, usageFlags, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, perFrameBuffer.mBuffer, perFrameBuffer.mAllocationInfo, "psb");
 	if (init_data)
 	{
@@ -102,6 +106,7 @@ void PlatformStructuredBuffer::CloseReadBuffer(crossplatform::DeviceContext &dev
 
 void PlatformStructuredBuffer::CopyToReadBuffer(crossplatform::DeviceContext &deviceContext)
 {
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
 
 	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;

@@ -12,20 +12,22 @@ namespace platform
 {
 	namespace vulkan
 	{
+		static constexpr size_t FrameCount = SIMUL_VULKAN_FRAME_LAG + 1;
+
+		struct CommandBufferResources
+		{
+			vk::CommandBuffer cmdBuffer;
+			vk::CommandBuffer graphicsToPresentCmdBuffer;
+		};
+		
 		struct SwapchainImageResources
 		{
 			vk::Image image;
 			vk::ImageView view;
 			vk::Framebuffer framebuffer;
 		};
-		
-		struct CommandBufferResources
-		{
-			vk::CommandBuffer cmd;
-			vk::CommandBuffer graphics_to_present_cmd;
-		};
 
-		class SIMUL_VULKAN_EXPORT DisplaySurface: public crossplatform::DisplaySurface
+		class SIMUL_VULKAN_EXPORT DisplaySurface : public crossplatform::DisplaySurface
 		{
 		public:
 			DisplaySurface(int view_id);
@@ -34,43 +36,53 @@ namespace platform
 			virtual void InvalidateDeviceObjects() override;
 			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			virtual void EndFrame() override;
+
 		protected:
+			void InitSwapChain();
+			void GetQueues();
+			void CreateSyncObjects();
+			void CreateCommandPoolsAndBuffers();
+			void CreateRenderPass();
+			void CreateFramebuffers();
+			void Present();
+
 			//! Will resize the swap chain only if needed
 			void Resize();
-			crossplatform::DeviceContext deferredContext;
+			void EnsureImageLayout();
+			void EnsureImagePresentLayout();
+
+			vk::Instance* GetVulkanInstance();
+			vk::Device* GetVulkanDevice();
+			vk::PhysicalDevice* GetGPU();
+
+			// The format being used.
 			crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNDEFINED;
 			// The format requested - may not be available.
 			crossplatform::PixelFormat requestedPixelFormat = crossplatform::PixelFormat::UNDEFINED;
 
-			vk::Format		vulkanFormat;
-			vk::ColorSpaceKHR colour_space;
+			vk::Format vulkanFormat;
+			vk::ColorSpaceKHR colourSpace;
 			vk::SwapchainKHR swapchain;
-			std::vector<SwapchainImageResources> swapchain_image_resources;
-			std::vector<CommandBufferResources> commandbuffer_resources;
-			vk::Queue graphics_queue,present_queue;
-			vk::CommandPool cmd_pool;
-			vk::CommandPool present_cmd_pool;
-			vk::Semaphore image_acquired_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
-			vk::Semaphore draw_complete_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
-			vk::Semaphore image_ownership_semaphores[SIMUL_VULKAN_FRAME_LAG+1];
-			vk::Fence fences[SIMUL_VULKAN_FRAME_LAG+1];
-			vk::RenderPass render_pass;
+			vk::SurfaceKHR surface;
 
-			vk::SurfaceKHR mSurface;
-			void InitSwapChain();
-			void GetQueues();
-			void CreateRenderPass();
-			void CreateFramebuffers();
-			void Present();
-			uint32_t frame_index = 0;	// Our internal frame index counter.
-			uint32_t image_index;		// Returned from Vulkan each frame.
-			uint32_t graphics_queue_family_index;
-			uint32_t present_queue_family_index;
-			vk::Instance *GetVulkanInstance();
-			vk::Device *GetVulkanDevice();
-			vk::PhysicalDevice* GetGPU();
-			void EnsureImageLayout();
-			void EnsureImagePresentLayout();
+			std::vector<SwapchainImageResources> swapchainImageResources;
+			std::vector<CommandBufferResources> cmdBufferResources;
+
+			vk::Queue graphicsQueue;
+			vk::Queue presentQueue;
+			vk::CommandPool cmdPool;
+			vk::CommandPool presentCmdPool;
+
+			vk::Semaphore imageAcquiredSemaphores[FrameCount];
+			vk::Semaphore drawCompleteSemaphores[FrameCount];
+			vk::Semaphore imageOwnershipSemaphores[FrameCount];
+			vk::Fence fences[FrameCount];
+			vk::RenderPass renderPass;
+
+			uint32_t frameIndex = 0; // Our internal frame index counter.
+			uint32_t imageIndex;	 // Returned from Vulkan each frame.
+			uint32_t graphicsQueueFamilyIndex;
+			uint32_t presentQueueFamilyIndex;
 		};
 	}
 }

@@ -1,22 +1,20 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
-#include "Platform/Core/StringToWString.h"
-#include "Platform/Core/StringFunctions.h"
 #include "Platform/CrossPlatform/RenderDelegater.h"
 
 using namespace platform;
 using namespace dx12;
 
 DisplaySurface::DisplaySurface(int view_id)
-	:crossplatform::DisplaySurface(view_id)
-	,mDeviceRef(nullptr),
-	mSwapChain(nullptr),
-	mRTHeap(nullptr)
+	: crossplatform::DisplaySurface(view_id), mDeviceRef(nullptr),
+	  mSwapChain(nullptr),
+	  mRTHeap(nullptr)
 {
 	for (int i = 0; i < FrameCount; i++)
 	{
 		mBackBuffers[i] = nullptr;
 		mCommandAllocators[i] = nullptr;
+		mCommandLists[i] = nullptr;
 		mGPUFences[i] = nullptr;
 		mFenceValues[i] = 0;
 	}
@@ -91,7 +89,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	IDXGISwapChain1* swapChain = nullptr;
 	res = factory->CreateSwapChainForHwnd
 	(
-		dx12RenderPlatform->GetCommandQueue(),
+		dx12RenderPlatform->GetID3D12CommandQueue(),
 		mHwnd,
 		&swapChainDesc12,
 		nullptr,
@@ -162,14 +160,20 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	CreateSyncObjects();
 
 	// Create this window command list
-	SAFE_RELEASE(mCommandList);
-	if (!mCommandAllocators[0])
-		return;
-	res = mDeviceRef->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0], nullptr, SIMUL_PPV_ARGS(&mCommandList));
-	SIMUL_ASSERT(res == S_OK);
-	if (!mCommandList)
-		return;
-	mCommandList->SetName(L"WindowCommandList 2");
+	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
+	SAFE_RELEASE_ARRAY(mCommandLists, FrameCount);
+	for (UINT i = 0; i < FrameCount; i++)
+	{
+		mCommandAllocators[i] = (ID3D12CommandAllocator*)renderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS);
+		mCommandLists[i] = (ID3D12GraphicsCommandList*)renderPlatform->CreateCommandList(crossplatform::DeviceContextType::GRAPHICS, mCommandAllocators[i]);
+
+		std::wstring commandAllocatorName = L"WindowCommandAllocator " + std::to_wstring(i);
+		mCommandAllocators[i]->SetName(commandAllocatorName.c_str());
+
+		std::wstring commandListName = L"WindowCommandList " + std::to_wstring(i);
+		mCommandLists[i]->SetName(commandListName.c_str());
+	}
+
 	mRecordingCommands = true;
 
 	dx12RenderPlatform->DefaultOutputFormat = outFmt;
@@ -185,8 +189,8 @@ void DisplaySurface::InvalidateDeviceObjects()
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
+	SAFE_RELEASE_ARRAY(mCommandLists, FrameCount);
 	SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
-	SAFE_RELEASE(mCommandList);
 }
 
 unsigned DisplaySurface::GetCurrentBackBufferIndex() const
@@ -214,28 +218,28 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	HRESULT res = S_FALSE;
 
 	// Set viewport 
-	mCommandList->RSSetViewports(1, &mCurViewport);
-	mCommandList->RSSetScissorRects(1, &mCurScissor);
+	mCommandLists[curIdx]->RSSetViewports(1, &mCurViewport);
+	mCommandLists[curIdx]->RSSetScissorRects(1, &mCurScissor);
 
 	// Indicate that the back buffer will be used as a render target.
 	auto tr=CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx]
 												, D3D12_RESOURCE_STATE_PRESENT
 												, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	mCommandList->ResourceBarrier(1, &tr);
-	mCommandList->OMSetRenderTargets(1, &mRTHandles[curIdx], FALSE, nullptr);
+	mCommandLists[curIdx]->ResourceBarrier(1, &tr);
+	mCommandLists[curIdx]->OMSetRenderTargets(1, &mRTHandles[curIdx], FALSE, nullptr);
 
 	// Submit commands
 	const float kClearColor[4] = { 0.0f,0.0f,0.0f,1.0f };
-	mCommandList->ClearRenderTargetView(mRTHandles[curIdx], kClearColor, 0, nullptr);
+	mCommandLists[curIdx]->ClearRenderTargetView(mRTHandles[curIdx], kClearColor, 0, nullptr);
 
 	if (renderer)
 	{
-		renderer->Render(mViewId, mCommandList, &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom, frameNumber, mCommandAllocators[curIdx]);
+		renderer->Render(mViewId, mCommandLists[curIdx], &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom, frameNumber, mCommandAllocators[curIdx]);
 	}
 
 	// Get ready to present
 	auto tr2=CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[curIdx], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	mCommandList->ResourceBarrier(1, &tr2);
+	mCommandLists[curIdx]->ResourceBarrier(1, &tr2);
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->unlock_from_write();
 }
@@ -271,8 +275,7 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 			device->CreateRenderTargetView(mBackBuffers[n], nullptr, rtvHandle);
 			rtvHandle.Offset(1, rtHandleSize);
 
-			result = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mCommandAllocators[n]));
-			SIMUL_ASSERT(result == S_OK);
+			
 		}
 	}
 	#endif
@@ -313,7 +316,7 @@ void DisplaySurface::StartFrame()
 
 	res = mCommandAllocators[idx]->Reset();
 	SIMUL_ASSERT(res == S_OK); 
-	res = mCommandList->Reset(mCommandAllocators[idx], nullptr);
+	res = mCommandLists[idx]->Reset(mCommandAllocators[idx], nullptr);
 	//SIMUL_COUT<<"Reset command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
 	SIMUL_ASSERT(res == S_OK);
 	mRecordingCommands = true;
@@ -330,12 +333,11 @@ void DisplaySurface::EndFrame()
 	HRESULT res = S_FALSE;
 	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
 
-	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetCommandQueue(), mCommandList);
-	//SIMUL_COUT<<"Executing command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
-	//ID3D12CommandList* ppCommandLists[] = { mCommandList };
-	//dx12RenderPlatform->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
+	
+	//SIMUL_COUT<<"Executing command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
+	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetID3D12CommandQueue(), mCommandLists[idx]);
 
 #ifndef _GAMING_XBOX
 	// Present new frame
@@ -350,7 +352,7 @@ void DisplaySurface::EndFrame()
 #endif
 	// Signal at the end of the pipe, note that we use the cached index 
 	// or we will be adding a fence for the next frame!
-	dx12RenderPlatform->GetCommandQueue()->Signal(mGPUFences[idx], mFenceValues[idx]);
+	dx12RenderPlatform->GetID3D12CommandQueue()->Signal(mGPUFences[idx], mFenceValues[idx]);
 }
 
 void DisplaySurface::WaitForAllWorkDone()
@@ -396,11 +398,8 @@ void DisplaySurface::Resize()
 
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
-	for (UINT i = 0; i < FrameCount; i++)
-	{
-	//	mCommandAllocators[i]->Reset();
-	}
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
+	SAFE_RELEASE_ARRAY(mCommandLists, FrameCount);
 
 	// DX12 viewport
 	mCurViewport.TopLeftX	= 0;

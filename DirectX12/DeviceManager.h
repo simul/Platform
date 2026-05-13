@@ -2,12 +2,9 @@
 #include "Platform/CrossPlatform/GraphicsDeviceInterface.h"
 #include "Platform/DirectX12/Export.h"
 #include "Platform/DirectX12/RenderPlatform.h"
-#include <wrl/client.h>
 #include "ThisPlatform/Direct3D12.h"
 
 #include "SimulDirectXHeader.h"
-
-#include <string>
 #include <map>
 
 #pragma warning(push)
@@ -23,7 +20,7 @@ namespace platform
 		typedef std::map<int, IDXGIOutput*> OutputMap;
 		
 		//! Manages the rendering device
-		class SIMUL_DIRECTX12_EXPORT DeviceManager: public crossplatform::GraphicsDeviceInterface
+		class SIMUL_DIRECTX12_EXPORT DeviceManager : public crossplatform::GraphicsDeviceInterface
 		{
 		public:
 									DeviceManager();

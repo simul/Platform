@@ -197,7 +197,8 @@ void Framebuffer::Activate(crossplatform::GraphicsDeviceContext &deviceContext)
 
 void Framebuffer::InitVulkanFramebuffer(crossplatform::GraphicsDeviceContext &deviceContext)
 {
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device *vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
 	if (buffer_texture)
 	{
 		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext, mDummyRenderPasses[RPType::COLOUR | RPType::DEPTH], 1, &target_format, depth_format, true, true, false, numAntialiasingSamples);

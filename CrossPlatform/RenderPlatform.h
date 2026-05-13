@@ -333,6 +333,12 @@ namespace platform
 			virtual void Wait(DeviceContextType &type, Fence::Waiter waiter, Fence *fence, uint64_t timeout_nanoseconds = UINT64_MAX) {}
 			//! Check the status of the fence. Returns true is fence is completed.
 			virtual bool GetFenceStatus(crossplatform::Fence *fence) { return false; }
+			//! Returns the CommandQueue created during RestoreDeviceObjects 
+			virtual void* GetCommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS) { return nullptr; }
+			//! Create Allocator for command list creation and recording.
+			virtual void* CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType) { return nullptr; }
+			//! Create CommandList for recording.
+			virtual void* CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator) { return nullptr; }
 			//! Execute all previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
 			virtual void ExecuteCommands(DeviceContext &deviceContext) {};
 			//! Restart the commands for rendering after calling ExcuteCommands().

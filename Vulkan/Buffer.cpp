@@ -46,6 +46,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	InvalidateDeviceObjects();
 	this->bufferType=crossplatform::BufferType::VERTEX;
 	renderPlatform=r;
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 
 	stride = str;
 	size = num_vertices * stride;
@@ -78,6 +79,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 {
 	InvalidateDeviceObjects();
 	renderPlatform = r;
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 
 	bufferType=crossplatform::BufferType::INDEX;
 	stride = index_size_bytes;
@@ -126,6 +128,7 @@ void Buffer::FinishLoading(crossplatform::DeviceContext& deviceContext)
 	if(loadingComplete)
 		return;
 
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
 
 	vk::BufferCopy copyRegion = {};

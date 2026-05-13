@@ -86,6 +86,8 @@ void EffectPass::Apply(crossplatform::DeviceContext &deviceContext, bool asCompu
 
 void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext, vk::DescriptorSet &descriptorSet)
 {
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+
 	if (!descriptorSet)
 	{
 		SIMUL_CERR << "Descriptor set is null.\n";
@@ -518,8 +520,8 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext, 
 
 void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 {
-	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
-	vk::Device *vulkanDevice = rp->AsVulkanDevice();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device *vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
 	int swapchainImageCount = SIMUL_VULKAN_FRAME_LAG + 1;
 
 	// TODO: This is super-inefficient:
@@ -719,7 +721,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 	uint8_t max_index = 0;
 	for (uint8_t i = 0; i < crossplatform::PER_PASS_RESOURCE_GROUP; i++)
 	{
-		const auto &l = rp->GetVulkanDescriptorSetLayoutForResourceGroup(i);
+		const auto &l = vulkanRenderPlatform->GetVulkanDescriptorSetLayoutForResourceGroup(i);
 		const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(i);
 		if (!layout.Empty())
 			max_index = i;
@@ -794,8 +796,8 @@ vk::ShaderStageFlags EffectPass::GetShaderFlagsForSlot(int slot, bool (platform:
 
 void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &deviceContext, RenderPassPipeline *renderPassPipeline, crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology, const crossplatform::RenderState *blendState, const crossplatform::RenderState *depthStencilState, const crossplatform::RenderState *rasterizerState, bool multiview)
 {
-	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
-	vk::Device *vulkanDevice = rp->AsVulkanDevice();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device *vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
 	vk::PipelineCacheCreateInfo pipelineCacheInfo;
 	vk::Result result = vulkanDevice->createPipelineCache(&pipelineCacheInfo, nullptr, &renderPassPipeline->pipelineCache);
 	SIMUL_VK_CHECK(result);
@@ -952,7 +954,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 		if (res != vk::Result::eSuccess)
 		{
 			SIMUL_VK_CHECK(res);
-			std::cerr << "vk::Result=" << platform::vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
+			std::cerr << "vk::Result=" << vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
 			std::cerr << "Failed to create mesh shader pipeline." << std::endl;
 		}
 		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass mesh Pipeline", name.c_str()));
@@ -1025,7 +1027,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 		vk::DynamicState dynamicStates[2] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
 		auto dynamicStateInfo = vk::PipelineDynamicStateCreateInfo().setPDynamicStates(dynamicStates).setDynamicStateCount(2);
 
-		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo = vk::PipelineInputAssemblyStateCreateInfo().setTopology(platform::vulkan::RenderPlatform::toVulkanTopology(topology));
+		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo = vk::PipelineInputAssemblyStateCreateInfo().setTopology(vulkan::RenderPlatform::toVulkanTopology(topology));
 		if (topology != crossplatform::Topology::UNDEFINED)
 		{
 			inputAssemblyInfo.setTopology(vulkan::RenderPlatform::toVulkanTopology(topology));
@@ -1113,7 +1115,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 		if (res != vk::Result::eSuccess)
 		{
 			SIMUL_VK_CHECK(res);
-			std::cerr << "vk::Result=" << platform::vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
+			std::cerr << "vk::Result=" << vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
 			std::cerr << "Failed to create pipeline." << std::endl;
 		}
 		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass renderPass Pipeline", name.c_str()));

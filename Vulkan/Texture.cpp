@@ -60,11 +60,13 @@ void SamplerState::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
+
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if(!vulkanDevice)
 		return;
-	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
-	r->PushToReleaseManager(mSampler);
+	
+	vulkanRenderPlatform->PushToReleaseManager(mSampler);
 	renderPlatform=nullptr;
 }
 
@@ -144,7 +146,7 @@ void Texture::InvalidateDeviceObjects()
 {
 	if(!renderPlatform)
 		return;
-	vulkan::RenderPlatform* r = static_cast<vulkan::RenderPlatform*>(renderPlatform);
+
 	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	if(vulkanDevice)
 	{
@@ -159,20 +161,20 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 {
 	if(!renderPlatform)
 		return;
-	vulkan::RenderPlatform *r= static_cast<vulkan::RenderPlatform * >(renderPlatform);
 
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::Device* vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
 	if(vulkanDevice)
 	{
 		if(!external_texture)
 		{
-			r->PushToReleaseManager(mImage, &mAllocationInfo);
+			vulkanRenderPlatform->PushToReleaseManager(mImage, &mAllocationInfo);
 			mImage=nullptr;
 		}
 		// don't free defaultImageView, it's a duplicate.
 		for (auto imageView : mImageViews)
 		{
-			r->PushToReleaseManager(*imageView.second);
+			vulkanRenderPlatform->PushToReleaseManager(*imageView.second);
 			delete imageView.second;
 		}
 		mImageViews.clear();
@@ -186,6 +188,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	SIMUL_ASSERT(mLoadedTextures.size() != 0)
 	SIMUL_ASSERT(mLoadedTextures[0].size() != 0)
 
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	
 	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
@@ -517,10 +520,8 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f, compressionFormat);
 	
-	//SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
-
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	vk::PhysicalDevice* gpu = ((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::PhysicalDevice* gpu = vulkanRenderPlatform->GetVulkanGPU();
 
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
 	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
@@ -617,8 +618,8 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	if(cf!=crossplatform::CompressionFormat::UNCOMPRESSED)
 		SIMUL_CERR<<"Texture "<<name.c_str()<<", format "<<magic_enum::enum_name(f)<<", compr: "<<magic_enum::enum_name(cf)<<" Vk format: "<<magic_enum::enum_name(tex_format)<<" ("<<(int)tex_format<<").\n";
 
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::PhysicalDevice* gpu = vulkanRenderPlatform->GetVulkanGPU();
 	
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
 	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
@@ -692,16 +693,20 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	InvalidateDeviceObjectsExceptLoaded();
 	renderPlatform=r;
 
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
+	vk::PhysicalDevice* gpu = vulkanRenderPlatform->GetVulkanGPU();
+
 	vk::Format tex_format = vulkan::RenderPlatform::ToVulkanFormat(f);
-	vk::FormatProperties props;
-	vk::PhysicalDevice *gpu=((vulkan::RenderPlatform*)renderPlatform)->GetVulkanGPU();
-	gpu->getFormatProperties(tex_format, &props);
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
+
 	// eTransferDst in case we want to call setTexels.
-	vk::ImageUsageFlags usageFlags=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferDst ;
+	vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
 	if(computable)
 		usageFlags|=vk::ImageUsageFlagBits::eStorage;
 
+	vk::ImageCreateFlags imageCreateFlags = vk::ImageCreateFlags(0);
+	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
+	
 	imageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e3D)
 		.setFormat(tex_format)
@@ -711,6 +716,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setSamples(vk::SampleCountFlagBits::e1)
 		.setTiling(vk::ImageTiling::eOptimal)
 		.setUsage(usageFlags)
+		.setFlags(imageCreateFlags)
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
@@ -759,6 +765,7 @@ void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, v
 	clearValue.float32[2] = colourClear[2];
 	clearValue.float32[3] = colourClear[3];
 
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
 	commandBuffer->clearColorImage(mImage, mCurrentImageLayout, &clearValue, 1, &imageSubresourceRange);
@@ -782,6 +789,7 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 	clearValue.depth = depthClear;
 	clearValue.stencil = stencilClear;
 
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
 	commandBuffer->clearDepthStencilImage(mImage, mCurrentImageLayout, &clearValue, 1, &imageSubresourceRange);
@@ -807,8 +815,6 @@ void Texture::setTexels(const void *src,int texel_index,int num_texels)
 {
 	if(!src||!num_texels)
 		return;
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
-	vulkan::RenderPlatform *r=static_cast<vulkan::RenderPlatform*>(renderPlatform);
 	PushLoadedTexturesToReleaseManager();
 	ClearLoadedTextures();
 	ResizeLoadedTextures(1, 1);
@@ -937,7 +943,6 @@ void Texture::SetTextureData(LoadedTexture &lt,const void *data,int x,int y,int 
 		numRowsToCopy			=block_height;
 	}
 	//int texelBytes=vulkan::RenderPlatform::FormatTexelBytes(f);
-	vk::Device *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
 	vulkan::RenderPlatform *vkRenderPlatform=(vulkan::RenderPlatform *)renderPlatform;
 	std::string _name = name + " texture upload buffer";
 
@@ -1024,6 +1029,8 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 {
 	if (newLayout == vk::ImageLayout::eUndefined)
 		return;
+
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 
 	int totalNum = cubemap ? 6 * arraySize : arraySize;
 
