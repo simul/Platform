@@ -44,7 +44,9 @@ if (SIMUL_DLL_SDK_LIBRARY)
 	target_compile_definitions(${target} PRIVATE "IMGUI_API=__declspec(dllexport)")
 endif()
 
-add_multiplatform_sfx_shader_project( ${target} INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders"
-								"${SIMUL_PLATFORM_DIR}/.."
-							SOURCES ${SHADERS} ${SHADER_INCLUDES} OPTIONS DEFINES VULKAN_SDK=${VULKAN_SDK_DIR}
-					 		OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" )
+add_multiplatform_sfx_shader_project( ${target} 
+	INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" "${SIMUL_PLATFORM_DIR}/.."
+	SOURCES ${SHADERS} ${SHADER_INCLUDES} 
+	OPTIONS 
+	DEFINES
+	OUTPUT "${CMAKE_BINARY_DIR}/shaderbin/$PLATFORM_NAME" )
