@@ -9,6 +9,7 @@
 #include <linux/input.h>
 #endif
 #include <vulkan/vulkan.hpp>
+	
 
 // Careless implementation by Vulkan requires this:
 #undef NOMINMAX
@@ -291,6 +292,31 @@ void DisplaySurface::InitSwapChain()
 
 	if (!mSurface)
 		return;
+#if !defined(WINVER)
+	// Linux/XCB: there is no GetClientRect, and mHwnd holds a VkSurfaceKHR* rather
+	// than a window handle. The caller (e.g. Main.cpp on Linux/GLFW) is expected to
+	// populate viewport.w/h from glfwGetFramebufferSize before Render(). As a
+	// fallback, query the surface itself for its current size, but only if it
+	// reports a real extent (not the "undefined" -1 sentinel and not 0x0, which
+	// happens when the X11 window has not yet been mapped).
+	if (viewport.w == 0 || viewport.h == 0)
+	{
+		vk::SurfaceCapabilitiesKHR surfCaps;
+		vk::PhysicalDevice *gpu = GetGPU();
+		if (gpu)
+		{
+			auto r = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCaps);
+			if (r == vk::Result::eSuccess
+				&& surfCaps.currentExtent.width != (uint32_t)-1
+				&& surfCaps.currentExtent.width != 0
+				&& surfCaps.currentExtent.height != 0)
+			{
+				viewport.w = surfCaps.currentExtent.width;
+				viewport.h = surfCaps.currentExtent.height;
+			}
+		}
+	}
+#endif
 	// what formats are supported?
 	uint32_t surfaceformats = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(*vulkanRenderPlatform->GetVulkanGPU(), mSurface, &surfaceformats, nullptr);
@@ -372,11 +398,16 @@ void DisplaySurface::InitSwapChain()
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	vk::Extent2D swapchainExtent;
-	// width and height are either both -1, or both not -1.
-	if (surfCapabilities.currentExtent.width == (uint32_t)-1)
+	// width and height are either both -1, or both not -1. On Linux the surface
+	// can also report 0x0 when the window has not yet been mapped; treat that the
+	// same as the "undefined" sentinel and fall back to the caller-supplied
+	// viewport size, which is otherwise valid.
+	const bool surfaceExtentValid =
+		surfCapabilities.currentExtent.width != (uint32_t)-1
+		&& surfCapabilities.currentExtent.width != 0
+		&& surfCapabilities.currentExtent.height != 0;
+	if (!surfaceExtentValid)
 	{
-		// If the mSurface size is undefined, the size is set to
-		// the size of the images requested.
 		swapchainExtent.width = viewport.w;
 		swapchainExtent.height = viewport.h;
 	}
@@ -387,10 +418,46 @@ void DisplaySurface::InitSwapChain()
 		viewport.w = surfCapabilities.currentExtent.width;
 		viewport.h = surfCapabilities.currentExtent.height;
 	}
+	// Final clamp to the device's allowed range, and bail out cleanly rather than
+	// hand a 0x0 extent (or the eUndefined format below) to the driver.
+	if (swapchainExtent.width < surfCapabilities.minImageExtent.width)
+		swapchainExtent.width = surfCapabilities.minImageExtent.width;
+	if (swapchainExtent.height < surfCapabilities.minImageExtent.height)
+		swapchainExtent.height = surfCapabilities.minImageExtent.height;
+	if (surfCapabilities.maxImageExtent.width
+		&& swapchainExtent.width > surfCapabilities.maxImageExtent.width)
+		swapchainExtent.width = surfCapabilities.maxImageExtent.width;
+	if (surfCapabilities.maxImageExtent.height
+		&& swapchainExtent.height > surfCapabilities.maxImageExtent.height)
+		swapchainExtent.height = surfCapabilities.maxImageExtent.height;
+	if (swapchainExtent.width == 0 || swapchainExtent.height == 0
+		|| vulkanFormat == vk::Format::eUndefined)
+	{
+		SIMUL_CERR << "Vulkan swapchain init aborted: extent=" << swapchainExtent.width
+			<< "x" << swapchainExtent.height << " format=" << (int)vulkanFormat << "\n";
+		return;
+	}
 
 	// The FIFO present mode is guaranteed by the spec to be supported
 	// and to have no tearing.  It's a great default present mode to use.
 	vk::PresentModeKHR swapchainPresentMode = vk::PresentModeKHR::eFifo;
+	// If the caller requested no-vsync, only honour eImmediate when the surface
+	// actually supports it - requesting an unsupported present mode is invalid
+	// usage and crashes inside vkCreateSwapchainKHR on several Linux ICDs.
+	if (!mIsVSYNC)
+	{
+		bool immediateSupported = false;
+		for (uint32_t i = 0; i < presentModeCount; i++)
+		{
+			if (presentModes[i] == vk::PresentModeKHR::eImmediate)
+			{
+				immediateSupported = true;
+				break;
+			}
+		}
+		if (immediateSupported)
+			swapchainPresentMode = vk::PresentModeKHR::eImmediate;
+	}
 
 	// Determine the number of VkImages to use in the swap chain.
 	// Application desires to acquire 3 images at a time for triple
@@ -450,7 +517,7 @@ void DisplaySurface::InitSwapChain()
 								  .setPQueueFamilyIndices(nullptr)
 								  .setPreTransform(preTransform)
 								  .setCompositeAlpha(compositeAlpha)
-								  .setPresentMode(mIsVSYNC ? swapchainPresentMode : vk::PresentModeKHR::eImmediate) // Use vk::PresentModeKHR::eImmediate for no v-sync.
+								  .setPresentMode(swapchainPresentMode)
 								  .setClipped(true)
 								  .setOldSwapchain(oldSwapchain);
 	int supported = 0;
@@ -494,13 +561,15 @@ void DisplaySurface::InitSwapChain()
 			SetVulkanName(renderPlatform, swapchainImages[i], platform::core::QuickFormat("Swapchain %d", i));
 		}
 	}
+	// swapchain_image_resources is indexed by image_index (returned by
+	// acquireNextImageKHR) so it must match the actual swapchain image count.
+	// commandbuffer_resources / fences / semaphores are indexed by frame_index,
+	// which cycles modulo (SIMUL_VULKAN_FRAME_LAG+1) - that is the in-flight slot
+	// count and is independent of how many images the driver hands back. On Linux
+	// the WSI is allowed to return more images than minImageCount, so do not tie
+	// the two together.
 	swapchain_image_resources.resize(swapchainImages.size());
-	commandbuffer_resources.resize(swapchainImages.size());
-
-	if (swapchain_image_resources.size() > SIMUL_VULKAN_FRAME_LAG + 1)
-	{
-		SIMUL_BREAK("swapchain_image_resources.size() is too large");
-	}
+	commandbuffer_resources.resize(SIMUL_VULKAN_FRAME_LAG + 1);
 
 	for (uint32_t i = 0; i < swapchainImages.size(); ++i)
 	{
@@ -525,7 +594,7 @@ void DisplaySurface::InitSwapChain()
 	// Create fences that we can use to throttle if we get too far
 	// ahead of the image presents
 	auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
-	for (uint32_t i = 0; i < swapchain_image_resources.size(); i++)
+	for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG + 1; i++)
 	{
 		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -563,7 +632,7 @@ void DisplaySurface::InitSwapChain()
 
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
-		for (uint32_t i = 0; i < swapchainImages.size(); ++i)
+		for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG + 1; ++i)
 		{
 			result = vulkanDevice->allocateCommandBuffers(&cmdAllocInfo, &commandbuffer_resources[i].cmd);
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -586,7 +655,7 @@ void DisplaySurface::InitSwapChain()
 										 .setLevel(vk::CommandBufferLevel::ePrimary)
 										 .setCommandBufferCount(1);
 
-			for (uint32_t i = 0; i < swapchainImages.size(); i++)
+			for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG + 1; i++)
 			{
 				result = vulkanDevice->allocateCommandBuffers(&present_cmd, &commandbuffer_resources[i].graphics_to_present_cmd);
 				SIMUL_ASSERT(result == vk::Result::eSuccess);
@@ -843,7 +912,7 @@ void DisplaySurface::Present()
 	}
 
 	frame_index += 1;
-	frame_index %= swapchain_image_resources.size();
+	frame_index %= SIMUL_VULKAN_FRAME_LAG + 1;
 }
 
 void DisplaySurface::EndFrame()
@@ -886,10 +955,27 @@ void DisplaySurface::Resize()
 	if (gpu && mSurface)
 	{
 		auto result = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCapabilities);
-		if (result == vk::Result::eSuccess && surfCapabilities.currentExtent.width != (uint32_t)-1)
+		if (result == vk::Result::eSuccess)
 		{
-			W = surfCapabilities.currentExtent.width;
-			H = surfCapabilities.currentExtent.height;
+			if (surfCapabilities.currentExtent.width != (uint32_t)-1)
+			{
+				// X11 and most ICDs report the concrete window size here, and the
+				// spec requires the swapchain to match it.
+				W = surfCapabilities.currentExtent.width;
+				H = surfCapabilities.currentExtent.height;
+			}
+			else if (pendingW != 0 && pendingH != 0)
+			{
+				// Wayland (and some XWayland configurations) report the "undefined"
+				// sentinel and delegate extent choice to the application. Fall back
+				// to the framebuffer size pushed in by the platform layer (e.g. via
+				// a GLFW framebuffer-size callback through SetRequestedExtent). Without
+				// this the swapchain would stay at its bootstrap size and the compositor
+				// would scale it to fit the window, making UI rendered at fixed pixel
+				// sizes appear to grow/shrink as the window is resized.
+				W = pendingW;
+				H = pendingH;
+			}
 		}
 	}
 #endif
@@ -909,4 +995,10 @@ void DisplaySurface::Resize()
 	viewport.y = 0;
 	if (renderer)
 		renderer->ResizeView(mViewId, W, H);
+}
+
+void DisplaySurface::SetRequestedExtent(uint32_t w, uint32_t h)
+{
+	pendingW = w;
+	pendingH = h;
 }

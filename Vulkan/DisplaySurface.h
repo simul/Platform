@@ -34,9 +34,15 @@ namespace platform
 			virtual void InvalidateDeviceObjects() override;
 			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			virtual void EndFrame() override;
+			//! Push in an externally-known framebuffer extent for surfaces whose
+			//! VkSurfaceCapabilitiesKHR::currentExtent is the "undefined" sentinel
+			//! (Wayland, some XWayland setups). Picked up on the next Resize().
+			void SetRequestedExtent(uint32_t w, uint32_t h);
 		protected:
 			//! Will resize the swap chain only if needed
 			void Resize();
+			uint32_t pendingW = 0;
+			uint32_t pendingH = 0;
 			crossplatform::DeviceContext deferredContext;
 			crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNDEFINED;
 			// The format requested - may not be available.
