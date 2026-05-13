@@ -111,13 +111,22 @@ void DisplaySurface::InvalidateDeviceObjects()
 	if (vulkanDevice && vulkanInstanace)
 	{
 		vulkanDevice->waitIdle();
+		
 		for (CommandBufferResources& cmdBufferResource : cmdBufferResources)
 		{
-			vulkanDevice->freeCommandBuffers(cmdPool, 1, &cmdBufferResource.cmdBuffer);
+			renderPlatform->DestroyCommandList((void*&)(VkCommandBuffer&)cmdBufferResource.cmdBuffer, cmdPool);
 			if (presentCmdPool)
-				vulkanDevice->freeCommandBuffers(presentCmdPool, 1, &cmdBufferResource.graphicsToPresentCmdBuffer);
+			{
+				renderPlatform->DestroyCommandList((void*&)(VkCommandBuffer&)cmdBufferResource.graphicsToPresentCmdBuffer, presentCmdPool);
+			}
 		}
 		cmdBufferResources.clear();
+
+		renderPlatform->DestroyCommandAllocator((void*&)(VkCommandPool&)cmdPool);
+		if (presentCmdPool)
+		{
+			renderPlatform->DestroyCommandAllocator((void*&)(VkCommandPool&)presentCmdPool);
+		}
 
 		for (SwapchainImageResources& swapchainImageResource : swapchainImageResources)
 		{
@@ -554,7 +563,7 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 		const vk::CommandPoolCreateInfo cmdPoolCI = vk::CommandPoolCreateInfo()
 			.setQueueFamilyIndex(queueFamilyIndex)
 			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS)
+		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS);
 		SIMUL_ASSERT(cmdPool != nullptr);
 		SetVulkanName(renderPlatform, cmdPool, std::format("Command Pool ({})", queueFamilyIndex));
 

@@ -1542,6 +1542,11 @@ void* RenderPlatform::CreateCommandAllocator(crossplatform::DeviceContextType de
 	return commandAllocator;
 }
 
+void RenderPlatform::DestroyCommandAllocator(void*& commandAllocator)
+{
+	SAFE_RELEASE((ID3D12CommandAllocator*&)commandAllocator);
+}
+
 void* RenderPlatform::CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator)
 {
 	D3D12_COMMAND_LIST_TYPE type;
@@ -1558,10 +1563,17 @@ void* RenderPlatform::CreateCommandList(crossplatform::DeviceContextType deviceC
 		type = D3D12_COMMAND_LIST_TYPE_COPY;
 		break;
 	}
-	ID3D12CommandList* commandLsit;
-	HRESULT result = m12Device->CreateCommandList(0, type, (ID3D12CommandAllocator*)commandAllocator, nullptr, SIMUL_PPV_ARGS(&commandLsit));
-	SIMUL_ASSERT(result == S_OK);
-	return commandLsit;
+	ID3D12GraphicsCommandList* commandList;
+	HRESULT result = m12Device->CreateCommandList(0, type, (ID3D12CommandAllocator*)commandAllocator, nullptr, SIMUL_PPV_ARGS(&commandList));
+	SIMUL_ASSERT(result == S_OK && commandList != nullptr);
+	result = commandList->Close();
+	SIMUL_ASSERT(result == S_OK)
+	return commandList;
+}
+
+void RenderPlatform::DestroyCommandList(void*& commandList, void* commandAllocator)
+{
+	SAFE_RELEASE((ID3D12CommandList*&)commandList);
 }
 
 void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)

@@ -335,10 +335,14 @@ namespace platform
 			virtual bool GetFenceStatus(crossplatform::Fence *fence) { return false; }
 			//! Returns the CommandQueue created during RestoreDeviceObjects 
 			virtual void* GetCommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS) { return nullptr; }
-			//! Create Allocator for command list creation and recording.
+			//! Create an Allocator for command list creation and recording.
 			virtual void* CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType) { return nullptr; }
-			//! Create CommandList for recording.
+			//! Destroy a CommandAllocator.
+			virtual void DestroyCommandAllocator(void*& commandAllocator) {};
+			//! Create a CommandList for recording.
 			virtual void* CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator) { return nullptr; }
+			//! Destroy a CommandList.
+			virtual void DestroyCommandList(void*& commandList, void* commandAllocator) {};
 			//! Execute all previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
 			virtual void ExecuteCommands(DeviceContext &deviceContext) {};
 			//! Restart the commands for rendering after calling ExcuteCommands().

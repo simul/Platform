@@ -28,7 +28,7 @@ namespace platform
 			void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber);
 
 		private:
-			unsigned GetCurrentBackBufferIndex() const;
+			UINT GetCurrentBackBufferIndex() const;
 			//! Query backbuffers and create render targets
 			void CreateRenderTargets(ID3D12Device* device);
 			//! Creates the fences used to synchronize with the GPU

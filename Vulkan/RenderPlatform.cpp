@@ -548,6 +548,13 @@ void* RenderPlatform::CreateCommandAllocator(crossplatform::DeviceContextType de
 	return cmdPool;
 }
 
+void RenderPlatform::DestroyCommandAllocator(void*& commandAllocator)
+{
+	vk::CommandPool cmdPool = (VkCommandPool)commandAllocator;
+	vulkanDevice->destroyCommandPool(cmdPool);
+	commandAllocator = VK_NULL_HANDLE;
+}
+
 void* RenderPlatform::CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator)
 {
 	vk::CommandPool cmdPool = (VkCommandPool)commandAllocator;
@@ -559,6 +566,14 @@ void* RenderPlatform::CreateCommandList(crossplatform::DeviceContextType deviceC
 
 	vk::CommandBuffer cmdBuffer = vulkanDevice->allocateCommandBuffers(cmdBufferAI)[0];
 	return cmdBuffer;
+}
+
+void RenderPlatform::DestroyCommandList(void*& commandList, void* commandAllocator)
+{
+	vk::CommandPool cmdPool = (VkCommandPool)commandAllocator;
+	vk::CommandBuffer cmdBuffer = (VkCommandBuffer)commandList;
+	vulkanDevice->freeCommandBuffers(cmdPool, 1, &cmdBuffer);
+	commandList = VK_NULL_HANDLE;
 }
 
 void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)

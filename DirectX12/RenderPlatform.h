@@ -173,7 +173,9 @@ namespace platform
 			bool GetFenceStatus(crossplatform::Fence *fence) override;
 			void* GetCommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS) override;
 			void* CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType) override;
+			void DestroyCommandAllocator(void*& commandAllocator) override;
 			void* CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator) override;
+			void DestroyCommandList(void*& commandList, void* commandAllocator) override;
 			void ExecuteCommands(crossplatform::DeviceContext &deviceContext) override;
 			void RestartCommands(crossplatform::DeviceContext &deviceContext) override;
 			void Draw(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext, int num_verts, int start_vert);

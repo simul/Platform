@@ -6,9 +6,11 @@ using namespace platform;
 using namespace dx12;
 
 DisplaySurface::DisplaySurface(int view_id)
-	: crossplatform::DisplaySurface(view_id), mDeviceRef(nullptr),
+	: crossplatform::DisplaySurface(view_id),
+	  mDeviceRef(nullptr),
 	  mSwapChain(nullptr),
-	  mRTHeap(nullptr)
+	  mRTHeap(nullptr),
+	  mRecordingCommands(false)
 {
 	for (int i = 0; i < FrameCount; i++)
 	{
@@ -32,16 +34,18 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	{
 		return;
 	}
-	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
-	InvalidateDeviceObjects();
 
 	mHwnd = handle;
 	this->renderPlatform = renderPlatform;
 	mIsVSYNC = vsync;
 
+	InvalidateDeviceObjects();
+
+	mDeviceRef = renderPlatform->AsD3D12Device();
+	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
+
 	HRESULT res = S_FALSE;
 	RECT rect = {};
-	mDeviceRef = renderPlatform->AsD3D12Device();
 
 #if defined(WINVER) && !defined(_GAMING_XBOX)
 	GetClientRect(mHwnd, &rect);
@@ -160,21 +164,21 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	CreateSyncObjects();
 
 	// Create this window command list
-	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
-	SAFE_RELEASE_ARRAY(mCommandLists, FrameCount);
-	for (UINT i = 0; i < FrameCount; i++)
+	for (size_t i = 0; i < FrameCount; i++)
 	{
-		mCommandAllocators[i] = (ID3D12CommandAllocator*)renderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS);
-		mCommandLists[i] = (ID3D12GraphicsCommandList*)renderPlatform->CreateCommandList(crossplatform::DeviceContextType::GRAPHICS, mCommandAllocators[i]);
+		renderPlatform->DestroyCommandList((void*&)mCommandLists[i], mCommandLists[i]);
+		renderPlatform->DestroyCommandAllocator((void*&)mCommandLists[i]);
 
+		mCommandAllocators[i] = (ID3D12CommandAllocator*)renderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS);
 		std::wstring commandAllocatorName = L"WindowCommandAllocator " + std::to_wstring(i);
 		mCommandAllocators[i]->SetName(commandAllocatorName.c_str());
 
+		mCommandLists[i] = (ID3D12GraphicsCommandList*)renderPlatform->CreateCommandList(crossplatform::DeviceContextType::GRAPHICS, mCommandAllocators[i]);
 		std::wstring commandListName = L"WindowCommandList " + std::to_wstring(i);
 		mCommandLists[i]->SetName(commandListName.c_str());
 	}
 
-	mRecordingCommands = true;
+	//mRecordingCommands = true;
 
 	dx12RenderPlatform->DefaultOutputFormat = outFmt;
 }
@@ -188,16 +192,19 @@ void DisplaySurface::InvalidateDeviceObjects()
 	SAFE_RELEASE(mSwapChain);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE(mRTHeap);
-	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
-	SAFE_RELEASE_ARRAY(mCommandLists, FrameCount);
+	for (size_t i = 0; i < FrameCount; i++)
+	{
+		renderPlatform->DestroyCommandList((void*&)mCommandLists[i], mCommandLists[i]);
+		renderPlatform->DestroyCommandAllocator((void*&)mCommandLists[i]);
+	}
 	SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
 }
 
-unsigned DisplaySurface::GetCurrentBackBufferIndex() const
+UINT DisplaySurface::GetCurrentBackBufferIndex() const
 {
-	UINT curIdx =0;
+	UINT curIdx = 0;
 #ifndef _GAMING_XBOX
-	if(mSwapChain)
+	if (mSwapChain)
 		curIdx = mSwapChain->GetCurrentBackBufferIndex();
 #endif
 	return curIdx;
@@ -209,7 +216,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 		delegatorReadWriteMutex->lock_for_write();
 	Resize();
 	// First lets make sure is safe to start working on this frame:
-   // StartFrame();
+	// StartFrame();
 #if defined(_GAMING_XBOX) 
 	UINT curIdx =0;
 #else
@@ -301,7 +308,6 @@ void DisplaySurface::StartFrame()
 	}
 
 	HRESULT res = S_FALSE;
-	static UINT idx_old=0;
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
@@ -310,17 +316,16 @@ void DisplaySurface::StartFrame()
 		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
 		WaitForSingleObject(mWindowEvent, INFINITE);
 	}
-	WaitForAllWorkDone();
+	//WaitForAllWorkDone();
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 
 	res = mCommandAllocators[idx]->Reset();
 	SIMUL_ASSERT(res == S_OK); 
 	res = mCommandLists[idx]->Reset(mCommandAllocators[idx], nullptr);
-	//SIMUL_COUT<<"Reset command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
 	SIMUL_ASSERT(res == S_OK);
+
 	mRecordingCommands = true;
-	idx_old=idx;
 }
 
 void DisplaySurface::EndFrame()
@@ -328,6 +333,7 @@ void DisplaySurface::EndFrame()
 	// Perfectly valid to call this if we didn't begin the frame for this surface.
 	if (!mRecordingCommands)
 		return;
+
 	mRecordingCommands = false;
 
 	HRESULT res = S_FALSE;
@@ -435,4 +441,3 @@ void DisplaySurface::Resize()
 	renderer->ResizeView(mViewId, screenWidth, screenHeight);
 	StartFrame();
 }
-
