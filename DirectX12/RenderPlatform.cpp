@@ -59,24 +59,6 @@ using namespace dx12;
 crossplatform::DeviceContextType barrierDeviceContextType = crossplatform::DeviceContextType::GRAPHICS;
 #endif
 
-///////////////////////
-// D3D12ComputeContext//
-///////////////////////
-
-void D3D12ComputeContext::RestoreDeviceObjects(ID3D12Device *mDevice)
-{
-	InvalidateDeviceObjects();
-	V_CHECK(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, SIMUL_PPV_ARGS(&IAllocator)));
-	V_CHECK(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, IAllocator, nullptr, SIMUL_PPV_ARGS(&ICommandList)));
-	IAllocator->SetName(platform::core::StringToWString("D3D12ComputeContext Allocator").c_str());
-}
-
-void D3D12ComputeContext::InvalidateDeviceObjects()
-{
-	SAFE_RELEASE(IAllocator);
-	SAFE_RELEASE(ICommandList);
-}
-
 /////////
 // Fence//
 /////////
@@ -175,21 +157,6 @@ float RenderPlatform::GetDefaultOutputGamma() const
 {
 	static float g = 1.0f;
 	return g;
-}
-
-void RenderPlatform::SetImmediateContext(ImmediateContext *ctx)
-{
-	if (!mIContext.isExternal)
-	{
-		SAFE_RELEASE(mIContext.IAllocator);
-		SAFE_RELEASE(mIContext.ICommandList);
-	}
-	mIContext = *ctx;
-	mIContext.isExternal = true;
-	immediateContext.platform_context = mIContext.ICommandList;
-	immediateContext.renderPlatform = this;
-	immediateContext.contextState.contextActive = true;
-	immediateContext.contextState.externalContext = ctx->isExternal;
 }
 
 ID3D12Device *RenderPlatform::AsD3D12Device()
@@ -464,28 +431,6 @@ void RenderPlatform::FlushBarriers(crossplatform::DeviceContext &deviceContext)
 void RenderPlatform::SynchronizeCacheAndState(crossplatform::DeviceContext &deviceContext)
 {
 	FlushBarriers(deviceContext);
-}
-
-crossplatform::GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
-{
-	if (immediateContext.platform_context == nullptr && m12Device != nullptr)
-	{
-		if (!mIContext.isExternal)
-		{
-			SAFE_RELEASE(mIContext.IAllocator);
-			SAFE_RELEASE(mIContext.ICommandList);
-		}
-		V_CHECK(m12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, SIMUL_PPV_ARGS(&mIContext.IAllocator)));
-		mIContext.IAllocator->SetName(L"mIContext.IAllocator");
-		V_CHECK(m12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mIContext.IAllocator, nullptr, SIMUL_PPV_ARGS(&mIContext.ICommandList)));
-		mIContext.IAllocator->SetName(L"mIContext.ICommandList");
-		// V_CHECK(mIContext.ICommandList->Close());
-		mIContext.isExternal = false;
-		immediateContext.platform_context = mIContext.ICommandList;
-		immediateContext.contextState.contextActive = true;
-	}
-	// ResetImmediateCommandList();
-	return crossplatform::RenderPlatform::GetImmediateContext();
 }
 
 void RenderPlatform::PushToReleaseManager(ID3D12Object *res, AllocationInfo *allocationInfo, bool owned)
@@ -820,13 +765,6 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 	mGraphicsQueue = CreateCommandQueue(m12Device, D3D12_COMMAND_LIST_TYPE_DIRECT, "Graphics CommandQueue");
 	mComputeQueue = CreateCommandQueue(m12Device, D3D12_COMMAND_LIST_TYPE_COMPUTE, "Compute CommandQueue");
 	mCopyQueue = CreateCommandQueue(m12Device, D3D12_COMMAND_LIST_TYPE_COPY, "Copy CommandQueue");
-
-	// Set up ComputeDeviceContext
-	m12ComputeContext.RestoreDeviceObjects(m12Device);
-	computeContext.renderPlatform = this;
-	computeContext.platform_context = m12ComputeContext.ICommandList;
-	computeContext.platform_context_allocator = m12ComputeContext.IAllocator;
-
 #endif
 
 	// Load the RootSignature blobs - Graphics
@@ -951,20 +889,6 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 #endif
 	crossplatform::RenderPlatform::RestoreDeviceObjects(nullptr);
 	LoadShaders();
-}
-
-void RenderPlatform::FlushImmediateCommandList()
-{
-	if (!immediateContext.contextState.contextActive)
-	{
-		return;
-	}
-	HRESULT res = mIContext.ICommandList->Close();
-	ID3D12CommandList *ppCommandLists[] = {mIContext.ICommandList};
-	ID3D12CommandQueue *mGraphicsQueue = RenderPlatform::CreateCommandQueue(m12Device, D3D12_COMMAND_LIST_TYPE_DIRECT, "ImmediateCommandQueue");
-	mGraphicsQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	RenderPlatform::FlushCommandQueue(m12Device, mGraphicsQueue);
-	mGraphicsQueue->Release();
 }
 
 void RenderPlatform::CreateResource(const D3D12_RESOURCE_DESC &resourceDesc, D3D12_RESOURCE_STATES state, D3D12_CLEAR_VALUE *clear, D3D12_HEAP_TYPE type, ID3D12Resource **resource, AllocationInfo &allocationInfo, const char *name)
@@ -1174,17 +1098,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(mGPUAllocator);
 	SAFE_RELEASE(mCPUAllocator);
-
-	// Shutdown ComputeContext
-	m12ComputeContext.InvalidateDeviceObjects();
-	computeContext.renderPlatform = nullptr;
-	computeContext.platform_context = nullptr;
-	computeContext.platform_context_allocator = nullptr;
-	if (!mIContext.isExternal)
-	{
-		SAFE_RELEASE(mIContext.IAllocator);
-		SAFE_RELEASE(mIContext.ICommandList);
-	}
 }
 
 void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, const char *name)
@@ -1604,34 +1517,14 @@ void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue *commandQueue, ID3D12GraphicsCommandList *const commandList)
 {
-	// Immediate context must always be flushed, because object initialization uses it, and other contexts will expect objects to be already in the initialized state
-	if (immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
-	{
-		ID3D12GraphicsCommandList *const immCommandList = immediateContext.asD3D12Context();
-		HRESULT r = immCommandList->Close();
-		if (FAILED(r))
-			SIMUL_BREAK("Failed to close command list");
-		mGraphicsQueue->ExecuteCommandLists(1, (ID3D12CommandList *const *)&immCommandList);
-		immediateContext.contextState.contextActive = false;
-	}
-	// Close and Execute the parameter commandlist, check that it's not the immediate commandlist that was just dealt with.
-	if (commandQueue && commandList && commandList != immediateContext.asD3D12Context())
+
+	// Close and Execute the parameter commandlist.
+	if (commandQueue && commandList)
 	{
 		HRESULT r = commandList->Close();
 		if (FAILED(r))
 			SIMUL_BREAK("Failed to close command list");
 		commandQueue->ExecuteCommandLists(1, (ID3D12CommandList *const *)&commandList);
-	}
-}
-
-void RenderPlatform::ResetImmediateCommandList()
-{
-	if (!immediateContext.contextState.contextActive && !immediateContext.contextState.externalContext)
-	{
-		ExecuteCommandList(nullptr, nullptr);
-		if (mIContext.ICommandList && mIContext.IAllocator)
-			mIContext.ICommandList->Reset(mIContext.IAllocator, nullptr);
-		immediateContext.contextState.contextActive = true;
 	}
 }
 
@@ -1667,9 +1560,6 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext
 		m12Device->CreateCommandAllocator(type, SIMUL_PPV_ARGS(&commandAllocator));
 		std::string commandAllocatorName = "CommandAllocator: RestartCommands" + std::to_string(count++);
 		commandAllocator->SetName(platform::core::StringToWString(commandAllocatorName).c_str());
-
-		// Update D3D12ComputeContext, so that when D3D12ComputeContext::InvalidateDeviceObject() is called IAllocator is valid.
-		m12ComputeContext.IAllocator = commandAllocator;
 
 		// Try to free old CommandAllocators
 		for (auto it = mUsedAllocators.begin(); it != mUsedAllocators.end(); /*Don't increment here*/)
@@ -3153,7 +3043,6 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext &deviceCon
 
 	cmdList->CopyTextureRegion(&dstCopyLocation, 0, 0, 0, &srcCopyLocation, nullptr);
 	ExecuteCommands(deviceContext);
-	immediateContext.contextState.contextActive = false;
 	RestartCommands(deviceContext);
 
 	void *ptr;

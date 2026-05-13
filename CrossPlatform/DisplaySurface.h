@@ -24,18 +24,12 @@ namespace platform
 			virtual void InvalidateDeviceObjects() {}
 			void Release();
 			void SetRenderer(RenderDelegatorInterface *ci);
-			void ResizeSwapChain(DeviceContext &deviceContext);
+			void ResizeSwapChain();
 			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex, long long frameNumber){};
 			virtual void StartFrame() {}
 			virtual void EndFrame() {}
-			bool IsSwapChainIsGammaEncoded() const
-			{
-				return swapChainIsGammaEncoded;
-			}
-			virtual void *GetPlatformDeviceContext()
-			{
-				return nullptr;
-			}
+			virtual void* GetPlatformDeviceContext(){ return nullptr; }
+			bool IsSwapChainIsGammaEncoded() const { return swapChainIsGammaEncoded; }
 			cp_hwnd GetHandle() { return mHwnd; }
 			int GetViewId() { return mViewId; }
 
@@ -43,12 +37,12 @@ namespace platform
 			RenderDelegatorInterface *renderer;
 
 		protected:
-			bool				swapChainIsGammaEncoded = false;
 			RenderPlatform*		renderPlatform;
 			//! The id assigned by the renderer to correspond to this hwnd
 			int					mViewId;
 			cp_hwnd				mHwnd;
 			bool				mIsVSYNC;
+			bool				swapChainIsGammaEncoded = false;
 			int4				lastWindow = {0, 0, 0, 0};
 		};
 	}

@@ -117,12 +117,15 @@ namespace platform
 			static D3D11_COMPARISON_FUNC toD3dComparison(crossplatform::DepthComparison d);
 			static crossplatform::PixelFormat FromDxgiFormat(DXGI_FORMAT f);
 			crossplatform::ShaderResourceType FromD3DShaderVariableType(D3D_SHADER_VARIABLE_TYPE t);
+			crossplatform::GraphicsDeviceContext& GetImmediateContext();
+
 		protected:
 			void ContextFrameBegin(crossplatform::GraphicsDeviceContext& deviceContext) override;
 			crossplatform::Texture* createTexture();
 			bool ApplyContextState(crossplatform::DeviceContext &deviceContext, bool /*error_checking*/ = true) override;
 			void WaitForFencedResources(crossplatform::DeviceContext &deviceContext);
 			ID3DUserDefinedAnnotation *pUserDefinedAnnotation;
+			crossplatform::GraphicsDeviceContext immediateContext;
 			/// \todo The stored states are implemented per-RenderPlatform for DX11, but need to be implemented per-DeviceContext.
 			struct StoredState
 			{

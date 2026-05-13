@@ -80,9 +80,6 @@ RenderPlatform::RenderPlatform(platform::core::MemoryInterface *m)
 	,mLastFrame(-1)
 	,textRenderer(nullptr)
 {
-	immediateContext.renderPlatform=this;
-	computeContext.renderPlatform=this;
-
 	effectCompileThread = std::thread(&RenderPlatform::recompileAsync,this);
 
 	numPlatforms++;
@@ -332,17 +329,6 @@ ID3D11Device *RenderPlatform::AsD3D11Device()
 vk::Instance* RenderPlatform::AsVulkanInstance() 
 {
 	return nullptr;
-}
-
-GraphicsDeviceContext &RenderPlatform::GetImmediateContext()
-{
-	if (!immediateContext.contextState.contextActive)
-	{
-		//SIMUL_CERR << "Immediate context is not active.\n";
-		// Reset so it is active, because we will now be executing commands on it probably.
-		ResetImmediateCommandList();
-	}
-	return immediateContext;
 }
 
 void RenderPlatform::RestoreDeviceObjects(void*)
@@ -1438,21 +1424,24 @@ crossplatform::Texture* RenderPlatform::GetOrCreateTexture(const char* filename,
 	// special textures:
 	if (std::string(filename) == "white")
 	{
-		t->ensureTexture2DSizeAndFormat(this,1,1, 1,PixelFormat::RGBA_8_UNORM,false,false,false,1,0,true,vec4(1.f,1.f,1.f,1.f));
+		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
 		uint8_t dataWhite[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-		t->setTexels(GetImmediateContext(), &dataWhite, 0, 1);
+		// TODO: AJR Replace with temporary context/commandlist
+		//t->setTexels(GetImmediateContext(), &dataWhite, 0, 1);
 	}
 	else if (std::string(filename) == "black")
 	{
 		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
 		uint8_t dataBlack[4] = {0x00, 0x00, 0x00, 0xFF};
-		t->setTexels(GetImmediateContext(), &dataBlack, 0, 1);
+		// TODO: AJR Replace with temporary context/commandlist
+		//t->setTexels(GetImmediateContext(), &dataBlack, 0, 1);
 	}
 	else if (std::string(filename) == "blue")
 	{
 		t->ensureTexture2DSizeAndFormat(this, 1, 1, 1, PixelFormat::RGBA_8_UNORM, false, false, false, 1, 0, true, vec4(1.f, 1.f, 1.f, 1.f));
 		uint8_t dataBlue[4] = {0x7F, 0x7F, 0xFF, 0xFF};
-		t->setTexels(GetImmediateContext(), &dataBlue, 0, 1);
+		// TODO: AJR Replace with temporary context/commandlist
+		//t->setTexels(GetImmediateContext(), &dataBlue, 0, 1);
 	}
 
 	return t;

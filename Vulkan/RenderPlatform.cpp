@@ -99,11 +99,12 @@ const char *RenderPlatform::GetName() const
 void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 {
 	ERRNO_BREAK
-	void **ptr = (void **)vkDevice_vkInstance_gpu;
-	vulkanDevice = (vk::Device *)ptr[0];
-	vulkanInstance = (vk::Instance *)ptr[1];
-	vulkanGpu = (vk::PhysicalDevice *)ptr[2];
-	immediateContext.platform_context = nullptr;
+	void** ptr = (void**)vkDevice_vkInstance_gpu;
+	vulkanDevice = (vk::Device*)ptr[0];
+	vulkanInstance = (vk::Instance*)ptr[1];
+	vulkanGpu = (vk::PhysicalDevice*)ptr[2];
+	//immediateContext.platform_context = nullptr;
+
 
 	// Set up VMA CPU and GPU allicators
 	VmaAllocatorCreateInfo allocatorCreateInfo;
@@ -595,7 +596,6 @@ void RenderPlatform::EndFrame()
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *dest, crossplatform::Texture *source)
 {
 	auto *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	immediateContext.platform_context = deviceContext.platform_context;
 
 	auto src = (vulkan::Texture *)source;
 	auto dst = (vulkan::Texture *)dest;
@@ -893,7 +893,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		for (int g = 0; g < 3; g++)
 			m_DescriptorSets_It[g][descriptorSetFrame] = m_DescriptorSets[g][descriptorSetFrame].begin();
 	}
-	if (frameNumber != mLastFrame && *commandBuffer != cmdBuffer) // Check this VkCommandBuffer is not the one used of the ImmediateContext - AJR
+	if (frameNumber != mLastFrame)
 	{
 		// Make sure that any resources set for deletion are removed
 		if (resourcesToBeReleased)
@@ -1304,11 +1304,12 @@ vulkan::Texture *RenderPlatform::GetDummyTextureCube()
 {
 	if (!mDummyTextureCube)
 	{
+		crossplatform::DeviceContext deviceContext;
 		mDummyTextureCube = (vulkan::Texture *)CreateTexture("mDummyTextureCube");
 		mDummyTextureCube->ensureTextureArraySizeAndFormat(this, 1, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, nullptr, false, false, false, true);
 
 		const float whiteTexels[24] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-		mDummyTextureCube->setTexels(immediateContext, &whiteTexels[0], 0, 6);
+		mDummyTextureCube->setTexels(deviceContext, &whiteTexels[0], 0, 6);
 	}
 	return mDummyTextureCube;
 }
@@ -1317,6 +1318,7 @@ vulkan::Texture *RenderPlatform::GetDummy2D()
 {
 	if (!mDummy2D)
 	{
+		crossplatform::DeviceContext deviceContext;
 		mDummy2D = (vulkan::Texture *)CreateTexture("dummy2d");
 		crossplatform::TextureCreate textureCreate;
 		textureCreate.w = 1;
@@ -1324,7 +1326,7 @@ vulkan::Texture *RenderPlatform::GetDummy2D()
 		textureCreate.d = 1;
 		textureCreate.f = crossplatform::PixelFormat::RGBA_8_UNORM;
 		mDummy2D->EnsureTexture(this, &textureCreate);
-		mDummy2D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+		mDummy2D->setTexels(deviceContext, &whiteTexel[0], 0, 1);
 	}
 	return mDummy2D;
 }
@@ -1333,10 +1335,11 @@ vulkan::Texture *RenderPlatform::GetDummy2DMS()
 {
 	if (!mDummy2DMS)
 	{
+		crossplatform::DeviceContext deviceContext;
 		mDummy2DMS = (vulkan::Texture *)CreateTexture("dummy2dms");
 		std::shared_ptr<std::vector<std::vector<uint8_t>>> data;
 		mDummy2DMS->ensureTexture2DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM, data, false, false, false, 2);
-		mDummy2DMS->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+		mDummy2DMS->setTexels(deviceContext, &whiteTexel[0], 0, 1);
 	}
 	return mDummy2DMS;
 }
@@ -1345,9 +1348,10 @@ vulkan::Texture *RenderPlatform::GetDummy2DArray()
 {
 	if (!mDummy2DArray)
 	{
+		crossplatform::DeviceContext deviceContext;
 		mDummy2DArray = (vulkan::Texture *)CreateTexture("dummy2darray");
 		mDummy2DArray->ensureTextureArraySizeAndFormat(this, 1, 1, 2, 1, crossplatform::PixelFormat::RGBA_8_UNORM, nullptr);
-		mDummy2DArray->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+		mDummy2DArray->setTexels(deviceContext, &whiteTexel[0], 0, 1);
 	}
 	return mDummy2DArray;
 }
@@ -1356,9 +1360,10 @@ vulkan::Texture *RenderPlatform::GetDummy3D()
 {
 	if (!mDummy3D)
 	{
+		crossplatform::DeviceContext deviceContext;
 		mDummy3D = (vulkan::Texture *)CreateTexture("dummy3d");
 		mDummy3D->ensureTexture3DSizeAndFormat(this, 1, 1, 1, crossplatform::PixelFormat::RGBA_8_UNORM);
-		mDummy3D->setTexels(immediateContext, &whiteTexel[0], 0, 1);
+		mDummy3D->setTexels(deviceContext, &whiteTexel[0], 0, 1);
 	}
 	return mDummy3D;
 }

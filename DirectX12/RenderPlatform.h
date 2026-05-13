@@ -71,20 +71,6 @@ namespace platform
 	}
 	namespace dx12
 	{
-		struct ImmediateContext
-		{
-			ID3D12GraphicsCommandListType *ICommandList = nullptr;
-			ID3D12CommandAllocator *IAllocator = nullptr;
-			bool isExternal = false;
-		};
-		struct D3D12ComputeContext
-		{
-			void RestoreDeviceObjects(ID3D12Device *mDevice);
-			void InvalidateDeviceObjects();
-
-			ID3D12GraphicsCommandListType *ICommandList = nullptr;
-			ID3D12CommandAllocator *IAllocator = nullptr;
-		};
 		class Heap;
 		class Material;
 		struct SIMUL_DIRECTX12_EXPORT Fence : public crossplatform::Fence
@@ -125,10 +111,6 @@ namespace platform
 			}
 			//! Returns the time stamp freq value
 			UINT64 GetTimeStampFreq() const { return mTimeStampFreq; }
-			//! Sets the reference of a command list. This is usually not needed as we will cache
-			//! the command list after calling render platform methods. We will need to call this
-			//! during initialization (the command list hasn't been cached yet)
-			void SetImmediateContext(ImmediateContext *ctx);
 
 			//! Returns the device provided during RestoreDeviceObjects
 			ID3D12Device *AsD3D12Device();
@@ -184,8 +166,6 @@ namespace platform
 			//! Platform-dependent function called when uninitializing the render platform.
 			void InvalidateDeviceObjects();
 			void SynchronizeCacheAndState(crossplatform::DeviceContext &) override;
-
-			crossplatform::GraphicsDeviceContext &GetImmediateContext() override;
 
 			virtual void BeginEvent(crossplatform::DeviceContext &deviceContext, const char *name);
 			virtual void EndEvent(crossplatform::DeviceContext &deviceContext);
@@ -331,8 +311,6 @@ namespace platform
 			ID3D12CommandQueue *mComputeQueue = nullptr;
 			//! Reference to the copy command queue
 			ID3D12CommandQueue *mCopyQueue = nullptr;
-			// Immediate context can be owned or external.
-			ImmediateContext mIContext;
 			//! This heap will be bound to the pipeline and we will be copying descriptors to it.
 			//! The frame heap is used to store CBV SRV and UAV
 			dx12::Heap *mFrameHeap = nullptr;
@@ -402,15 +380,11 @@ namespace platform
 #endif
 			ID3D12RootSignature *LoadRootSignature(const char *filename);
 
-			D3D12ComputeContext m12ComputeContext;
 			std::deque<std::pair<crossplatform::Fence *, ID3D12CommandAllocator *>> mUsedAllocators;
 
 		public:
-			void FlushImmediateCommandList();
-			void ResetImmediateCommandList() override;
 			unsigned char frameHeapIndex = 0;
 		};
-
 	}
 }
 #ifdef _MSC_VER

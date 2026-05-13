@@ -88,20 +88,21 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	// If provided data, init the GPU buffer with it:
 	if (init_data)
 	{
-		void* pNewData = malloc(mTotalSize);
+		/*void* pNewData = malloc(mTotalSize);
 		memset(pNewData, 0, mTotalSize);
 		memcpy(pNewData, init_data, mUnitSize);
 		
 		D3D12_SUBRESOURCE_DATA dataToCopy   = {};
 		dataToCopy.pData                    = pNewData;
 		dataToCopy.RowPitch                 = dataToCopy.SlicePitch = mUnitSize;
+		mCurrentState                       = finalState;
+
 		crossplatform::DeviceContext &deviceContext=mRenderPlatform->GetImmediateContext();
 		mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, initState, D3D12_RESOURCE_STATE_COPY_DEST, true);
 		UpdateSubresources(deviceContext.asD3D12Context(), mGPUBuffer, mUploadBuffer, 0, 0, 1, &dataToCopy);
 		mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, finalState, true);
-		mCurrentState                       = finalState;
 		
-		free(pNewData);
+		free(pNewData);*/
 	}
 
 	// If this Structured Buffer supports CPU read,

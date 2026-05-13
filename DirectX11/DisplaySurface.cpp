@@ -180,7 +180,7 @@ void DisplaySurface::EndFrame()
 {
 	if(mCommandList)
 	{
-		renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(mCommandList,true);
+		((dx11::RenderPlatform*)(renderPlatform))->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(mCommandList, true);
 		SAFE_RELEASE(mCommandList);
 		static DWORD dwFlags        = mIsVSYNC ? 0 : DXGI_PRESENT_ALLOW_TEARING;
 		static UINT SyncInterval    = mIsVSYNC ? 1 : 0;

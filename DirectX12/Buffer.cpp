@@ -186,7 +186,6 @@ void Buffer::Upload(crossplatform::DeviceContext &deviceContext)
 {
 	if (upload_data && upload_data->size())
 	{
-		//auto& deviceContext = renderPlatform->GetImmediateContext();
 		D3D12_SUBRESOURCE_DATA subresourceData = {};
 		subresourceData.pData = upload_data->data();
 		subresourceData.RowPitch = mBufferSize;

@@ -202,6 +202,7 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	AsD3D11Device()->GetImmediateContext(&pImmediateContext);
 	immediateContext.platform_context=pImmediateContext;
 	immediateContext.renderPlatform=this;
+
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
 	eSRAMManager=new ESRAMManager(device);
@@ -736,6 +737,17 @@ crossplatform::ShaderResourceType RenderPlatform::FromD3DShaderVariableType(D3D_
 	default:
 		return ShaderResourceType::UNKNOWN;
 	}
+}
+
+crossplatform::GraphicsDeviceContext& RenderPlatform::GetImmediateContext()
+{
+	if (!immediateContext.contextState.contextActive)
+	{
+		// SIMUL_CERR << "Immediate context is not active.\n";
+		//  Reset so it is active, because we will now be executing commands on it probably.
+		ResetImmediateCommandList();
+	}
+	return immediateContext;
 }
 
 crossplatform::Layout *RenderPlatform::CreateLayout(int num_elements,const crossplatform::LayoutDesc *desc,bool interleaved)
@@ -1288,54 +1300,51 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &deviceContext
 
 void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceContext, crossplatform::Texture *texture,const char *lFileNameUtf8)
 {
-    //dx11::SaveTexture(device, texture->AsD3D11Texture2D(), lFileNameUtf8);
- 
+	// dx11::SaveTexture(device, texture->AsD3D11Texture2D(), lFileNameUtf8);
 
-    crossplatform::PixelFormat format = texture->GetFormat();
-    crossplatform::PixelFormatType type = GetElementType(format);
-    
-        ID3D11Resource *stagingBuffer(NULL);
-        D3D11_TEXTURE2D_DESC textureDesc;
+	crossplatform::PixelFormat format = texture->GetFormat();
+	crossplatform::PixelFormatType type = GetElementType(format);
 
-		HRESULT hr;
+	ID3D11Resource* stagingBuffer(NULL);
+	D3D11_TEXTURE2D_DESC textureDesc;
 
-        texture->AsD3D11Texture2D()->GetDesc(&textureDesc);
-        textureDesc.Usage = D3D11_USAGE_STAGING;
-        textureDesc.BindFlags = 0;
-        textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        textureDesc.MiscFlags = 0;
+	HRESULT hr;
 
-        hr = deviceContext.renderPlatform->AsD3D11Device()->CreateTexture2D(&textureDesc, nullptr, (ID3D11Texture2D**)(&stagingBuffer));
-        if (FAILED(hr))
-        {
-            SIMUL_CERR << "Er";
-        }
+	texture->AsD3D11Texture2D()->GetDesc(&textureDesc);
+	textureDesc.Usage = D3D11_USAGE_STAGING;
+	textureDesc.BindFlags = 0;
+	textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	textureDesc.MiscFlags = 0;
 
-        deviceContext.asD3D11DeviceContext()->CopyResource(stagingBuffer, texture->AsD3D11Resource());
-        ExecuteCommands(deviceContext);
+	hr = deviceContext.renderPlatform->AsD3D11Device()->CreateTexture2D(&textureDesc, nullptr, (ID3D11Texture2D**)(&stagingBuffer));
+	if (FAILED(hr))
+	{
+		SIMUL_CERR << "Er";
+	}
 
+	deviceContext.asD3D11DeviceContext()->CopyResource(stagingBuffer, texture->AsD3D11Resource());
+	ExecuteCommands(deviceContext);
 
-        D3D11_MAPPED_SUBRESOURCE mappedResource;
-        hr = deviceContext.renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Map(stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource);
-        
-		if (SUCCEEDED(hr))
-		{
-            crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, mappedResource.pData);
-		}
-        deviceContext.renderPlatform->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingBuffer, 0);
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	hr = ((dx11::RenderPlatform*)(deviceContext.renderPlatform))->GetImmediateContext().asD3D11DeviceContext()->Map(stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource);
 
-		SAFE_RELEASE(stagingBuffer);
-    
+	if (SUCCEEDED(hr))
+	{
+		crossplatform::RenderPlatform::SaveTextureDataToDisk(lFileNameUtf8, texture->width, texture->length, format, mappedResource.pData);
+	}
+	((dx11::RenderPlatform*)(deviceContext.renderPlatform))->GetImmediateContext().asD3D11DeviceContext()->Unmap(stagingBuffer, 0);
+
+	SAFE_RELEASE(stagingBuffer);
 }
 
 void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)
 {
-    ID3D11CommandList *commandList = nullptr;
-    HRESULT hr = deviceContext.asD3D11DeviceContext()->FinishCommandList(FALSE, &commandList);
-    if (SUCCEEDED(hr))
-		deviceContext.renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(commandList, FALSE);
-    deviceContext.contextState.contextActive = false;
-    SAFE_RELEASE(commandList);
+	ID3D11CommandList* commandList = nullptr;
+	HRESULT hr = deviceContext.asD3D11DeviceContext()->FinishCommandList(FALSE, &commandList);
+	if (SUCCEEDED(hr))
+		((dx11::RenderPlatform*)(deviceContext.renderPlatform))->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(commandList, FALSE);
+	deviceContext.contextState.contextActive = false;
+	SAFE_RELEASE(commandList);
 }
 
 void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext)

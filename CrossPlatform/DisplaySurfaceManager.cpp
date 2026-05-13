@@ -119,8 +119,8 @@ void DisplaySurfaceManager::ResizeSwapChain(cp_hwnd hwnd)
 	DisplaySurface *w=surfaces[hwnd];
 	if(!w)
 		return;
-	DeviceContext &deviceContext =renderPlatform->GetImmediateContext();
-	w->ResizeSwapChain(deviceContext);
+
+	w->ResizeSwapChain();
 }
 
 void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fmt,bool vsync)

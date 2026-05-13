@@ -655,7 +655,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 	renderPlatform=r;
 	if(external_copy_source==t&& external_copy_source)
 	{
-		r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
+		((dx11::RenderPlatform*)(r))->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture, external_copy_source);
 		return true;
 	}
 	external_texture=true;
@@ -691,7 +691,7 @@ bool Texture::InitFromExternalTexture2D(crossplatform::RenderPlatform* r, void* 
 				if(setDepthStencil&&(textureDesc.BindFlags&D3D11_BIND_RENDER_TARGET)==0)
 					textureDesc.BindFlags|=D3D11_BIND_DEPTH_STENCIL;
 				V_CHECK(renderPlatform->AsD3D11Device()->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
-				r->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture,external_copy_source);
+				((dx11::RenderPlatform*)(r))->GetImmediateContext().asD3D11DeviceContext()->CopyResource(texture, external_copy_source);
 			}
 			
 			// ASSUME it's a cubemap if it's an array of six.

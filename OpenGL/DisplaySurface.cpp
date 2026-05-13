@@ -50,7 +50,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	}
 	renderPlatform=r;
 	pixelFormat=outFmt;
-	crossplatform::DeviceContext &immediateContext=r->GetImmediateContext();
 	mHwnd							   = handle;
 #ifdef _MSC_VER
 	if (!(hDC=GetDC(mHwnd)))
@@ -79,13 +78,12 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 		0, 0, 0							// Layer Masks Ignored
 	};
 	GLuint glPixelFormat;
-	//(HGLRC)immediateContext.platform_context
 	HGLRC hglrc	=wglGetCurrentContext();
 	HDC hdc		=wglGetCurrentDC();
 	int pf		=GetPixelFormat(hdc);
 	PIXELFORMATDESCRIPTOR pfd2;
 	int maxidx=DescribePixelFormat(
-             hdc,
+			  hdc,
 			  pf,
 			  sizeof(PIXELFORMATDESCRIPTOR),
 			  &pfd2
@@ -173,18 +171,12 @@ void DisplaySurface::InitSwapChain()
 
 void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
-	crossplatform::DeviceContext &immediateContext=renderPlatform->GetImmediateContext();
-	deferredContext.platform_context=immediateContext.platform_context;
-	deferredContext.renderPlatform=renderPlatform;
-	
 	HGLRC hglrc	=wglGetCurrentContext();
 	if(!wglMakeCurrent(hDC,hRC))
 		return;
 
-	renderPlatform->StoreRenderState(deferredContext);
-
 	//static vec4 clear = { 0.0f,0.0f,0.0f,1.0f};
-	glViewport(0, 0, viewport.w, viewport.h);   
+	glViewport(0, 0, viewport.w, viewport.h);
 	//glClearColor(clear.x,clear.y,clear.z,clear.w);
 	//glClearDepth(1.0f);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -196,7 +188,6 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 		renderer->Render(mViewId, 0, 0,viewport.w, viewport.h,frameNumber);
 
 	//mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
-	renderPlatform->RestoreRenderState(deferredContext);
 	//mDeferredContext->FinishCommandList(true,&mCommandList);          // Draw The Scene
 	SwapBuffers(hDC); 
 	wglMakeCurrent(hDC,hglrc);

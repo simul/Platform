@@ -213,7 +213,7 @@ void* PlatformStructuredBuffer::GetBuffer(crossplatform::DeviceContext& deviceCo
 const void* PlatformStructuredBuffer::OpenReadBuffer(crossplatform::DeviceContext&)
 {
 	// Only immediate context works for mapping to read!
-	crossplatform::DeviceContext& deviceContext = renderPlatform->GetImmediateContext();
+	crossplatform::DeviceContext& deviceContext = ((dx11::RenderPlatform*)(renderPlatform))->GetImmediateContext();
 	lastContext = deviceContext.asD3D11DeviceContext();
 	mapped.pData = NULL;
 	if (numCopies >= NUM_STAGING_BUFFERS)

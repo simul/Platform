@@ -259,10 +259,6 @@ namespace platform
 			//! But we can't always be sure that external render code hasn't modified the API state. So by calling SynchronizeCacheAndState()
 			//! the API state is forced to the cached state. This can be called at the start of Renderplatform's rendering per-frame.
 			virtual void SynchronizeCacheAndState(crossplatform::DeviceContext &) {}
-			//! Gets an object containing immediate-context API-specific values.
-			virtual GraphicsDeviceContext &GetImmediateContext();
-			//! Gets an object containing the current global compute context.
-			ComputeDeviceContext &GetComputeDeviceContext() { return computeContext; }
 			//! Push the given file path onto the texture path stack.
 			virtual void PushTexturePath(const char *pathUtf8);
 			//! Remove a path from the top of the texture path stack.
@@ -615,8 +611,7 @@ namespace platform
 			std::map<std::string, SamplerState *> sharedSamplerStates;
 
 			ShaderBuildMode shaderBuildMode = ShaderBuildMode::NEVER_BUILD;
-			GraphicsDeviceContext immediateContext;
-			ComputeDeviceContext computeContext;
+			
 			// All for debug Effect
 			std::shared_ptr<crossplatform::Effect> debugEffect = nullptr;
 			std::shared_ptr<crossplatform::Effect> mipEffect = nullptr;

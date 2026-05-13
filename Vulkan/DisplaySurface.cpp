@@ -95,7 +95,6 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	renderPlatform = r;
 	pixelFormat = outFmt;
 	requestedPixelFormat = outFmt;
-	crossplatform::DeviceContext &immediateContext = r->GetImmediateContext();
 	mHwnd = handle;
 	mIsVSYNC = vsync;
 
