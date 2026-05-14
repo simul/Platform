@@ -257,6 +257,7 @@ void DisplaySurface::InitSwapChain()
 	// Note: destroying the swapchain also cleans up all its associated presentable images once the platform is done with them.
 	if (swapchain)
 	{
+		device->waitIdle(); // Ensure not work on the GPU, before destroying the swapchain.
 		device->destroySwapchainKHR(swapchain, nullptr);
 	}
 
