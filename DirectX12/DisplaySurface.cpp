@@ -316,7 +316,7 @@ void DisplaySurface::StartFrame()
 		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
 		WaitForSingleObject(mWindowEvent, INFINITE);
 	}
-	//WaitForAllWorkDone();
+	WaitForAllWorkDone();
 	// EndFrame will Signal this value:
 	mFenceValues[idx]++;
 

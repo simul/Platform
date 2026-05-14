@@ -88,6 +88,8 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	// If provided data, init the GPU buffer with it:
 	if (init_data)
 	{
+		SIMUL_BREAK_ONCE("Not implemented");
+
 		/*void* pNewData = malloc(mTotalSize);
 		memset(pNewData, 0, mTotalSize);
 		memcpy(pNewData, init_data, mUnitSize);
