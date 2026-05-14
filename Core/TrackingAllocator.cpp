@@ -2,7 +2,7 @@
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/RuntimeError.h"
 #include <string.h> // for strlen
-#include <fmt/format.h>
+#include <format>
 
 using namespace platform;
 using namespace core;
@@ -18,18 +18,18 @@ static string memstring(size_t bytes)
 {
 	string memtxt;
 	if(bytes<1024)
-		memtxt+=fmt::format("{0} bytes",bytes);
+		memtxt+=std::format("{0} bytes",bytes);
 	else
 	{
 		size_t k=bytes/1024;
 		if(k<1024)
 		{
-			memtxt+=fmt::format("{0} kb",k);
+			memtxt+=std::format("{0} kb",k);
 		}
 		else
 		{
 			size_t meg=k/1024;
-			memtxt+=fmt::format("{0} Mb",meg);
+			memtxt+=std::format("{0} Mb",meg);
 		}
 	}
 	return memtxt;
@@ -248,7 +248,7 @@ void TrackingAllocator::UpdateDebugText() const
 {
 	debugTextValid=true;
 	debugText.clear();
-	debugText=	fmt::format("  Current {0}\n",memstring(totalVideoAllocated-totalVideoFreed));
-	debugText+=	fmt::format("Allocated {0}\n",memstring(totalVideoAllocated));
-	debugText+=	fmt::format("    Freed {0}\n",memstring(totalVideoFreed));
+	debugText=	std::format("  Current {0}\n",memstring(totalVideoAllocated-totalVideoFreed));
+	debugText+=	std::format("Allocated {0}\n",memstring(totalVideoAllocated));
+	debugText+=	std::format("    Freed {0}\n",memstring(totalVideoFreed));
 }

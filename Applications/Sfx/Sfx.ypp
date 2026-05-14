@@ -1210,7 +1210,7 @@ gslayout : '[' MAX_VERTEX_COUNT '(' NUM ')' ']'
 mslayout : '[' OUTPUT_TOPOLOGY '(' QUOTED_STRING ')' ']'
 	{
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0];
-	}
+	}	
 
 optional_unroll : '[' UNROLL ']'
 {

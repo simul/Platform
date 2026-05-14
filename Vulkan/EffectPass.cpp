@@ -774,7 +774,7 @@ vk::ShaderStageFlags EffectPass::GetShaderFlagsForSlot(int slot, bool (platform:
 	vulkan::Shader *v = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_VERTEX];
 	vulkan::Shader *f = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_PIXEL];
 	vulkan::Shader *c = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_COMPUTE];
-	vulkan::Shader *as = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_AMPLIFICATION_SHADER];
+	vulkan::Shader *as = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_AMPLIFICATION];
 	vulkan::Shader *ms = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_MESH];
 
 	vk::ShaderStageFlags stageFlags;
@@ -804,7 +804,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 	vulkan::Shader *v = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_VERTEX];
 	vulkan::Shader *f = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_PIXEL];
 	vulkan::Shader *c = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_COMPUTE];
-	vulkan::Shader *as = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_AMPLIFICATION_SHADER];
+	vulkan::Shader *as = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_AMPLIFICATION];
 	vulkan::Shader *ms = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_MESH];
 
 	if (c)

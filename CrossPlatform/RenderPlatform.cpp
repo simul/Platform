@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <format>
 
 using namespace std::literals;
 using namespace std::string_literals;
@@ -110,10 +111,11 @@ RenderPlatform::~RenderPlatform()
 	delete gpuProfiler;
 }
 
-static bool RewriteOutput(std::string str)
+static std::mutex rewriteOutputMutex;
+static void RewriteOutput(const std::string& str)
 {
+	std::lock_guard rewriteOutputGuard(rewriteOutputMutex);
 	std::cerr<<str.c_str();
-	return true;
 }
 
 static std::string recompiling_effect_names;
@@ -175,7 +177,7 @@ void RenderPlatform::recompileAsync()
 					{
 						if (effectRecompile.effect_name.length())
 						{
-							if(RecompileEffect(effectRecompile.effect_name))
+							if (RecompileEffect(effectRecompile.effect_name))
 							{
 								GetOrCreateEffect(effectRecompile.effect_name.c_str(), true);
 							}
@@ -270,14 +272,14 @@ bool RenderPlatform::RecompileEffect(std::string effect_filename)
 	std::string name=std::string(GetName());
 	std::string json_file=PLATFORM+"/"s+GetSfxConfigFilename();
 	std::string this_platform_dir=std::filesystem::path(json_file).parent_path().generic_string();
-	std::string command=sfxcmd+fmt::format(" -I\"{PLATFORM}/../..;{PLATFORM}/..;{PLATFORM};{this_platform_dir};{PLATFORM}/CrossPlatform/Shaders\""
-											" -O\"{shaderbin}\""
-												" -P\"{json_file}\""
-												" -m\"{shaderbin}/intermediate\" "
-												,fmt::arg("PLATFORM", PLATFORM)
-												,fmt::arg("this_platform_dir",this_platform_dir)
-												,fmt::arg("shaderbin", shaderbin)
-												,fmt::arg("json_file", json_file));
+	std::string command=sfxcmd+std::format(" -I\"{0}/../..;{0}/..;{0};{1};{0}/CrossPlatform/Shaders\""
+											" -O\"{2}\""
+												" -P\"{3}\""
+												" -m\"{2}/intermediate\" "
+												,PLATFORM
+												,this_platform_dir
+												,shaderbin
+												,json_file);
 	command+= std::string(" -EPLATFORM=") + PLATFORM;
 	if ((buildMode & crossplatform::ALWAYS_BUILD) != 0)
 		command+=" -F";
@@ -286,8 +288,8 @@ bool RenderPlatform::RecompileEffect(std::string effect_filename)
 	command+=" "s+filenameInUseUtf8.c_str();
 	platform::core::find_and_replace(command,"{SIMUL}",SIMUL);
 
-	platform::core::OutputDelegate cc=std::bind(&RewriteOutput,std::placeholders::_1);
-	bool result= platform::core::RunCommandLine(command.c_str(),  cc);
+	platform::core::OutputDelegate outputDelegate = std::bind(&RewriteOutput, std::placeholders::_1);
+	bool result = platform::core::RunCommandLine(command.c_str(), outputDelegate);
 	
 	return result;
 #else
@@ -626,11 +628,12 @@ void RenderPlatform::PushShaderPath(const char *path_utf8)
 	char c = dir.back();
 	if (c != '\\' && c != '/')
 		dir += '/';
-	shaderPathsUtf8.push_back(dir+"/");
+	shaderPathsUtf8.push_back(dir);
 #else
 	shaderPathsUtf8.push_back(path_utf8);
 #endif
 }
+
 void RenderPlatform::PushShaderBinaryPath(const char* path_utf8)
 {
 #if SIMUL_FILESYSTEM
@@ -639,7 +642,6 @@ void RenderPlatform::PushShaderBinaryPath(const char* path_utf8)
 	if (c != '\\' && c != '/')
 		str += '/';
 	shaderBinaryPathsUtf8.push_back(str);
-//	SIMUL_COUT << "Shader binary path: " << str.c_str() << std::endl;
 #else
 	shaderBinaryPathsUtf8.push_back(path_utf8);
 #endif
@@ -1335,8 +1337,10 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext,const float
 		x=normalize(x);
 	else
 		x=cross(direction,y);
-	x*=radius;
 	y = cross(direction , x);
+	
+	x*=radius;
+	y*=radius;
 
 	mat4 wvp;
 	if (view_centred)
@@ -1377,8 +1381,10 @@ void RenderPlatform::DrawCircle(GraphicsDeviceContext &deviceContext, const doub
 		x = normalize(x);
 	else
 		x = cross(direction, y);
-	x *= radius;
 	y = cross(direction, x);
+
+	x *= radius;
+	y *= radius;
 
 	mat4 wvp;
 	if (view_centred)
@@ -2139,6 +2145,7 @@ std::shared_ptr<Effect> RenderPlatform::GetOrCreateEffect(const char *filename_u
 		{
 			if (it->second.valid())
 			{
+				effects[fn]->Load(this, it->first.c_str());
 				effectsToCompileFutures.erase(it);
 				return effects[fn];
 			}

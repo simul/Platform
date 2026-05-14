@@ -987,6 +987,12 @@ void DisplaySurface::Resize()
 		regen = true;
 	if (!regen)
 		return;
+	// InitSwapChain re-queries the surface capabilities, recreates the swapchain and framebuffers
+	// at whatever size the surface reports at that moment, sets viewport to match, and calls
+	// renderer->ResizeView via CreateFramebuffers. Do not overwrite viewport here with the W/H
+	// captured above: a window manager can change the surface size between the two queries, and
+	// using a stale W/H would produce a mismatch between the swapchain framebuffer dimensions
+	// and the HDR framebuffer / renderArea, triggering VUID-VkRenderPassBeginInfo-pNext-02852/02853.
 	InitSwapChain();
 
 	viewport.w = W;

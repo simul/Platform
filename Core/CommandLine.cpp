@@ -9,7 +9,7 @@ using namespace core;
 #ifdef WIN64
 #include <Windows.h>
 
-bool platform::core::RunCommandLine(const char *command_utf8,  OutputDelegate outputDelegate)
+bool platform::core::RunCommandLine(const char *command_utf8, OutputDelegate outputDelegate)
 {
 	bool pipeChildProcessOutput=true;
 	STARTUPINFOW si;

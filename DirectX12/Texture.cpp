@@ -934,6 +934,9 @@ void Texture::copyToMemory(crossplatform::DeviceContext &,void *,int ,int )
 
 void Texture::setTexels(crossplatform::DeviceContext &deviceContext,const void *src,int texel_index,int num_texels)
 {
+	if (!src || !num_texels)
+		return;
+
 	HRESULT res = S_FALSE;
 	
 	if (mLoadedFromFile)
