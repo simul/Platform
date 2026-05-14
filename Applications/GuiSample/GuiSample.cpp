@@ -6,7 +6,7 @@
 #include "backends/imgui_impl_win32.h"
 #include "Platform/ImGui/imgui_impl_platform.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
-#include "Platform/CrossPlatform/RenderDelegater.h"
+#include "Platform/CrossPlatform/RenderDelegator.h"
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/Core/Timer.h"
 #ifdef _WIN32

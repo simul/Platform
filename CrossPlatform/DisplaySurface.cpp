@@ -1,5 +1,6 @@
 #include "DisplaySurface.h"
-#include "RenderDelegater.h"
+#include "RenderDelegator.h"
+
 using namespace platform;
 using namespace crossplatform;
 

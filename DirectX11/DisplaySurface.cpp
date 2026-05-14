@@ -1,6 +1,6 @@
 #include "DisplaySurface.h"
 #include "RenderPlatform.h"
-#include "Platform/CrossPlatform/RenderDelegater.h"
+#include "Platform/CrossPlatform/RenderDelegator.h"
 
 using namespace platform;
 using namespace dx11;

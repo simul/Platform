@@ -17,6 +17,7 @@ namespace platform
 	namespace crossplatform
 	{
 		class CameraOutputInterface;
+
 		/// This represents an interface that faces the raw API.
 		/// The implementing class should keep a list of integer view id's
 		class RenderDelegatorInterface
@@ -37,10 +38,10 @@ namespace platform
 			virtual void				SetRenderDelegate(int /*view_id*/,crossplatform::RenderDelegate /*d*/){}
 		};
 		using RenderDelegatorInterface =RenderDelegatorInterface ;
+
 		/// A class that faces the raw API and implements RenderDelegatorInterface
 		/// in order to translate to the platform-independent renderer.
-		class SIMUL_CROSSPLATFORM_EXPORT RenderDelegator
-			:public RenderDelegatorInterface
+		class SIMUL_CROSSPLATFORM_EXPORT RenderDelegator : public RenderDelegatorInterface
 		{
 			phmap::flat_hash_map<int,crossplatform::RenderDelegate> renderDelegate;
 			phmap::flat_hash_map<int,int2> viewSize;
@@ -48,10 +49,11 @@ namespace platform
 			std::vector<crossplatform::ShutdownDeviceDelegate> shutdownDeviceDelegates;
 			int last_view_id;
 			platform::crossplatform::RenderPlatform *renderPlatform;
+
 		public:
 			RenderDelegator(crossplatform::RenderPlatform *r=nullptr);
 			~RenderDelegator();
-			virtual void SetRenderPlatform(crossplatform::RenderPlatform *r);
+			virtual void	SetRenderPlatform(crossplatform::RenderPlatform *r);
 			virtual int		AddView						() override;
 			virtual void	RemoveView					(int) override;
 			virtual void	ResizeView					(int view_id,int w,int h) override;

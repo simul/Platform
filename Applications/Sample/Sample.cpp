@@ -39,7 +39,7 @@
 #include "Platform/CrossPlatform/SphericalHarmonics.h"
 #include "Platform/CrossPlatform/View.h"
 #include "Platform/CrossPlatform/Mesh.h"
-#include "Platform/CrossPlatform/RenderDelegater.h"
+#include "Platform/CrossPlatform/RenderDelegator.h"
 #include "Platform/CrossPlatform/MeshRenderer.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/Camera.h"

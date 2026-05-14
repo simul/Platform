@@ -1,8 +1,9 @@
 #include "DisplaySurface.h"
 #include "DeviceManager.h"
 #include "Platform/Core/StringFunctions.h"
-#include "Platform/CrossPlatform/RenderDelegater.h"
+#include "Platform/CrossPlatform/RenderDelegator.h"
 #include "RenderPlatform.h"
+
 #if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xutil.h>
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)

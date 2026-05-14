@@ -44,7 +44,7 @@
 #include "Platform/Core/CommandLineParams.h"
 #include "Platform/CrossPlatform/DisplaySurfaceManager.h"
 #include "Platform/CrossPlatform/Framebuffer.h"
-#include "Platform/CrossPlatform/RenderDelegater.h"
+#include "Platform/CrossPlatform/RenderDelegator.h"
 #include "Platform/CrossPlatform/Shaders/camera_constants.sl"
 
 

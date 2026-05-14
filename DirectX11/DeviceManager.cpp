@@ -3,13 +3,14 @@
 #include "Platform/Core/StringToWString.h"
 #include "Platform/DirectX11/MacrosDx1x.h"
 #include "Platform/DirectX11/Utilities.h"
-#include "Platform/CrossPlatform/RenderDelegater.h"
-#include <iomanip>
+#include "Platform/CrossPlatform/RenderDelegator.h"
+
 #ifndef _XBOX_ONE 
 #ifndef _GAMING_XBOX
 #include <dxgi.h>
 #endif
 #endif
+
 using namespace platform;
 using namespace dx11;
 

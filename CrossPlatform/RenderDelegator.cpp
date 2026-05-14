@@ -1,9 +1,9 @@
 
 #include "Platform/Core/RuntimeError.h"
-#include "Platform/CrossPlatform/RenderDelegater.h"
+#include "Platform/CrossPlatform/RenderDelegator.h"
 #include "Platform/CrossPlatform/GpuProfiler.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
-#include "Platform/Math/Pi.h"
+
 using namespace platform;
 using namespace crossplatform;
 
