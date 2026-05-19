@@ -635,10 +635,6 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 		SIMUL_ASSERT(cmdPool != nullptr);
 		SetVulkanName(renderPlatform, cmdPool, std::format("Command Pool ({})", queueFamilyIndex));
 
-		const vk::CommandBufferAllocateInfo cmdBufferAI = vk::CommandBufferAllocateInfo()
-			.setCommandPool(cmdPool)
-			.setLevel(vk::CommandBufferLevel::ePrimary)
-			.setCommandBufferCount(1);
 		for (size_t i = 0; i < cmdBufferResources.size(); ++i)
 		{
 			vk::CommandBuffer& cmdBuffer = cmdBufferResources[i].cmdBuffer;
