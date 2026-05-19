@@ -36,6 +36,10 @@ namespace platform
 			virtual void InvalidateDeviceObjects() override;
 			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			virtual void EndFrame() override;
+			//! Push in an externally-known framebuffer extent for surfaces whose
+			//! VkSurfaceCapabilitiesKHR::currentExtent is the "undefined" sentinel
+			//! (Wayland, some XWayland setups). Picked up on the next Resize().
+			void SetRequestedExtent(uint32_t w, uint32_t h);
 
 		protected:
 			void InitSwapChain();
@@ -83,6 +87,9 @@ namespace platform
 			uint32_t imageIndex;	 // Returned from Vulkan each frame.
 			uint32_t graphicsQueueFamilyIndex;
 			uint32_t presentQueueFamilyIndex;
+
+			uint32_t pendingW = 0;
+			uint32_t pendingH = 0;
 		};
 	}
 }

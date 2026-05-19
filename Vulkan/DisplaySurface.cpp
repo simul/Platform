@@ -271,6 +271,31 @@ void DisplaySurface::InitSwapChain()
 		device->destroySwapchainKHR(swapchain, nullptr);
 	}
 
+#if !defined(WINVER)
+	// Linux/XCB: there is no GetClientRect, and mHwnd holds a VkSurfaceKHR* rather
+	// than a window handle. The caller (e.g. Main.cpp on Linux/GLFW) is expected to
+	// populate viewport.w/h from glfwGetFramebufferSize before Render(). As a
+	// fallback, query the surface itself for its current size, but only if it
+	// reports a real extent (not the "undefined" -1 sentinel and not 0x0, which
+	// happens when the X11 window has not yet been mapped).
+	if (viewport.w == 0 || viewport.h == 0)
+	{
+		vk::SurfaceCapabilitiesKHR surfCaps;
+		vk::PhysicalDevice *gpu = GetGPU();
+		if (gpu)
+		{
+			auto r = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCaps);
+			if (r == vk::Result::eSuccess
+				&& surfCaps.currentExtent.width != (uint32_t)-1
+				&& surfCaps.currentExtent.width != 0
+				&& surfCaps.currentExtent.height != 0)
+			{
+				viewport.w = surfCaps.currentExtent.width;
+				viewport.h = surfCaps.currentExtent.height;
+			}
+		}
+	}
+#endif
 	// what formats are supported?
 	uint32_t surfaceformats = 0;
 	result = gpu->getSurfaceFormatsKHR(surface, &surfaceformats, nullptr);
@@ -351,11 +376,16 @@ void DisplaySurface::InitSwapChain()
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 	vk::Extent2D swapchainExtent;
-	// width and height are either both -1, or both not -1.
-	if (surfCapabilities.currentExtent.width == (uint32_t)-1)
+	// width and height are either both -1, or both not -1. On Linux the surface
+	// can also report 0x0 when the window has not yet been mapped; treat that the
+	// same as the "undefined" sentinel and fall back to the caller-supplied
+	// viewport size, which is otherwise valid.
+	const bool surfaceExtentValid =
+		surfCapabilities.currentExtent.width != (uint32_t)-1
+		&& surfCapabilities.currentExtent.width != 0
+		&& surfCapabilities.currentExtent.height != 0;
+	if (!surfaceExtentValid)
 	{
-		// If the surface size is undefined, the size is set to
-		// the size of the images requested.
 		swapchainExtent.width = viewport.w;
 		swapchainExtent.height = viewport.h;
 	}
@@ -366,10 +396,46 @@ void DisplaySurface::InitSwapChain()
 		viewport.w = surfCapabilities.currentExtent.width;
 		viewport.h = surfCapabilities.currentExtent.height;
 	}
+	// Final clamp to the device's allowed range, and bail out cleanly rather than
+	// hand a 0x0 extent (or the eUndefined format below) to the driver.
+	if (swapchainExtent.width < surfCapabilities.minImageExtent.width)
+		swapchainExtent.width = surfCapabilities.minImageExtent.width;
+	if (swapchainExtent.height < surfCapabilities.minImageExtent.height)
+		swapchainExtent.height = surfCapabilities.minImageExtent.height;
+	if (surfCapabilities.maxImageExtent.width
+		&& swapchainExtent.width > surfCapabilities.maxImageExtent.width)
+		swapchainExtent.width = surfCapabilities.maxImageExtent.width;
+	if (surfCapabilities.maxImageExtent.height
+		&& swapchainExtent.height > surfCapabilities.maxImageExtent.height)
+		swapchainExtent.height = surfCapabilities.maxImageExtent.height;
+	if (swapchainExtent.width == 0 || swapchainExtent.height == 0
+		|| vulkanFormat == vk::Format::eUndefined)
+	{
+		SIMUL_CERR << "Vulkan swapchain init aborted: extent=" << swapchainExtent.width
+			<< "x" << swapchainExtent.height << " format=" << (int)vulkanFormat << "\n";
+		return;
+	}
 
 	// The FIFO present mode is guaranteed by the spec to be supported
 	// and to have no tearing.  It's a great default present mode to use.
 	vk::PresentModeKHR swapchainPresentMode = vk::PresentModeKHR::eFifo;
+	// If the caller requested no-vsync, only honour eImmediate when the surface
+	// actually supports it - requesting an unsupported present mode is invalid
+	// usage and crashes inside vkCreateSwapchainKHR on several Linux ICDs.
+	if (!mIsVSYNC)
+	{
+		bool immediateSupported = false;
+		for (uint32_t i = 0; i < presentModeCount; i++)
+		{
+			if (presentModes[i] == vk::PresentModeKHR::eImmediate)
+			{
+				immediateSupported = true;
+				break;
+			}
+		}
+		if (immediateSupported)
+			swapchainPresentMode = vk::PresentModeKHR::eImmediate;
+	}
 
 	// Determine the number of VkImages to use in the swap chain.
 	// Application desires to acquire 3 images at a time for triple
@@ -418,8 +484,8 @@ void DisplaySurface::InitSwapChain()
 
 	// Create Swapchain
 	const vk::SwapchainCreateInfoKHR swapchainCI = vk::SwapchainCreateInfoKHR()
-		.setMinImageCount(desiredNumOfSwapchainImages)
 		.setSurface(surface)
+		.setMinImageCount(desiredNumOfSwapchainImages)
 		.setImageFormat(vulkanFormat)
 		.setImageColorSpace(colourSpace)
 		.setImageExtent({swapchainExtent.width, swapchainExtent.height})
@@ -777,8 +843,25 @@ void DisplaySurface::Resize()
 		auto result = gpu->getSurfaceCapabilitiesKHR(surface, &surfCapabilities);
 		if (result == vk::Result::eSuccess && surfCapabilities.currentExtent.width != (uint32_t)-1)
 		{
-			W = surfCapabilities.currentExtent.width;
-			H = surfCapabilities.currentExtent.height;
+			if (surfCapabilities.currentExtent.width != (uint32_t)-1)
+			{
+				// X11 and most ICDs report the concrete window size here, and the
+				// spec requires the swapchain to match it.
+				W = surfCapabilities.currentExtent.width;
+				H = surfCapabilities.currentExtent.height;
+			}
+			else if (pendingW != 0 && pendingH != 0)
+			{
+				// Wayland (and some XWayland configurations) report the "undefined"
+				// sentinel and delegate extent choice to the application. Fall back
+				// to the framebuffer size pushed in by the platform layer (e.g. via
+				// a GLFW framebuffer-size callback through SetRequestedExtent). Without
+				// this the swapchain would stay at its bootstrap size and the compositor
+				// would scale it to fit the window, making UI rendered at fixed pixel
+				// sizes appear to grow/shrink as the window is resized.
+				W = pendingW;
+				H = pendingH;
+			}
 		}
 	}
 #endif
@@ -798,6 +881,13 @@ void DisplaySurface::Resize()
 	// using a stale W/H would produce a mismatch between the swapchain framebuffer dimensions
 	// and the HDR framebuffer / renderArea, triggering VUID-VkRenderPassBeginInfo-pNext-02852/02853.
 	InitSwapChain();
+
+	viewport.w = W;
+	viewport.h = H;
+	viewport.x = 0;
+	viewport.y = 0;
+	if (renderer)
+		renderer->ResizeView(mViewId, W, H);
 }
 
 void DisplaySurface::EnsureImageLayout()
