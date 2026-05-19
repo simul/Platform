@@ -108,7 +108,7 @@ std::vector<vk::QueueFamilyProperties> RenderPlatform::GetQueueProperties(vk::Ph
 	return queueFamilyProperties;
 }
 
-uint32_t RenderPlatform::GetQueueFamilyIndex(crossplatform::DeviceContextType type)
+uint32_t RenderPlatform::GetQueueFamilyIndex(crossplatform::CommandContextType type)
 {
 	uint32_t index = 0;
 	for (const vk::QueueFamilyProperties& queueFamilyProps : mQueueFamilyProperties)
@@ -117,15 +117,15 @@ uint32_t RenderPlatform::GetQueueFamilyIndex(crossplatform::DeviceContextType ty
 		bool computeFlag = (queueFamilyProps.queueFlags & vk::QueueFlagBits::eCompute) == vk::QueueFlagBits::eCompute;
 		bool transferFlag = (queueFamilyProps.queueFlags & vk::QueueFlagBits::eTransfer) == vk::QueueFlagBits::eTransfer;
 
-		if (graphicsFlag && type == crossplatform::DeviceContextType::GRAPHICS)
+		if (graphicsFlag && type == crossplatform::CommandContextType::GRAPHICS)
 		{
 			return index;
 		}
-		if (computeFlag && !graphicsFlag && type == crossplatform::DeviceContextType::COMPUTE)
+		if (computeFlag && !graphicsFlag && type == crossplatform::CommandContextType::COMPUTE)
 		{
 			return index;
 		}
-		if (transferFlag && !computeFlag && !graphicsFlag && type == crossplatform::DeviceContextType::COPY)
+		if (transferFlag && !computeFlag && !graphicsFlag && type == crossplatform::CommandContextType::COPY)
 		{
 			return index;
 		}
@@ -145,9 +145,9 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 
 	// Init Command Queues
 	mQueueFamilyProperties = GetQueueProperties(vulkanGpu);
-	mGraphicsQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::DeviceContextType::GRAPHICS), 0);
-	mComputeQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::DeviceContextType::COMPUTE), 0);
-	mTransferQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::DeviceContextType::COPY), 0);
+	mGraphicsQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::CommandContextType::GRAPHICS), 0);
+	mComputeQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::CommandContextType::COMPUTE), 0);
+	mTransferQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::CommandContextType::COPY), 0);
 
 	// Set up VMA CPU and GPU allicators
 	VmaAllocatorCreateInfo allocatorCreateInfo;
@@ -524,26 +524,26 @@ bool RenderPlatform::CheckDeviceExtension(const std::string &deviceExtensionName
 	return false;
 }
 
-void* RenderPlatform::GetCommandQueue(crossplatform::DeviceContextType deviceContextType)
+void* RenderPlatform::GetCommandQueue(crossplatform::CommandContextType deviceContextType)
 {
 	switch (deviceContextType)
 	{
 	default:
-	case platform::crossplatform::DeviceContextType::GRAPHICS:
+	case platform::crossplatform::CommandContextType::GRAPHICS:
 		return mGraphicsQueue;
-	case platform::crossplatform::DeviceContextType::COMPUTE:
+	case platform::crossplatform::CommandContextType::COMPUTE:
 		return mComputeQueue;
-	case platform::crossplatform::DeviceContextType::COPY:
+	case platform::crossplatform::CommandContextType::COPY:
 		return mTransferQueue;
 	}
 }
 
-void* RenderPlatform::CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType)
+void* RenderPlatform::CreateCommandAllocator(crossplatform::CommandContextType type)
 {
 	vk::CommandPoolCreateInfo cmdPoolCI = vk::CommandPoolCreateInfo()
 		.setPNext(nullptr)
 		.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-		.setQueueFamilyIndex(GetQueueFamilyIndex(deviceContextType));
+		.setQueueFamilyIndex(GetQueueFamilyIndex(type));
 	vk::CommandPool cmdPool = vulkanDevice->createCommandPool(cmdPoolCI);
 	return cmdPool;
 }
@@ -555,48 +555,55 @@ void RenderPlatform::DestroyCommandAllocator(void*& commandAllocator)
 	commandAllocator = VK_NULL_HANDLE;
 }
 
-void* RenderPlatform::CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator)
+void* RenderPlatform::CreateCommandList(crossplatform::CommandContextType type, void* commandAllocator)
 {
 	vk::CommandPool cmdPool = (VkCommandPool)commandAllocator;
-	vk::CommandBufferAllocateInfo cmdBufferAI = vk::CommandBufferAllocateInfo()
+	vk::CommandBufferAllocateInfo commandBufferAI = vk::CommandBufferAllocateInfo()
 		.setPNext(nullptr)
 		.setLevel(vk::CommandBufferLevel::ePrimary)
 		.setCommandPool(cmdPool)
 		.setCommandBufferCount(1);
 
-	vk::CommandBuffer cmdBuffer = vulkanDevice->allocateCommandBuffers(cmdBufferAI)[0];
-	return cmdBuffer;
+	vk::CommandBuffer commandBuffer = vulkanDevice->allocateCommandBuffers(commandBufferAI)[0];
+	return commandBuffer;
 }
 
 void RenderPlatform::DestroyCommandList(void*& commandList, void* commandAllocator)
 {
 	vk::CommandPool cmdPool = (VkCommandPool)commandAllocator;
-	vk::CommandBuffer cmdBuffer = (VkCommandBuffer)commandList;
-	vulkanDevice->freeCommandBuffers(cmdPool, 1, &cmdBuffer);
+	vk::CommandBuffer commandBuffer = (VkCommandBuffer)commandList;
+	vulkanDevice->freeCommandBuffers(cmdPool, 1, &commandBuffer);
 	commandList = VK_NULL_HANDLE;
 }
 
-void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
 {
-	vk::CommandBuffer *cmdBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	cmdBuffer->end();
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
+	commandBuffer->end();
 
 	vk::FenceCreateInfo fenceCI;
 	fenceCI.setPNext(nullptr).setFlags(vk::FenceCreateFlags(0));
 	vk::Fence fence = vulkanDevice->createFence(fenceCI);
 
-	vk::SubmitInfo si;
-	si.setWaitSemaphoreCount(0).setPWaitSemaphores(nullptr).setWaitDstStageMask(nullptr).setCommandBufferCount(1).setPCommandBuffers(cmdBuffer).setSignalSemaphoreCount(0).setPSignalSemaphores(nullptr).setPNext(nullptr);
-	vk::Queue queue = vulkanDevice->getQueue(0, 0);
+	vk::SubmitInfo si = vk::SubmitInfo()
+		.setWaitSemaphoreCount(0)
+		.setPWaitSemaphores(nullptr)
+		.setWaitDstStageMask(nullptr)
+		.setCommandBufferCount(1)
+		.setPCommandBuffers(commandBuffer)
+		.setSignalSemaphoreCount(0)
+		.setPSignalSemaphores(nullptr)
+		.setPNext(nullptr);
+	vk::Queue queue = (VkQueue)GetCommandQueue(deviceContext.commandContextType);
 	SIMUL_VK_CHECK(queue.submit(1, &si, fence));
 	SIMUL_VK_CHECK(vulkanDevice->waitForFences(1, &fence, true, UINT64_MAX));
 }
 
 void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext)
 {
-	vk::CommandBuffer *cmdBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	cmdBuffer->reset(vk::CommandBufferResetFlagBits::eReleaseResources);
-	cmdBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse));
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
+	commandBuffer->reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+	commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse));
 }
 
 void RenderPlatform::ClearReleaseManager(bool force)
@@ -680,7 +687,7 @@ void RenderPlatform::BeginFrame()
 	if (frame_started)
 		return;
 	crossplatform::RenderPlatform::BeginFrame();
-	auto *vulkanDevice = AsVulkanDevice();
+	vk::Device* vulkanDevice = AsVulkanDevice();
 	// vulkanDevice->waitForFences(1, &deviceManagerInternal->fences[frameIndex], VK_TRUE, UINT64_MAX);
 	// vulkanDevice->resetFences(1, &deviceManagerInternal->fences[frameIndex]);
 }
@@ -692,7 +699,7 @@ void RenderPlatform::EndFrame()
 
 void RenderPlatform::CopyTexture(crossplatform::DeviceContext &deviceContext, crossplatform::Texture *dest, crossplatform::Texture *source)
 {
-	auto *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 
 	auto src = (vulkan::Texture *)source;
 	auto dst = (vulkan::Texture *)dest;
@@ -759,7 +766,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, con
 {
 	if (debugUtilsSupported)
 	{
-		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+		vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 		vk::DebugUtilsLabelEXT labelInfo;
 		labelInfo.pNext = nullptr;
 		labelInfo.pLabelName = name;
@@ -771,7 +778,7 @@ void RenderPlatform::BeginEvent(crossplatform::DeviceContext &deviceContext, con
 	}
 	if (debugMarkerSupported)
 	{
-		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+		vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 		vk::DebugMarkerMarkerInfoEXT markerInfo = {};
 		markerInfo.pNext = nullptr;
 		markerInfo.pMarkerName = name;
@@ -787,14 +794,14 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 {
 	if (debugUtilsSupported)
 	{
-		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+		vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 		DispatchLoaderDynamic d;
 		d.vkCmdEndDebugUtilsLabelEXT = vkCmdEndDebugUtilsLabelEXT;
 		commandBuffer->endDebugUtilsLabelEXT(d);
 	}
 	if (debugMarkerSupported)
 	{
-		vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+		vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 		DispatchLoaderDynamic d;
 		d.vkCmdDebugMarkerEndEXT = vkCmdDebugMarkerEndEXT;
 		commandBuffer->debugMarkerEndEXT(d);
@@ -803,7 +810,7 @@ void RenderPlatform::EndEvent(crossplatform::DeviceContext &deviceContext)
 
 void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext, int w, int l, int d)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 #if SIMUL_INTERNAL_CHECKS
@@ -826,7 +833,7 @@ void RenderPlatform::DispatchCompute(crossplatform::DeviceContext &deviceContext
 
 void RenderPlatform::DispatchComputeIndirect(crossplatform::DeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer || !argsBuffer)
 		return;
 
@@ -866,7 +873,7 @@ void RenderPlatform::DispatchMesh(crossplatform::GraphicsDeviceContext &deviceCo
 #if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
 	if (!HasRenderingFeatures(crossplatform::RenderingFeatures::MeshShader) || !vkCmdDrawMeshTasksEXT)
 		return;
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 
@@ -885,7 +892,7 @@ void RenderPlatform::DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &
 #if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
 	if (!HasRenderingFeatures(crossplatform::RenderingFeatures::MeshShader) || !vkCmdDrawMeshTasksIndirectEXT)
 		return;
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer || !argsBuffer)
 		return;
 
@@ -913,7 +920,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext &deviceCont
 {
 	EndRenderPass(deviceContext);
 
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (commandBuffer)
 	{
 		vk::MemoryBarrier barrier(vk::AccessFlagBits::eMemoryWrite, vk::AccessFlagBits::eMemoryRead);
@@ -926,7 +933,7 @@ void RenderPlatform::ResourceBarrierUAV(crossplatform::DeviceContext &deviceCont
 {
 	EndRenderPass(deviceContext);
 
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (commandBuffer)
 	{
 		vk::MemoryBarrier barrier = {};
@@ -945,7 +952,7 @@ void RenderPlatform::DrawQuad(crossplatform::GraphicsDeviceContext &deviceContex
 	if (!deviceContext.contextState.currentEffectPass)
 		return;
 
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 
@@ -967,7 +974,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 		SIMUL_BREAK("No valid shader pass in ApplyContextState");
 		return false;
 	}
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return false;
 
@@ -2053,8 +2060,8 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext &deviceCon
 {
 	vk::Result result = vk::Result::eSuccess;
 
-	vk::CommandBuffer *cmdBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
-	if (!cmdBuffer)
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
+	if (!commandBuffer)
 		return;
 
 	crossplatform::PixelFormat format = texture->GetFormat();
@@ -2083,7 +2090,7 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext &deviceCon
 												  {0, 0, 0},
 												  {(uint32_t)texture->width, (uint32_t)texture->length, (uint32_t)texture->depth});
 
-	cmdBuffer->copyImageToBuffer(*t->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, imageBuffer, 1, &bic);
+	commandBuffer->copyImageToBuffer(*t->AsVulkanImage(), vk::ImageLayout::eTransferSrcOptimal, imageBuffer, 1, &bic);
 
 	ExecuteCommands(deviceContext);
 
@@ -2193,7 +2200,7 @@ void RenderPlatform::PopRenderTargets(crossplatform::GraphicsDeviceContext &)
 
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext, int num_verts, int start_vert)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 
@@ -2205,7 +2212,7 @@ void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext, i
 
 void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 
@@ -2217,7 +2224,7 @@ void RenderPlatform::DrawInstanced(crossplatform::GraphicsDeviceContext &deviceC
 
 void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceContext, int num_indices, int start_index, int base_vertex)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 	if (ApplyContextState(deviceContext))
@@ -2226,7 +2233,7 @@ void RenderPlatform::DrawIndexed(crossplatform::GraphicsDeviceContext &deviceCon
 
 void RenderPlatform::DrawIndexedInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_indices, int start_index, int base_vertex)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 	if (ApplyContextState(deviceContext))
@@ -2776,7 +2783,7 @@ void RenderPlatform::CreateVulkanRenderpass(crossplatform::DeviceContext &device
 
 void RenderPlatform::EndRenderPass(crossplatform::DeviceContext &deviceContext)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (!commandBuffer)
 		return;
 	if (deviceContext.contextState.vulkanInsideRenderPass)

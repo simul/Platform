@@ -12,13 +12,15 @@ DisplaySurface::DisplaySurface(int view_id)
 	  mRTHeap(nullptr),
 	  mRecordingCommands(false)
 {
-	for (int i = 0; i < FrameCount; i++)
+	for (UINT i = 0; i < FrameCount; i++)
 	{
 		mBackBuffers[i] = nullptr;
 		mCommandAllocators[i] = nullptr;
 		mCommandLists[i] = nullptr;
-		mGPUFences[i] = nullptr;
-		mFenceValues[i] = 0;
+		mComputeCommandAllocators[i] = nullptr;
+		mComputeCommandLists[i] = nullptr;
+		mFences[i] = nullptr;
+		mComputeFences[i] = nullptr;
 	}
 }
 
@@ -93,7 +95,7 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	IDXGISwapChain1* swapChain = nullptr;
 	res = factory->CreateSwapChainForHwnd
 	(
-		dx12RenderPlatform->GetID3D12CommandQueue(),
+		dx12RenderPlatform->GetID3D12CommandQueue(crossplatform::CommandContextType::GRAPHICS),
 		mHwnd,
 		&swapChainDesc12,
 		nullptr,
@@ -166,16 +168,29 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	// Create this window command list
 	for (size_t i = 0; i < FrameCount; i++)
 	{
-		renderPlatform->DestroyCommandList((void*&)mCommandLists[i], mCommandLists[i]);
+		//GRAPHICS
+		renderPlatform->DestroyCommandList((void*&)mCommandLists[i], mCommandAllocators[i]);
 		renderPlatform->DestroyCommandAllocator((void*&)mCommandLists[i]);
 
-		mCommandAllocators[i] = (ID3D12CommandAllocator*)renderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS);
+		mCommandAllocators[i] = (ID3D12CommandAllocator*)renderPlatform->CreateCommandAllocator(crossplatform::CommandContextType::GRAPHICS);
 		std::wstring commandAllocatorName = L"WindowCommandAllocator " + std::to_wstring(i);
 		mCommandAllocators[i]->SetName(commandAllocatorName.c_str());
 
-		mCommandLists[i] = (ID3D12GraphicsCommandList*)renderPlatform->CreateCommandList(crossplatform::DeviceContextType::GRAPHICS, mCommandAllocators[i]);
+		mCommandLists[i] = (ID3D12GraphicsCommandList*)renderPlatform->CreateCommandList(crossplatform::CommandContextType::GRAPHICS, mCommandAllocators[i]);
 		std::wstring commandListName = L"WindowCommandList " + std::to_wstring(i);
 		mCommandLists[i]->SetName(commandListName.c_str());
+
+		//COMPUTE
+		renderPlatform->DestroyCommandList((void*&)mComputeCommandLists[i], mComputeCommandAllocators[i]);
+		renderPlatform->DestroyCommandAllocator((void*&)mComputeCommandLists[i]);
+
+		mComputeCommandAllocators[i] = (ID3D12CommandAllocator*)renderPlatform->CreateCommandAllocator(crossplatform::CommandContextType::COMPUTE);
+		std::wstring computeCommandAllocatorName = L"WindowComputeCommandAllocator " + std::to_wstring(i);
+		mComputeCommandAllocators[i]->SetName(computeCommandAllocatorName.c_str());
+
+		mComputeCommandLists[i] = (ID3D12GraphicsCommandList*)renderPlatform->CreateCommandList(crossplatform::CommandContextType::COMPUTE, mComputeCommandAllocators[i]);
+		std::wstring computeCommandListName = L"WindowComputeCommandList " + std::to_wstring(i);
+		mComputeCommandLists[i]->SetName(computeCommandListName.c_str());
 	}
 
 	//mRecordingCommands = true;
@@ -194,10 +209,15 @@ void DisplaySurface::InvalidateDeviceObjects()
 	SAFE_RELEASE(mRTHeap);
 	for (size_t i = 0; i < FrameCount; i++)
 	{
-		renderPlatform->DestroyCommandList((void*&)mCommandLists[i], mCommandLists[i]);
+		renderPlatform->DestroyCommandList((void*&)mCommandLists[i], mCommandAllocators[i]);
 		renderPlatform->DestroyCommandAllocator((void*&)mCommandLists[i]);
+
+		renderPlatform->DestroyCommandList((void*&)mComputeCommandLists[i], mComputeCommandAllocators[i]);
+		renderPlatform->DestroyCommandAllocator((void*&)mComputeCommandAllocators[i]);
+
+		SAFE_DELETE(mFences[i])
+		SAFE_DELETE(mComputeFences[i])
 	}
-	SAFE_RELEASE_ARRAY(mGPUFences, FrameCount);
 }
 
 UINT DisplaySurface::GetCurrentBackBufferIndex() const
@@ -241,7 +261,17 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 
 	if (renderer)
 	{
-		renderer->Render(mViewId, mCommandLists[curIdx], &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom, frameNumber, mCommandAllocators[curIdx]);
+		crossplatform::CommandContext graphicsCommandContext = { mCommandLists[curIdx], mCommandAllocators[curIdx] };
+		crossplatform::CommandContext computeCommandContext = { mComputeCommandLists[curIdx], mComputeCommandAllocators[curIdx]};
+		crossplatform::CommandContext* commandContexts[2] = { &graphicsCommandContext, &computeCommandContext };
+
+		renderer->Render(mViewId, commandContexts, std::size(commandContexts), &mRTHandles[curIdx], mCurScissor.right, mCurScissor.bottom, frameNumber);
+
+		// RenderPlatform::RestartCommands may have been called and new command context created.
+		mCommandLists[curIdx] = (ID3D12GraphicsCommandList*)graphicsCommandContext.commandList;
+		mCommandAllocators[curIdx] = (ID3D12CommandAllocator*)graphicsCommandContext.commandAllocator;
+		mComputeCommandLists[curIdx] = (ID3D12GraphicsCommandList*)computeCommandContext.commandList;
+		mComputeCommandAllocators[curIdx] = (ID3D12CommandAllocator*)computeCommandContext.commandAllocator;
 	}
 
 	// Get ready to present
@@ -290,12 +320,13 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 
 void DisplaySurface::CreateSyncObjects()
 {
-	mWindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	for (int i = 0; i < FrameCount; i++)
 	{
-		mFenceValues[i] = 0;
-		mDeviceRef->CreateFence(mFenceValues[i], D3D12_FENCE_FLAG_NONE, SIMUL_PPV_ARGS(&mGPUFences[i]));
-		mGPUFences[i]->SetName(L"DisplaySurfaceSwapchainSync");
+		std::string fenceName = "WindowFence " + std::to_string(i);
+		mFences[i] = renderPlatform->CreateFence(fenceName.c_str());
+
+		std::string computeFenceName = "WindowComputeFence " + std::to_string(i);
+		mComputeFences[i] = renderPlatform->CreateFence(computeFenceName.c_str());
 	}
 }
 
@@ -311,18 +342,20 @@ void DisplaySurface::StartFrame()
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
-	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
-	{
-		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
-		WaitForSingleObject(mWindowEvent, INFINITE);
-	}
+	renderPlatform->Wait(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Waiter::CPU, mFences[idx]);
+	renderPlatform->Wait(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Waiter::CPU, mComputeFences[idx]);
 	WaitForAllWorkDone();
-	// EndFrame will Signal this value:
-	mFenceValues[idx]++;
 
+	//GRAPHICS
 	res = mCommandAllocators[idx]->Reset();
 	SIMUL_ASSERT(res == S_OK); 
 	res = mCommandLists[idx]->Reset(mCommandAllocators[idx], nullptr);
+	SIMUL_ASSERT(res == S_OK);
+
+	//COMPUTE
+	res = mComputeCommandAllocators[idx]->Reset();
+	SIMUL_ASSERT(res == S_OK);
+	res = mComputeCommandLists[idx]->Reset(mComputeCommandAllocators[idx], nullptr);
 	SIMUL_ASSERT(res == S_OK);
 
 	mRecordingCommands = true;
@@ -343,7 +376,8 @@ void DisplaySurface::EndFrame()
 	int idx = GetCurrentBackBufferIndex();
 	
 	//SIMUL_COUT<<"Executing command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
-	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetID3D12CommandQueue(), mCommandLists[idx]);
+	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetID3D12CommandQueue(crossplatform::CommandContextType::GRAPHICS), mCommandLists[idx]);
+	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetID3D12CommandQueue(crossplatform::CommandContextType::COMPUTE), mComputeCommandLists[idx]);
 
 #ifndef _GAMING_XBOX
 	// Present new frame
@@ -358,18 +392,16 @@ void DisplaySurface::EndFrame()
 #endif
 	// Signal at the end of the pipe, note that we use the cached index 
 	// or we will be adding a fence for the next frame!
-	dx12RenderPlatform->GetID3D12CommandQueue()->Signal(mGPUFences[idx], mFenceValues[idx]);
+	renderPlatform->Signal(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Signaller::GPU, mFences[idx]);
+	renderPlatform->Signal(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Signaller::GPU, mComputeFences[idx]);
 }
 
 void DisplaySurface::WaitForAllWorkDone()
 {
-	for (int i = 0; i < FrameCount; i++)
+	for (size_t i = 0; i < FrameCount; i++)
 	{
-		if (mGPUFences[i]->GetCompletedValue() < mFenceValues[i])
-		{
-			mGPUFences[i]->SetEventOnCompletion(mFenceValues[i], mWindowEvent);
-			WaitForSingleObject(mWindowEvent, INFINITE);
-		}
+		renderPlatform->Wait(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Waiter::CPU, mFences[i]);
+		renderPlatform->Wait(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Waiter::CPU, mComputeFences[i]);
 	}
 }
 
@@ -395,17 +427,16 @@ void DisplaySurface::Resize()
 		EndFrame();
 	}
 
-	int idx = (GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
-	if (mGPUFences[idx]->GetCompletedValue() < mFenceValues[idx])
-	{
-		mGPUFences[idx]->SetEventOnCompletion(mFenceValues[idx], mWindowEvent);
-		WaitForSingleObject(mWindowEvent, INFINITE);
-	}
+	UINT idx = (GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
+	renderPlatform->Wait(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Waiter::CPU, mFences[idx]);
+	renderPlatform->Wait(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Waiter::CPU, mComputeFences[idx]);
 
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
 	SAFE_RELEASE_ARRAY(mCommandAllocators, FrameCount);
 	SAFE_RELEASE_ARRAY(mCommandLists, FrameCount);
+	SAFE_RELEASE_ARRAY(mComputeCommandAllocators, FrameCount);
+	SAFE_RELEASE_ARRAY(mComputeCommandLists, FrameCount);
 
 	// DX12 viewport
 	mCurViewport.TopLeftX	= 0;

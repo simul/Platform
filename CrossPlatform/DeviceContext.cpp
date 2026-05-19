@@ -65,7 +65,6 @@ bool ContextState::IsDepthActive() const
 // Change this from a static construtor to a dynamic construtor so that the memory is allocated by the application rather than the C runtime
 long long DeviceContext::GetFrameNumber() const
 {
-
 	return frame_number;
 }
 
@@ -76,11 +75,24 @@ void DeviceContext::SetFrameNumber(long long n)
 }
 
 GraphicsDeviceContext::GraphicsDeviceContext()
-	//:cur_backbuffer(0)
 {
-	deviceContextType=DeviceContextType::GRAPHICS;
-	viewStruct.depthTextureStyle=crossplatform::PROJECTION;
-	setDefaultRenderTargets(nullptr,nullptr,0,0,0,0);
+	deviceContextType = DeviceContextType::GRAPHICS;
+	commandContextType = CommandContextType::GRAPHICS;
+	viewStruct.depthTextureStyle = crossplatform::PROJECTION;
+	setDefaultRenderTargets(nullptr, nullptr, 0, 0, 0, 0);
+}
+
+GraphicsDeviceContext::GraphicsDeviceContext(DeviceContext& deviceContext)
+{
+	deviceContextType = DeviceContextType::GRAPHICS;
+	commandContextType = CommandContextType::GRAPHICS;
+	viewStruct.depthTextureStyle = crossplatform::PROJECTION;
+	setDefaultRenderTargets(nullptr, nullptr, 0, 0, 0, 0);
+
+	frame_number = deviceContext.frame_number;
+	contextState = deviceContext.contextState;
+	renderPlatform = deviceContext.renderPlatform;
+	commandContexts = deviceContext.commandContexts;
 }
 
 GraphicsDeviceContext::~GraphicsDeviceContext()
@@ -158,11 +170,35 @@ void GraphicsDeviceContext::setDefaultRenderTargets(const ApiRenderTarget* rt
 MultiviewGraphicsDeviceContext::MultiviewGraphicsDeviceContext()
 {
 	deviceContextType = DeviceContextType::MULTIVIEW_GRAPHICS;
+	commandContextType = CommandContextType::GRAPHICS;
+}
+
+MultiviewGraphicsDeviceContext::MultiviewGraphicsDeviceContext(DeviceContext& deviceContext)
+{
+	deviceContextType = DeviceContextType::MULTIVIEW_GRAPHICS;
+	commandContextType = CommandContextType::GRAPHICS;
+
+	frame_number = deviceContext.frame_number;
+	contextState = deviceContext.contextState;
+	renderPlatform = deviceContext.renderPlatform;
+	commandContexts = deviceContext.commandContexts;
 }
 
 ComputeDeviceContext::ComputeDeviceContext()
 {
 	deviceContextType = DeviceContextType::COMPUTE;
+	commandContextType = CommandContextType::COMPUTE;
+}
+
+ComputeDeviceContext::ComputeDeviceContext(DeviceContext& deviceContext)
+{
+	deviceContextType = DeviceContextType::COMPUTE;
+	commandContextType = CommandContextType::COMPUTE;
+
+	frame_number = deviceContext.frame_number;
+	contextState = deviceContext.contextState;
+	renderPlatform = deviceContext.renderPlatform;
+	commandContexts = deviceContext.commandContexts;
 }
 
 // TODO: this is terrible, let's get rid of it.

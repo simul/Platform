@@ -191,7 +191,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
 	
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer=deviceContext.asVulkanContext();
 
 	if (GetSampleCount() > 1)
 	{
@@ -767,7 +767,7 @@ void Texture::ClearColour(crossplatform::GraphicsDeviceContext &deviceContext, v
 
 	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	commandBuffer->clearColorImage(mImage, mCurrentImageLayout, &clearValue, 1, &imageSubresourceRange);
 
 	// We can't go back to these layouts below, so just stay in eTransferDstOptimal for now:
@@ -791,7 +791,7 @@ void Texture::ClearDepthStencil(crossplatform::GraphicsDeviceContext& deviceCont
 
 	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatform->EndRenderPass(deviceContext);
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	commandBuffer->clearDepthStencilImage(mImage, mCurrentImageLayout, &clearValue, 1, &imageSubresourceRange);
 
 	// We can't go back to these layouts below, so just stay in eTransferDstOptimal for now:
@@ -1049,7 +1049,7 @@ void Texture::SetLayout(crossplatform::DeviceContext &deviceContext, vk::ImageLa
 			return;
 	}
 
-	auto* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+	vk::CommandBuffer* commandBuffer = deviceContext.asVulkanContext();
 	auto DstAccessMask = [](vk::ImageLayout const& layout)
 	{
 		vk::AccessFlags flags;
@@ -1212,7 +1212,7 @@ vk::ImageLayout Texture::GetLayout(crossplatform::DeviceContext& deviceContext, 
 				auto curState = mSubResourcesLayouts[l][m];
 				if (curState != mCurrentImageLayout)
 				{
-					vk::CommandBuffer* commandBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
+					vk::CommandBuffer* commandBuffer = deviceContext.asVulkanContext();
 					vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor;
 					if (crossplatform::RenderPlatform::IsDepthFormat(pixelFormat))
 						aspectMask = vk::ImageAspectFlagBits::eDepth;
@@ -1239,8 +1239,8 @@ void Texture::Reallocate(crossplatform::GraphicsDeviceContext& deviceContext, co
 {
 	if(mImage!=src_ptr)
 		return;
-	vk::CommandBuffer* cmdBuffer = (vk::CommandBuffer*)deviceContext.platform_context;
-	if (!cmdBuffer)
+	vk::CommandBuffer* commandBuffer = deviceContext.asVulkanContext();
+	if (!commandBuffer)
 		return;
 	// Recreate and bind this buffer/image at: pass.pMoves[i].dstMemory, pass.pMoves[i].dstOffset.
 	vk::Image newImg;
@@ -1290,7 +1290,7 @@ void Texture::Reallocate(crossplatform::GraphicsDeviceContext& deviceContext, co
 				.setDstSubresource(subresource)
 				.setExtent(extent);
 
-			cmdBuffer->copyImage(mImage, vk::ImageLayout::eTransferSrcOptimal, newImg, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+			commandBuffer->copyImage(mImage, vk::ImageLayout::eTransferSrcOptimal, newImg, vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
 	
 		}
 		w/=2;

@@ -200,8 +200,10 @@ void RenderPlatform::RestoreDeviceObjects(void *d)
 	
 	ID3D11DeviceContext *pImmediateContext;
 	AsD3D11Device()->GetImmediateContext(&pImmediateContext);
-	immediateContext.platform_context=pImmediateContext;
-	immediateContext.renderPlatform=this;
+	immediateContext.commandContexts[crossplatform::CommandContextType::GRAPHICS] = new crossplatform::CommandContext();
+	immediateContext.commandContexts[crossplatform::CommandContextType::GRAPHICS]->commandList = pImmediateContext;
+	immediateContext.commandContexts[crossplatform::CommandContextType::GRAPHICS]->commandAllocator = nullptr;
+	immediateContext.renderPlatform = this;
 
 #ifdef _XBOX_ONE
 	delete eSRAMManager;
@@ -231,8 +233,11 @@ void RenderPlatform::InvalidateDeviceObjects()
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
 	ID3D11DeviceContext* c=immediateContext.asD3D11DeviceContext();
 	SAFE_RELEASE(c);
-	immediateContext.platform_context=NULL;
-	device=NULL;
+	
+	immediateContext.commandContexts[crossplatform::CommandContextType::GRAPHICS]->commandList = nullptr;
+	delete immediateContext.commandContexts[crossplatform::CommandContextType::GRAPHICS];
+	
+	device = nullptr;
 }
 
 void RenderPlatform::BeginEvent	(crossplatform::DeviceContext &,const char *name)
@@ -1337,7 +1342,7 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 	SAFE_RELEASE(stagingBuffer);
 }
 
-void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
 {
 	ID3D11CommandList* commandList = nullptr;
 	HRESULT hr = deviceContext.asD3D11DeviceContext()->FinishCommandList(FALSE, &commandList);

@@ -199,20 +199,29 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex* delegatorReadWriteMu
 	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
 
 	vk::CommandBuffer& commandBuffer = cmdBufferResources[frameIndex].cmdBuffer;
+	vk::CommandPool& commandPool = cmdPool;
 	vk::Framebuffer& framebuffer = swapchainImageResources[imageIndex].framebuffer;
 
 	const vk::CommandBufferBeginInfo commandInfo = vk::CommandBufferBeginInfo()
-		.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 	result = commandBuffer.begin(&commandInfo);
 	SIMUL_VK_CHECK(result);
-
+	
 	EnsureImageLayout();
-
+	vulkanRenderPlatform->SetDefaultColourFormat(pixelFormat);
+	
 	ERRNO_BREAK
 	if (renderer)
 	{
-		vulkanRenderPlatform->SetDefaultColourFormat(pixelFormat);
-		renderer->Render(mViewId, &commandBuffer, &framebuffer, viewport.w, viewport.h, frameNumber);
+		crossplatform::CommandContext graphicsCommandContext = {&commandBuffer, &cmdPool};
+		crossplatform::CommandContext computeCommandContext = {nullptr, nullptr};
+		crossplatform::CommandContext* commandContexts[2] = {&graphicsCommandContext, &computeCommandContext};
+
+		renderer->Render(mViewId, commandContexts, std::size(commandContexts), &framebuffer, viewport.w, viewport.h, frameNumber);
+
+		// RenderPlatform::RestartCommands may have been called and new command context created.
+		// mCommandLists[curIdx] = (ID3D12GraphicsCommandList*)graphicsCommandContext.commandList;
+		// mCommandAllocators[curIdx] = (ID3D12CommandAllocator*)graphicsCommandContext.commandAllocator;
 	}
 
 	EnsureImagePresentLayout();
@@ -483,7 +492,7 @@ void DisplaySurface::GetQueues()
 	presentQueueFamilyIndex = UINT32_MAX;
 
 	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
-	graphicsQueueFamilyIndex = vulkanRenderPlatform->GetQueueFamilyIndex(crossplatform::DeviceContextType::GRAPHICS);
+	graphicsQueueFamilyIndex = vulkanRenderPlatform->GetQueueFamilyIndex(crossplatform::CommandContextType::GRAPHICS);
 
 	// Iterate over each queue to learn whether it supports presenting:
 	for (uint32_t i = 0; i < (uint32_t)vulkanRenderPlatform->GetQueueProperties().size(); i++)
@@ -565,7 +574,7 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 		const vk::CommandPoolCreateInfo cmdPoolCI = vk::CommandPoolCreateInfo()
 			.setQueueFamilyIndex(queueFamilyIndex)
 			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(crossplatform::DeviceContextType::GRAPHICS);
+		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(crossplatform::CommandContextType::GRAPHICS);
 		SIMUL_ASSERT(cmdPool != nullptr);
 		SetVulkanName(renderPlatform, cmdPool, std::format("Command Pool ({})", queueFamilyIndex));
 
@@ -581,7 +590,7 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 				cmdBuffer = cmdBufferResources[i].graphicsToPresentCmdBuffer;
 			}
 
-			cmdBuffer = (VkCommandBuffer)vulkanRenderPlatform->CreateCommandList(crossplatform::DeviceContextType::GRAPHICS, cmdPool);
+			cmdBuffer = (VkCommandBuffer)vulkanRenderPlatform->CreateCommandList(crossplatform::CommandContextType::GRAPHICS, cmdPool);
 			SIMUL_ASSERT(cmdBuffer != nullptr);
 			SetVulkanName(renderPlatform, cmdBufferResources[i].cmdBuffer, std::format("Command Buffer {}", i));
 		}
@@ -734,7 +743,7 @@ void DisplaySurface::Present()
 
 void DisplaySurface::Resize()
 {
-	auto* vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
+	vk::Device* vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
 
 	bool recreate = false;
 	uint32_t W = 0;

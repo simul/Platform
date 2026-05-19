@@ -315,7 +315,7 @@ int Text3DRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y
 	uint& n = constantBuffer.numChars;
 	n=0;
 	float u = 1024.f / font_texture->width;
-	crossplatform::StructuredBuffer<FontChar> &f=fontChars[deviceContext.platform_context];
+	crossplatform::StructuredBuffer<FontChar>& f = fontChars[renderPlatform];
 	if(max_chars>f.count)
 		f.RestoreDeviceObjects(renderPlatform,max_chars,false,false,nullptr,"fontChars");
 	FontChar *charList=f.GetBuffer(deviceContext);
@@ -406,7 +406,7 @@ int Text3DRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float*
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
 
 	uint n = 0;
-	crossplatform::StructuredBuffer<FontChar>& f = fontChars[deviceContext.platform_context];
+	crossplatform::StructuredBuffer<FontChar>& f = fontChars[renderPlatform];
 	FontChar* charList = f.GetBuffer(deviceContext);
 
 	size_t countOfTextBackgroundArray = sizeof(constantBuffer.background_rect) / sizeof(constantBuffer.background_rect[0]);

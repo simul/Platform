@@ -1439,7 +1439,7 @@ void RenderPlatform::DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &
 #endif
 }
 
-void RenderPlatform::Signal(crossplatform::DeviceContextType &type, crossplatform::Fence::Signaller signaller, crossplatform::Fence *fence)
+void RenderPlatform::Signal(crossplatform::CommandContextType type, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence)
 {
 	dx12::Fence *f = (dx12::Fence *)fence;
 	if (!f)
@@ -1463,7 +1463,7 @@ void RenderPlatform::Signal(crossplatform::DeviceContextType &type, crossplatfor
 	}
 }
 
-void RenderPlatform::Wait(crossplatform::DeviceContextType &type, crossplatform::Fence::Waiter waiter, crossplatform::Fence *fence, uint64_t timeout_nanoseconds)
+void RenderPlatform::Wait(crossplatform::CommandContextType type, crossplatform::Fence::Waiter waiter, crossplatform::Fence *fence, uint64_t timeout_nanoseconds)
 {
 	dx12::Fence *f = (dx12::Fence *)fence;
 	if (!f)
@@ -1506,38 +1506,38 @@ bool RenderPlatform::GetFenceStatus(crossplatform::Fence *fence)
 	return complete;
 }
 
-void* RenderPlatform::GetCommandQueue(crossplatform::DeviceContextType deviceContextType)
+void* RenderPlatform::GetCommandQueue(crossplatform::CommandContextType type)
 {
-	switch (deviceContextType)
+	switch (type)
 	{
 	default:
-	case platform::crossplatform::DeviceContextType::GRAPHICS:
+	case platform::crossplatform::CommandContextType::GRAPHICS:
 		return mGraphicsQueue;
-	case platform::crossplatform::DeviceContextType::COMPUTE:
+	case platform::crossplatform::CommandContextType::COMPUTE:
 		return mComputeQueue;
-	case platform::crossplatform::DeviceContextType::COPY:
+	case platform::crossplatform::CommandContextType::COPY:
 		return mCopyQueue;
 	}
 }
 
-void* RenderPlatform::CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType)
+void* RenderPlatform::CreateCommandAllocator(crossplatform::CommandContextType type)
 {
-	D3D12_COMMAND_LIST_TYPE type;
-	switch (deviceContextType)
+	D3D12_COMMAND_LIST_TYPE d3d12Type;
+	switch (type)
 	{
 	default:
-	case crossplatform::DeviceContextType::GRAPHICS:
-		type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	case crossplatform::CommandContextType::GRAPHICS:
+		d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		break;
-	case crossplatform::DeviceContextType::COMPUTE:
-		type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	case crossplatform::CommandContextType::COMPUTE:
+		d3d12Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
 		break;
-	case crossplatform::DeviceContextType::COPY:
-		type = D3D12_COMMAND_LIST_TYPE_COPY;
+	case crossplatform::CommandContextType::COPY:
+		d3d12Type = D3D12_COMMAND_LIST_TYPE_COPY;
 		break;
 	}
 	ID3D12CommandAllocator* commandAllocator;
-	HRESULT result = m12Device->CreateCommandAllocator(type, SIMUL_PPV_ARGS(&commandAllocator));
+	HRESULT result = m12Device->CreateCommandAllocator(d3d12Type, SIMUL_PPV_ARGS(&commandAllocator));
 	SIMUL_ASSERT(result == S_OK);
 	return commandAllocator;
 }
@@ -1547,24 +1547,24 @@ void RenderPlatform::DestroyCommandAllocator(void*& commandAllocator)
 	SAFE_RELEASE((ID3D12CommandAllocator*&)commandAllocator);
 }
 
-void* RenderPlatform::CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator)
+void* RenderPlatform::CreateCommandList(crossplatform::CommandContextType type, void* commandAllocator)
 {
-	D3D12_COMMAND_LIST_TYPE type;
-	switch (deviceContextType)
+	D3D12_COMMAND_LIST_TYPE d3d12Type;
+	switch (type)
 	{
 	default:
-	case crossplatform::DeviceContextType::GRAPHICS:
-		type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	case crossplatform::CommandContextType::GRAPHICS:
+		d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		break;
-	case crossplatform::DeviceContextType::COMPUTE:
-		type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	case crossplatform::CommandContextType::COMPUTE:
+		d3d12Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
 		break;
-	case crossplatform::DeviceContextType::COPY:
-		type = D3D12_COMMAND_LIST_TYPE_COPY;
+	case crossplatform::CommandContextType::COPY:
+		d3d12Type = D3D12_COMMAND_LIST_TYPE_COPY;
 		break;
 	}
 	ID3D12GraphicsCommandList* commandList;
-	HRESULT result = m12Device->CreateCommandList(0, type, (ID3D12CommandAllocator*)commandAllocator, nullptr, SIMUL_PPV_ARGS(&commandList));
+	HRESULT result = m12Device->CreateCommandList(0, d3d12Type, (ID3D12CommandAllocator*)commandAllocator, nullptr, SIMUL_PPV_ARGS(&commandList));
 	SIMUL_ASSERT(result == S_OK && commandList != nullptr);
 	result = commandList->Close();
 	SIMUL_ASSERT(result == S_OK)
@@ -1576,17 +1576,16 @@ void RenderPlatform::DestroyCommandList(void*& commandList, void* commandAllocat
 	SAFE_RELEASE((ID3D12CommandList*&)commandList);
 }
 
-void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext &deviceContext)
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
 {
 	ID3D12GraphicsCommandList *const commandList = deviceContext.asD3D12Context();
 	if (commandList && deviceContext.contextState.contextActive)
-		ExecuteCommandList(GetID3D12CommandQueue(deviceContext.deviceContextType), commandList);
+		ExecuteCommandList(GetID3D12CommandQueue(deviceContext.commandContextType), commandList);
 	deviceContext.contextState.contextActive = false;
 }
 
 void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue *commandQueue, ID3D12GraphicsCommandList *const commandList)
 {
-
 	// Close and Execute the parameter commandlist.
 	if (commandQueue && commandList)
 	{
@@ -1599,68 +1598,16 @@ void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue *commandQueue, ID3D12
 
 void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext)
 {
-	ID3D12GraphicsCommandList *&commandList = reinterpret_cast<ID3D12GraphicsCommandList *&>(deviceContext.platform_context);
-	ID3D12CommandAllocator *&commandAllocator = reinterpret_cast<ID3D12CommandAllocator *&>(deviceContext.platform_context_allocator);
+	crossplatform::CommandContext& commandContext = deviceContext.GetCommandContext();
+	ID3D12GraphicsCommandList*& commandList = reinterpret_cast<ID3D12GraphicsCommandList*&>(commandContext.commandList);
+	ID3D12CommandAllocator*& commandAllocator = reinterpret_cast<ID3D12CommandAllocator*&>(commandContext.commandAllocator);
 
-	if (deviceContext.deviceContextType == crossplatform::DeviceContextType::COMPUTE)
-	{
-		// Push back old CommandAllocator and its sync fence.
-		static uint64_t count = 0;
-		std::string fenceName = "Fence: RestartCommands DeviceContextType::COMPUTE" + std::to_string(count);
-		crossplatform::Fence *fence = CreateFence(fenceName.c_str());
-		Signal(deviceContext.deviceContextType, crossplatform::Fence::Signaller::GPU, fence);
-		mUsedAllocators.push_back({fence, commandAllocator});
+	// Push to release manager, but should check that the GPU is finished with these before releasing them.
+	PushToReleaseManager(commandList);
+	PushToReleaseManager(commandAllocator);
 
-		// Create new CommandAllocator
-		D3D12_COMMAND_LIST_TYPE type;
-		switch (deviceContext.deviceContextType)
-		{
-		default:
-		case crossplatform::DeviceContextType::GRAPHICS:
-			type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-			break;
-		case crossplatform::DeviceContextType::COMPUTE:
-			type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-			break;
-		case crossplatform::DeviceContextType::COPY:
-			type = D3D12_COMMAND_LIST_TYPE_COPY;
-			break;
-		}
-		m12Device->CreateCommandAllocator(type, SIMUL_PPV_ARGS(&commandAllocator));
-		std::string commandAllocatorName = "CommandAllocator: RestartCommands" + std::to_string(count++);
-		commandAllocator->SetName(platform::core::StringToWString(commandAllocatorName).c_str());
-
-		// Try to free old CommandAllocators
-		for (auto it = mUsedAllocators.begin(); it != mUsedAllocators.end(); /*Don't increment here*/)
-		{
-			crossplatform::Fence *&fence = it->first;
-			ID3D12CommandAllocator *&commandAllocator = it->second;
-			if (GetFenceStatus(fence))
-			{
-				SAFE_RELEASE(commandAllocator);
-				SAFE_DELETE(fence);
-				it = mUsedAllocators.erase(it); // Erase at this element, assign the next element to 'it'
-			}
-			else
-			{
-				it++; // Do increment here, if not re-assigned by std::vector::erase().
-			}
-		}
-	}
-	else if (deviceContext.deviceContextType == crossplatform::DeviceContextType::GRAPHICS)
-	{
-		// TODO: This will kill performance if overused! Do heavy GPU->CPU synchronisation - AJR
-		static uint64_t count = 0;
-		std::string fenceName = "Fence: RestartCommands DeviceContextType::GRAPHICS" + std::to_string(count++);
-		crossplatform::Fence *fence = CreateFence(fenceName.c_str());
-		Signal(deviceContext.deviceContextType, crossplatform::Fence::Signaller::GPU, fence);
-		Wait(deviceContext.deviceContextType, crossplatform::Fence::Signaller::CPU, fence);
-		SAFE_DELETE(fence);
-	}
-	else
-	{
-		SIMUL_BREAK("D3D12: DeviceContextType::UNKNOWN/DeviceContextType::COPY not supported.");
-	}
+	commandAllocator = (ID3D12CommandAllocator*)CreateCommandAllocator(deviceContext.commandContextType);
+	commandList = (ID3D12GraphicsCommandList*)CreateCommandList(deviceContext.commandContextType, commandAllocator);
 
 	if (commandList && commandAllocator)
 	{
@@ -1680,9 +1627,9 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext
 	deviceContext.contextState.contextActive = true;
 }
 
-ID3D12CommandQueue* RenderPlatform::GetID3D12CommandQueue(crossplatform::DeviceContextType deviceContextType)
+ID3D12CommandQueue* RenderPlatform::GetID3D12CommandQueue(crossplatform::CommandContextType type)
 {
-	return (ID3D12CommandQueue*)(GetCommandQueue(deviceContextType));
+	return (ID3D12CommandQueue*)(GetCommandQueue(type));
 }
 
 void RenderPlatform::Draw(crossplatform::GraphicsDeviceContext &deviceContext, int num_verts, int start_vert)
@@ -3063,8 +3010,7 @@ void RenderPlatform::Resolve(crossplatform::GraphicsDeviceContext &deviceContext
 
 void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::Texture *texture, const char *lFileNameUtf8)
 {
-
-	ID3D12GraphicsCommandList *cmdList = (ID3D12GraphicsCommandList *)deviceContext.platform_context;
+	ID3D12GraphicsCommandList* cmdList = ((crossplatform::DeviceContext)deviceContext).asD3D12Context();
 	if (!cmdList)
 		return;
 

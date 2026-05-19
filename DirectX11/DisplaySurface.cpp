@@ -146,30 +146,37 @@ void DisplaySurface::InitSwapChain()
 
 void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber)
 {
-	if(mCommandList)
+	if (mCommandList)
 		return;
-	if(!mDeferredContext)
+
+	if (!mDeferredContext)
 		return;
 	
-	 if (!mBackBufferRT)
+	if (!mBackBufferRT)
 		return;
+
 	if (delegatorReadWriteMutex)
 		delegatorReadWriteMutex->lock_for_write();
 
-	deferredContext.platform_context=mDeferredContext;
-	deferredContext.renderPlatform=renderPlatform;
+	crossplatform::CommandContext graphicsCommandContexts = { mDeferredContext, nullptr };
+	crossplatform::CommandContext* commandContexts[1] = { &graphicsCommandContexts };
 
-	renderPlatform->StoreRenderState(deferredContext);
+	crossplatform::DeviceContext deviceContext;
+	deviceContext.commandContexts[crossplatform::CommandContextType::GRAPHICS] = commandContexts[(size_t)crossplatform::CommandContextType::GRAPHICS];
+	renderPlatform->StoreRenderState(deviceContext);
 	mDeferredContext->OMSetRenderTargets(1, &mBackBufferRT, nullptr);
-#if 1
+
 	const float clear[4] = { 0.0f,0.0f,0.0f,1.0f };
 	mDeferredContext->ClearRenderTargetView(mBackBufferRT, clear);
 	mDeferredContext->RSSetViewports(1, &mViewport);
+
 	if(renderer)
-		renderer->Render(mViewId, mDeferredContext, mBackBufferRT, (int)mViewport.Width, (int)mViewport.Height, frameNumber);
-#endif
+	{
+		renderer->Render(mViewId, commandContexts, std::size(commandContexts), mBackBufferRT, (int)mViewport.Width, (int)mViewport.Height, frameNumber);
+	}
+
 	mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
-	renderPlatform->RestoreRenderState(deferredContext);
+	renderPlatform->RestoreRenderState(deviceContext);
 	mDeferredContext->FinishCommandList(true,&mCommandList);
 
 	if (delegatorReadWriteMutex)

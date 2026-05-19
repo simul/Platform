@@ -80,7 +80,7 @@ namespace platform
 
 			static std::vector<vk::QueueFamilyProperties> GetQueueProperties(vk::PhysicalDevice* gpu);
 			const std::vector<vk::QueueFamilyProperties>& GetQueueProperties() { return mQueueFamilyProperties; }
-			uint32_t GetQueueFamilyIndex(crossplatform::DeviceContextType type);
+			uint32_t GetQueueFamilyIndex(crossplatform::CommandContextType type);
 
 			template <typename T>
 			void FillPhysicalDeviceFeatures2ExtensionStructure(T &_structure)
@@ -120,12 +120,12 @@ namespace platform
 				}
 			}
 
-			void* GetCommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS) override;
-			void* CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType) override;
+			void* GetCommandQueue(crossplatform::CommandContextType type = crossplatform::CommandContextType::GRAPHICS) override;
+			void* CreateCommandAllocator(crossplatform::CommandContextType type) override;
 			void DestroyCommandAllocator(void*& commandAllocator) override;
-			void* CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator) override;
+			void* CreateCommandList(crossplatform::CommandContextType type, void* commandAllocator) override;
 			void DestroyCommandList(void*& commandList, void* commandAllocator) override;
-			void ExecuteCommands(crossplatform::DeviceContext &deviceContext) override;
+			void ExecuteCommands(crossplatform::DeviceContext& deviceContext) override;
 			void RestartCommands(crossplatform::DeviceContext &deviceContext) override;
 
 			struct ReleaseResourceInfo

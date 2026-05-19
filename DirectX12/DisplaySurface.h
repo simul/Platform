@@ -11,6 +11,11 @@
 
 namespace platform
 {
+	namespace crossplatform
+	{
+		struct Fence;
+	}
+	
 	namespace dx12
 	{
 		static constexpr UINT FrameCount = 4;
@@ -57,17 +62,18 @@ namespace platform
 			ID3D12DescriptorHeap*						mRTHeap;
 			//! The views of each backbuffers
 			CD3DX12_CPU_DESCRIPTOR_HANDLE				mRTHandles[FrameCount];
+			bool										mRecordingCommands;
+
 			//! We need one command allocator (storage for commands) for each backbuffer
 			ID3D12CommandAllocator*						mCommandAllocators[FrameCount];
-			//! Event used to synchronize
-			HANDLE										mWindowEvent;
-			//! Fences to syn with the GPU
-			ID3D12Fence*								mGPUFences[FrameCount];
-			//! Storage for the values of the fence
-			UINT64										mFenceValues[FrameCount];
 			//! Used to record commands
 			ID3D12GraphicsCommandList*					mCommandLists[FrameCount];
-			bool										mRecordingCommands;
+			//! Used to record compute commands
+			ID3D12GraphicsCommandList*					mComputeCommandLists[FrameCount];
+			//! We need one command allocator (storage for compute commands) for each backbuffer
+			ID3D12CommandAllocator*						mComputeCommandAllocators[FrameCount];
+			crossplatform::Fence*						mFences[FrameCount];
+			crossplatform::Fence*						mComputeFences[FrameCount];
 		};
 	}
 }

@@ -185,7 +185,9 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	//mDeferredContext->RSSetViewports(1, &mViewport);
 
 	if(renderer)
-		renderer->Render(mViewId, 0, 0,viewport.w, viewport.h,frameNumber);
+	{
+		renderer->Render(mViewId, nullptr, 0, nullptr, viewport.w, viewport.h, frameNumber);
+	}
 
 	//mDeferredContext->OMSetRenderTargets(0, nullptr, nullptr);
 	//mDeferredContext->FinishCommandList(true,&mCommandList);          // Draw The Scene

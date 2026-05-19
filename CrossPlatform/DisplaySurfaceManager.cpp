@@ -6,11 +6,11 @@ using namespace crossplatform;
 
 void platform::crossplatform::DisplaySurfaceManager::RemoveWindow(cp_hwnd hwnd)
 {
-	if(surfaces.find(hwnd)==surfaces.end())
+	if (surfaces.find(hwnd) == surfaces.end())
 		return;
 	toRender.erase(hwnd);
-	DisplaySurface *w=surfaces[hwnd];
-	SetFullScreen(hwnd,false,0);
+	DisplaySurface* w = surfaces[hwnd];
+	SetFullScreen(hwnd, false, 0);
 	delete w;
 	surfaces.erase(hwnd);
 }
@@ -26,7 +26,7 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 	{
 		if (surfaces.find(h) == surfaces.end())
 			return;
-		DisplaySurface *w = surfaces[h];
+		DisplaySurface* w = surfaces[h];
 		if (!w)
 		{
 			SIMUL_CERR << "No window exists for cp_hwnd " << std::hex << h << std::endl;
@@ -43,23 +43,22 @@ void DisplaySurfaceManager::RenderAll(bool clear)
 		}
 		w->StartFrame();
 		w->Render(delegatorReadWriteMutex, renderPlatform->GetFrameNumber());
-		if(delegatorReadWriteMutex->locked())
+		if (delegatorReadWriteMutex->locked())
 		{
 			SIMUL_BREAK("Locked mutex");
 		}
 	}
-	if(clear)
+	if (clear)
 		toRender.clear();
 }
 
-DisplaySurfaceManager::DisplaySurfaceManager():
-				renderPlatform(nullptr)
+DisplaySurfaceManager::DisplaySurfaceManager() : renderPlatform(nullptr)
 {
 }
 
-void DisplaySurfaceManager::Initialize(RenderPlatform *r)
+void DisplaySurfaceManager::Initialize(RenderPlatform* r)
 {
-	renderPlatform=r;
+	renderPlatform = r;
 	if (!delegatorReadWriteMutex)
 		delegatorReadWriteMutex = new platform::core::ReadWriteMutex;
 }
@@ -71,80 +70,80 @@ DisplaySurfaceManager::~DisplaySurfaceManager()
 
 void DisplaySurfaceManager::Shutdown()
 {
-	for(DisplaySurfaceMap::iterator i=surfaces.begin();i!=surfaces.end();i++)
+	for (DisplaySurfaceMap::iterator i = surfaces.begin(); i != surfaces.end(); i++)
 	{
-		SetFullScreen(i->second->GetHandle(),false,0);
+		SetFullScreen(i->second->GetHandle(), false, 0);
 		delete i->second;
 	}
 	surfaces.clear();
 }
 
-void DisplaySurfaceManager::SetRenderer(crossplatform::RenderDelegatorInterface *ci)
+void DisplaySurfaceManager::SetRenderer(crossplatform::RenderDelegatorInterface* renderDelegatorInterface)
 {
-	renderDelegater=ci;
-	for(auto s:surfaces)
+	renderDelegator = renderDelegatorInterface;
+	for (auto s : surfaces)
 	{
-		s.second->SetRenderer(ci);
+		s.second->SetRenderer(renderDelegatorInterface);
 	}
 }
 
 int DisplaySurfaceManager::GetViewId(cp_hwnd hwnd)
 {
-	if(surfaces.find(hwnd)==surfaces.end())
+	if (surfaces.find(hwnd) == surfaces.end())
 		return -1;
-	DisplaySurface *w=surfaces[hwnd];
+	DisplaySurface* w = surfaces[hwnd];
 	return w->GetViewId();
 }
 
-DisplaySurface *DisplaySurfaceManager::GetWindow(cp_hwnd hwnd)
+DisplaySurface* DisplaySurfaceManager::GetWindow(cp_hwnd hwnd)
 {
-	if(surfaces.find(hwnd)==surfaces.end())
+	if (surfaces.find(hwnd) == surfaces.end())
 		return NULL;
-	DisplaySurface *w=surfaces[hwnd];
+	DisplaySurface* w = surfaces[hwnd];
 	return w;
 }
 
-void DisplaySurfaceManager::SetFullScreen(cp_hwnd hwnd,bool fullscreen,int which_output)
+void DisplaySurfaceManager::SetFullScreen(cp_hwnd hwnd, bool fullscreen, int which_output)
 {
-	DisplaySurface *w=(DisplaySurface*)GetWindow(hwnd);
-	if(!w)
+	DisplaySurface* w = (DisplaySurface*)GetWindow(hwnd);
+	if (!w)
 		return;
 	// TO-DO!
 }
 
 void DisplaySurfaceManager::ResizeSwapChain(cp_hwnd hwnd)
 {
-	if(surfaces.find(hwnd)==surfaces.end())
+	if (surfaces.find(hwnd) == surfaces.end())
 		return;
-	DisplaySurface *w=surfaces[hwnd];
-	if(!w)
+	DisplaySurface* w = surfaces[hwnd];
+	if (!w)
 		return;
 
 	w->ResizeSwapChain();
 }
 
-void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd,crossplatform::PixelFormat fmt,bool vsync)
+void DisplaySurfaceManager::AddWindow(cp_hwnd hwnd, crossplatform::PixelFormat fmt, bool vsync)
 {
-	if(surfaces.find(hwnd)!=surfaces.end())
+	if (surfaces.find(hwnd) != surfaces.end())
 		return;
-	if(fmt==crossplatform::UNKNOWN)
-		fmt=kDisplayFormat;
-	SIMUL_NULL_CHECK_RETURN(renderPlatform,"Can't add a window when renderPlatform has not been set.")
-	DisplaySurface *window=nullptr;
-	if(createSurfaceDelegate)
-		window=createSurfaceDelegate(hwnd);
+	if (fmt == crossplatform::UNKNOWN)
+		fmt = kDisplayFormat;
+	SIMUL_NULL_CHECK_RETURN(renderPlatform, "Can't add a window when renderPlatform has not been set.")
+	DisplaySurface* window = nullptr;
+	if (createSurfaceDelegate)
+		window = createSurfaceDelegate(hwnd);
 	else
-		window=renderPlatform->CreateDisplaySurface();
-	window->SetRenderer(renderDelegater);
-	surfaces[hwnd]=window;
-	window->RestoreDeviceObjects(hwnd,renderPlatform,vsync,fmt);
+		window = renderPlatform->CreateDisplaySurface();
+	window->SetRenderer(renderDelegator);
+	surfaces[hwnd] = window;
+	window->RestoreDeviceObjects(hwnd, renderPlatform, vsync, fmt);
 }
 
 void DisplaySurfaceManager::EndFrame(bool clear)
 {
 	RenderAll(clear);
 	ERRNO_BREAK
-	for(auto s:surfaces)
+	for (auto s : surfaces)
 	{
 		s.second->EndFrame();
 	}

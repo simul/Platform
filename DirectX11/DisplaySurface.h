@@ -39,9 +39,8 @@ namespace platform
             ID3D11Device*               mDeviceRef;
             //! Rendering viewport
             D3D11_VIEWPORT				mViewport;
-			crossplatform::DeviceContext deferredContext;
-			ID3D11DeviceContext*	mDeferredContext;
-			ID3D11CommandList *mCommandList;
+			ID3D11DeviceContext*	    mDeferredContext;
+			ID3D11CommandList *         mCommandList;
 			crossplatform::PixelFormat pixelFormat;
 			void InitSwapChain();
         };

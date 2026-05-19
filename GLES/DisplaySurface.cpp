@@ -182,9 +182,10 @@ void DisplaySurface::Render(simul::base::ReadWriteMutex *delegatorReadWriteMutex
 	
 	renderPlatform->StoreRenderState(deferredContext);
 
-	glViewport(0, 0, viewport.w, viewport.h);   
+	glViewport(0, 0, viewport.w, viewport.h);
+	 
 	if(renderer)
-		renderer->Render(mViewId, 0, 0,viewport.w, viewport.h,frameNumber);
+		renderer->Render(mViewId, nullptr, 0, nullptr, viewport.w, viewport.h, frameNumber);
 
 	renderPlatform->RestoreRenderState(deferredContext);
 }

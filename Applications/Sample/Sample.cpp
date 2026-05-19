@@ -93,7 +93,7 @@ crossplatform::GraphicsDeviceInterface *graphicsDeviceInterface=&deviceManager;
 
 void GlfwErrorCallback(int errcode, const char* info)
 {
-    std::cout << "[GLFW ERROR] " << info << std::endl;
+	std::cout << "[GLFW ERROR] " << info << std::endl;
 }
 
 #endif
@@ -353,9 +353,9 @@ public:
 	}
 
 	void ResizeView(int view_id,int W,int H)
-    {
-        kOverrideWidth  = W;
-        kOverrideHeight = H;
+	{
+		kOverrideWidth  = W;
+		kOverrideHeight = H;
 		hDRRenderer->SetBufferSize(W,H);
 		hdrFramebuffer->SetWidthAndHeight(W,H);
 		hdrFramebuffer->SetAntialiasing(1);
@@ -394,33 +394,36 @@ public:
 		//hdrTexture=nullptr;
 	}
 
-	void Render(int view_id, void* context,void* colorBuffer, int w, int h, long long frame, void* context_allocator = nullptr) override
+	void Render(int view_id, crossplatform::CommandContext** ppContexts, size_t numContexts, void* colorBuffer, int w, int h, long long frame) override
 	{
 		// Device context structure
 		platform::crossplatform::GraphicsDeviceContext	deviceContext;
 
 		// Store back buffer, depth buffer and viewport information
-        deviceContext.defaultTargetsAndViewport.num             = 1;
-        deviceContext.defaultTargetsAndViewport.m_rt[0]         = colorBuffer;
-        deviceContext.defaultTargetsAndViewport.rtFormats[0]    = crossplatform::UNKNOWN; //To be later defined in the pipeline
-        deviceContext.defaultTargetsAndViewport.m_dt            = nullptr;
-        deviceContext.defaultTargetsAndViewport.depthFormat     = crossplatform::UNKNOWN;
-        deviceContext.defaultTargetsAndViewport.viewport        = { 0,0,w,h };
-		deviceContext.platform_context				            = context;
+		deviceContext.defaultTargetsAndViewport.num             = 1;
+		deviceContext.defaultTargetsAndViewport.m_rt[0]         = colorBuffer;
+		deviceContext.defaultTargetsAndViewport.rtFormats[0]    = crossplatform::UNKNOWN; //To be later defined in the pipeline
+		deviceContext.defaultTargetsAndViewport.m_dt            = nullptr;
+		deviceContext.defaultTargetsAndViewport.depthFormat     = crossplatform::UNKNOWN;
+		deviceContext.defaultTargetsAndViewport.viewport        = { 0,0,w,h };
+		for (size_t i = 0; i < numContexts; i++)
+		{
+			deviceContext.commandContexts[crossplatform::CommandContextType(i)] = ppContexts[i];
+		}
 		deviceContext.renderPlatform				            = renderPlatform;
 		deviceContext.viewStruct.view_id			            = view_id;
 		deviceContext.viewStruct.depthTextureStyle	            = crossplatform::PROJECTION;
 		{
 			deviceContext.viewStruct.view			            = camera.MakeViewMatrix();
-            float aspect                                        = (float)kOverrideWidth/ (float)kOverrideHeight;
-            if (reverseDepth)
-            {
-                deviceContext.viewStruct.proj                   = camera.MakeDepthReversedProjectionMatrix(aspect);
-            }
+			float aspect                                        = (float)kOverrideWidth/ (float)kOverrideHeight;
+			if (reverseDepth)
+			{
+				deviceContext.viewStruct.proj                   = camera.MakeDepthReversedProjectionMatrix(aspect);
+			}
 			else
-            { 
+			{ 
 				deviceContext.viewStruct.proj		            = camera.MakeProjectionMatrix(aspect);
-            }
+			}
 			deviceContext.viewStruct.Init();
 		}
 
@@ -609,8 +612,8 @@ public:
 	void OnMouse(bool bLeftButtonDown
 				,bool bRightButtonDown
 				,bool bMiddleButtonDown
-                ,int nMouseWheelDelta
-                ,int xPos
+				,int nMouseWheelDelta
+				,int xPos
 				,int yPos )
 	{
 		mouseCameraInput.MouseButtons

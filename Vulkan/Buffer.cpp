@@ -133,7 +133,7 @@ void Buffer::FinishLoading(crossplatform::DeviceContext& deviceContext)
 
 	vk::BufferCopy copyRegion = {};
 	copyRegion.setSize(size);
-	vk::CommandBuffer *commandBuffer=(vk::CommandBuffer*)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer=deviceContext.asVulkanContext();
 	commandBuffer->copyBuffer(mStagingBuffer, mBuffer, 1, &copyRegion);
 	loadingComplete = true;
 }

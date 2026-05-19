@@ -328,23 +328,23 @@ namespace platform
 			//! a structured buffer. The offset is in bytes, relative to the start of the structured data.
 			virtual void DispatchMeshIndirect(GraphicsDeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) {}
 			//! Add a signal command to the CPU thread or GPU queue.
-			virtual void Signal(DeviceContextType &type, Fence::Signaller signaller, Fence *fence) {}
+			virtual void Signal(CommandContextType type, Fence::Signaller signaller, Fence* fence) {}
 			//! Add a wait command to the CPU thread or GPU queue.
-			virtual void Wait(DeviceContextType &type, Fence::Waiter waiter, Fence *fence, uint64_t timeout_nanoseconds = UINT64_MAX) {}
+			virtual void Wait(CommandContextType type, Fence::Waiter waiter, Fence* fence, uint64_t timeout_nanoseconds = UINT64_MAX) {}
 			//! Check the status of the fence. Returns true is fence is completed.
 			virtual bool GetFenceStatus(crossplatform::Fence *fence) { return false; }
 			//! Returns the CommandQueue created during RestoreDeviceObjects 
-			virtual void* GetCommandQueue(crossplatform::DeviceContextType deviceContextType = crossplatform::DeviceContextType::GRAPHICS) { return nullptr; }
+			virtual void* GetCommandQueue(crossplatform::CommandContextType type = crossplatform::CommandContextType::GRAPHICS) { return nullptr; }
 			//! Create an Allocator for command list creation and recording.
-			virtual void* CreateCommandAllocator(crossplatform::DeviceContextType deviceContextType) { return nullptr; }
+			virtual void* CreateCommandAllocator(crossplatform::CommandContextType type) { return nullptr; }
 			//! Destroy a CommandAllocator.
 			virtual void DestroyCommandAllocator(void*& commandAllocator) {};
 			//! Create a CommandList for recording.
-			virtual void* CreateCommandList(crossplatform::DeviceContextType deviceContextType, void* commandAllocator) { return nullptr; }
+			virtual void* CreateCommandList(crossplatform::CommandContextType type, void* commandAllocator) { return nullptr; }
 			//! Destroy a CommandList.
 			virtual void DestroyCommandList(void*& commandList, void* commandAllocator) {};
-			//! Execute all previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
-			virtual void ExecuteCommands(DeviceContext &deviceContext) {};
+			//! Execute previous commands. You must call RestartCommands() to continue rendering after adding in synchronisation.
+			virtual void ExecuteCommands(DeviceContext& deviceContext) {};
 			//! Restart the commands for rendering after calling ExcuteCommands().
 			virtual void RestartCommands(DeviceContext &deviceContext) {};
 			//! Clear the current render target (i.e. the screen). In most API's this is simply a case of drawing a full-screen quad in the specified rgba colour.

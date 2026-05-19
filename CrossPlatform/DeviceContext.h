@@ -4,7 +4,7 @@
 #include "Texture.h"
 #include "Export.h"
 #include "Topology.h"
-#include <set>
+#include <map>
 #include <stack>
 #include <parallel_hashmap/phmap.h>
 #include <limits.h> 
@@ -20,8 +20,12 @@
 #endif
 
 struct ID3D11DeviceContext;
-struct IDirect3DDevice9;  
+struct IDirect3DDevice9;
 struct ID3D12GraphicsCommandList;
+namespace vk
+{
+	class CommandBuffer;
+}
 namespace sce
 {
 	namespace Gnmx
@@ -33,6 +37,7 @@ namespace nvn
 {
 	class CommandBuffer;
 }
+
 namespace platform
 {
 	namespace crossplatform
@@ -60,8 +65,10 @@ namespace platform
 			SubresourceRange subresource;
 			crossplatform::ShaderResourceType resourceType;
 		};
+
 		//! A container class intended to reproduce some of the behaviour of std::map with ints for indices, but to be much much faster.
-		template<typename T,int count> class FastMap
+		template<typename T,int count> 
+		class FastMap
 		{
 			int index_limit;
 			int index_start;
@@ -165,6 +172,7 @@ namespace platform
 		typedef FastMap<SamplerState*,32> SamplerStateAssignmentMap;
 		typedef phmap::flat_hash_map<const Texture*,TextureFence> FenceMap;
 		struct RenderState;
+
 		//! A structure to describe the state that is associated with a given deviceContext.
 		//! When rendering is to be performed, we can ensure that the state is applied.
 		struct SIMUL_CROSSPLATFORM_EXPORT ContextState
@@ -279,11 +287,10 @@ namespace platform
 				resourceGroupAppliedCounterCompute[0] = resourceGroupAppliedCounterCompute[1] = resourceGroupAppliedCounterCompute[2] = 0;
 			}
 		};
+
 		class EffectTechnique;
 		class RenderPlatform;
-		struct GraphicsDeviceContext;
-		struct MultiviewGraphicsDeviceContext;
-		struct ComputeDeviceContext;
+
 		enum class DeviceContextType:uint8_t
 		{
 			GRAPHICS, 
@@ -291,6 +298,20 @@ namespace platform
 			COMPUTE, 
 			COPY
 		};
+
+		enum class CommandContextType:uint8_t
+		{
+			GRAPHICS,
+			COMPUTE,
+			COPY
+		};
+
+		struct CommandContext
+		{
+			void* commandList = nullptr;		//ID3D12GraphicsCommandList* or vk::CommandBuffer*
+			void* commandAllocator = nullptr;	//ID3D12CommandAllocator* or vk::CommandPool*
+		};
+
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext
 		{
 		protected:
@@ -299,49 +320,37 @@ namespace platform
 			long long GetFrameNumber() const;
 			//! Only RenderPlatform should call this.
 			void SetFrameNumber(long long n);
+
 			friend class RenderPlatform;
-		public:
-			DeviceContextType deviceContextType;
 			
-			void *platform_context=nullptr;
-			void *platform_context_allocator=nullptr;
-			RenderPlatform *renderPlatform=nullptr;
+			friend struct GraphicsDeviceContext;
+			friend struct MultiviewGraphicsDeviceContext;
+			friend struct ComputeDeviceContext;
+
+		public:
+		#ifdef _DEBUG
+			int ApiCallCounter = 0;
+		#endif
 			crossplatform::ContextState contextState;
-#ifdef _DEBUG
-			int ApiCallCounter=0;
-#endif
-			virtual GraphicsDeviceContext* AsGraphicsDeviceContext()
-			{ 
-				return nullptr;
-			}
-			virtual MultiviewGraphicsDeviceContext* AsMultiviewGraphicsDeviceContext()
-			{
-				return nullptr;
-			}
-			virtual ComputeDeviceContext* AsComputeDeviceContext()
-			{
-				return nullptr;
-			}
-			ID3D11DeviceContext *asD3D11DeviceContext()
-			{
-				return (ID3D11DeviceContext*)platform_context;
-			}
-			IDirect3DDevice9 *asD3D9Device()
-			{
-				return (IDirect3DDevice9*)platform_context;
-			}
-			sce::Gnmx::LightweightGfxContext *asGfxContext()
-			{
-				return (sce::Gnmx::LightweightGfxContext*)platform_context;
-			}
-			nvn::CommandBuffer* asNVNContext()
-			{
-				return (nvn::CommandBuffer*)platform_context;
-			}
-			ID3D12GraphicsCommandList* asD3D12Context()
-			{
-				return (ID3D12GraphicsCommandList*)platform_context;
-			}
+			RenderPlatform* renderPlatform = nullptr;
+
+			DeviceContextType deviceContextType;	// This is for DeviceContext type safety.
+			CommandContextType commandContextType;	// This is the default CommandContext to be used.
+			
+			std::map<CommandContextType, CommandContext*> commandContexts;
+
+		public:
+			virtual GraphicsDeviceContext* AsGraphicsDeviceContext() { return nullptr; }
+			virtual MultiviewGraphicsDeviceContext* AsMultiviewGraphicsDeviceContext() { return nullptr; }
+			virtual ComputeDeviceContext* AsComputeDeviceContext() { return nullptr; }
+
+			CommandContext& GetCommandContext() { return *commandContexts[commandContextType]; }
+
+			ID3D11DeviceContext*				asD3D11DeviceContext()	{ return (ID3D11DeviceContext*)GetCommandContext().commandList; }
+			ID3D12GraphicsCommandList*			asD3D12Context()		{ return (ID3D12GraphicsCommandList*)GetCommandContext().commandList; }
+			vk::CommandBuffer*					asVulkanContext()		{ return (vk::CommandBuffer*)GetCommandContext().commandList; }
+			sce::Gnmx::LightweightGfxContext*	asGfxContext()			{ return (sce::Gnmx::LightweightGfxContext*)GetCommandContext().commandList; }
+			nvn::CommandBuffer*					asNVNContext()			{ return (nvn::CommandBuffer*)GetCommandContext().commandList; }
 		};
 		
 		//! The base class for Device contexts. The actual context pointer is only applicable in DirectX - in OpenGL, it will be null.
@@ -349,21 +358,16 @@ namespace platform
 		//! DeviceContext is context in the DirectX11 sense, encompassing a platform-specific deviceContext pointer
 		struct SIMUL_CROSSPLATFORM_EXPORT GraphicsDeviceContext : public DeviceContext
 		{
-			GraphicsDeviceContext *AsGraphicsDeviceContext() override
-			{
-				return this;
-			}
-			bool initialized=false;
-			int framePrintX=0;
-			int framePrintY=0;
-			double predictedDisplayTimeS = 0.0;
 			GraphicsDeviceContext();
+			GraphicsDeviceContext(DeviceContext& deviceContext);
+
 			~GraphicsDeviceContext();
-			ViewStruct viewStruct;
-			//uint cur_backbuffer;
+
+			GraphicsDeviceContext* AsGraphicsDeviceContext() override { return this; }
+	
 			std::stack<crossplatform::TargetsAndViewport*>& GetFrameBufferStack();
-			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
-			crossplatform::TargetsAndViewport *GetCurrentTargetsAndViewport();
+			crossplatform::TargetsAndViewport* GetCurrentTargetsAndViewport();
+
 			//! Set the RT's to restore to, once all Simul Framebuffers are deactivated. This must be called at least once.
 			void setDefaultRenderTargets(const ApiRenderTarget* rt
 				,const ApiDepthRenderTarget* dt
@@ -375,6 +379,14 @@ namespace platform
 				,int num_targets=0
 				,Texture *depth_target=nullptr
 			);
+
+			bool initialized = false;
+			int framePrintX = 0;
+			int framePrintY = 0;
+			double predictedDisplayTimeS = 0.0;
+			ViewStruct viewStruct;
+
+			crossplatform::TargetsAndViewport defaultTargetsAndViewport;
 			std::stack<crossplatform::TargetsAndViewport*> targetStack;
 		};
 
@@ -383,23 +395,21 @@ namespace platform
 		//! used a back up if MultiviewGraphicsDeviceContext::viewStructs is empty.
 		struct SIMUL_CROSSPLATFORM_EXPORT MultiviewGraphicsDeviceContext : public GraphicsDeviceContext
 		{
-			MultiviewGraphicsDeviceContext* AsMultiviewGraphicsDeviceContext() override
-			{
-				return this;
-			}
 			MultiviewGraphicsDeviceContext();
+			MultiviewGraphicsDeviceContext(DeviceContext& deviceContext);
+
+			MultiviewGraphicsDeviceContext* AsMultiviewGraphicsDeviceContext() override { return this; }
 
 			std::vector<ViewStruct> viewStructs;
 		};
 
 		struct SIMUL_CROSSPLATFORM_EXPORT ComputeDeviceContext : public DeviceContext
 		{
-			ComputeDeviceContext* AsComputeDeviceContext() override
-			{
-				return this;
-			}
-
 			ComputeDeviceContext();
+			ComputeDeviceContext(DeviceContext& deviceContext);
+
+			ComputeDeviceContext* AsComputeDeviceContext() override { return this; }
+
 			//Some function expect completed_frame and frame_number to increment.
 			//This copies the frame numbers from the normal DeviceContext to simulate this.
 			void UpdateFrameNumbers(DeviceContext& deviceContext);

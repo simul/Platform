@@ -475,7 +475,7 @@ cp::VideoDecoderResult VideoDecoder::CreateQueryObjects()
 cp::VideoDecoderResult VideoDecoder::CreateCommandObjects()
 {
 	RenderPlatform* dx12PF = (RenderPlatform*)mRenderPlatform;
-	mGraphicsCLC.Initialize(dx12PF, D3D12_COMMAND_LIST_TYPE_DIRECT, "DecoderGraphics", dx12PF->GetID3D12CommandQueue());
+	mGraphicsCLC.Initialize(dx12PF, D3D12_COMMAND_LIST_TYPE_DIRECT, "DecoderGraphics", dx12PF->GetID3D12CommandQueue(crossplatform::CommandContextType::GRAPHICS));
 	mDecodeCLC.Initialize(dx12PF, D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE, "Decode");
 	return cp::VideoDecoderResult::Ok;
 }

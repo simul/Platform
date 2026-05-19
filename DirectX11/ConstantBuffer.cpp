@@ -180,7 +180,7 @@ void  PlatformConstantBuffer::Apply(platform::crossplatform::DeviceContext &devi
 		SIMUL_CERR<<"Attempting to apply an uninitialized Constant Buffer"<<std::endl;
 		return;
 	}
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)deviceContext.platform_context;
+	ID3D11DeviceContext *pContext=deviceContext.asD3D11DeviceContext();
 	D3D11_MAPPED_SUBRESOURCE mapped_res;
 #if  SIMUL_D3D11_MAP_USAGE_DEFAULT_PLACEMENT
 	if(((dx11::RenderPlatform*)deviceContext.renderPlatform)->UsesFastSemantics())

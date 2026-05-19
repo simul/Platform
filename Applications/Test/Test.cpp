@@ -328,7 +328,7 @@ public:
 	void RemoveView(int id) override {};
 	void ResizeView(int view_id, int W, int H) override {};
 
-	void Render(int view_id, void* context, void* colorBuffer, int w, int h, long long frame, void* context_allocator = nullptr) override
+	void Render(int view_id, crossplatform::CommandContext** ppContexts, size_t numContexts, void* colorBuffer, int w, int h, long long frame) override
 	{
 		if (w * h == 0) //FramebufferGL can't deal with a viewport of {0,0,0,0}!
 			return;
@@ -344,7 +344,10 @@ public:
 		deviceContext.defaultTargetsAndViewport.depthFormat = crossplatform::UNKNOWN;
 		deviceContext.defaultTargetsAndViewport.viewport = { 0, 0, w, h };
 		
-		deviceContext.platform_context = context;
+		for (size_t i = 0; i < numContexts; i++)
+		{
+			deviceContext.commandContexts[crossplatform::CommandContextType(i)] = ppContexts[i];
+		}
 		deviceContext.renderPlatform = renderPlatform;
 		deviceContext.viewStruct.view_id = view_id;
 		deviceContext.viewStruct.depthTextureStyle = crossplatform::PROJECTION;

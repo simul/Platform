@@ -258,7 +258,7 @@ int TextRenderer::Render(GraphicsDeviceContext &deviceContext,float x0,float y,f
 	uint& n = constantBuffer.numChars;
 	n=0;
 	float u = 1024.f / font_texture->width;
-	crossplatform::StructuredBuffer<FontChar> &f=fontChars[deviceContext.platform_context];
+	crossplatform::StructuredBuffer<FontChar>& f = fontChars[renderPlatform];
 	if(max_chars>f.count)
 		f.RestoreDeviceObjects(renderPlatform,max_chars,false,false,nullptr,"fontChars");
 	FontChar *charList=f.GetBuffer(deviceContext);
@@ -354,7 +354,7 @@ int TextRenderer::Render(MultiviewGraphicsDeviceContext& deviceContext, float* x
 	//renderPlatform->SetStandardRenderState(deviceContext,crossplatform::STANDARD_ALPHA_BLENDING);
 
 	uint n = 0;
-	crossplatform::StructuredBuffer<FontChar>& f = fontChars[deviceContext.platform_context];
+	crossplatform::StructuredBuffer<FontChar>& f = fontChars[renderPlatform];
 	FontChar* charList = f.GetBuffer(deviceContext);
 	if(!charList)
 		return 0;

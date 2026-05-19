@@ -100,7 +100,7 @@ void Query::ResetQueries(crossplatform::DeviceContext &deviceContext)
 		RestoreDeviceObjects(deviceContext.renderPlatform);
 	}
 
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	commandBuffer->resetQueryPool(mQueryPool, currFrame, 1);
 	mCmdBuffers[currFrame] = commandBuffer;
 
@@ -112,7 +112,7 @@ void Query::Begin(crossplatform::DeviceContext& deviceContext)
 {
 	ResetQueries(deviceContext);
 
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (mQueryPoolCI.queryType == vk::QueryType::eTimestamp)
 		commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
 }
@@ -121,14 +121,14 @@ void Query::End(crossplatform::DeviceContext& deviceContext)
 {
 	ResetQueries(deviceContext);
 
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	if (mQueryPoolCI.queryType == vk::QueryType::eTimestamp)
 		commandBuffer->writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, mQueryPool, static_cast<uint32_t>(currFrame));
 }
 
 bool Query::GetData(crossplatform::DeviceContext &deviceContext,void *data, size_t sz)
 {
-	vk::CommandBuffer *commandBuffer = (vk::CommandBuffer *)deviceContext.platform_context;
+	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 
 	gotResults[currFrame] = true;
 	if (!doneQuery[currFrame])

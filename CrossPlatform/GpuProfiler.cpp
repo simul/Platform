@@ -36,13 +36,13 @@ namespace platform
 	{
 		void SetGpuProfilingInterface(crossplatform::DeviceContext &context, GpuProfilingInterface *p)
 		{
-			gpuProfilingInterface[context.platform_context] = p;
+			gpuProfilingInterface[context.renderPlatform] = p;
 		}
 		GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context)
 		{
 			if (gpuProfilingInterface.empty())
 				return nullptr;
-			auto u = gpuProfilingInterface.find(context.platform_context);
+			auto u = gpuProfilingInterface.find(context.renderPlatform);
 			if (u == gpuProfilingInterface.end())
 				return nullptr;
 			return u->second;

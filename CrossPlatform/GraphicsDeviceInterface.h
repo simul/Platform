@@ -26,12 +26,15 @@ namespace platform
 			int height;
 			int numerator, denominator;
 		};
+
 		struct GPUInfo
 		{
 			std::string name;
 			uint64_t memorySize;
 		};
+
 		class RenderDelegatorInterface;
+
 		/// An interface class for managing GPU-accelerated graphics windows.
 		/// The derived class 
 		class SIMUL_CROSSPLATFORM_EXPORT GraphicsDeviceInterface
