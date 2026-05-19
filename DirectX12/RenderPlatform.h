@@ -168,15 +168,15 @@ namespace platform
 			void DispatchRays(crossplatform::DeviceContext &deviceContext, const uint3 &dispatch, const crossplatform::ShaderBindingTable *sbt = nullptr) override;
 			void DispatchMesh(crossplatform::GraphicsDeviceContext &deviceContext, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
 			void DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &deviceContext, crossplatform::PlatformStructuredBuffer *argsBuffer, uint64_t offset = 0) override;
-			void Signal(crossplatform::CommandContextType type, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence) override;
-			void Wait(crossplatform::CommandContextType type, crossplatform::Fence::Waiter waiter, crossplatform::Fence* fence, uint64_t timeout_nanoseconds = UINT64_MAX) override;
+			void Signal(crossplatform::Fence* fence) override;
+			void Wait(crossplatform::Fence* fence, uint64_t timeout_nanoseconds = UINT64_MAX) override;
 			bool GetFenceStatus(crossplatform::Fence *fence) override;
 			void* GetCommandQueue(crossplatform::CommandContextType type = crossplatform::CommandContextType::GRAPHICS) override;
 			void* CreateCommandAllocator(crossplatform::CommandContextType type) override;
 			void DestroyCommandAllocator(void*& commandAllocator) override;
 			void* CreateCommandList(crossplatform::CommandContextType type, void* commandAllocator) override;
 			void DestroyCommandList(void*& commandList, void* commandAllocator) override;
-			void ExecuteCommands(crossplatform::DeviceContext &deviceContext) override;
+			void ExecuteCommands(crossplatform::DeviceContext& deviceContext, crossplatform::Fences waitFences = {}, crossplatform::Fences signalFences = {}) override;
 			void RestartCommands(crossplatform::DeviceContext &deviceContext) override;
 			void Draw(crossplatform::GraphicsDeviceContext &GraphicsDeviceContext, int num_verts, int start_vert);
 			void DrawInstanced(crossplatform::GraphicsDeviceContext &deviceContext, int num_instances, int base_instance, int num_verts, int start_vert) override;
@@ -248,9 +248,6 @@ namespace platform
 			void SetCurrentSamples(int samples, int quality = 0);
 			bool IsMSAAEnabled();
 
-			//! Executes the provided commandList on the provided commandQueue, alongwith executing the internal immediate commandlist on the graphics queue.
-			//! Passing nullptr for both parameters will only execute the immediate commandlist.
-			void ExecuteCommandList(ID3D12CommandQueue *commandQueue, ID3D12GraphicsCommandList *const commandList);
 			ID3D12CommandQueue* GetID3D12CommandQueue(crossplatform::CommandContextType type);
 
 			DXGI_SAMPLE_DESC GetMSAAInfo();

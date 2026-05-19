@@ -668,24 +668,54 @@ void RenderPlatform::DestroyCommandList(void*& commandList, void* commandAllocat
 	commandList = VK_NULL_HANDLE;
 }
 
-void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext, crossplatform::Fences waitFences, crossplatform::Fences signalFences)
 {
 	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	commandBuffer->end();
+
+	vk::TimelineSemaphoreSubmitInfo semaphoreSI = vk::TimelineSemaphoreSubmitInfo();
+	semaphoreSI.waitSemaphoreValueCount = (uint32_t)waitFences.size();
+	semaphoreSI.signalSemaphoreValueCount = (uint32_t)signalFences.size();
+
+	std::vector<uint64_t> waitSemaphoreValues;
+	waitSemaphoreValues.reserve(semaphoreSI.waitSemaphoreValueCount);
+	std::vector<uint64_t> signalSemaphoreValues;
+	signalSemaphoreValues.reserve(semaphoreSI.signalSemaphoreValueCount);
+
+	std::vector<vk::Semaphore> waitSemaphores;
+	waitSemaphoreValues.reserve(semaphoreSI.waitSemaphoreValueCount);
+	std::vector<vk::Semaphore> signalSemaphores;
+	signalSemaphoreValues.reserve(semaphoreSI.signalSemaphoreValueCount);
+
+	for (const auto& waitFence : waitFences)
+	{
+		vulkan::Fence* f = (vulkan::Fence*)waitFence;
+		waitSemaphores.push_back(f->AsVulkanSemaphore());
+		waitSemaphoreValues.push_back(f->value);
+	}
+	for (const auto& signalFence : signalFences)
+	{
+		vulkan::Fence* f = (vulkan::Fence*)signalFence;
+		signalSemaphores.push_back(f->AsVulkanSemaphore());
+		signalSemaphoreValues.push_back(f->value);
+	}
+
+	semaphoreSI.pWaitSemaphoreValues = waitSemaphoreValues.data();
+	semaphoreSI.pSignalSemaphoreValues = signalSemaphoreValues.data();
 
 	vk::FenceCreateInfo fenceCI;
 	fenceCI.setPNext(nullptr).setFlags(vk::FenceCreateFlags(0));
 	vk::Fence fence = vulkanDevice->createFence(fenceCI);
 
 	vk::SubmitInfo si = vk::SubmitInfo()
-		.setWaitSemaphoreCount(0)
-		.setPWaitSemaphores(nullptr)
+		.setPNext(&semaphoreSI)
+		.setWaitSemaphoreCount(semaphoreSI.waitSemaphoreValueCount)
+		.setPWaitSemaphores(waitSemaphores.data())
 		.setWaitDstStageMask(nullptr)
 		.setCommandBufferCount(1)
 		.setPCommandBuffers(commandBuffer)
-		.setSignalSemaphoreCount(0)
-		.setPSignalSemaphores(nullptr)
-		.setPNext(nullptr);
+		.setSignalSemaphoreCount(semaphoreSI.signalSemaphoreValueCount)
+		.setPSignalSemaphores(signalSemaphores.data());
 	vk::Queue queue = (VkQueue)GetCommandQueue(deviceContext.commandContextType);
 	SIMUL_VK_CHECK(queue.submit(1, &si, fence));
 	SIMUL_VK_CHECK(vulkanDevice->waitForFences(1, &fence, true, UINT64_MAX));

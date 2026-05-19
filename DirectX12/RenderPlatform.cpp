@@ -1439,7 +1439,7 @@ void RenderPlatform::DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &
 #endif
 }
 
-void RenderPlatform::Signal(crossplatform::CommandContextType type, crossplatform::Fence::Signaller signaller, crossplatform::Fence* fence)
+void RenderPlatform::Signal(crossplatform::Fence* fence)
 {
 	dx12::Fence *f = (dx12::Fence *)fence;
 	if (!f)
@@ -1449,21 +1449,10 @@ void RenderPlatform::Signal(crossplatform::CommandContextType type, crossplatfor
 	}
 
 	f->value++; // Increment the fence value to a new value which we can wait upon.
-	if (signaller == crossplatform::Fence::Signaller::CPU)
-	{
-		f->AsD3D12Fence()->Signal(f->value);
-	}
-	else if (signaller == crossplatform::Fence::Signaller::GPU)
-	{
-		GetID3D12CommandQueue(type)->Signal(f->AsD3D12Fence(), f->value);
-	}
-	else
-	{
-		SIMUL_BREAK_ONCE("D3D12: Unknown Signaller.");
-	}
+	f->AsD3D12Fence()->Signal(f->value);
 }
 
-void RenderPlatform::Wait(crossplatform::CommandContextType type, crossplatform::Fence::Waiter waiter, crossplatform::Fence *fence, uint64_t timeout_nanoseconds)
+void RenderPlatform::Wait(crossplatform::Fence *fence, uint64_t timeout_nanoseconds)
 {
 	dx12::Fence *f = (dx12::Fence *)fence;
 	if (!f)
@@ -1472,25 +1461,14 @@ void RenderPlatform::Wait(crossplatform::CommandContextType type, crossplatform:
 		return;
 	}
 
-	if (waiter == crossplatform::Fence::Signaller::CPU)
+	if (f->AsD3D12Fence()->GetCompletedValue() < f->value)
 	{
-		if (f->AsD3D12Fence()->GetCompletedValue() < f->value)
+		HANDLE mWindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		if (mWindowEvent != 0)
 		{
-			HANDLE mWindowEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-			if (mWindowEvent != 0)
-			{
-				f->AsD3D12Fence()->SetEventOnCompletion(f->value, mWindowEvent);
-				WaitForSingleObject(mWindowEvent, static_cast<DWORD>(timeout_nanoseconds / 1000));
-			}
+			f->AsD3D12Fence()->SetEventOnCompletion(f->value, mWindowEvent);
+			WaitForSingleObject(mWindowEvent, static_cast<DWORD>(timeout_nanoseconds / 1000));
 		}
-	}
-	else if (waiter == crossplatform::Fence::Signaller::GPU)
-	{
-		GetID3D12CommandQueue(type)->Wait(f->AsD3D12Fence(), f->value);
-	}
-	else
-	{
-		SIMUL_BREAK_ONCE("D3D12: Unknown Waiter.");
 	}
 }
 
@@ -1576,24 +1554,32 @@ void RenderPlatform::DestroyCommandList(void*& commandList, void* commandAllocat
 	SAFE_RELEASE((ID3D12CommandList*&)commandList);
 }
 
-void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext, crossplatform::Fences waitFences, crossplatform::Fences signalFences)
 {
-	ID3D12GraphicsCommandList *const commandList = deviceContext.asD3D12Context();
-	if (commandList && deviceContext.contextState.contextActive)
-		ExecuteCommandList(GetID3D12CommandQueue(deviceContext.commandContextType), commandList);
-	deviceContext.contextState.contextActive = false;
-}
+	ID3D12CommandQueue* commandQueue = GetID3D12CommandQueue(deviceContext.commandContextType);
+	for (const auto& waitFence : waitFences)
+	{
+		dx12::Fence* f = (dx12::Fence*)waitFence;
+		commandQueue->Wait(f->AsD3D12Fence(), f->value);
+	}
 
-void RenderPlatform::ExecuteCommandList(ID3D12CommandQueue *commandQueue, ID3D12GraphicsCommandList *const commandList)
-{
-	// Close and Execute the parameter commandlist.
-	if (commandQueue && commandList)
+	ID3D12GraphicsCommandList *const commandList = deviceContext.asD3D12Context();
+	if (commandQueue && commandList && deviceContext.contextState.contextActive)
 	{
 		HRESULT r = commandList->Close();
 		if (FAILED(r))
 			SIMUL_BREAK("Failed to close command list");
-		commandQueue->ExecuteCommandLists(1, (ID3D12CommandList *const *)&commandList);
+		commandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&commandList);
 	}
+
+	for (const auto& signalFence : signalFences)
+	{
+		dx12::Fence* f = (dx12::Fence*)signalFence;
+		f->value++; // Increment the fence value to a new value which we can wait upon.
+		commandQueue->Signal(f->AsD3D12Fence(), f->value);
+	}
+
+	deviceContext.contextState.contextActive = false;
 }
 
 void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext)

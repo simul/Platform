@@ -1342,7 +1342,7 @@ void RenderPlatform::SaveTexture(crossplatform::GraphicsDeviceContext& deviceCon
 	SAFE_RELEASE(stagingBuffer);
 }
 
-void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext)
+void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext, crossplatform::Fences waitFences, crossplatform::Fences signalFences)
 {
 	ID3D11CommandList* commandList = nullptr;
 	HRESULT hr = deviceContext.asD3D11DeviceContext()->FinishCommandList(FALSE, &commandList);

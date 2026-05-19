@@ -134,12 +134,15 @@ namespace platform
 				}
 			}
 
+			void Signal(crossplatform::Fence* fence) override;
+			void Wait(crossplatform::Fence* fence, uint64_t timeout_nanoseconds = UINT64_MAX) override;
+			bool GetFenceStatus(crossplatform::Fence* fence) override;
 			void* GetCommandQueue(crossplatform::CommandContextType type = crossplatform::CommandContextType::GRAPHICS) override;
 			void* CreateCommandAllocator(crossplatform::CommandContextType type) override;
 			void DestroyCommandAllocator(void*& commandAllocator) override;
 			void* CreateCommandList(crossplatform::CommandContextType type, void* commandAllocator) override;
 			void DestroyCommandList(void*& commandList, void* commandAllocator) override;
-			void ExecuteCommands(crossplatform::DeviceContext& deviceContext) override;
+			void ExecuteCommands(crossplatform::DeviceContext& deviceContext, crossplatform::Fences waitFences = {}, crossplatform::Fences signalFences = {}) override;
 			void RestartCommands(crossplatform::DeviceContext &deviceContext) override;
 
 			struct ReleaseResourceInfo

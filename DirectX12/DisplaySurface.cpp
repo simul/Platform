@@ -342,8 +342,8 @@ void DisplaySurface::StartFrame()
 	UINT idx	= GetCurrentBackBufferIndex();
 
 	// If the GPU is behind, wait:
-	renderPlatform->Wait(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Waiter::CPU, mFences[idx]);
-	renderPlatform->Wait(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Waiter::CPU, mComputeFences[idx]);
+	renderPlatform->Wait(mFences[idx]);
+	renderPlatform->Wait(mComputeFences[idx]);
 	WaitForAllWorkDone();
 
 	//GRAPHICS
@@ -369,39 +369,43 @@ void DisplaySurface::EndFrame()
 
 	mRecordingCommands = false;
 
-	HRESULT res = S_FALSE;
-	dx12::RenderPlatform* dx12RenderPlatform = static_cast<dx12::RenderPlatform*>(renderPlatform);
-
 	// Cache the current idx:
 	int idx = GetCurrentBackBufferIndex();
 	
-	//SIMUL_COUT<<"Executing command list 0x"<<std::hex<<(uint64_t)mCommandList<<"\n";
-	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetID3D12CommandQueue(crossplatform::CommandContextType::GRAPHICS), mCommandLists[idx]);
-	dx12RenderPlatform->ExecuteCommandList(dx12RenderPlatform->GetID3D12CommandQueue(crossplatform::CommandContextType::COMPUTE), mComputeCommandLists[idx]);
+	auto ExecuteCommands = [&]<typename T, typename = std::enable_if_t<std::is_base_of_v<crossplatform::DeviceContext, T>>>
+		(ID3D12GraphicsCommandList* commandList, crossplatform::Fences waitFences = {}, crossplatform::Fences signalFences = {}) -> void
+	{
+		crossplatform::CommandContext commandContext = {commandList, nullptr};
+
+		T deviceContext;
+		deviceContext.commandContexts[deviceContext.commandContextType] = &commandContext;
+		deviceContext.contextState.contextActive = true;
+		renderPlatform->ExecuteCommands(deviceContext, waitFences, signalFences);
+	};
+
+	//https://stackoverflow.com/questions/3575901/can-lambda-functions-be-templated#comment117678141_62932369
+	ExecuteCommands.template operator()<crossplatform::GraphicsDeviceContext>(mCommandLists[idx], {}, { mFences[idx] });
+	ExecuteCommands.template operator()<crossplatform::ComputeDeviceContext>(mComputeCommandLists[idx], {}, { mComputeFences[idx] });
 
 #ifndef _GAMING_XBOX
 	// Present new frame
 	const DWORD dwFlags = mIsVSYNC ? 0 : DXGI_PRESENT_ALLOW_TEARING;
 	const UINT SyncInterval = mIsVSYNC ? 1 : 0;
-	res = mSwapChain->Present(SyncInterval, dwFlags);
+	HRESULT res = mSwapChain->Present(SyncInterval, dwFlags);
 	if (FAILED(res))
 	{
 		HRESULT removedRes = mDeviceRef->GetDeviceRemovedReason();
 		SIMUL_CERR << removedRes << std::endl;
 	}
 #endif
-	// Signal at the end of the pipe, note that we use the cached index 
-	// or we will be adding a fence for the next frame!
-	renderPlatform->Signal(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Signaller::GPU, mFences[idx]);
-	renderPlatform->Signal(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Signaller::GPU, mComputeFences[idx]);
 }
 
 void DisplaySurface::WaitForAllWorkDone()
 {
 	for (size_t i = 0; i < FrameCount; i++)
 	{
-		renderPlatform->Wait(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Waiter::CPU, mFences[i]);
-		renderPlatform->Wait(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Waiter::CPU, mComputeFences[i]);
+		renderPlatform->Wait(mFences[i]);
+		renderPlatform->Wait(mComputeFences[i]);
 	}
 }
 
@@ -428,8 +432,8 @@ void DisplaySurface::Resize()
 	}
 
 	UINT idx = (GetCurrentBackBufferIndex() + (FrameCount - 1)) % FrameCount;
-	renderPlatform->Wait(crossplatform::CommandContextType::GRAPHICS, crossplatform::Fence::Waiter::CPU, mFences[idx]);
-	renderPlatform->Wait(crossplatform::CommandContextType::COMPUTE, crossplatform::Fence::Waiter::CPU, mComputeFences[idx]);
+	renderPlatform->Wait(mFences[idx]);
+	renderPlatform->Wait(mComputeFences[idx]);
 
 	SAFE_RELEASE(mRTHeap);
 	SAFE_RELEASE_ARRAY(mBackBuffers, FrameCount);
