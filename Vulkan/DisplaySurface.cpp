@@ -284,11 +284,10 @@ void DisplaySurface::InitSwapChain()
 		vk::PhysicalDevice *gpu = GetGPU();
 		if (gpu)
 		{
-			auto r = gpu->getSurfaceCapabilitiesKHR(mSurface, &surfCaps);
-			if (r == vk::Result::eSuccess
-				&& surfCaps.currentExtent.width != (uint32_t)-1
-				&& surfCaps.currentExtent.width != 0
-				&& surfCaps.currentExtent.height != 0)
+			result = gpu->getSurfaceCapabilitiesKHR(surface, &surfCaps);
+			if (result == vk::Result::eSuccess
+				&& surfCaps.currentExtent.width != (uint32_t)-1 && surfCaps.currentExtent.height != (uint32_t)-1
+				&& surfCaps.currentExtent.width != 0 && surfCaps.currentExtent.height != 0)
 			{
 				viewport.w = surfCaps.currentExtent.width;
 				viewport.h = surfCaps.currentExtent.height;
@@ -296,6 +295,7 @@ void DisplaySurface::InitSwapChain()
 		}
 	}
 #endif
+
 	// what formats are supported?
 	uint32_t surfaceformats = 0;
 	result = gpu->getSurfaceFormatsKHR(surface, &surfaceformats, nullptr);
@@ -380,10 +380,8 @@ void DisplaySurface::InitSwapChain()
 	// can also report 0x0 when the window has not yet been mapped; treat that the
 	// same as the "undefined" sentinel and fall back to the caller-supplied
 	// viewport size, which is otherwise valid.
-	const bool surfaceExtentValid =
-		surfCapabilities.currentExtent.width != (uint32_t)-1
-		&& surfCapabilities.currentExtent.width != 0
-		&& surfCapabilities.currentExtent.height != 0;
+	const bool surfaceExtentValid = surfCapabilities.currentExtent.width != (uint32_t)-1 && surfCapabilities.currentExtent.height != (uint32_t)-1
+		&& surfCapabilities.currentExtent.width != 0 && surfCapabilities.currentExtent.height != 0;
 	if (!surfaceExtentValid)
 	{
 		swapchainExtent.width = viewport.w;
@@ -396,20 +394,12 @@ void DisplaySurface::InitSwapChain()
 		viewport.w = surfCapabilities.currentExtent.width;
 		viewport.h = surfCapabilities.currentExtent.height;
 	}
+
 	// Final clamp to the device's allowed range, and bail out cleanly rather than
 	// hand a 0x0 extent (or the eUndefined format below) to the driver.
-	if (swapchainExtent.width < surfCapabilities.minImageExtent.width)
-		swapchainExtent.width = surfCapabilities.minImageExtent.width;
-	if (swapchainExtent.height < surfCapabilities.minImageExtent.height)
-		swapchainExtent.height = surfCapabilities.minImageExtent.height;
-	if (surfCapabilities.maxImageExtent.width
-		&& swapchainExtent.width > surfCapabilities.maxImageExtent.width)
-		swapchainExtent.width = surfCapabilities.maxImageExtent.width;
-	if (surfCapabilities.maxImageExtent.height
-		&& swapchainExtent.height > surfCapabilities.maxImageExtent.height)
-		swapchainExtent.height = surfCapabilities.maxImageExtent.height;
-	if (swapchainExtent.width == 0 || swapchainExtent.height == 0
-		|| vulkanFormat == vk::Format::eUndefined)
+	swapchainExtent.width = std::clamp(swapchainExtent.width, surfCapabilities.minImageExtent.width, surfCapabilities.maxImageExtent.width);
+	swapchainExtent.height = std::clamp(swapchainExtent.height, surfCapabilities.minImageExtent.height, surfCapabilities.maxImageExtent.height);
+	if (swapchainExtent.width == 0 || swapchainExtent.height == 0 || vulkanFormat == vk::Format::eUndefined)
 	{
 		SIMUL_CERR << "Vulkan swapchain init aborted: extent=" << swapchainExtent.width
 			<< "x" << swapchainExtent.height << " format=" << (int)vulkanFormat << "\n";
@@ -419,6 +409,7 @@ void DisplaySurface::InitSwapChain()
 	// The FIFO present mode is guaranteed by the spec to be supported
 	// and to have no tearing.  It's a great default present mode to use.
 	vk::PresentModeKHR swapchainPresentMode = vk::PresentModeKHR::eFifo;
+
 	// If the caller requested no-vsync, only honour eImmediate when the surface
 	// actually supports it - requesting an unsupported present mode is invalid
 	// usage and crashes inside vkCreateSwapchainKHR on several Linux ICDs.
@@ -496,7 +487,7 @@ void DisplaySurface::InitSwapChain()
 		.setPQueueFamilyIndices(nullptr)
 		.setPreTransform(preTransform)
 		.setCompositeAlpha(compositeAlpha)
-		.setPresentMode(mIsVSYNC ? swapchainPresentMode : vk::PresentModeKHR::eImmediate) // Use vk::PresentModeKHR::eImmediate for no v-sync.
+		.setPresentMode(swapchainPresentMode)
 		.setClipped(true)
 		.setOldSwapchain(VK_NULL_HANDLE);
 	result = device->createSwapchainKHR(&swapchainCI, nullptr, &swapchain);
@@ -815,7 +806,7 @@ void DisplaySurface::Resize()
 	uint32_t W = 0;
 	uint32_t H = 0;
 
-#ifdef _MSC_VER
+#ifndef _MSC_VER
 	RECT rect = {};
 	if (!GetClientRect((HWND)mHwnd, &rect))
 	{
@@ -840,8 +831,8 @@ void DisplaySurface::Resize()
 	vk::PhysicalDevice* gpu = GetGPU();
 	if (gpu && surface)
 	{
-		auto result = gpu->getSurfaceCapabilitiesKHR(surface, &surfCapabilities);
-		if (result == vk::Result::eSuccess && surfCapabilities.currentExtent.width != (uint32_t)-1)
+		vk::Result result = gpu->getSurfaceCapabilitiesKHR(surface, &surfCapabilities);
+		if (result == vk::Result::eSuccess && surfCapabilities.currentExtent.width != (uint32_t)-1 && surfCapabilities.currentExtent.height != (uint32_t)-1)
 		{
 			if (surfCapabilities.currentExtent.width != (uint32_t)-1)
 			{
@@ -850,7 +841,7 @@ void DisplaySurface::Resize()
 				W = surfCapabilities.currentExtent.width;
 				H = surfCapabilities.currentExtent.height;
 			}
-			else if (pendingW != 0 && pendingH != 0)
+			else if (pendingWidth != 0 && pendingHeight != 0)
 			{
 				// Wayland (and some XWayland configurations) report the "undefined"
 				// sentinel and delegate extent choice to the application. Fall back
@@ -859,8 +850,8 @@ void DisplaySurface::Resize()
 				// this the swapchain would stay at its bootstrap size and the compositor
 				// would scale it to fit the window, making UI rendered at fixed pixel
 				// sizes appear to grow/shrink as the window is resized.
-				W = pendingW;
-				H = pendingH;
+				W = pendingWidth;
+				H = pendingHeight;
 			}
 		}
 	}

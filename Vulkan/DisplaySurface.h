@@ -88,8 +88,8 @@ namespace platform
 			uint32_t graphicsQueueFamilyIndex;
 			uint32_t presentQueueFamilyIndex;
 
-			uint32_t pendingW = 0;
-			uint32_t pendingH = 0;
+			uint32_t pendingWidth = 0;
+			uint32_t pendingHeight = 0;
 		};
 	}
 }
