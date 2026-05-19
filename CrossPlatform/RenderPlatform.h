@@ -139,20 +139,18 @@ namespace platform
 		struct SIMUL_CROSSPLATFORM_EXPORT Fence
 		{
 			virtual ~Fence() = default;
-			enum class Signaller : uint32_t
-			{
-				CPU,
-				GPU
-			};
-			typedef Signaller Waiter;
-			uint64_t value;
+			uint64_t value = 0;
+			RenderPlatform* renderPlatform = nullptr;
 			virtual void RestoreDeviceObjects(RenderPlatform *r)
 			{
+				renderPlatform = r;
 			}
 			virtual void InvalidateDeviceObjects()
 			{
+				renderPlatform = nullptr;
 			}
 		};
+		typedef std::vector<Fence*> Fences;
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.
 		vec4 SIMUL_CROSSPLATFORM_EXPORT ViewportToTexCoordsXYWH(const Viewport *vi, const Texture *t);
 		/// Given a viewport struct and a texture, get the texture coordinates that viewport represents within the texture.

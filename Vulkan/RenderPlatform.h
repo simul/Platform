@@ -58,7 +58,21 @@ namespace platform
 			size_t GetTotalVideoBytesFreed() const override;
 			void Deallocate(void *) override {};
 		};
+		//! Vulkan Fence - implemented as a Vulkan Timeline Semaphore
+		struct SIMUL_VULKAN_EXPORT Fence : public crossplatform::Fence
+		{
+			void RestoreDeviceObjects(crossplatform::RenderPlatform* r) override;
+			void InvalidateDeviceObjects() override;
+			Fence(crossplatform::RenderPlatform* r);
+			~Fence();
+			vk::Semaphore AsVulkanSemaphore()
+			{
+				return vkSemaphore;
+			}
 
+		protected:
+			vk::Semaphore vkSemaphore = VK_NULL_HANDLE;
+		};
 		//! Vulkan renderplatform implementation
 		class SIMUL_VULKAN_EXPORT RenderPlatform : public crossplatform::RenderPlatform
 		{
@@ -208,6 +222,7 @@ namespace platform
 			crossplatform::Buffer *CreateBuffer() override;
 			crossplatform::RenderState *CreateRenderState(const crossplatform::RenderStateDesc &desc) override;
 			crossplatform::Query *CreateQuery(crossplatform::QueryType type) override;
+			crossplatform::Fence* CreateFence(const char* name) override;
 			crossplatform::Shader *CreateShader() override;
 
 			crossplatform::DisplaySurface *CreateDisplaySurface() override;

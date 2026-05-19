@@ -23,34 +23,11 @@
 #include <cstdint>
 #include <format>
 
-#pragma optimize("", off)
-#ifndef _countof
-#define _countof(a) (sizeof(a) / sizeof(*(a)))
-#endif
-
 bool platform::vulkan::debugUtilsSupported = false;
 bool platform::vulkan::debugMarkerSupported = false;
 
-size_t platform::vulkan::MemoryInterface::GetCurrentVideoBytesAllocated() const
-{
-	VmaTotalStatistics stat;
-	vmaCalculateStatistics(mGPUAllocator, &stat);
-	return stat.total.statistics.allocationBytes;
-}
-
-size_t platform::vulkan::MemoryInterface::GetTotalVideoBytesAllocated() const
-{
-	VmaTotalStatistics stat;
-	vmaCalculateStatistics(mGPUAllocator, &stat);
-	return stat.total.statistics.allocationBytes;
-}
-
-size_t platform::vulkan::MemoryInterface::GetTotalVideoBytesFreed() const
-{
-	VmaTotalStatistics stat;
-	vmaCalculateStatistics(mGPUAllocator, &stat);
-	return 0;
-}
+using namespace platform;
+using namespace vulkan;
 
 namespace platform::vulkan
 {
@@ -64,8 +41,75 @@ namespace platform::vulkan
 #endif
 }
 
-using namespace platform;
-using namespace vulkan;
+///////////////////
+// MemoryInterface//
+///////////////////
+
+size_t MemoryInterface::GetCurrentVideoBytesAllocated() const
+{
+	VmaTotalStatistics stat;
+	vmaCalculateStatistics(mGPUAllocator, &stat);
+	return stat.total.statistics.allocationBytes;
+}
+
+size_t MemoryInterface::GetTotalVideoBytesAllocated() const
+{
+	VmaTotalStatistics stat;
+	vmaCalculateStatistics(mGPUAllocator, &stat);
+	return stat.total.statistics.allocationBytes;
+}
+
+size_t MemoryInterface::GetTotalVideoBytesFreed() const
+{
+	VmaTotalStatistics stat;
+	vmaCalculateStatistics(mGPUAllocator, &stat);
+	return 0;
+}
+
+/////////
+// Fence//
+/////////
+
+void Fence::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
+{
+	vulkan::RenderPlatform* vulkanRenderPlatfrom = (vulkan::RenderPlatform*)r;
+	vk::SemaphoreTypeCreateInfo semaphoretypeCI = vk::SemaphoreTypeCreateInfo()
+		.setSemaphoreType(vk::SemaphoreType::eTimeline)
+		.setInitialValue(0);
+	vk::SemaphoreCreateInfo semaphoreCI = vk::SemaphoreCreateInfo()
+		.setPNext(&semaphoretypeCI);
+	vkSemaphore = vulkanRenderPlatfrom->AsVulkanDevice()->createSemaphore(semaphoreCI, nullptr);
+	value = 0;
+}
+
+void Fence::InvalidateDeviceObjects()
+{
+	vulkan::RenderPlatform* vulkanRenderPlatfrom = (vulkan::RenderPlatform*)renderPlatform;
+	vulkanRenderPlatfrom->AsVulkanDevice()->destroySemaphore(vkSemaphore, nullptr);
+}
+
+Fence::Fence(crossplatform::RenderPlatform* r)
+{
+	crossplatform::Fence::RestoreDeviceObjects(r);
+	RestoreDeviceObjects(r);
+}
+
+Fence::~Fence()
+{
+	crossplatform::Fence::InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
+}
+
+crossplatform::Fence* RenderPlatform::CreateFence(const char* name)
+{
+	vulkan::Fence* q = new vulkan::Fence(this);
+	SetVulkanName(q->renderPlatform, q->AsVulkanSemaphore(), name);
+	return q;
+}
+
+//////////////////
+// RenderPlatform//
+//////////////////
 
 RenderPlatform::RenderPlatform() : vulkanMemoryInterface(mGPUAllocator), mDummy2D(nullptr), mDummy3D(nullptr)
 {
@@ -522,6 +566,54 @@ bool RenderPlatform::CheckDeviceExtension(const std::string &deviceExtensionName
 			return true;
 	}
 	return false;
+}
+
+void RenderPlatform::Signal(crossplatform::Fence* fence)
+{
+	vulkan::Fence* f = (vulkan::Fence*)fence;
+	if (!f)
+	{
+		SIMUL_BREAK_ONCE("Vulkan: Fence is nullptr.");
+		return;
+	}
+
+	f->value++; // Increment the fence value to a new value which we can wait upon.
+	vk::SemaphoreSignalInfo signalInfo = vk::SemaphoreSignalInfo()
+		.setSemaphore(f->AsVulkanSemaphore())
+		.setValue(f->value);
+	AsVulkanDevice()->signalSemaphore(signalInfo);
+}
+
+void RenderPlatform::Wait(crossplatform::Fence* fence, uint64_t timeout_nanoseconds)
+{
+	vulkan::Fence* f = (vulkan::Fence*)fence;
+	if (!f)
+	{
+		SIMUL_BREAK_ONCE("Vulkan: Fence is nullptr.");
+		return;
+	}
+
+	vk::Semaphore semaphore = f->AsVulkanSemaphore();
+	uint64_t value = f->value;
+	
+	vk::SemaphoreWaitInfo waitInfo = vk::SemaphoreWaitInfo()
+		.setSemaphoreCount(1)
+		.setPSemaphores(&semaphore)
+		.setPValues(&value);
+	SIMUL_VK_CHECK(AsVulkanDevice()->waitSemaphores(waitInfo, timeout_nanoseconds));
+}
+
+bool RenderPlatform::GetFenceStatus(crossplatform::Fence* fence)
+{
+	vulkan::Fence* f = (vulkan::Fence*)fence;
+	if (!f)
+	{
+		SIMUL_BREAK_ONCE("Vulkan: Fence is nullptr.");
+		return false;
+	}
+
+	bool complete = !(AsVulkanDevice()->getSemaphoreCounterValue(f->AsVulkanSemaphore()) < f->value);
+	return complete;
 }
 
 void* RenderPlatform::GetCommandQueue(crossplatform::CommandContextType deviceContextType)
