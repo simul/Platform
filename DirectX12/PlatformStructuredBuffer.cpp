@@ -88,23 +88,37 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 	// If provided data, init the GPU buffer with it:
 	if (init_data)
 	{
-		SIMUL_BREAK_ONCE("Not implemented");
+		void* cmdAlloc = renderPlatform->CreateCommandAllocator(crossplatform::CommandContextType::GRAPHICS);
+		void* cmdList = renderPlatform->CreateCommandList(crossplatform::CommandContextType::GRAPHICS, cmdAlloc);
+		((ID3D12GraphicsCommandList*)cmdList)->Reset((ID3D12CommandAllocator*)cmdAlloc, nullptr);
 
-		/*void* pNewData = malloc(mTotalSize);
+		crossplatform::CommandContext commandContext = {cmdList, cmdAlloc};
+		crossplatform::GraphicsDeviceContext deviceContext;
+		deviceContext.commandContexts[deviceContext.commandContextType] = &commandContext;
+		deviceContext.contextState.contextActive = true;
+
+		void* pNewData = malloc(mTotalSize);
 		memset(pNewData, 0, mTotalSize);
 		memcpy(pNewData, init_data, mUnitSize);
-		
+
 		D3D12_SUBRESOURCE_DATA dataToCopy   = {};
 		dataToCopy.pData                    = pNewData;
 		dataToCopy.RowPitch                 = dataToCopy.SlicePitch = mUnitSize;
 		mCurrentState                       = finalState;
 
-		crossplatform::DeviceContext &deviceContext=mRenderPlatform->GetImmediateContext();
-		mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, initState, D3D12_RESOURCE_STATE_COPY_DEST, true);
+		mRenderPlatform->ResourceTransitionSimple(deviceContext, mGPUBuffer, initState, D3D12_RESOURCE_STATE_COPY_DEST, true);
 		UpdateSubresources(deviceContext.asD3D12Context(), mGPUBuffer, mUploadBuffer, 0, 0, 1, &dataToCopy);
-		mRenderPlatform->ResourceTransitionSimple(deviceContext,mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, finalState, true);
-		
-		free(pNewData);*/
+		mRenderPlatform->ResourceTransitionSimple(deviceContext, mGPUBuffer, D3D12_RESOURCE_STATE_COPY_DEST, finalState, true);
+
+		crossplatform::Fence* uploadFence = renderPlatform->CreateFence((std::string("UploadFence: ") + std::string(name)).c_str());
+		renderPlatform->ExecuteCommands(deviceContext, {}, {uploadFence});
+		renderPlatform->Wait(uploadFence);
+
+		renderPlatform->DestroyCommandList(cmdList, cmdAlloc);
+		renderPlatform->DestroyCommandAllocator(cmdList);
+		SAFE_DELETE(uploadFence);
+
+		free(pNewData);
 	}
 
 	// If this Structured Buffer supports CPU read,
