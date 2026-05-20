@@ -39,6 +39,8 @@ else()
 	target_include_directories(${target} INTERFACE "${SIMUL_PLATFORM_DIR}/External")
 endif()
 
+target_compile_definitions(${target} PRIVATE GLFW_INCLUDE_NONE)
+
 if (SIMUL_DLL_SDK_LIBRARY)
 	AddDLLCompileDefinitions( ${target} )
 	target_compile_definitions(${target} PRIVATE "IMGUI_API=__declspec(dllexport)")
