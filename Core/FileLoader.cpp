@@ -66,12 +66,17 @@ std::string platform::core::GetExeDirectory()
 }
 
 static FileLoader *fileLoader = nullptr;
+static DefaultFileLoader defaultFileLoader = DefaultFileLoader();
+
+FileLoader::~FileLoader()
+{
+	std::cout<<"FileLoader destructor"<<std::endl;
+}
 
 FileLoader *FileLoader::GetFileLoader()
 {
 	if (!fileLoader)
 	{
-		static DefaultFileLoader defaultFileLoader = DefaultFileLoader();
 		fileLoader = &defaultFileLoader;
 	}
 	return fileLoader;
