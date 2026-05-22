@@ -1,12 +1,18 @@
 {
 	"compiler": {
-		"command": "glslangValidator -V -S {stage}",
+		"command": "glslangValidator -V -S {stage} --target-env vulkan1.3",
 		"commandPaths": [ "$VULKAN_SDK/bin/", "$VULKAN_SDK/Bin/" ],
 		"stages": {
 			"vertex": "vert",
 			"geometry": "geom",
 			"pixel": "frag",
 			"compute": "comp",
+			"raygeneration": "rgen",
+			"miss": "rmiss",
+			"callable": "rcall",
+			"closesthit": "rchit",
+			"anyhit": "rahit",
+			"intersection": "rint",
 			"mesh": "mesh",
 			"task": "task"
 		}
@@ -18,7 +24,7 @@
 	"sourceExtension": "glsl",
 	"outputOption": "-o ",
 	"includeOption": "",
-	"entryPointOption": "--target-env vulkan1.3 --entry-point {name} --source-entrypoint main",
+	"entryPointOption": "--entry-point {name} --source-entrypoint main",
 	"debugOption": "-gVS -Od",
 	"debugOptionSometimesFailsToGenerateSpirV": "-gVS",
 	"multiplePixelOutputFormats": false,
@@ -29,6 +35,7 @@
 	},
 	"generateSlots": true,
 	"sharedSlots": false,
+	"supportRaytracing": true,
 	"supportMultiview": true,
 	"lineDirectiveFilenames": true,
 	"passThroughSamplers": true,
@@ -51,6 +58,9 @@
 	"gatherBlueSyntax": "{command}({samplerType}({textureSampler}),{otherParams},2)",
 	"gatherAlphaSyntax": "{command}({samplerType}({textureSampler}),{otherParams},3)",
 	"interlockedOpSyntax": "{previousValue}={command}({resourceName},{value})",
+	"traceRaySyntax": "{command}({tlas}, {rayFlags}, {cullMask}, {sbtRecordOffset}, {sbtRecordStride}, {missIndex}, {origin}, {Tmin}, {direction}, {Tmax}, {payloadLocation})",
+	"reportHitSyntax": "{command}({hitT}, {hitKind})",
+	"callShaderSyntax": "{command}({sbtRecordIndex}, {callableLocation})",
 	"structDeclaration": "struct {name}\n{\n[\t{flat} {type} {name};]};",
 	"constantBufferDeclaration": "layout(std140, set={group}, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} ;",
 	"namedConstantBufferDeclaration": "layout(std140, set={group}, binding = {slot}) uniform {name}\n{\n[\t{type} {name};]} {instance_name};",
@@ -59,9 +69,10 @@
 	"vertexOutputDeclaration": "out gl_PerVertex { vec4 gl_Position; };\nlayout(location ={slot}) out Block\n{\n[{type} {name};]} ioblock;",
 	"pixelOutputDeclaration": "[layout(location = {slot}) out {type} {name};]",
 	"pixelOutputDeclarationDSB": "[layout(location = {slot}, index = {id}) out {type} {name};]",
-	"compilerMessageRegex": [ "(ERROR|WARNING):[\\S]*(.*):[\\S]*([0-9]+)[\\S]*:[ ]*(.*)", "$2($3): $1: $4" ],
-	"preamble": "#version 450\n#extension GL_EXT_debug_printf : enable\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_int16 : enable\n#extension GL_EXT_control_flow_attributes: enable\n",
+	"compilerMessageRegex": [ "(ERROR|WARNING):[\\s]*(.*):[\\s]*([0-9]+)[\\s]*:[ ]*(.*)", "$2($3): $1: $4" ],
+	"preamble": "#version 460\n#extension GL_EXT_debug_printf : enable\n#extension GL_GOOGLE_cpp_style_line_directive : enable\n#extension GL_EXT_samplerless_texture_functions : enable\n#extension GL_EXT_shader_io_blocks : enable\n#extension GL_ARB_enhanced_layouts : enable\n#extension GL_EXT_multiview : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n#extension GL_EXT_shader_explicit_arithmetic_types_int16 : enable\n#extension GL_EXT_control_flow_attributes : enable\n",
 	"computePreamble": "#extension GL_KHR_shader_subgroup_quad : enable\n#extension GL_KHR_shader_subgroup_shuffle: enable\n#extension GL_KHR_shader_subgroup_vote : enable\n#extension GL_KHR_shader_subgroup_ballot : enable\n#extension GL_KHR_shader_subgroup_arithmetic : enable\n#extension GL_KHR_shader_subgroup_basic : enable\n#extension GL_ARB_gpu_shader_int64 : enable\n#extension GL_ARB_compute_shader : enable\n#extension GL_ARB_shader_image_load_store : enable\n#extension GL_ARB_gpu_shader_int64 : enable\n",
+	"raytracingPreamble": "#extension GL_EXT_ray_tracing : enable\n",
 	"meshPreamble": "#extension GL_EXT_mesh_shader : require\n#extension GL_KHR_shader_subgroup_basic : enable\n#extension GL_KHR_shader_subgroup_ballot : require\n#extension GL_KHR_shader_subgroup_arithmetic : enable\n#define USE_MESH_SHADER 1\n",
 	"amplificationPreamble": "#extension GL_EXT_mesh_shader : require\n#extension GL_KHR_shader_subgroup_basic : enable\n#extension GL_KHR_shader_subgroup_ballot : require\n#extension GL_KHR_shader_subgroup_arithmetic : enable\n#define USE_AMPLIFICATION_SHADER 1\n",
 	"vertexSemantics": {
@@ -194,6 +205,8 @@
 		"float2": "vec2",
 		"float3": "vec3",
 		"float4": "vec4",
+		"float4x3": "mat4x3",
+		"float3x4": "mat4x3",
 		"SamplerState": "sampler",
 		"Texture1D": "texture1D",
 		"Texture2D": "texture2D",
@@ -282,6 +295,17 @@
 		"round": "roundEven",
 		"roundNearest": "round",
 		"firstbitlow": "findLSB",
-		"unroll": "[unroll]"
+		"unroll": "[unroll]",
+		"RaytracingAccelerationStructure": "accelerationStructureEXT",
+		"CallShader": "executeCallableEXT",
+		"IgnoreHit": "ignoreIntersectionEXT",
+		"ReportHit": "reportIntersectionEXT",
+		"AcceptHitAndEndSearch": "terminateRayEXT",
+		"TraceRay": "traceRayEXT",
+		"payloadStorage": "rayPayloadEXT",
+		"payloadInStorage": "rayPayloadInEXT",
+		"attributeStorage": "hitAttributeEXT",
+		"callableDataStorage": "callableDataEXT",
+		"callableDataInStorage": "callableDataInEXT"
 	}
 }

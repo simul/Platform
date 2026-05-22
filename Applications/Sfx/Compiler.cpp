@@ -539,7 +539,7 @@ string FillInVariables(const string &src, std::shared_ptr<ShaderInstance> shader
 
 void ReplaceRegexes(string &src, const std::map<string, string> &replace)
 {
-	for (auto i : replace)
+	for (const auto& i : replace)
 	{
 		std::regex param_re(std::string("\\b") + i.first + "\\b");
 		src = std::regex_replace(src, param_re, i.second);
@@ -691,9 +691,20 @@ wstring BuildCompileCommand(std::shared_ptr<ShaderInstance> shaderInstance, cons
 	command += L" ";
 
 	// Add entry point option
-	if (sfxConfig.entryPointOption.length() && shaderInstance->m_profile.find("lib_6_") == std::string::npos)
+	if (sfxConfig.entryPointOption.length())
 	{
-		command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shaderInstance->entryPoint)) + L" ";
+		bool vulkan = sfxConfig.api == "Vulkan";
+		bool raytracingProfile = shaderInstance->m_profile.find("lib_6_") != std::string::npos;
+		
+		if (!raytracingProfile)
+		{
+			command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shaderInstance->entryPoint)) + L" ";
+		}
+		else
+		{
+			if (vulkan)
+				command += Utf8ToWString(std::regex_replace(sfxConfig.entryPointOption, std::regex("\\{name\\}"), shaderInstance->entryPoint)) + L" ";
+		}
 	}
 	string filename_root = WStringToString(outputFile);
 	size_t dot_pos = filename_root.rfind(".");
@@ -762,11 +773,11 @@ bool RewriteOutput(const SfxConfig &sfxConfig, const SfxOptions &sfxOptions, str
 	{
 		try
 		{
-			std::regex re(sfxConfig.compilerMessageRegex.c_str(), std::regex_constants::icase | std::regex::extended);
+			std::regex re(sfxConfig.compilerMessageRegex.c_str(), std::regex_constants::icase);
 			std::smatch base_match;
 			while (std::regex_search(str, base_match, re))
 			{
-				str = std::regex_replace(str, re, sfxConfig.compilerMessageReplace + "\n");
+				str = std::regex_replace(str, re, sfxConfig.compilerMessageReplace);
 				base_match = std::smatch();
 			}
 		}
@@ -854,11 +865,13 @@ int Compile(std::shared_ptr<ShaderInstance> shaderInstance, const string &source
 	string preamble = "";
 	preamble += sfxConfig.preamble + "\n";
 	if (t == COMPUTE_SHADER)
-		preamble += sfxConfig.computePreamble;
+		preamble += sfxConfig.computePreamble + "\n";
+	else if (t == RAY_GENERATION_SHADER || t == MISS_SHADER || t == CALLABLE_SHADER || t == CLOSEST_HIT_SHADER || t == ANY_HIT_SHADER || t == INTERSECTION_SHADER)
+		preamble += sfxConfig.raytracingPreamble + "\n";
 	else if (t == MESH_SHADER)
-		preamble += sfxConfig.meshPreamble;
+		preamble += sfxConfig.meshPreamble + "\n";
 	else if (t == AMPLIFICATION_SHADER)
-		preamble += sfxConfig.amplificationPreamble;
+		preamble += sfxConfig.amplificationPreamble + "\n";
 
 	// Pssl recognizes the shaderInstance type using a suffix to the filename, before the .pssl extension:
 	wstring shaderTypeSuffix;

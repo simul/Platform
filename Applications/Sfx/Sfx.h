@@ -101,11 +101,16 @@ struct SfxConfig
 	std::string gatherBlueSyntax;
 	std::string gatherAlphaSyntax;
 	std::string interlockedOpSyntax;
+	std::string traceRaySyntax;
+	std::string reportHitSyntax;
+	std::string callShaderSyntax;
 	//! Generic preamble
 	std::string preamble;
 	std::string optimizationLevelOption;
 	//! Preamble only for compute shaders
 	std::string computePreamble;
+	//! Preamble only for ray tracing shaders
+	std::string raytracingPreamble;
 	//! Preamble only for mesh shaders
 	std::string meshPreamble;
 	//! Preamble only for amplification (task) shaders

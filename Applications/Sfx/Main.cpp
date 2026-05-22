@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 		int a = 0;
 		for (int i = 1; i < argc; i++)
 		{
-			// std::cout << "argv[" << i << "] " << argv[i] << std::endl;
+			std::cout << "argv[" << i << "] " << argv[i] << std::endl;
 			while (argv[i][0] == ' ')
 				argv[i]++;
 			if (strlen(argv[i]) >= 2 && (argv[i][0] == '-'))
@@ -299,6 +299,20 @@ int main(int argc, char **argv)
 							st = (int)sfx::FRAGMENT_SHADER;
 						else if (a == "compute")
 							st = (int)sfx::COMPUTE_SHADER;
+
+						else if (a == "raygeneration")
+							st = (int)sfx::RAY_GENERATION_SHADER;
+						else if (a == "miss")
+							st = (int)sfx::MISS_SHADER;
+						else if (a == "callable")
+							st = (int)sfx::CALLABLE_SHADER;
+						else if (a == "closesthit")
+							st = (int)sfx::CLOSEST_HIT_SHADER;
+						else if (a == "anyhit")
+							st = (int)sfx::ANY_HIT_SHADER;
+						else if (a == "intersection")
+							st = (int)sfx::INTERSECTION_SHADER;
+						
 						else if (a == "mesh")
 							st = (int)sfx::MESH_SHADER;
 						else if (a == "amplification" || a == "task")
@@ -454,12 +468,20 @@ int main(int argc, char **argv)
 				sfxConfig.gatherAlphaSyntax = j["gatherAlphaSyntax"];
 			if (j.count("interlockedOpSyntax") > 0)
 				sfxConfig.interlockedOpSyntax = j["interlockedOpSyntax"];
+			if (j.count("traceRaySyntax") > 0)
+				sfxConfig.traceRaySyntax = j["traceRaySyntax"];
+			if (j.count("reportHitSyntax") > 0)
+				sfxConfig.reportHitSyntax = j["reportHitSyntax"];
+			if (j.count("callShaderSyntax") > 0)
+				sfxConfig.callShaderSyntax = j["callShaderSyntax"];
 			if (j.count("preamble") > 0)
 				sfxConfig.preamble = j["preamble"];
 			if (j.count("optimizationLevelOption") > 0)
 				sfxConfig.optimizationLevelOption = j["optimizationLevelOption"];
 			if (j.count("computePreamble") > 0)
 				sfxConfig.computePreamble = j["computePreamble"];
+			if (j.count("raytracingPreamble") > 0)
+				sfxConfig.raytracingPreamble = j["raytracingPreamble"];
 			if (j.count("meshPreamble") > 0)
 				sfxConfig.meshPreamble = j["meshPreamble"];
 			if (j.count("amplificationPreamble") > 0)

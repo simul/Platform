@@ -780,6 +780,7 @@ unsigned Effect::CompileAllShaders(string sfxoFilename, const string &sharedCode
 		find_and_replace(profile_text, "cs_", "");
 		find_and_replace(profile_text, "ms_", "");
 		find_and_replace(profile_text, "as_", "");
+		find_and_replace(profile_text, "lib_", "");
 		find_and_replace(profile_text, "_", ".");
 		double profile_number = atof(profile_text.c_str());
 		if (profile_number > sfxConfig.maxShaderModel)
@@ -2810,8 +2811,8 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 	for (auto v = vars.begin(); v != vars.end(); v++)
 	{
 		std::string varOrig = v.operator*()->original;
-		if (gEffect->GetConfig()->api == "Vulkan" &&
-			shaderInstance->shaderType == AMPLIFICATION_SHADER)
+		const ShaderType& t = shaderInstance->shaderType;
+		if (gEffect->GetConfig()->api == "Vulkan" && t == AMPLIFICATION_SHADER)
 		{
 			find_and_replace(varOrig, "shared ", "taskPayloadSharedEXT ");
 		}
@@ -2990,6 +2991,44 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		}
 	}
 	string content = function->content;
+
+	// Apply Vulkan-specific transformations for ray tracing shaders
+	if (config->api == "Vulkan")
+	{
+		if (shaderInstance->shaderType == MISS_SHADER || shaderInstance->shaderType == CLOSEST_HIT_SHADER || shaderInstance->shaderType == ANY_HIT_SHADER)
+		{
+			std::string preFunctionAssignment = "", postFunctionAssignment = "";
+			const auto& payloadParameter = function->parameters[0];
+			for (const auto& var : vars)
+			{
+				if (var->name == payloadParameter.identifier)
+				{
+					std::string globalVariableForParameter = var->original.substr(var->original.find_last_of(' ') + 1);
+					find_and_replace(globalVariableForParameter, ";", "");
+					preFunctionAssignment += payloadParameter.type + " " + payloadParameter.identifier + " = " + globalVariableForParameter + ";\n";
+					postFunctionAssignment += globalVariableForParameter + " = " + payloadParameter.identifier + ";\n";
+					break;
+				}
+			}
+
+			if (shaderInstance->shaderType == CLOSEST_HIT_SHADER || shaderInstance->shaderType == ANY_HIT_SHADER)
+			{
+				const auto& attributesParameter = function->parameters[1];
+				for (const auto& var : vars)
+				{
+					if (var->name == attributesParameter.identifier)
+					{
+						std::string globalVariableForParameter = var->original.substr(var->original.find_last_of(' ') + 1);
+						find_and_replace(globalVariableForParameter, ";", "");
+						preFunctionAssignment += attributesParameter.type + " " + attributesParameter.identifier + " = " + globalVariableForParameter + ";\n";
+						break;
+					}
+				}
+			}
+
+			content = preFunctionAssignment + content + "\n" + postFunctionAssignment;
+		}
+	}
 
 	// Apply Vulkan-specific transformations for mesh/task shaders
 	if (config->api == "Vulkan")
@@ -3532,29 +3571,32 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 
 		theShader << csLayout << "\n";
 	}
-	if (shaderInstance->shaderType == RAY_GENERATION_SHADER)
+	if (config->api == "DirectX 12")
 	{
-		theShader << "[shader(\"raygeneration\")]\n";
-	}
-	if (shaderInstance->shaderType == CLOSEST_HIT_SHADER)
-	{
-		theShader << "[shader(\"closesthit\")]\n";
-	}
-	if (shaderInstance->shaderType == ANY_HIT_SHADER)
-	{
-		theShader << "[shader(\"anyhit\")]\n"; // sfxConfig
-	}
-	if (shaderInstance->shaderType == MISS_SHADER)
-	{
-		theShader << "[shader(\"miss\")]\n"; // sfxConfig
-	}
-	if (shaderInstance->shaderType == INTERSECTION_SHADER)
-	{
-		theShader << "[shader(\"intersection\")]\n"; // sfxConfig
-	}
-	if (shaderInstance->shaderType == CALLABLE_SHADER)
-	{
-		theShader << "[shader(\"callable\")]\n"; // sfxConfig
+		if (shaderInstance->shaderType == RAY_GENERATION_SHADER)
+		{
+			theShader << "[shader(\"raygeneration\")]\n";
+		}
+		if (shaderInstance->shaderType == CLOSEST_HIT_SHADER)
+		{
+			theShader << "[shader(\"closesthit\")]\n";
+		}
+		if (shaderInstance->shaderType == ANY_HIT_SHADER)
+		{
+			theShader << "[shader(\"anyhit\")]\n"; // sfxConfig
+		}
+		if (shaderInstance->shaderType == MISS_SHADER)
+		{
+			theShader << "[shader(\"miss\")]\n"; // sfxConfig
+		}
+		if (shaderInstance->shaderType == INTERSECTION_SHADER)
+		{
+			theShader << "[shader(\"intersection\")]\n"; // sfxConfig
+		}
+		if (shaderInstance->shaderType == CALLABLE_SHADER)
+		{
+			theShader << "[shader(\"callable\")]\n"; // sfxConfig
+		}
 	}
 	// Only if COMPILED as a GS, not VS streamout.
 	if (shaderInstance->shaderType == GEOMETRY_SHADER)

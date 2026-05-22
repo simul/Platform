@@ -61,6 +61,7 @@
 	static int global_linenumber=0;
 	std::string currentCsLayout;
 	std::string currentGsLayout;
+	static uint32_t globalVariableRayTracingLocationNumber = 0;
 	bool sfxError=false;
 
 	bool is_equal(const string& a, const char * b)
@@ -613,6 +614,8 @@
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ COMPARISON D_NEVER D_ALWAYS D_LESS D_EQUAL D_LESS_EQUAL D_GREATER D_NOT_EQUAL D_GREATER_EQUAL
 
 %token INTERLOCKED_ADD INTERLOCKED_AND INTERLOCKED_OR INTERLOCKED_XOR INTERLOCKED_MIN INTERLOCKED_MAX INTERLOCKED_EXCHANGE INTERLOCKED_COMPARE_STORE INTERLOCKED_COMPARE_EXCHANGE
+
+%token TRACE_RAYS REPORT_HIT CALL_SHADER
 
 %token LOAD GET_DIMS SAMPLE SAMPLE_LOD
 %token GATHER_RED GATHER_GREEN GATHER_BLUE GATHER_ALPHA
@@ -2375,6 +2378,197 @@ postfix_exp : primary_exp
 		buildFunction.declareResource(resourceName);
 		$$.strs[0] = full_expr.str();
 	}
+	| trace_ray_command '(' argument_exp_list ')'
+	{
+		string command = $1.strs[0];
+		string openBracket = $2.strs[0];
+		string params = $3.strs[0];
+		string closeBracket = $4.strs[0];
+
+		vector<sfxstype::variable> params2 = *($3.vars);
+		delete $3.vars;
+
+		Declaration* declRayDesc = gEffect->GetDeclaration("RayDesc");
+
+		const SfxConfig* config = gEffect->GetConfig();
+		const std::string& traceRaySyntax = config->traceRaySyntax;
+		if (traceRaySyntax.length() > 0 
+			&& declRayDesc != nullptr
+			&& declRayDesc->declarationType == DeclarationType::STRUCT 
+			&& params2.size() == 8)
+		{
+			Struct* structRayDesc = (Struct*)declRayDesc;
+			string cmd = traceRaySyntax;
+			find_and_replace(cmd, "{command}", command);
+			find_and_replace(cmd, "{tlas}", params2[0].identifier);
+			find_and_replace(cmd, "{rayFlags}", params2[1].identifier);
+			find_and_replace(cmd, "{cullMask}", params2[2].identifier);
+			find_and_replace(cmd, "{sbtRecordOffset}", params2[3].identifier);
+			find_and_replace(cmd, "{sbtRecordStride}", params2[4].identifier);
+			find_and_replace(cmd, "{missIndex}", params2[5].identifier);
+			find_and_replace(cmd, "{origin}", params2[6].identifier + "." + structRayDesc->m_structMembers[0].name);
+			find_and_replace(cmd, "{Tmin}", params2[6].identifier + "." + structRayDesc->m_structMembers[1].name);
+			find_and_replace(cmd, "{direction}", params2[6].identifier + "." + structRayDesc->m_structMembers[2].name);
+			find_and_replace(cmd, "{Tmax}", params2[6].identifier + "." + structRayDesc->m_structMembers[3].name);
+			
+			uint32_t locationNumber = -1;
+			std::string preCall = "";
+			std::string postCall = "";
+			std::string params2_7_identifier_local = params2[7].identifier;
+			std::string params2_7_identifier_global = "g_" + params2[7].identifier;
+			if (buildFunction.globals.find(params2_7_identifier_local) != buildFunction.globals.end())
+			{
+				locationNumber = gEffect->GetDeclaration(params2_7_identifier_local)->slot;
+			}
+			else
+			{
+				buildFunction.globals[params2_7_identifier_local] = {};
+				for (const auto& local : buildFunction.locals)
+				{
+					if (local.identifier == params2_7_identifier_local)
+					{
+						Variable variable;
+						variable.slot = globalVariableRayTracingLocationNumber++;
+						variable.structureType = local.type;
+						variable.name = local.identifier;
+						variable.original = "layout(location = {slot}) payloadStorage ";
+						variable.original += variable.structureType + " " + params2_7_identifier_global + ";";
+						find_and_replace(variable.original, "{slot}", std::to_string(variable.slot));
+						gEffect->DeclareVariable(&variable);
+						buildFunction.declarations.insert(params2_7_identifier_local);
+
+						locationNumber = variable.slot;
+						preCall  = params2_7_identifier_global + " = " + params2_7_identifier_local + ";\n"; // Save local to global
+						postCall = params2_7_identifier_local + " = " + params2_7_identifier_global + ";\n"; // Save global to local
+						break;
+					}
+				}
+			}
+			find_and_replace(cmd, "{payloadLocation}", std::to_string(locationNumber));
+
+			$$.strs[0] = preCall + cmd + ";\n" + postCall;
+		}
+		else
+		{
+			$$.strs[0] = command + openBracket + params + closeBracket;
+		}
+	}
+	| report_hit_command '(' argument_exp_list ')' 
+	{
+		string command = $1.strs[0];
+		string openBracket = $2.strs[0];
+		string params = $3.strs[0];
+		string closeBracket = $4.strs[0];
+
+		vector<sfxstype::variable> params2 = *($3.vars);
+		delete $3.vars;
+		const SfxConfig* config = gEffect->GetConfig();
+		const std::string& reportHitSyntax = config->reportHitSyntax;
+		if (reportHitSyntax.length() > 0 && params2.size() == 3)
+		{
+			string cmd = reportHitSyntax;
+			find_and_replace(cmd, "{command}", command);
+			find_and_replace(cmd, "{hitT}", params2[0].identifier);
+			find_and_replace(cmd, "{hitKind}", params2[1].identifier);
+
+			uint32_t locationNumber = -1;
+			std::string preCall = "";
+			std::string postCall = "";
+			const std::string& params2_2_identifier_local = params2[2].identifier;
+			const std::string& params2_2_identifier_global = "g_" + params2[2].identifier;
+			if (buildFunction.globals.find(params2_2_identifier_local) != buildFunction.globals.end())
+			{
+				locationNumber = gEffect->GetDeclaration(params2_2_identifier_local)->slot;
+			}
+			else
+			{
+				buildFunction.globals[params2_2_identifier_local] = {};
+				for (const auto& local : buildFunction.locals)
+				{
+					if (local.identifier == params2_2_identifier_local)
+					{
+						Variable variable;
+						variable.structureType = local.type;
+						variable.name = local.identifier;
+						variable.original = "attributeStorage ";
+						variable.original += variable.structureType + " " + params2_2_identifier_global + ";";
+						gEffect->DeclareVariable(&variable);
+						buildFunction.declarations.insert(params2_2_identifier_local);
+
+						locationNumber = variable.slot;
+						preCall  = params2_2_identifier_global + " = " + params2_2_identifier_local + ";\n"; // Save local to global
+						postCall = params2_2_identifier_local + " = " + params2_2_identifier_global + ";\n"; // Save global to local
+						break;
+					}
+				}
+			}
+
+			$$.strs[0] = preCall + cmd + ";\n" + postCall;
+		}
+		else
+		{
+			$$.strs[0] = command + openBracket + params + closeBracket;
+		}
+	}
+	| call_shader_command '(' argument_exp_list ')' 
+	{
+		string command = $1.strs[0];
+		string openBracket = $2.strs[0];
+		string params = $3.strs[0];
+		string closeBracket = $4.strs[0];
+
+		vector<sfxstype::variable> params2 = *($3.vars);
+		delete $3.vars;
+		const SfxConfig* config = gEffect->GetConfig();
+		const std::string& callShaderSyntax = config->callShaderSyntax;
+		if (callShaderSyntax.length() > 0 && params2.size() == 3)
+		{
+			string cmd = callShaderSyntax;
+			find_and_replace(cmd, "{command}", command);
+			find_and_replace(cmd, "{sbtRecordIndex}", params2[0].identifier);
+
+			uint32_t locationNumber = -1;
+			std::string preCall = "";
+			std::string postCall = "";
+			const std::string& params2_1_identifier_local = params2[1].identifier;
+			const std::string& params2_1_identifier_global = "g_" + params2[1].identifier;
+			if (buildFunction.globals.find(params2_1_identifier_local) != buildFunction.globals.end())
+			{
+				locationNumber = gEffect->GetDeclaration(params2_1_identifier_local)->slot;
+			}
+			else
+			{
+				buildFunction.globals[params2_1_identifier_local] = {};
+				for (const auto& local : buildFunction.locals)
+				{
+					if (local.identifier == params2_1_identifier_local)
+					{
+						Variable variable;
+						variable.slot = globalVariableRayTracingLocationNumber++;
+						variable.structureType = local.type;
+						variable.name = local.identifier;
+						variable.original = "layout(location = {slot}) callableDataStorage ";
+						variable.original += variable.structureType + " " + params2_1_identifier_global + ";";
+						find_and_replace(variable.original, "{slot}", std::to_string(variable.slot));
+						gEffect->DeclareVariable(&variable);
+						buildFunction.declarations.insert(params2_1_identifier_local);
+
+						locationNumber = variable.slot;
+						preCall  = params2_1_identifier_global + " = " + params2_1_identifier_local + ";\n";  // Save local to global
+						postCall = params2_1_identifier_local + " = " + params2_1_identifier_global + ";\n"; // Save global to local
+						break;
+					}
+				}
+			}
+			find_and_replace(cmd, "{callableLocation}", std::to_string(locationNumber));
+
+			$$.strs[0] = preCall + cmd + ";\n" + postCall;
+		}
+		else
+		{
+			$$.strs[0] = command + openBracket + params + closeBracket;
+		}
+	}
 	| postfix_exp '(' argument_exp_list ')'
 	{
 		string expr1=$1.strs[0];
@@ -2607,7 +2801,20 @@ interlocked_op_command : INTERLOCKED_ADD
 		$$.num = INTERLOCKED_COMPARE_EXCHANGE;
 	}
 
-	decl_specs : IDENTIFIER
+trace_ray_command : TRACE_RAYS
+	{
+		$$.strs[0] = $1.strs[0];
+	}
+report_hit_command : REPORT_HIT
+	{
+		$$.strs[0] = $1.strs[0];
+	}
+call_shader_command : CALL_SHADER
+	{
+		$$.strs[0] = $1.strs[0];
+	}
+
+decl_specs : IDENTIFIER
 	{
 		$$.strs[0] = $1.strs[0];
 		$$.strs[1] = $1.strs[0];

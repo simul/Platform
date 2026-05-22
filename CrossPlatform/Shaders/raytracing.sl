@@ -186,6 +186,7 @@ struct RayPlaneIntersectionResult
 	float T;
 	bool intersection;
 };
+
 RayPlaneIntersectionResult GetRayPlaneIntersection(vec3 rayOrigin, vec3 rayDirection, vec3 normal, vec3 position)
 {
 	RayPlaneIntersectionResult result;

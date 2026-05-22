@@ -835,6 +835,21 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*([eE][+-]?[0-9]+)?f?
 													sfxlval.strs[0]=yytext;
 													stdReturn(INTERLOCKED_COMPARE_EXCHANGE);
 												}
+<IN_SHADER>"TraceRay"							{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(TRACE_RAYS);
+												}
+<IN_SHADER>"ReportHit"							{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(REPORT_HIT);
+												}
+<IN_SHADER>"CallShader"							{
+													sfxlval.lineno=yylineno;
+													sfxlval.strs[0]=yytext;
+													stdReturn(CALL_SHADER);
+												}
 <IN_SHADER>"break"								stdReturn(BREAK);
 <IN_SHADER>"continue"							stdReturn(CONTINUE);
 <IN_SHADER>"do"									stdReturn(DO);

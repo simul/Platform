@@ -35,7 +35,6 @@ mat3 mul(mat3 a, mat3 b){return a * b;}
 #define uint3 uvec3
 #define uint4 uvec4
 
-
 uint reversebits(uint bits)
 {
 	bits = (bits << 16u) | (bits >> 16u);
@@ -70,6 +69,49 @@ vec4 reverse_y_coord(vec4 a)
 
 #define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_0(n) : SV_TARGET6883660##n
 #define SIMUL_RENDERTARGET_OUTPUT_DSB_INDEX_1(n) : SV_TARGET6883661##n
+
+// Ray Tracing
+
+struct RayDesc
+{
+	vec3 Origin;
+	float TMin;
+	vec3 Direction;
+	float TMax;
+};
+
+uint3 DispatchRaysIndex() { return gl_LaunchIDEXT; }
+uint3 DispatchRaysDimensions() { return gl_LaunchSizeEXT; }
+uint PrimitiveIndex() { return gl_PrimitiveID; }
+uint InstanceIndex() { return gl_InstanceID; }
+uint InstanceID() { return gl_InstanceCustomIndexEXT; }
+uint GeometryIndex() { return gl_GeometryIndexEXT; }
+float3 WorldRayOrigin() { return gl_WorldRayOriginEXT; }
+float3 WorldRayDirection() { return gl_WorldRayDirectionEXT; }
+float3 ObjectRayOrigin() { return gl_ObjectRayOriginEXT; }
+float3 ObjectRayDirection() { return gl_ObjectRayDirectionEXT; }
+float RayTMin() { return gl_RayTminEXT; }
+uint RayFlags() { return gl_IncomingRayFlagsEXT; }
+float RayTCurrent() { return gl_HitTEXT; }
+uint HitKind() { return gl_HitKindEXT; }
+float4x3 ObjectToWorld4x3() { return gl_ObjectToWorldEXT; }
+float4x3 WorldToObject4x3() { return gl_WorldToObjectEXT; }
+float3x4 WorldToObject3x4() { return gl_WorldToObject3x4EXT; }
+float3x4 ObjectToWorld3x4() { return gl_ObjectToWorld3x4EXT;}
+
+#define RAY_FLAG_NONE gl_RayFlagsNoneEXT
+#define RAY_FLAG_FORCE_OPAQUE gl_RayFlagsOpaqueEXT
+#define RAY_FLAG_FORCE_NON_OPAQUE gl_RayFlagsNoOpaqueEXT
+#define RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH gl_RayFlagsTerminateOnFirstHitEXT
+#define RAY_FLAG_SKIP_CLOSEST_HIT_SHADER gl_RayFlagsSkipClosestHitShaderEXT
+#define RAY_FLAG_CULL_BACK_FACING_TRIANGLES gl_RayFlagsCullBackFacingTrianglesEXT
+#define RAY_FLAG_CULL_FRONT_FACING_TRIANGLES gl_RayFlagsCullFrontFacingTrianglesEXT
+#define RAY_FLAG_CULL_OPAQUE gl_RayFlagsCullOpaqueEXT
+#define RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES gl_RayFlagsSkipAABBEXT
+#define HIT_KIND_TRIANGLE_FRONT_FACE gl_HitKindFrontFacingTriangleEXT
+#define HIT_KIND_TRIANGLE_BACK_FACE gl_HitKindBackFacingTriangleEXT
+
+// Wave Intrinsics
 
 uint WaveGetLaneCount()
 {
