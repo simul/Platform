@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 		int a = 0;
 		for (int i = 1; i < argc; i++)
 		{
-			std::cout << "argv[" << i << "] " << argv[i] << std::endl;
+			//std::cout << "argv[" << i << "] " << argv[i] << std::endl;
 			while (argv[i][0] == ' ')
 				argv[i]++;
 			if (strlen(argv[i]) >= 2 && (argv[i][0] == '-'))
