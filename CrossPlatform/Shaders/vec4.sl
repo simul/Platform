@@ -334,7 +334,7 @@ pvector4<T> packed(const tvector4<T> &v)
 }
 
 template <typename T>
-tvector3<T> unpacked(const pvector4<T> &v)
+tvector4<T> unpacked(const pvector4<T> &v)
 {
 	return tvector4<T>{v.x, v.y, v.z, v.w};
 }

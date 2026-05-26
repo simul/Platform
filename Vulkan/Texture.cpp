@@ -199,10 +199,6 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	}
 	else
 	{
-		if(compressionFormat!=crossplatform::CompressionFormat::UNCOMPRESSED)
-		{
-			SIMUL_CERR<<"Texture "<<name.c_str()<<" uploading with compression format "<<magic_enum::enum_name<crossplatform::CompressionFormat>(compressionFormat)<<"\n";
-		}
 		SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, mCurrentImageLayout,
 			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits(), vk::PipelineStageFlagBits::eTopOfPipe,
 			vk::PipelineStageFlagBits::eTransfer);

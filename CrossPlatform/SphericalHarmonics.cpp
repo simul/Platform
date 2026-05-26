@@ -194,7 +194,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 {
 	if (!bands)
 		return;
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
+	PLATFORM_COMBINED_PROFILE_START(deviceContext,"Calc Spherical Harmonics")
 	int num_coefficients=bands*bands;
 	static int BLOCK_SIZE=16;
 	static int sqrt_jitter_samples=4;
@@ -205,7 +205,7 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	}
 	if(!sphericalHarmonicsEffect)
 		LoadShaders();
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"clear")
+	PLATFORM_COMBINED_PROFILE_START(deviceContext,"clear")
 	sphericalHarmonicsConstants.num_bands			=bands;
 	sphericalHarmonicsConstants.numCoefficients		=num_coefficients;
 	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
@@ -213,8 +213,8 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
 	sphericalHarmonicsConstants.randomSeed			=shSeed;
 
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"jitter")
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_START(deviceContext,"jitter")
 
 	{
 		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
@@ -252,8 +252,8 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		}
 		sphericalSamples.CloseReadBuffer(deviceContext);
 	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"encode")
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_START(deviceContext,"encode")
 	{
 		renderPlatform->SetTexture(deviceContext, _cubemapTexture, buffer_texture);
 		sphericalSamples.Apply(deviceContext, _samplesBuffer);
@@ -284,8 +284,8 @@ void SphericalHarmonics::CalcSphericalHarmonics(crossplatform::DeviceContext &de
 		}
 		sphericalSamples.CloseReadBuffer(deviceContext);
 	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
 }
 
 
@@ -304,7 +304,7 @@ void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,cross
 	//float cam_pos[] = { 0,0,0 };
 	crossplatform::EffectTechnique *tech = lightProbesEffect->GetTechniqueByName("irradiance_map");
 		// For each face, 
-		SIMUL_COMBINED_PROFILE_START(deviceContext, "RenderEnvmap draw")
+		PLATFORM_COMBINED_PROFILE_START(deviceContext, "RenderEnvmap draw")
 		int cube_start=0,cube_end=6;
 	if(cubemapIndex>=0&&cubemapIndex<6)
 	{
@@ -338,5 +338,5 @@ void SphericalHarmonics::RenderEnvmap(GraphicsDeviceContext &deviceContext,cross
 		}
 		target_texture->deactivateRenderTarget(deviceContext);
 	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
 }

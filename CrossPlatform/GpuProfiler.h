@@ -2,7 +2,7 @@
 #define SIMUL_PLATFORM_CROSSPLATFORM_GPUPROFILER_H
 #include "Platform/Core/ProfilingInterface.h"
 #include "Platform/CrossPlatform/Export.h"
-
+#pragma optimize("", off)
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
@@ -40,7 +40,7 @@ namespace platform
 			//! Get the timing text per-frame.
 			virtual const char *GetDebugText(platform::core::TextStyle st = platform::core::PLAINTEXT) const=0;
 		};
-		/// Set the GPU profilerFuture use of SIMUL_GPU_PROFILE_START or SIMUL_COMBINED_PROFILE_START will use that profiler.
+		/// Set the GPU profilerFuture use of SIMUL_GPU_PROFILE_START or PLATFORM_COMBINED_PROFILE_START will use that profiler.
 		extern SIMUL_CROSSPLATFORM_EXPORT void SetGpuProfilingInterface(crossplatform::DeviceContext &context,GpuProfilingInterface *p);
 		/// Returns a pointer to the current GPU profiler.
 		extern SIMUL_CROSSPLATFORM_EXPORT GpuProfilingInterface *GetGpuProfilingInterface(crossplatform::DeviceContext &context);
@@ -67,16 +67,16 @@ namespace platform
 		* Per-frame, at the start of the frame:
 
 				platform::core::SetGpuProfilingInterface(deviceContext.platform_context,&platform::crossplatform::GpuProfiler::GetGlobalProfiler());
-				SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
+				PLATFORM_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
 
 		*  Wrap these around anything you want to measure:
 
-				SIMUL_COMBINED_PROFILE_START(deviceContext,"Element name")
-				SIMUL_COMBINED_PROFILE_END(deviceContext)
+				PLATFORM_COMBINED_PROFILE_START(deviceContext,"Element name")
+				PLATFORM_COMBINED_PROFILE_END(deviceContext)
 
 		* At frame-end:
 
-				SIMUL_COMBINED_PROFILE_END(deviceContext)
+				PLATFORM_COMBINED_PROFILE_END(deviceContext)
 
 		* To obtain the profiling results - pass true if you want HTML output:
 
@@ -138,7 +138,7 @@ namespace platform
 	}
 }
 
-#ifdef PLATFORM_INTERNAL_PROFILING
+#if PLATFORM_INTERNAL_PROFILING
 		//Debug SIMUL_COMBINED_PROFILE
 		//inline std::stack<std::string> names;
 
@@ -160,22 +160,22 @@ namespace platform
 			if(gpuProfilingInterface) \
 				gpuProfilingInterface->End(ctx);}
 		
-		#define SIMUL_COMBINED_PROFILE_START(ctx,name) \
+		#define PLATFORM_COMBINED_PROFILE_START(ctx,name) \
 			SIMUL_GPU_PROFILE_START(ctx,name) \
 			SIMUL_PROFILE_START(name) //\
 			//PLATFORM_WARN("Start: {}", name);\
 			//names.push(name);
 
-		#define SIMUL_COMBINED_PROFILE_END(ctx) \
+		#define PLATFORM_COMBINED_PROFILE_END(ctx) \
 			SIMUL_PROFILE_END \
 			SIMUL_GPU_PROFILE_END(ctx) //\
 			//PLATFORM_WARN("End: {}", names.top()); \
 			//names.pop();
 		
-		#define SIMUL_COMBINED_PROFILE_STARTFRAME(ctx) \
+		#define PLATFORM_COMBINED_PROFILE_STARTFRAME(ctx) \
 			SIMUL_GPU_PROFILE_STARTFRAME(ctx) \
 			SIMUL_PROFILE_STARTFRAME
-		#define SIMUL_COMBINED_PROFILE_ENDFRAME(ctx) \
+		#define PLATFORM_COMBINED_PROFILE_ENDFRAME(ctx) \
 			SIMUL_GPU_PROFILE_ENDFRAME(ctx) \
 			SIMUL_PROFILE_ENDFRAME
 		#ifndef SIMUL_DISABLE_PROFILING
@@ -197,13 +197,13 @@ namespace platform
 		/// Call this at the end of a block to be profiled - must match uses of SIMUL_GPU_PROFILE_START.
 		#define SIMUL_GPU_PROFILE_END(ctx)
 		/// Call this at the start of a block to be profiled.
-		#define SIMUL_COMBINED_PROFILE_START(ctx,name)
-		/// Call this at the end of a block to be profiled - must match uses of SIMUL_COMBINED_PROFILE_START.
-		#define SIMUL_COMBINED_PROFILE_END(ctx)
+		#define PLATFORM_COMBINED_PROFILE_START(ctx,name)
+		/// Call this at the end of a block to be profiled - must match uses of PLATFORM_COMBINED_PROFILE_START.
+		#define PLATFORM_COMBINED_PROFILE_END(ctx)
 		/// Call this at the start of the frame when using Simul profiling.
-		#define SIMUL_COMBINED_PROFILE_STARTFRAME(ctx)
+		#define PLATFORM_COMBINED_PROFILE_STARTFRAME(ctx)
 		/// Call this at the end of the frame when using Simul profiling.
-		#define SIMUL_COMBINED_PROFILE_ENDFRAME(ctx)
+		#define PLATFORM_COMBINED_PROFILE_ENDFRAME(ctx)
 		#define SIMUL_DISABLE_PROFILING
 #endif
 #ifdef _MSC_VER

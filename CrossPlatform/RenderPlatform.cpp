@@ -1610,7 +1610,7 @@ void RenderPlatform::DrawCubemap(GraphicsDeviceContext &deviceContext,Texture *c
 	viewport.x		=(int)(0.5f*(1.f+offsetx)*oldv.w-viewport.w/2);
 	viewport.y		=(int)(0.5f*(1.f-offsety)*oldv.h-viewport.h/2);
 	SetViewports(deviceContext,1,&viewport);
-	
+	this->DrawTexture(deviceContext,0,0,viewport.w,viewport.h,nullptr,vec4(0,0,0,0));
 	math::Matrix4x4 view=deviceContext.viewStruct.view;
 	math::Matrix4x4 proj=crossplatform::Camera::MakeDepthReversedProjectionMatrix(1.f,(float)viewport.h/(float)viewport.w,0.1f,100.f);
 	// Create the viewport.
@@ -1975,7 +1975,7 @@ void RenderPlatform::Draw2dLine(GraphicsDeviceContext &deviceContext,vec2 pos1,v
 
 int RenderPlatform::Print(GraphicsDeviceContext& deviceContext, int x, int y, const char* text, const float* colr, const float* bkg)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext, "Print")
+	PLATFORM_COMBINED_PROFILE_START(deviceContext, "Print")
 	static float clr[]={1.f,1.f,0.f,1.f};
 	static float black[]={0.f,0.f,0.f,0.0f};
 	if(!colr)
@@ -1988,13 +1988,13 @@ int RenderPlatform::Print(GraphicsDeviceContext& deviceContext, int x, int y, co
 	{
 		lines+=textRenderer->Render(deviceContext,(float)x,(float)y,(float)viewport.w,(float)viewport.h,text,colr,bkg,mirrorYText);
 	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
 	return lines;
 }
 
 int RenderPlatform::Print(MultiviewGraphicsDeviceContext& deviceContext, float* xs, float* ys, const char* text, const float* colr, const float* bkg)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext, "Print")
+	PLATFORM_COMBINED_PROFILE_START(deviceContext, "Print")
 	static float clr[] = { 1.f,1.f,0.f,1.f };
 	static float black[] = { 0.f,0.f,0.f,0.0f };
 	if (!colr)
@@ -2007,7 +2007,7 @@ int RenderPlatform::Print(MultiviewGraphicsDeviceContext& deviceContext, float* 
 	{
 		lines += textRenderer->Render(deviceContext, xs, ys, (float)viewport.w, (float)viewport.h, text, colr, bkg, mirrorYText);
 	}
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
 	return lines;
 }
 
