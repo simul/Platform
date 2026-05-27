@@ -85,8 +85,8 @@ Fence::Fence(crossplatform::RenderPlatform* r)
 
 Fence::~Fence()
 {
-	crossplatform::Fence::InvalidateDeviceObjects();
 	InvalidateDeviceObjects();
+	crossplatform::Fence::InvalidateDeviceObjects();
 }
 
 crossplatform::Fence* RenderPlatform::CreateFence(const char* name)
