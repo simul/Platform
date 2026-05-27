@@ -21,20 +21,24 @@ ShaderBindingTable::~ShaderBindingTable()
 
 void ShaderBindingTable::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
+	crossplatform::ShaderBindingTable::RestoreDeviceObjects(r);
 	device = reinterpret_cast<vulkan::RenderPlatform*>(r)->AsVulkanDevice();
 }
 
 void ShaderBindingTable::InvalidateDeviceObjects()
 {
-	for (auto& sbtRes : SBTResources)
+	RenderPlatform* vulkanRenderPlatform = reinterpret_cast<RenderPlatform*>(renderPlatform);
+	for (size_t i = 0; i < SBTResources.size(); i++)
 	{
-		device->destroyBuffer(sbtRes.second);
-		sbtRes.second = VK_NULL_HANDLE;
+		crossplatform::ShaderRecord::Type type = crossplatform::ShaderRecord::Type(i);
+		vulkanRenderPlatform->PushToReleaseManager(SBTResources[type], &SBTResourceAllocations[type]);
 	}
 	SBTResources.clear();
 	SBTResourceAllocations.clear();
 
 	device = nullptr;
+
+	crossplatform::ShaderBindingTable::InvalidateDeviceObjects();
 }
 
 std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> ShaderBindingTable::GetShaderHandlesFromEffectPass(crossplatform::RenderPlatform* renderPlatform, crossplatform::EffectPass* pass)

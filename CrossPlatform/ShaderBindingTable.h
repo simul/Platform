@@ -64,11 +64,13 @@ namespace platform
 			std::map<ShaderRecord::Type, size_t> shaderBindingTableStrides;
 			std::map<ShaderRecord::Type, std::vector<char>> shaderBindingTableResources;
 
+			RenderPlatform* renderPlatform;
+
 		public:
 			ShaderBindingTable();
 			virtual ~ShaderBindingTable() = default;
-			virtual void RestoreDeviceObjects(RenderPlatform* r) {};
-			virtual void InvalidateDeviceObjects() {};
+			virtual void RestoreDeviceObjects(RenderPlatform* r) { renderPlatform = r; };
+			virtual void InvalidateDeviceObjects() { renderPlatform = nullptr; };
 
 			void DefaultInitFromEffectPass(RenderPlatform* renderPlatform, EffectPass* pass);
 

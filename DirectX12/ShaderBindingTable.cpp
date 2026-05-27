@@ -22,6 +22,7 @@ ShaderBindingTable::~ShaderBindingTable()
 
 void ShaderBindingTable::RestoreDeviceObjects(crossplatform::RenderPlatform* r)
 {
+	crossplatform::ShaderBindingTable::RestoreDeviceObjects(r);
 }
 
 void ShaderBindingTable::InvalidateDeviceObjects()
@@ -30,6 +31,8 @@ void ShaderBindingTable::InvalidateDeviceObjects()
 	{
 		SAFE_RELEASE(sbtRes.second);
 	}
+
+	crossplatform::ShaderBindingTable::InvalidateDeviceObjects();
 }
 
 std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> ShaderBindingTable::GetShaderHandlesFromEffectPass(crossplatform::RenderPlatform* renderPlatform, crossplatform::EffectPass* pass)
