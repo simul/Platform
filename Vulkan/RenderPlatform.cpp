@@ -16,6 +16,7 @@
 #include "Platform/Vulkan/PlatformStructuredBuffer.h"
 #include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/Texture.h"
+#include "Platform/Vulkan/ShaderBindingTable.h"
 #include <vulkan/vulkan.hpp>
 #if VULKAN_HPP_CPP_VERSION > 17
 #include <vulkan/vulkan_to_string.hpp>
@@ -28,18 +29,6 @@ bool platform::vulkan::debugMarkerSupported = false;
 
 using namespace platform;
 using namespace vulkan;
-
-namespace platform::vulkan
-{
-	static PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = nullptr;
-	static PFN_vkCmdDebugMarkerBeginEXT vkCmdDebugMarkerBeginEXT = nullptr;
-	static PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT = nullptr;
-	static PFN_vkCmdDebugMarkerEndEXT vkCmdDebugMarkerEndEXT = nullptr;
-#if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
-	static PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT = nullptr;
-	static PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT = nullptr;
-#endif
-}
 
 ///////////////////
 // MemoryInterface//
@@ -193,9 +182,17 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 	mComputeQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::CommandContextType::COMPUTE), 0);
 	mTransferQueue = vulkanDevice->getQueue(GetQueueFamilyIndex(crossplatform::CommandContextType::COPY), 0);
 
-	// Set up VMA CPU and GPU allicators
+	bool bufferDeviceAddress = false;
+#if PLATFORM_SUPPORT_VULKAN_RAYTRACING
+	uint32_t instanceVersion = 0;
+	vk::Result result = vk::enumerateInstanceVersion(&instanceVersion);
+	bufferDeviceAddress |= CheckDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+	bufferDeviceAddress |= (instanceVersion >= VK_API_VERSION_1_2);
+#endif
+
+	// Set up VMA CPU and GPU allocators
 	VmaAllocatorCreateInfo allocatorCreateInfo;
-	allocatorCreateInfo.flags = 0;
+	allocatorCreateInfo.flags = bufferDeviceAddress ? VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT : 0;
 	allocatorCreateInfo.physicalDevice = *vulkanGpu;
 	allocatorCreateInfo.device = *vulkanDevice;
 	allocatorCreateInfo.preferredLargeHeapBlockSize = mCPUPreferredBlockSize = 256 * 1048576;
@@ -213,8 +210,14 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 
 	// Check feature support. Do this before parent RestoreDeviceObjects(), which loads effects depending on features available.
 	renderingFeatures = crossplatform::RenderingFeatures::None;
+#if PLATFORM_SUPPORT_VULKAN_RAYTRACING
+	if (CheckDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && CheckDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) // Assume dependencies are valid too
+		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Raytracing);
+#endif
+#if PLATFORM_SUPPORT_VULKAN_MULTIVIEW
 	if (CheckDeviceExtension(VK_KHR_MULTIVIEW_EXTENSION_NAME))
 		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::Multiview);
+#endif
 #if PLATFORM_SUPPORT_VULKAN_MESH_SHADER
 	if (CheckDeviceExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME))
 		renderingFeatures = (crossplatform::RenderingFeatures)((uint32_t)renderingFeatures | (uint32_t)crossplatform::RenderingFeatures::MeshShader);
@@ -239,6 +242,32 @@ void RenderPlatform::RestoreDeviceObjects(void *vkDevice_vkInstance_gpu)
 		vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)vulkanInstance->getProcAddr("vkCmdDrawMeshTasksEXT");
 		vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)vulkanInstance->getProcAddr("vkCmdDrawMeshTasksIndirectEXT");
 	}
+#endif
+#if PLATFORM_SUPPORT_VULKAN_RAYTRACING
+	vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vulkanInstance->getProcAddr("vkCmdTraceRaysKHR");
+	vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vulkanInstance->getProcAddr("vkCreateRayTracingPipelinesKHR");
+	vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vulkanInstance->getProcAddr("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+	vkCmdTraceRaysIndirectKHR = (PFN_vkCmdTraceRaysIndirectKHR)vulkanInstance->getProcAddr("vkCmdTraceRaysIndirectKHR");
+	vkGetRayTracingShaderGroupStackSizeKHR = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vulkanInstance->getProcAddr("vkGetRayTracingShaderGroupStackSizeKHR");
+	vkCmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vulkanInstance->getProcAddr("vkCmdSetRayTracingPipelineStackSizeKHR");
+	vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vulkanInstance->getProcAddr("vkGetRayTracingShaderGroupHandlesKHR");
+
+	vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vulkanInstance->getProcAddr("vkCreateAccelerationStructureKHR");
+	vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vulkanInstance->getProcAddr("vkDestroyAccelerationStructureKHR");
+	vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vulkanInstance->getProcAddr("vkCmdBuildAccelerationStructuresKHR");
+	vkCmdBuildAccelerationStructuresIndirectKHR = (PFN_vkCmdBuildAccelerationStructuresIndirectKHR)vulkanInstance->getProcAddr("vkCmdBuildAccelerationStructuresIndirectKHR");
+	vkBuildAccelerationStructuresKHR = (PFN_vkBuildAccelerationStructuresKHR)vulkanInstance->getProcAddr("vkBuildAccelerationStructuresKHR");
+	vkCopyAccelerationStructureKHR = (PFN_vkCopyAccelerationStructureKHR)vulkanInstance->getProcAddr("vkCopyAccelerationStructureKHR");
+	vkCopyAccelerationStructureToMemoryKHR = (PFN_vkCopyAccelerationStructureToMemoryKHR)vulkanInstance->getProcAddr("vkCopyAccelerationStructureToMemoryKHR");
+	vkCopyMemoryToAccelerationStructureKHR = (PFN_vkCopyMemoryToAccelerationStructureKHR)vulkanInstance->getProcAddr("vkCopyMemoryToAccelerationStructureKHR");
+	vkWriteAccelerationStructuresPropertiesKHR = (PFN_vkWriteAccelerationStructuresPropertiesKHR)vulkanInstance->getProcAddr("vkWriteAccelerationStructuresPropertiesKHR");
+	vkCmdCopyAccelerationStructureKHR = (PFN_vkCmdCopyAccelerationStructureKHR)vulkanInstance->getProcAddr("vkCmdCopyAccelerationStructureKHR");
+	vkCmdCopyAccelerationStructureToMemoryKHR = (PFN_vkCmdCopyAccelerationStructureToMemoryKHR)vulkanInstance->getProcAddr("vkCmdCopyAccelerationStructureToMemoryKHR");
+	vkCmdCopyMemoryToAccelerationStructureKHR = (PFN_vkCmdCopyMemoryToAccelerationStructureKHR)vulkanInstance->getProcAddr("vkCmdCopyMemoryToAccelerationStructureKHR");
+	vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vulkanInstance->getProcAddr("vkGetAccelerationStructureDeviceAddressKHR");
+	vkCmdWriteAccelerationStructuresPropertiesKHR = (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR)vulkanInstance->getProcAddr("vkCmdWriteAccelerationStructuresPropertiesKHR");
+	vkGetDeviceAccelerationStructureCompatibilityKHR = (PFN_vkGetDeviceAccelerationStructureCompatibilityKHR)vulkanInstance->getProcAddr("vkGetDeviceAccelerationStructureCompatibilityKHR");
+	vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vulkanInstance->getProcAddr("vkGetAccelerationStructureBuildSizesKHR");
 #endif
 
 	// Vulkan Video decoding support:
@@ -1003,7 +1032,9 @@ void RenderPlatform::DispatchMesh(crossplatform::GraphicsDeviceContext &deviceCo
 	BeginEvent(deviceContext, vkEffectPass->name.c_str());
 	if (ApplyContextState(deviceContext))
 	{
-		vkCmdDrawMeshTasksEXT(static_cast<VkCommandBuffer>(*commandBuffer), groupCountX, groupCountY, groupCountZ);
+		DispatchLoaderDynamic d;
+		d.vkCmdDrawMeshTasksEXT = vkCmdDrawMeshTasksEXT;
+		commandBuffer->drawMeshTasksEXT(groupCountX, groupCountY, groupCountZ, d);
 	}
 	EndEvent(deviceContext);
 #endif
@@ -1032,7 +1063,9 @@ void RenderPlatform::DispatchMeshIndirect(crossplatform::GraphicsDeviceContext &
 	BeginEvent(deviceContext, vkEffectPass->name.c_str());
 	if (ApplyContextState(deviceContext))
 	{
-		vkCmdDrawMeshTasksIndirectEXT(static_cast<VkCommandBuffer>(*commandBuffer), static_cast<VkBuffer>(*pVkBuffer), totalOffset, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+		DispatchLoaderDynamic d;
+		d.vkCmdDrawMeshTasksIndirectEXT = vkCmdDrawMeshTasksIndirectEXT;
+		commandBuffer->drawMeshTasksIndirectEXT(static_cast<VkBuffer>(*pVkBuffer), totalOffset, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT), d);
 	}
 	EndEvent(deviceContext);
 #endif
@@ -1314,10 +1347,10 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::G
 		if (tv && tv->textureTargets[0].texture)
 			pixelFormat = tv->textureTargets[0].texture->pixelFormat;
 	}
-	if (pixelFormat == crossplatform::PixelFormat::UNKNOWN)
+	/*if (pixelFormat == crossplatform::PixelFormat::UNKNOWN)
 	{
 		SIMUL_ASSERT_WARN_ONCE(pixelFormat != crossplatform::PixelFormat::UNKNOWN, "Unknown active pixel format!");
-	}
+	}*/
 	return pixelFormat;
 }
 
@@ -2371,6 +2404,29 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 {
 	Shader *S = new Shader();
 	return S;
+}
+
+crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
+{
+	//return new BottomLevelAccelerationStructure(this);
+	return nullptr;
+}
+
+crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
+{
+	//return new TopLevelAccelerationStructure(this);
+	return nullptr;
+}
+
+crossplatform::AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()
+{
+	//return new AccelerationStructureManager(this);
+	return nullptr;
+}
+
+crossplatform::ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()
+{
+	return new ShaderBindingTable();
 }
 
 bool RenderPlatform::memory_type_from_properties(vk::PhysicalDevice *gpu, uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask, uint32_t *typeIndex)

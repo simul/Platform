@@ -644,6 +644,29 @@ void DeviceManager::CreateDevice(bool use_debug, std::vector<std::string> requir
 	// Look for device extensions
 	ExclusivePushBack(required_device_extensions, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
+#if PLATFORM_SUPPORT_VULKAN_RAYTRACING
+	ExclusivePushBack(required_device_extensions, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+	//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME dependencies
+	{
+		if (apiVersion < VK_API_VERSION_1_2)
+		{
+			SIMUL_ASSERT(apiVersion >= VK_API_VERSION_1_1);
+			ExclusivePushBack(required_device_extensions, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+			ExclusivePushBack(required_device_extensions, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+		}
+		ExclusivePushBack(required_device_extensions, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+	}
+
+	ExclusivePushBack(required_device_extensions, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+	// VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME dependencies
+	{
+		if (apiVersion < VK_API_VERSION_1_2)
+		{
+			SIMUL_ASSERT(apiVersion >= VK_API_VERSION_1_1);
+			ExclusivePushBack(required_device_extensions, VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+		}
+	}
+#endif
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	ExclusivePushBack(required_device_extensions, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 #endif
@@ -705,6 +728,20 @@ void DeviceManager::CreateDevice(bool use_debug, std::vector<std::string> requir
 	nextPropsAddr = &deviceManagerInternal->gpuProps2.pNext;
 
 	// Query fine-grained feature and properties support for this device with VK_KHR_get_physical_device_properties2.
+#if PLATFORM_SUPPORT_VULKAN_RAYTRACING
+	if (IsInVector(deviceExtensionNames, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && IsInVector(deviceExtensionNames, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+	{
+		*nextFeatsAddr = &physicalDeviceAccelerationStructureFeaturesKHR;
+		nextFeatsAddr = &physicalDeviceAccelerationStructureFeaturesKHR.pNext;
+		*nextPropsAddr = &physicalDeviceAccelerationStructurePropertiesKHR;
+		nextPropsAddr = &physicalDeviceAccelerationStructurePropertiesKHR.pNext;
+
+		*nextFeatsAddr = &physicalDeviceRayTracingPipelineFeaturesKHR;
+		nextFeatsAddr = &physicalDeviceRayTracingPipelineFeaturesKHR.pNext;
+		*nextPropsAddr = &physicalDeviceRayTracingPipelinePropertiesKHR;
+		nextPropsAddr = &physicalDeviceRayTracingPipelinePropertiesKHR.pNext;
+	}
+#endif
 #if PLATFORM_SUPPORT_VULKAN_SAMPLER_YCBCR
 	if (IsInVector(deviceExtensionNames, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
 	{

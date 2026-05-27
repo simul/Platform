@@ -66,6 +66,11 @@ namespace platform
 			vk::DebugUtilsMessengerEXT debugUtilsMessenger;
 			vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI;
 
+			vk::PhysicalDeviceRayTracingPipelineFeaturesKHR physicalDeviceRayTracingPipelineFeaturesKHR;
+			vk::PhysicalDeviceRayTracingPipelinePropertiesKHR physicalDeviceRayTracingPipelinePropertiesKHR;
+			vk::PhysicalDeviceAccelerationStructureFeaturesKHR physicalDeviceAccelerationStructureFeaturesKHR;
+			vk::PhysicalDeviceAccelerationStructurePropertiesKHR physicalDeviceAccelerationStructurePropertiesKHR;
+
 			vk::PhysicalDeviceSamplerYcbcrConversionFeatures physicalDeviceSamplerYcbcrConversionFeatures;
 
 			vk::PhysicalDeviceMultiviewFeatures physicalDeviceMultiviewFeatures;

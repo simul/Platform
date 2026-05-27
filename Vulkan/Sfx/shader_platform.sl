@@ -80,6 +80,11 @@ struct RayDesc
 	float TMax;
 };
 
+struct BuiltInTriangleIntersectionAttributes
+{
+	vec2 barycentrics;
+};
+
 uint3 DispatchRaysIndex() { return gl_LaunchIDEXT; }
 uint3 DispatchRaysDimensions() { return gl_LaunchSizeEXT; }
 uint PrimitiveIndex() { return gl_PrimitiveID; }

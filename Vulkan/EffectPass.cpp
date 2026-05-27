@@ -49,6 +49,9 @@ void EffectPass::InvalidateDeviceObjects()
 		m_DescriptorSets_It[i] = m_DescriptorSets[i].begin();
 	}
 
+	m_ShaderStageInfos.clear();
+	m_ShaderGroupInfos.clear();
+
 	renderPlatform = nullptr;
 	m_Initialized = false;
 }
@@ -95,6 +98,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext, 
 	}
 	crossplatform::ContextState *cs = &deviceContext.contextState;
 	vulkan::Shader *c = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	vulkan::Shader *rg = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
 	vulkan::RenderPlatform *rp = (vulkan::RenderPlatform *)renderPlatform;
 	vk::Device *vulkanDevice = rp->AsVulkanDevice();
 
@@ -459,7 +463,7 @@ void EffectPass::ApplyContextState(crossplatform::DeviceContext &deviceContext, 
 	crossplatform::GraphicsDeviceContext *graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
 	RenderPassHash hashval = 0;
 	RenderPassPipeline *renderPassPipeline = nullptr;
-	if (c)
+	if (c || rg)
 	{
 		const auto &p = m_RenderPasses.find(hashval);
 		if (p == m_RenderPasses.end())
@@ -581,7 +585,7 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 					vk::DescriptorSetLayoutBinding &binding = layoutBindings[bindingIndex];
 					vk::ShaderStageFlags stageFlags = GetShaderFlagsForSlot(slot, &Shader::usesTextureSlot);
 					binding.setBinding(vulkan::RenderPlatform::GenerateTextureSlot(slot))
-						.setDescriptorType(m_VideoSource ? vk::DescriptorType::eCombinedImageSampler : vk::DescriptorType::eSampledImage)
+						.setDescriptorType(slot == 25 ? vk::DescriptorType::eAccelerationStructureKHR :m_VideoSource ? vk::DescriptorType::eCombinedImageSampler : vk::DescriptorType::eSampledImage)
 						.setDescriptorCount(1)
 						.setStageFlags(stageFlags);
 					if (m_VideoSource)
@@ -678,16 +682,14 @@ void EffectPass::CreateDescriptorPoolAndSetLayoutAndPipelineLayout()
 						.setPImmutableSamplers(nullptr);
 					bindingIndex++;
 				}
-				else
-					for (uint8_t l = 0; l < crossplatform::PER_PASS_RESOURCE_GROUP; l++)
+				for (uint8_t l = 0; l < crossplatform::PER_PASS_RESOURCE_GROUP; l++)
+				{
+					const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(l);
+					if (layout.UsesConstantBufferSlot(slot))
 					{
-						const crossplatform::ResourceGroupLayout &layout = renderPlatform->GetResourceGroupLayout(l);
-						if (layout.UsesConstantBufferSlot(slot))
-						{
-							usingResourceLayouts |= (1 << l);
-							break;
-						}
+						usingResourceLayouts |= (1 << l);
 					}
+				}
 			}
 
 			descriptorSetLayoutCI.setBindingCount(bindingIndex).setPBindings(layoutBindings);
@@ -773,19 +775,69 @@ void EffectPass::AllocateDescriptorSets(vk::DescriptorSet &descriptorSet)
 
 vk::ShaderStageFlags EffectPass::GetShaderFlagsForSlot(int slot, bool (platform::crossplatform::Shader::*pfn)(int) const)
 {
-	vulkan::Shader *v = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_VERTEX];
-	vulkan::Shader *f = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_PIXEL];
-	vulkan::Shader *c = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_COMPUTE];
-	vulkan::Shader *as = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_AMPLIFICATION];
-	vulkan::Shader *ms = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_MESH];
+	crossplatform::Shader *v = shaders[crossplatform::SHADERTYPE_VERTEX];
+	crossplatform::Shader *f = shaders[crossplatform::SHADERTYPE_PIXEL];
+	crossplatform::Shader *c = shaders[crossplatform::SHADERTYPE_COMPUTE];
+	crossplatform::Shader *rg = shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
+	crossplatform::Shader *rm = shaders[crossplatform::SHADERTYPE_MISS];
+	crossplatform::Shader *rc = shaders[crossplatform::SHADERTYPE_CALLABLE];
+	crossplatform::Shader *rh = shaders[crossplatform::SHADERTYPE_CLOSEST_HIT];
+	crossplatform::Shader *ra = shaders[crossplatform::SHADERTYPE_ANY_HIT];
+	crossplatform::Shader *ri = shaders[crossplatform::SHADERTYPE_INTERSECTION];
+	crossplatform::Shader *as = shaders[crossplatform::SHADERTYPE_AMPLIFICATION];
+	crossplatform::Shader *ms = shaders[crossplatform::SHADERTYPE_MESH];
 
 	vk::ShaderStageFlags stageFlags;
-	if (f && (f->*pfn)(slot))
-		stageFlags |= vk::ShaderStageFlagBits::eFragment;
+	//Graphics / Compute
 	if (v && (v->*pfn)(slot))
 		stageFlags |= vk::ShaderStageFlagBits::eVertex;
+	if (f && (f->*pfn)(slot))
+		stageFlags |= vk::ShaderStageFlagBits::eFragment;
 	if (c && (c->*pfn)(slot))
 		stageFlags |= vk::ShaderStageFlagBits::eCompute;
+
+	// Ray Tracing
+	if (rg && (rg->*pfn)(slot))
+		stageFlags |= vk::ShaderStageFlagBits::eRaygenKHR;
+	if (ra && (ra->*pfn)(slot))
+		stageFlags |= vk::ShaderStageFlagBits::eAnyHitKHR;
+	if (rh && (rh->*pfn)(slot))
+		stageFlags |= vk::ShaderStageFlagBits::eClosestHitKHR;
+	if (rm && (rm->*pfn)(slot))
+		stageFlags |= vk::ShaderStageFlagBits::eMissKHR;
+	if (ri && (ri->*pfn)(slot))
+		stageFlags |= vk::ShaderStageFlagBits::eIntersectionKHR;
+	if (rc && (rc->*pfn)(slot))
+		stageFlags |= vk::ShaderStageFlagBits::eCallableKHR;
+	for (const auto& raytraceHitGroup : raytraceHitGroups)
+	{
+		rh = raytraceHitGroup.second.closestHit;
+		ra = raytraceHitGroup.second.anyHit;
+		ri = raytraceHitGroup.second.intersection;
+
+		if (ra && (ra->*pfn)(slot))
+			stageFlags |= vk::ShaderStageFlagBits::eAnyHitKHR;
+		if (rh && (rh->*pfn)(slot))
+			stageFlags |= vk::ShaderStageFlagBits::eClosestHitKHR;
+		if (ri && (ri->*pfn)(slot))
+			stageFlags |= vk::ShaderStageFlagBits::eIntersectionKHR;
+	}
+	for (const auto& missShader : missShaders)
+	{
+		rm = missShader.second;
+
+		if (rm && (rm->*pfn)(slot))
+			stageFlags |= vk::ShaderStageFlagBits::eMissKHR;
+	}
+	for (const auto& callableShader : callableShaders)
+	{
+		rc = callableShader.second;
+
+		if (rc && (rc->*pfn)(slot))
+			stageFlags |= vk::ShaderStageFlagBits::eCallableKHR;
+	}
+
+	// Mesh / Task
 	if (ms && (ms->*pfn)(slot))
 		stageFlags |= vk::ShaderStageFlagBits::eMeshEXT;
 	if (as && (as->*pfn)(slot))
@@ -806,18 +858,145 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 	vulkan::Shader *v = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_VERTEX];
 	vulkan::Shader *f = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_PIXEL];
 	vulkan::Shader *c = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_COMPUTE];
+	vulkan::Shader *rg = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
 	vulkan::Shader *as = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_AMPLIFICATION];
 	vulkan::Shader *ms = (vulkan::Shader *)shaders[crossplatform::SHADERTYPE_MESH];
 
-	if (c)
+	if (rg)
+	{
+		//Shaders
+		std::vector<vulkan::Shader*> vulkanShaders;
+		std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfos;
+		auto PushBackShader = [&](crossplatform::Shader* shader) -> void
+			{
+				if (shader)
+				{
+					vulkan::Shader* s = (vulkan::Shader*)shader;
+					vk::PipelineShaderStageCreateInfo shaderStageInfo =
+						vk::PipelineShaderStageCreateInfo().setStage(s->GetShaderStage()).setModule(s->mShader).setPName(s->entryPoint.c_str());
+					shaderStageInfos.push_back(shaderStageInfo);
+					vulkanShaders.push_back(s);
+				}
+			};
+
+		for (int i = crossplatform::SHADERTYPE_RAY_GENERATION; i < crossplatform::SHADERTYPE_INTERSECTION + 1; i++)
+		{
+			PushBackShader(shaders[i]);
+		}
+		for (const auto& group : raytraceHitGroups)
+		{
+			PushBackShader(group.second.closestHit);
+			PushBackShader(group.second.anyHit);
+			PushBackShader(group.second.intersection);
+		}
+		for (const auto& missShader : missShaders)
+		{
+			PushBackShader(missShader.second);
+		}
+		for (const auto& callableShader : callableShaders)
+		{
+			PushBackShader(callableShader.second);
+		}
+
+		//LibraryInterface
+		vk::RayTracingPipelineInterfaceCreateInfoKHR interfaceInfo;
+		interfaceInfo.setMaxPipelineRayPayloadSize(maxPayloadSize).setMaxPipelineRayHitAttributeSize(maxAttributeSize);
+
+		//ShaderGroup
+		std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shaderGroupInfos;
+		//Type       General                        | Triangle  | Procedural
+		//shader[0]: Ray Generation, Miss, Callable | ClosetHit | ClosetHit
+		//shader[1]:                                | AnyHit    | AnyHit
+		//shader[2]:                                            | Intersection
+		auto PushBackShaderGroup = [&](crossplatform::Shader* shaders[3], vk::RayTracingShaderGroupTypeKHR type) -> void
+		{
+			if (!shaders[0])
+				return;
+
+			vk::RayTracingShaderGroupCreateInfoKHR shaderGroupInfo;
+			shaderGroupInfo.setType(type);
+			if (type == vk::RayTracingShaderGroupTypeKHR::eGeneral)
+			{
+				shaderGroupInfo.setGeneralShader(static_cast<uint32_t>(std::find(vulkanShaders.begin(), vulkanShaders.end(), shaders[0]) - vulkanShaders.begin()));
+			}
+			else if (type == vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup)
+			{
+				shaderGroupInfo.setClosestHitShader(static_cast<uint32_t>(std::find(vulkanShaders.begin(), vulkanShaders.end(), shaders[0]) - vulkanShaders.begin()));
+				if (shaders[1])
+					shaderGroupInfo.setAnyHitShader(static_cast<uint32_t>(std::find(vulkanShaders.begin(), vulkanShaders.end(), shaders[1]) - vulkanShaders.begin()));
+			}
+			else if (type == vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup)
+			{
+				shaderGroupInfo.setClosestHitShader(static_cast<uint32_t>(std::find(vulkanShaders.begin(), vulkanShaders.end(), shaders[0]) - vulkanShaders.begin()));
+				if (shaders[1])
+					shaderGroupInfo.setAnyHitShader(static_cast<uint32_t>(std::find(vulkanShaders.begin(), vulkanShaders.end(), shaders[1]) - vulkanShaders.begin()));
+				shaderGroupInfo.setIntersectionShader(static_cast<uint32_t>(std::find(vulkanShaders.begin(), vulkanShaders.end(), shaders[2]) - vulkanShaders.begin()));
+			}
+			shaderGroupInfos.push_back(shaderGroupInfo);
+			
+		};
+		for (int i = crossplatform::SHADERTYPE_RAY_GENERATION; i < crossplatform::SHADERTYPE_CALLABLE + 1; i++)
+		{
+			crossplatform::Shader* shaderGroup[3] = {shaders[i], nullptr, nullptr};
+			PushBackShaderGroup(shaderGroup, vk::RayTracingShaderGroupTypeKHR::eGeneral);
+		}
+		for (const auto& group : raytraceHitGroups)
+		{
+			vk::RayTracingShaderGroupTypeKHR type = group.second.intersection != nullptr ? 
+				vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup : vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
+
+			crossplatform::Shader* shaderGroup[3] = {group.second.closestHit, group.second.anyHit, group.second.intersection};
+			PushBackShaderGroup(shaderGroup, type);
+		}
+		for (const auto& missShader : missShaders)
+		{
+			crossplatform::Shader* shaderGroup[3] = {missShader.second, nullptr, nullptr};
+			PushBackShaderGroup(shaderGroup, vk::RayTracingShaderGroupTypeKHR::eGeneral);
+		}
+		for (const auto& callableShader : callableShaders)
+		{
+			crossplatform::Shader* shaderGroup[3] = {callableShader.second, nullptr, nullptr};
+			PushBackShaderGroup(shaderGroup, vk::RayTracingShaderGroupTypeKHR::eGeneral);
+		}
+
+		if (!m_Initialized)
+			CreateDescriptorPoolAndSetLayoutAndPipelineLayout();
+
+		// Ray Tracing Pipeline
+		vk::RayTracingPipelineCreateInfoKHR rayTracingPipelineCreateInfo = vk::RayTracingPipelineCreateInfoKHR()
+																			   .setStages(shaderStageInfos)
+																			   .setGroups(shaderGroupInfos)
+																			   .setMaxPipelineRayRecursionDepth(maxTraceRecursionDepth)
+																			   .setLayout(m_PipelineLayout);
+		DispatchLoaderDynamic d;
+		d.vkCreateRayTracingPipelinesKHR = platform::vulkan::vkCreateRayTracingPipelinesKHR;
+		vk::Result res = vulkanDevice->createRayTracingPipelinesKHR(VK_NULL_HANDLE, renderPassPipeline->pipelineCache, 1, &rayTracingPipelineCreateInfo, nullptr, &renderPassPipeline->pipeline, d);
+		if (res != vk::Result::eSuccess)
+		{
+			SIMUL_VK_CHECK(res);
+			std::cerr << "vk::Result=" << vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
+			std::cerr << "Failed to create raytracing pipeline." << std::endl;
+		}
+		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass RayTracing Pipeline", name.c_str()));
+
+		m_ShaderStageInfos = shaderStageInfos;
+		m_ShaderGroupInfos = shaderGroupInfos;
+	}
+	else if (c)
 	{
 		vk::PipelineShaderStageCreateInfo shaderStageInfo =
 			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eCompute).setModule(c->mShader).setPName(c->entryPoint.c_str());
 		vk::ComputePipelineCreateInfo computePipelineCreateInfo = vk::ComputePipelineCreateInfo()
 																	  .setLayout(m_PipelineLayout)
 																	  .setStage(shaderStageInfo);
-		SIMUL_VK_CHECK(vulkanDevice->createComputePipelines(renderPassPipeline->pipelineCache, 1, &computePipelineCreateInfo, nullptr, &renderPassPipeline->pipeline));
-		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass compute mPipeline", name.c_str()));
+		vk::Result res = vulkanDevice->createComputePipelines(renderPassPipeline->pipelineCache, 1, &computePipelineCreateInfo, nullptr, &renderPassPipeline->pipeline);
+		if (res != vk::Result::eSuccess)
+		{
+			SIMUL_VK_CHECK(res);
+			std::cerr << "vk::Result=" << vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
+			std::cerr << "Failed to create compute pipeline." << std::endl;
+		}
+		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass Compute Pipeline", name.c_str()));
 	}
 	else if (ms && f)
 	{
@@ -861,7 +1040,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 
 		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext, renderPassPipeline->renderPass, num_RT, &pixelFormat,
 													 depthFormat, depth_read, depth_write, false, numOfSamples, multiview);
-		SetVulkanName(renderPlatform, renderPassPipeline->renderPass, platform::core::QuickFormat("%s EffectPass mRenderPass (mesh)", name.c_str()));
+		SetVulkanName(renderPlatform, renderPassPipeline->renderPass, platform::core::QuickFormat("%s EffectPass RenderPass (Mesh)", name.c_str()));
 
 		// Setup viewport and other fixed-function state (no vertex input for mesh shaders)
 		vk::PipelineViewportStateCreateInfo viewportInfo = vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
@@ -955,9 +1134,9 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 		{
 			SIMUL_VK_CHECK(res);
 			std::cerr << "vk::Result=" << vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
-			std::cerr << "Failed to create mesh shader pipeline." << std::endl;
+			std::cerr << "Failed to create mesh pipeline." << std::endl;
 		}
-		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass mesh Pipeline", name.c_str()));
+		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass Mesh Pipeline", name.c_str()));
 	}
 	else
 	{
@@ -976,7 +1155,7 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 
 		vulkanRenderPlatform->CreateVulkanRenderpass(deviceContext, renderPassPipeline->renderPass, num_RT, &pixelFormat,
 													 depthFormat, depth_read, depth_write, false, numOfSamples, multiview);
-		SetVulkanName(renderPlatform, renderPassPipeline->renderPass, platform::core::QuickFormat("%s EffectPass mRenderPass", name.c_str()));
+		SetVulkanName(renderPlatform, renderPassPipeline->renderPass, platform::core::QuickFormat("%s EffectPass RenderPass (Graphics)", name.c_str()));
 
 		vk::PipelineShaderStageCreateInfo shaderStageInfo[2] = {
 			vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eVertex).setModule(v->mShader).setPName(v->entryPoint.c_str()),
@@ -1116,9 +1295,9 @@ void EffectPass::InitializePipeline(crossplatform::GraphicsDeviceContext &device
 		{
 			SIMUL_VK_CHECK(res);
 			std::cerr << "vk::Result=" << vulkan::RenderPlatform::VulkanResultString(res) << std::endl;
-			std::cerr << "Failed to create pipeline." << std::endl;
+			std::cerr << "Failed to create graphics pipeline." << std::endl;
 		}
-		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass renderPass Pipeline", name.c_str()));
+		SetVulkanName(renderPlatform, renderPassPipeline->pipeline, platform::core::QuickFormat("%s EffectPass Graphics Pipeline", name.c_str()));
 		if (vertexInputs)
 			delete[] vertexInputs;
 	}

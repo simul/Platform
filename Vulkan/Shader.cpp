@@ -37,6 +37,49 @@ bool Shader::load(crossplatform::RenderPlatform* r, const char* filename_utf8, c
 	return true;
 }
 
+vk::ShaderStageFlagBits Shader::GetShaderStage()
+{
+	switch (type)
+	{
+	case crossplatform::SHADERTYPE_UNKNOWN:
+		return vk::ShaderStageFlagBits(0);
+	case crossplatform::SHADERTYPE_VERTEX:
+		return vk::ShaderStageFlagBits::eVertex;
+	case crossplatform::SHADERTYPE_HULL:
+		return vk::ShaderStageFlagBits::eTessellationEvaluation;
+	case crossplatform::SHADERTYPE_DOMAIN:
+		return vk::ShaderStageFlagBits::eTessellationControl;
+	case crossplatform::SHADERTYPE_GEOMETRY:
+		return vk::ShaderStageFlagBits::eGeometry;
+	case crossplatform::SHADERTYPE_PIXEL:
+		return vk::ShaderStageFlagBits::eFragment;
+	case crossplatform::SHADERTYPE_COMPUTE:
+		return vk::ShaderStageFlagBits::eCompute;
+	case crossplatform::SHADERTYPE_RAY_GENERATION:
+		return vk::ShaderStageFlagBits::eRaygenKHR;
+	case crossplatform::SHADERTYPE_MISS:
+		return vk::ShaderStageFlagBits::eMissKHR;
+	case crossplatform::SHADERTYPE_CALLABLE:
+		return vk::ShaderStageFlagBits::eCallableKHR;
+	case crossplatform::SHADERTYPE_CLOSEST_HIT:
+		return vk::ShaderStageFlagBits::eClosestHitKHR;
+	case crossplatform::SHADERTYPE_ANY_HIT:
+		return vk::ShaderStageFlagBits::eAnyHitKHR;
+	case crossplatform::SHADERTYPE_INTERSECTION:
+		return vk::ShaderStageFlagBits::eIntersectionKHR;
+	case crossplatform::SHADERTYPE_EXPORT:
+		return vk::ShaderStageFlagBits(0);
+	case crossplatform::SHADERTYPE_MESH:
+		return vk::ShaderStageFlagBits::eMeshEXT;
+	case crossplatform::SHADERTYPE_AMPLIFICATION:
+		return vk::ShaderStageFlagBits::eTaskEXT;
+	default:
+		return vk::ShaderStageFlagBits(0);
+	}
+
+	return vk::ShaderStageFlagBits(0);
+}
+
 void Shader::Release()
 {
 	if (renderPlatform)

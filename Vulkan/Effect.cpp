@@ -175,25 +175,44 @@ EffectTechnique* Effect::CreateTechnique()
 
 crossplatform::EffectTechnique* Effect::GetTechniqueByIndex(int index)
 {
-    return techniques_by_index[index];
+	return techniques_by_index[index];
 }
 
 void Effect::Reapply(crossplatform::DeviceContext& deviceContext)
 {
-    crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
-    cs->textureAssignmentMapValid = false;
-    cs->rwTextureAssignmentMapValid = false;
-    crossplatform::Effect::Reapply(deviceContext);
+	crossplatform::ContextState *cs = renderPlatform->GetContextState(deviceContext);
+	cs->textureAssignmentMapValid = false;
+	cs->rwTextureAssignmentMapValid = false;
+	crossplatform::Effect::Reapply(deviceContext);
 }
 
 void Effect::Unapply(crossplatform::DeviceContext& deviceContext)
 {
-    crossplatform::Effect::Unapply(deviceContext);
+	crossplatform::Effect::Unapply(deviceContext);
 }
 
 void Effect::UnbindTextures(crossplatform::DeviceContext& deviceContext)
 {
-    crossplatform::Effect::UnbindTextures(deviceContext);
+	crossplatform::Effect::UnbindTextures(deviceContext);
+}
+
+void Effect::PostLoad()
+{
+	crossplatform::GraphicsDeviceContext graphicsDeviceContext;
+
+	for (const auto& technique : techniques)
+	{
+		for (const auto& pass : technique.second->passes_by_name)
+		{
+			EffectPass* vulkanPass = reinterpret_cast<EffectPass*>(pass.second);
+
+			crossplatform::Shader* rg = vulkanPass->shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
+			if (rg)
+			{
+				vulkanPass->GetRenderPassPipeline(graphicsDeviceContext);
+			}
+		}
+	}
 }
 
 crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
@@ -202,42 +221,4 @@ crossplatform::EffectPass* EffectTechnique::AddPass(const char* name, int i)
 	p->SetName(((this->name+" ")+name).c_str());
 	passes_by_name[name]            = passes_by_index[i] = p;
 	return p;
-}
-
-TexHandlesUBO::TexHandlesUBO()
-  //  mId(0)
-{
-}
-
-
-TexHandlesUBO::~TexHandlesUBO()
-{
-    Release();
-}
-
-/*
-void TexHandlesUBO::Init(size_t count, GLuint program, int index, int slot)
-{
-    Release();
-
-	size=count;
-    mSlot = slot;
-}
-
-void TexHandlesUBO::Bind(GLuint program)
-{
-}
-
-void TexHandlesUBO::Update(GLuint64 value, size_t offset)
-{
-	if(offset/sizeof(GLuint64)>=size)
-		SIMUL_BREAK("");
-}
-*/
-void TexHandlesUBO::Release()
-{
- //   if (mId != 0)
-    {
-  //      mId = 0;
-    }
 }

@@ -18,22 +18,6 @@ namespace platform
 {
 	namespace vulkan
 	{
-		//! Used internally to bind texture handles:
-		class TexHandlesUBO
-		{
-		public:
-						TexHandlesUBO();
-						~TexHandlesUBO();
-		  
-
-		private:
-			void	Release();
-
-			//int	 mSlot;
-
-			//int size;
-		};
-
 		// Vulkan Query implementation
 		struct SIMUL_VULKAN_EXPORT Query:public crossplatform::Query
 		{
@@ -84,6 +68,7 @@ namespace platform
 			void							Reapply(crossplatform::DeviceContext& deviceContext) override;
 			void							Unapply(crossplatform::DeviceContext& deviceContext) override;
 			void							UnbindTextures(crossplatform::DeviceContext& deviceContext) override;
+			void							PostLoad() override;
 		private:
 			EffectTechnique*				CreateTechnique() override;
 		};

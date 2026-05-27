@@ -3,6 +3,7 @@
 #include "Platform/Vulkan/Export.h"
 #include "Platform/CrossPlatform/Effect.h"
 #include "Platform/Vulkan/Shader.h"
+#include "Platform/Vulkan/ShaderBindingTable.h"
 #include <list>
 
 #ifdef _MSC_VER
@@ -100,6 +101,9 @@ namespace platform
 			std::list<vk::DescriptorSet>					m_DescriptorSets[s_DescriptorSetCount];
 			std::list<vk::DescriptorSet>::iterator			m_DescriptorSets_It[s_DescriptorSetCount];
 			
+			std::vector<vk::PipelineShaderStageCreateInfo>		m_ShaderStageInfos;
+			std::vector<vk::RayTracingShaderGroupCreateInfoKHR>	m_ShaderGroupInfos;
+			friend ShaderBindingTable;
 		};
 	}
 }
