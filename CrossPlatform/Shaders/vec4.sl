@@ -28,72 +28,18 @@ struct tvector4
 	};
 
 	// Constructors
-	tvector4()
-	{
-		x = T(0);
-		y = T(0);
-		z = T(0);
-		w = T(0);
-	}
-	tvector4(T x, T y, T z, T w)
-	{
-		this->x = x;
-		this->y = y;
-		this->z = z;
-		this->w = w;
-	}
-	tvector4(const tvector3<T> &v, T w)
-	{
-		this->x = v.x;
-		this->y = v.y;
-		this->z = v.z;
-		this->w = w;
-	}
-	tvector4(T v)
-	{
-		x = v;
-		y = v;
-		z = v;
-		w = v;
-	}
-	tvector4(const T *v)
-	{
-		x = v[0];
-		y = v[1];
-		z = v[2];
-		w = v[3];
-	}
-	tvector4(const tvector4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = v.w;
-	}
+	constexpr tvector4() : x(T(0)), y(T(0)), z(T(0)), w(T(0)) {}
+	constexpr tvector4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
+	constexpr tvector4(const tvector3<T> &v, T w) : x(v.x), y(v.y), z(v.z), w(w) {}
+	constexpr tvector4(T v) : x(v), y(v), z(v), w(v) {}
+	constexpr tvector4(const T *v) : x(v[0]), y(v[1]), z(v[2]), w(v[3]) {}
+	constexpr tvector4(const tvector4 &v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
 	template <typename U>
-	tvector4(const U *v)
-	{
-		x = T(v[0]);
-		y = T(v[1]);
-		z = T(v[2]);
-		w = T(v[3]);
-	}
+	constexpr tvector4(const U *v) : x(T(v[0])), y(T(v[1])), z(T(v[2])), w(T(v[3])) {}
 	template <typename U>
-	tvector4(const tvector4<U> &v)
-	{
-		x = T(v.x);
-		y = T(v.y);
-		z = T(v.z);
-		w = T(v.w);
-	}
+	constexpr tvector4(const tvector4<U> &v) : x(T(v.x)), y(T(v.y)), z(T(v.z)), w(T(v.w)) {}
 	template <typename U>
-	tvector4(const pvector4<U> &v)
-	{
-		x = T(v.x);
-		y = T(v.y);
-		z = T(v.z);
-		w = T(v.w);
-	}
+	constexpr tvector4(const pvector4<U> &v) : x(T(v.x)), y(T(v.y)), z(T(v.z)), w(T(v.w)) {}
 
 	// Equality operators
 	bool operator==(const tvector4 &v) const

@@ -8,43 +8,15 @@ struct tvector2
 	T x, y;
 
 	// Constructors
-	tvector2()
-	{
-		x = T(0);
-		y = T(0);
-	}
-	tvector2(T x, T y)
-	{
-		this->x = x;
-		this->y = y;
-	}
-	tvector2(T v)
-	{
-		x = v;
-		y = v;
-	}
-	tvector2(const T *v)
-	{
-		x = v[0];
-		y = v[1];
-	}
-	tvector2(const tvector2<T> &v)
-	{
-		x = v.x;
-		y = v.y;
-	}
+	constexpr tvector2() : x(T(0)), y(T(0)) {}
+	constexpr tvector2(T x, T y) : x(x), y(y) {}
+	constexpr tvector2(T v) : x(v), y(v) {}
+	constexpr tvector2(const T *v) : x(v[0]), y(v[1]) {}
+	constexpr tvector2(const tvector2<T> &v) = default;
 	template <typename U>
-	tvector2(const U *v)
-	{
-		x = T(v[0]);
-		y = T(v[1]);
-	}
+	constexpr tvector2(const U *v) : x(T(v[0])), y(T(v[1])) {}
 	template <typename U>
-	tvector2(const tvector2<U> &v)
-	{
-		x = T(v.x);
-		y = T(v.y);
-	}
+	constexpr tvector2(const tvector2<U> &v) : x(T(v.x)), y(T(v.y)) {}
 
 	// Equality operators
 	bool operator==(const tvector2 &v) const
