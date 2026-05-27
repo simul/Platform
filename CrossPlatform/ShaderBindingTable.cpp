@@ -10,7 +10,9 @@ ShaderBindingTable::ShaderBindingTable()
 	{ShaderRecord::Type::MISS, 0}, 
 	{ShaderRecord::Type::HIT_GROUP, 0}, 
 	{ShaderRecord::Type::CALLABLE, 0} 
-	} ) {}
+	} ) 
+{
+}
 
 void ShaderBindingTable::DefaultInitFromEffectPass(RenderPlatform* renderPlatform, EffectPass* pass)
 {

@@ -59,12 +59,12 @@ struct Raytracing_AABB
 #define Raytracing_AABB_FaceIndex uint
 
 //Constant Buffer Structs
-PLATFORM_NAMED_CONSTANT_BUFFER(TraceRayParameters, traceRayParameters, 0, 3)
+PLATFORM_NAMED_CONSTANT_BUFFER(TraceRayParameters, traceRayParameters, 2, 3)
 	uint instanceInclusionMask;								//Inclusion Mask for instances
 	uint rayContributionToHitGroupIndex;					//HitGroup Index for Ray into the SBT.
 	uint multiplierForGeometryContributionToHitGroupIndex;	//HitGroup Stride for Geometry into the SBT.
 	uint missShaderIndex;									//MissShader Index into the SBT.
 PLATFORM_NAMED_CONSTANT_BUFFER_END
-PLATFORM_NAMED_CONSTANT_BUFFER_HELPER(TraceRayParameters, traceRayParameters, 0, 3)
+PLATFORM_NAMED_CONSTANT_BUFFER_HELPER(TraceRayParameters, traceRayParameters, 2, 3)
 
 #endif

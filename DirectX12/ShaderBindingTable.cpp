@@ -32,12 +32,12 @@ void ShaderBindingTable::InvalidateDeviceObjects()
 	}
 }
 
-std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> platform::dx12::ShaderBindingTable::GetShaderHandlesFromEffectPass(crossplatform::RenderPlatform* renderPlatform, crossplatform::EffectPass* pass)
+std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> ShaderBindingTable::GetShaderHandlesFromEffectPass(crossplatform::RenderPlatform* renderPlatform, crossplatform::EffectPass* pass)
 {
 	std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRecord::Handle>> result;
 
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
-	dx12::EffectPass* d3d12Pass = reinterpret_cast<dx12::EffectPass*>(pass);
+	EffectPass* d3d12Pass = reinterpret_cast<EffectPass*>(pass);
 	if (!d3d12Pass)
 	{
 		SIMUL_BREAK_INTERNAL("No valid EffectPass.");

@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
-option(PLATFORM_D3D12_ENABLE_PIX "" OFF)
+
 option(PLATFORM_SUPPORT_D3D12_RAYTRACING "" OFF)
 option(PLATFORM_SUPPORT_D3D12_VIEWINSTANCING "" OFF)
 option(PLATFORM_SUPPORT_D3D12_MESHSHADER "" OFF)
+option(PLATFORM_D3D12_ENABLE_PIX "" OFF)
 option(PLATFORM_DEBUG_BARRIERS "Whether to output debug info for resource layout transition barriers. Slow." OFF)
 
 if(!SIMUL_INTERNAL_CHECKS)
