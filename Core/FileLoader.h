@@ -24,7 +24,7 @@ namespace platform
 		{
 		public:
 			FileLoader() {}
-			~FileLoader() = default;
+			~FileLoader();
 
 			//! Returns a pointer to the current file handler.
 			static FileLoader *GetFileLoader();

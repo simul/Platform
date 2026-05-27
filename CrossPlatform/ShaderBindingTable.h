@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/CrossPlatform/Export.h"
 #include "Platform/Core/RuntimeError.h"
+#include <cstdint>
 #include <map>
 #include <vector>
 

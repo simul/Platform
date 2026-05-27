@@ -122,7 +122,7 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 {
 	if(!hdr_effect)
 		LoadShaders();
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"HDR")
+	PLATFORM_COMBINED_PROFILE_START(deviceContext,"HDR")
 	hdrConstants.gamma		=Gamma;
 	hdrConstants.exposure	=Exposure;
 	hdrConstants.offset		=vec2(offsetX,0.0f);
@@ -146,12 +146,12 @@ void HdrRenderer::Render(GraphicsDeviceContext &deviceContext,crossplatform::Tex
 	
 	//hdr_effect->UnbindTextures(deviceContext);
 	renderPlatform->UnapplyPass(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
 }
 
 void HdrRenderer::RenderInfraRed(GraphicsDeviceContext &deviceContext,crossplatform::Texture *texture,vec3 infrared_integration_factors,float Exposure,float Gamma)
 {
-	SIMUL_COMBINED_PROFILE_START(deviceContext,"RenderInfraRed")
+	PLATFORM_COMBINED_PROFILE_START(deviceContext,"RenderInfraRed")
 	bool msaa=(texture->GetSampleCount()>1);
 	if(msaa)
 		hdr_effect->SetTexture(deviceContext,"imageTextureMS"	,texture);
@@ -171,7 +171,7 @@ void HdrRenderer::RenderInfraRed(GraphicsDeviceContext &deviceContext,crossplatf
 	hdrConstants.Unbind(deviceContext);
 	imageConstants.Unbind(deviceContext);
 	hdr_effect->Unapply(deviceContext);
-	SIMUL_COMBINED_PROFILE_END(deviceContext)
+	PLATFORM_COMBINED_PROFILE_END(deviceContext)
 }
 
 

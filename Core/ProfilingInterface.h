@@ -164,7 +164,7 @@ namespace platform
 			//! Call this at the start of the frame to reset values.
 			virtual void EndFrame()=0;
 		};
-		/// Set the CPU profiler. Future use of SIMUL_PROFILE_START or SIMUL_COMBINED_PROFILE_START will use that profiler.
+		/// Set the CPU profiler. Future use of SIMUL_PROFILE_START or PLATFORM_COMBINED_PROFILE_START will use that profiler.
 		extern PLATFORM_CORE_EXPORT void SetProfilingInterface(THREAD_TYPE thread_id,ProfilingInterface *p);
 		/// Returns a pointer to the current CPU profiler.
 		extern PLATFORM_CORE_EXPORT ProfilingInterface *GetProfilingInterface(THREAD_TYPE thread_id);
@@ -180,16 +180,16 @@ namespace platform
 
 		* Per-frame, at the start of the frame:
 
-				SIMUL_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
+				PLATFORM_COMBINED_PROFILE_STARTFRAME(deviceContext.platform_context)
 
 		*  Wrap these around anything you want to measure:
 
-				SIMUL_COMBINED_PROFILE_START(deviceContext,"Element name")
-				SIMUL_COMBINED_PROFILE_END(deviceContext)
+				PLATFORM_COMBINED_PROFILE_START(deviceContext,"Element name")
+				PLATFORM_COMBINED_PROFILE_END(deviceContext)
 
 		* At frame-end:
 
-				SIMUL_COMBINED_PROFILE_ENDFRAME(deviceContext)
+				PLATFORM_COMBINED_PROFILE_ENDFRAME(deviceContext)
 
 		* To obtain the profiling results
 		

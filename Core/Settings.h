@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/Core/Export.h"
 #include "Platform/Core/RuntimeError.h"
+#include <cstdint>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
