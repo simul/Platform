@@ -52,23 +52,140 @@ using namespace std;
 
 // VK_EXT_debug_report
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-	VkDebugReportFlagsEXT flags,
-	VkDebugReportObjectTypeEXT objectType,
+void RewriteVulkanMessage(std::string &str)
+{
+	// If we have a number followed by a bracket at the start
+	std::smatch m;
+	std::regex re("0x([0-9a-f]+)"); // e.g. 0x1c4e6c00000002c7
+	std::string out;
+	while (std::regex_search(str, m, re))
+	{
+		string hex_addr = m[1].str();
+		std::stringstream sstr;
+		uint64_t num;
+		sstr << std::hex << hex_addr.c_str();
+		sstr >> num;
+
+		out += m.prefix();
+		out += m.str();
+		auto f = RenderPlatform::ResourceMap.find(num);
+		if (f != RenderPlatform::ResourceMap.end())
+		{
+			out += "(";
+			out += f->second + ")";
+		}
+		str = m.suffix();
+	}
+	out += str;
+	str = out;
+}
+
+vk::Bool32 VKAPI_PTR DebugReportCallback(
+	vk::DebugReportFlagsEXT flags,
+	vk::DebugReportObjectTypeEXT objectType,
 	uint64_t object,
 	size_t location,
 	int32_t messageCode,
 	const char *pLayerPrefix,
 	const char *pMessage,
-	void *pUserData);
+	void *pUserData)
+{
+	if (pLayerPrefix)
+		std::cerr << pLayerPrefix << " layer: ";
+	if (flags & vk::DebugReportFlagBitsEXT::eError)
+		std::cerr << " Error: ";
+	if (flags & vk::DebugReportFlagBitsEXT::eWarning)
+		std::cerr << " Warning: ";
+	if (pMessage)
+	{
+		std::string str = pMessage;
+		RewriteVulkanMessage(str);
+		std::cerr << str.c_str() << std::endl;
+	}
+	if (flags & vk::DebugReportFlagBitsEXT::eError)
+		SIMUL_BREAK("Vulkan Error");
+	return VK_FALSE;
+}
 
 // VK_EXT_debug_utils
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-	void *pUserData);
+vk::Bool32 VKAPI_PTR DebugUtilsCallback(
+	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	vk::DebugUtilsMessageTypeFlagsEXT messageType,
+	const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
+	void *pUserData)
+{
+	auto GetMessageSeverityString = [](vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity) -> std::string
+	{
+		bool separator = false;
+
+		std::string msg_flags;
+		if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose)
+		{
+			msg_flags += "VERBOSE";
+			separator = true;
+		}
+		if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
+		{
+			if (separator)
+				msg_flags += ",";
+			msg_flags += "INFO";
+			separator = true;
+		}
+		if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning)
+		{
+			if (separator)
+				msg_flags += ",";
+			msg_flags += "WARN";
+			separator = true;
+		}
+		if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+		{
+			if (separator)
+				msg_flags += ",";
+			msg_flags += "ERROR";
+		}
+		return msg_flags;
+	};
+	auto GetMessageTypeString = [](vk::DebugUtilsMessageTypeFlagBitsEXT messageType) -> std::string
+	{
+		bool separator = false;
+
+		std::string msg_flags;
+		if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
+		{
+			msg_flags += "GEN";
+			separator = true;
+		}
+		if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation)
+		{
+			if (separator)
+				msg_flags += ",";
+			msg_flags += "SPEC";
+			separator = true;
+		}
+		if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
+		{
+			if (separator)
+				msg_flags += ",";
+			msg_flags += "PERF";
+		}
+		return msg_flags;
+	};
+
+	std::string messageSeverityStr = GetMessageSeverityString(messageSeverity);
+	std::string messageTypeStr = GetMessageTypeString((vk::DebugUtilsMessageTypeFlagBitsEXT)(VkDebugUtilsMessageTypeFlagsEXT)messageType);
+
+	std::stringstream errorMessage;
+	errorMessage << pCallbackData->pMessageIdName << "(" << messageSeverityStr << " / " << messageTypeStr << "): msgNum: " << pCallbackData->messageIdNumber << " - " << pCallbackData->pMessage;
+	std::string errorMessageStr = errorMessage.str();
+
+	std::cerr << errorMessageStr.c_str() << std::endl;
+
+	if ((messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
+		SIMUL_BREAK("Vulkan Error");
+	return VK_FALSE;
+}
 
 static bool IsInVector(const std::vector<std::string> &container, const std::string &value)
 {
@@ -625,141 +742,6 @@ void platform::vulkan::InitQueueProperties(const vk::PhysicalDevice &gpu, std::v
 	gpu.getQueueFamilyProperties(&queue_family_count, queue_props.data());
 }
 
-#ifdef _MSC_VER
-#pragma optimize("", off)
-#endif
-void RewriteVulkanMessage(std::string &str)
-{
-	// If we have a number followed by a bracket at the start
-	std::smatch m;
-	std::regex re("0x([0-9a-f]+)"); // e.g. 0x1c4e6c00000002c7
-	std::string out;
-	while (std::regex_search(str, m, re))
-	{
-		string hex_addr = m[1].str();
-		std::stringstream sstr;
-		uint64_t num;
-		sstr << std::hex << hex_addr.c_str();
-		sstr >> num;
-
-		out += m.prefix();
-		out += m.str();
-		auto f = RenderPlatform::ResourceMap.find(num);
-		if (f != RenderPlatform::ResourceMap.end())
-		{
-			out += "(";
-			out += f->second + ")";
-		}
-		str = m.suffix();
-	}
-	out += str;
-	str = out;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-	void *pUserData)
-{
-	auto GetMessageSeverityString = [](VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity) -> std::string
-	{
-		bool separator = false;
-
-		std::string msg_flags;
-		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
-		{
-			msg_flags += "VERBOSE";
-			separator = true;
-		}
-		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-		{
-			if (separator)
-				msg_flags += ",";
-			msg_flags += "INFO";
-			separator = true;
-		}
-		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-		{
-			if (separator)
-				msg_flags += ",";
-			msg_flags += "WARN";
-			separator = true;
-		}
-		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-		{
-			if (separator)
-				msg_flags += ",";
-			msg_flags += "ERROR";
-		}
-		return msg_flags;
-	};
-	auto GetMessageTypeString = [](VkDebugUtilsMessageTypeFlagBitsEXT messageType) -> std::string
-	{
-		bool separator = false;
-
-		std::string msg_flags;
-		if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
-		{
-			msg_flags += "GEN";
-			separator = true;
-		}
-		if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
-		{
-			if (separator)
-				msg_flags += ",";
-			msg_flags += "SPEC";
-			separator = true;
-		}
-		if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
-		{
-			if (separator)
-				msg_flags += ",";
-			msg_flags += "PERF";
-		}
-		return msg_flags;
-	};
-
-	std::string messageSeverityStr = GetMessageSeverityString(messageSeverity);
-	std::string messageTypeStr = GetMessageTypeString(VkDebugUtilsMessageTypeFlagBitsEXT(messageType));
-
-	std::stringstream errorMessage;
-	errorMessage << pCallbackData->pMessageIdName << "(" << messageSeverityStr << " / " << messageTypeStr << "): msgNum: " << pCallbackData->messageIdNumber << " - " << pCallbackData->pMessage;
-	std::string errorMessageStr = errorMessage.str();
-
-	std::cerr << errorMessageStr.c_str() << std::endl;
-
-	if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
-		SIMUL_BREAK("Vulkan Error");
-	return VK_FALSE;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-	VkDebugReportFlagsEXT flags,
-	VkDebugReportObjectTypeEXT objectType,
-	uint64_t object,
-	size_t location,
-	int32_t messageCode,
-	const char *pLayerPrefix,
-	const char *pMessage,
-	void *pUserData)
-{
-	if (pLayerPrefix)
-		std::cerr << pLayerPrefix << " layer: ";
-	if ((flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) != 0)
-		std::cerr << " Error: ";
-	if ((flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0)
-		std::cerr << " Warning: ";
-	if (pMessage)
-	{
-		std::string str = pMessage;
-		RewriteVulkanMessage(str);
-		std::cerr << str.c_str() << std::endl;
-	}
-	if ((flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) != 0)
-		SIMUL_BREAK("Vulkan Error");
-	return VK_FALSE;
-}
 void DeviceManager::SetupDebugCallback(bool debugUtils, bool debugReport, bool debugMarker)
 {
 	if (debugUtils)
@@ -849,8 +831,8 @@ void DeviceManager::CreateDevice()
 	auto deviceInfo = vk::DeviceCreateInfo()
 						  .setQueueCreateInfoCount((uint32_t)queues.size())
 						  .setPQueueCreateInfos(queues.data())
-						  .setEnabledLayerCount(0)
-						  .setPpEnabledLayerNames(nullptr)
+						  //.setEnabledLayerCount(0)
+						  //.setPpEnabledLayerNames(nullptr)
 						  .setEnabledExtensionCount((uint32_t)device_extension_names_cstr.size())
 						  .setPpEnabledExtensionNames(device_extension_names_cstr.data())
 						  .setPNext(deviceCI_pNext)
