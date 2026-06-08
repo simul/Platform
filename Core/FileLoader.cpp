@@ -1,7 +1,6 @@
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/DefaultFileLoader.h"
 #include "Platform/Core/StringToWString.h"
-#include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/RuntimeError.h"
 #include <iostream>
 
@@ -66,17 +65,22 @@ std::string platform::core::GetExeDirectory()
 }
 
 static FileLoader *fileLoader = nullptr;
-static DefaultFileLoader defaultFileLoader = DefaultFileLoader();
+
+FileLoader::FileLoader()
+{
+	std::cout << "FileLoader constructor" << std::endl;
+}
 
 FileLoader::~FileLoader()
 {
-	std::cout<<"FileLoader destructor"<<std::endl;
+	std::cout << "FileLoader destructor" << std::endl;
 }
 
 FileLoader *FileLoader::GetFileLoader()
 {
 	if (!fileLoader)
 	{
+		static DefaultFileLoader defaultFileLoader;
 		fileLoader = &defaultFileLoader;
 	}
 	return fileLoader;
