@@ -15,7 +15,7 @@
 #endif
 #include <cstdlib> // for malloc, free
 #include <stdio.h> // for fopen, seek, fclose
-#include <time.h>
+
 typedef struct stat Stat;
 using namespace platform;
 using namespace core;

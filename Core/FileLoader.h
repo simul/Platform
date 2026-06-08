@@ -23,7 +23,7 @@ namespace platform
 		class PLATFORM_CORE_EXPORT FileLoader
 		{
 		public:
-			FileLoader() {}
+			FileLoader();
 			~FileLoader();
 
 			//! Returns a pointer to the current file handler.
