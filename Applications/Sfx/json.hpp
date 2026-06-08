@@ -2415,7 +2415,7 @@ JSON_HEDLEY_DIAGNOSTIC_POP
             #define JSON_HAS_EXPERIMENTAL_FILESYSTEM 1
         #elif __has_include(<filesystem>)
             #define JSON_HAS_FILESYSTEM 1
-        #elif __has_include(<experimental/filesystem>)
+        #elif __has_include(<filesystem>)
             #define JSON_HAS_EXPERIMENTAL_FILESYSTEM 1
         #endif
 
@@ -4565,7 +4565,7 @@ NLOHMANN_JSON_NAMESPACE_END
 
 
 #if JSON_HAS_EXPERIMENTAL_FILESYSTEM
-#include <experimental/filesystem>
+#include <filesystem>
 NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail
 {
