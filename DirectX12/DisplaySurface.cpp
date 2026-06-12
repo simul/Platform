@@ -22,11 +22,12 @@ DisplaySurface::DisplaySurface(int view_id)
 		mFences[i] = nullptr;
 		mComputeFences[i] = nullptr;
 	}
+	mGraphicsFence = nullptr;
+	mComputeFence= nullptr;
 }
 
 DisplaySurface::~DisplaySurface()
 {
-	WaitForAllWorkDone();
 	InvalidateDeviceObjects();
 }
 
@@ -218,6 +219,9 @@ void DisplaySurface::InvalidateDeviceObjects()
 		SAFE_DELETE(mFences[i])
 		SAFE_DELETE(mComputeFences[i])
 	}
+	
+	SAFE_DELETE(mGraphicsFence)
+	SAFE_DELETE(mComputeFence)
 }
 
 UINT DisplaySurface::GetCurrentBackBufferIndex() const
@@ -237,11 +241,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex *delegatorReadWriteMu
 	Resize();
 	// First lets make sure is safe to start working on this frame:
 	// StartFrame();
-#if defined(_GAMING_XBOX) 
-	UINT curIdx =0;
-#else
 	UINT curIdx = GetCurrentBackBufferIndex();
-#endif
 	HRESULT res = S_FALSE;
 
 	// Set viewport 
@@ -307,12 +307,11 @@ void DisplaySurface::CreateRenderTargets(ID3D12Device* device)
 		result = mSwapChain->GetBuffer(n, __uuidof(ID3D12Resource), (LPVOID*)&mBackBuffers[n]);
 		if(result == S_OK)
 		{
-			mBackBuffers[n]->SetName(L"WindowBackBuffer");
+			std::wstring mBackBufferName = L"WindowBackBuffer " + std::to_wstring(n);
+			mBackBuffers[n]->SetName(mBackBufferName.c_str());
 
 			device->CreateRenderTargetView(mBackBuffers[n], nullptr, rtvHandle);
 			rtvHandle.Offset(1, rtHandleSize);
-
-			
 		}
 	}
 	#endif
@@ -328,6 +327,9 @@ void DisplaySurface::CreateSyncObjects()
 		std::string computeFenceName = "WindowComputeFence " + std::to_string(i);
 		mComputeFences[i] = renderPlatform->CreateFence(computeFenceName.c_str());
 	}
+
+	mGraphicsFence = renderPlatform->CreateFence("GraphicsFence");
+	mComputeFence = renderPlatform->CreateFence("ComputeFence");
 }
 
 void DisplaySurface::StartFrame()
@@ -402,11 +404,17 @@ void DisplaySurface::EndFrame()
 
 void DisplaySurface::WaitForAllWorkDone()
 {
-	for (size_t i = 0; i < FrameCount; i++)
-	{
-		renderPlatform->Wait(mFences[i]);
-		renderPlatform->Wait(mComputeFences[i]);
-	}
+	RenderPlatform* d3d12RenderPlatform = reinterpret_cast<RenderPlatform*>(renderPlatform);
+	ID3D12CommandQueue* graphicsQueue = d3d12RenderPlatform->GetID3D12CommandQueue(crossplatform::CommandContextType::GRAPHICS);
+	ID3D12CommandQueue* computeQueue = d3d12RenderPlatform->GetID3D12CommandQueue(crossplatform::CommandContextType::COMPUTE);
+
+	graphicsQueue->Signal(((Fence*)mGraphicsFence)->AsD3D12Fence(), ++mGraphicsFence->value);
+	//TODO: Replace spin-lock wait
+	while (((Fence*)mGraphicsFence)->AsD3D12Fence()->GetCompletedValue() < mGraphicsFence->value) { Sleep(0); }
+
+	computeQueue->Signal(((Fence*)mComputeFence)->AsD3D12Fence(), ++mComputeFence->value);
+	// TODO: Replace spin-lock wait
+	while (((Fence*)mComputeFence)->AsD3D12Fence()->GetCompletedValue() < mComputeFence->value) { Sleep(0); }
 }
 
 void DisplaySurface::Resize()

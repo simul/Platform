@@ -74,6 +74,10 @@ namespace platform
 			ID3D12CommandAllocator*						mComputeCommandAllocators[FrameCount];
 			crossplatform::Fence*						mFences[FrameCount];
 			crossplatform::Fence*						mComputeFences[FrameCount];
+			//! For WaitForAllWorkDone()
+			crossplatform::Fence*						mGraphicsFence;
+			//! For WaitForAllWorkDone()
+			crossplatform::Fence*						mComputeFence;
 		};
 	}
 }
