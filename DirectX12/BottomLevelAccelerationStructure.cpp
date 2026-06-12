@@ -67,7 +67,7 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 	{
 		crossplatform::Buffer* indexBuffer = mesh->GetIndexBuffer();
 		crossplatform::Buffer* vertexBuffer = mesh->GetVertexBuffer();
-		if (!indexBuffer | !vertexBuffer)
+		if (!indexBuffer || !vertexBuffer)
 			return;
 
 		auto* indexBuffer12 = indexBuffer->AsD3D12Buffer();
@@ -109,17 +109,16 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 					continue;
 				D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc;
 				geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-				geometryDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
 				// Mark the geometry as opaque. 
 				// PERFORMANCE TIP: mark geometry as opaque whenever applicable as it can enable important ray processing optimizations.
 				// Note: When rays encounter opaque geometry an any hit shader will not be executed whether it is present or not.
 				geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-				geometryDesc.Triangles.IndexBuffer = indexBuffer12->GetGPUVirtualAddress() + (UINT64)m->IndexOffset * indexBuffer->stride;
-				geometryDesc.Triangles.IndexCount = static_cast<UINT>(m->TriangleCount * 3);
-				geometryDesc.Triangles.IndexFormat = indexBuffer->stride == 4 ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
-
 				geometryDesc.Triangles.Transform3x4 = transforms->GetGPUVirtualAddress() + sizeof(mat4) * n;
+				geometryDesc.Triangles.IndexFormat = indexBuffer->stride == 4 ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+				geometryDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+				geometryDesc.Triangles.IndexCount = static_cast<UINT>(m->TriangleCount * 3);
 				geometryDesc.Triangles.VertexCount = static_cast<UINT>(vertexBuffer->count);
+				geometryDesc.Triangles.IndexBuffer = indexBuffer12->GetGPUVirtualAddress() + (UINT64)m->IndexOffset * indexBuffer->stride;
 				geometryDesc.Triangles.VertexBuffer.StartAddress = vertexBuffer12->GetGPUVirtualAddress();
 				geometryDesc.Triangles.VertexBuffer.StrideInBytes = vertexSize;
 				geometryDescs.push_back(geometryDesc);
@@ -138,7 +137,7 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 	else if (geometryType == crossplatform::BottomLevelAccelerationStructure::GeometryType::AABB)
 	{
 		ID3D12Resource* ppAABBResources[1] = { nullptr };
-		UINT64 AABBCount = _countof(ppAABBResources);
+		UINT64 AABBCount = std::size(ppAABBResources);
 		ppAABBResources[0] = aabbBuffer->platformStructuredBuffer->AsD3D12Resource(deviceContext);
 
 		if (ppAABBResources == nullptr || AABBCount == 0)
