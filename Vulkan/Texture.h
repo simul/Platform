@@ -136,7 +136,7 @@ namespace platform
 			std::vector<std::vector<LoadedTexture>>			mLoadedTextures; //By mip, then by layer.
 			int												mNumSamples = 1;
 			vk::ImageLayout									mExternalLayout;
-			vk::ImageCreateInfo imageCreateInfo; //!< Stored for defragmentation purposes.
+			vk::ImageCreateInfo								mImageCreateInfo; //!< Stored for defragmentation purposes.
 		};
 	}
 

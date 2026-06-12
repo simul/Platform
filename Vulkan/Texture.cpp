@@ -1,15 +1,11 @@
 #include "Texture.h"
 #include "RenderPlatform.h"
-#include "DeviceManager.h"
-#include "Effect.h"
 
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/StringFunctions.h"
 #include <magic_enum/magic_enum.hpp>
 
 #include <algorithm>
-//#include <vulkan/vk_enum_string_helper.h>
-
 
 using namespace platform;
 using namespace platform;
@@ -313,7 +309,6 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	
 	textureUploadComplete = true;
 }
-#pragma optimize("",off)
 
 vk::ImageView *Texture::AsVulkanImageView(crossplatform::TextureView textureView)
 {
@@ -522,7 +517,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
 	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
 	
-	imageCreateInfo = vk::ImageCreateInfo()
+	mImageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (int32_t)1 })
@@ -538,7 +533,7 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 
 	std::string _name = name + " texture mImage";
-	vulkanRenderPlatform->CreateVulkanImage(this,imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
+	vulkanRenderPlatform->CreateVulkanImage(this, mImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	InitViewTable(1, m);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
@@ -620,7 +615,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 	vk::FormatProperties props = gpu->getFormatProperties(tex_format);
 	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
 	
-	imageCreateInfo = vk::ImageCreateInfo()
+	mImageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e2D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (uint32_t)1 })
@@ -636,7 +631,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 
 	std::string _name = name + " texture mImage";
-	vulkanRenderPlatform->CreateVulkanImage(this,imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
+	vulkanRenderPlatform->CreateVulkanImage(this, mImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	pixelFormat=f;
 	width=w;
@@ -703,7 +698,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 	vk::ImageCreateFlags imageCreateFlags = vk::ImageCreateFlags(0);
 	vk::ImageFormatProperties image_props = gpu->getImageFormatProperties(tex_format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, usageFlags, imageCreateFlags);
 	
-	imageCreateInfo = vk::ImageCreateInfo()
+	mImageCreateInfo = vk::ImageCreateInfo()
 		.setImageType(vk::ImageType::e3D)
 		.setFormat(tex_format)
 		.setExtent({ (uint32_t)w, (uint32_t)l, (uint32_t)d })
@@ -719,7 +714,7 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setInitialLayout(vk::ImageLayout::ePreinitialized);
 
 	std::string _name = name + " texture mImage";
-	vulkanRenderPlatform->CreateVulkanImage(this,imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
+	vulkanRenderPlatform->CreateVulkanImage(this, mImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 	
 	InitViewTable(1, m);
 	AssumeLayout(vk::ImageLayout::ePreinitialized);
@@ -1241,7 +1236,7 @@ void Texture::Reallocate(crossplatform::GraphicsDeviceContext& deviceContext, co
 	// Recreate and bind this buffer/image at: pass.pMoves[i].dstMemory, pass.pMoves[i].dstOffset.
 	vk::Image newImg;
 	auto r=((vulkan::RenderPlatform*)renderPlatform);
-	r->ReallocVulkanImage(imageCreateInfo, *((VmaAllocation*)dest_alloc), newImg);
+	r->ReallocVulkanImage(mImageCreateInfo, *((VmaAllocation*)dest_alloc), newImg);
 	
 	// Issue a vkCmdCopyBuffer/vkCmdCopyImage to copy its content to the new place.
 	vk::ImageLayout srcLayout = mCurrentImageLayout;
