@@ -2999,31 +2999,41 @@ void Effect::ConstructSource(ShaderInstance *shaderInstance)
 		{
 			std::string preFunctionAssignment = "", postFunctionAssignment = "";
 			const auto& payloadParameter = function->parameters[0];
-			for (const auto& var : vars)
+			
+			const Variable* var = nullptr;
+			for (const auto& var_ : vars)
 			{
-				if (var->name == payloadParameter.identifier)
+				if (var_->name == payloadParameter.identifier)
 				{
-					std::string globalVariableForParameter = var->original.substr(var->original.find_last_of(' ') + 1);
-					find_and_replace(globalVariableForParameter, ";", "");
-					preFunctionAssignment += payloadParameter.type + " " + payloadParameter.identifier + " = " + globalVariableForParameter + ";\n";
-					postFunctionAssignment += globalVariableForParameter + " = " + payloadParameter.identifier + ";\n";
+					var = var_;
 					break;
 				}
 			}
+			assert(var != nullptr);
+
+			std::string globalVariableForParameter = var->original.substr(var->original.find_last_of(' ') + 1);
+			find_and_replace(globalVariableForParameter, ";", "");
+			preFunctionAssignment += payloadParameter.type + " " + payloadParameter.identifier + " = " + globalVariableForParameter + ";\n";
+			postFunctionAssignment += globalVariableForParameter + " = " + payloadParameter.identifier + ";\n";
 
 			if (shaderInstance->shaderType == CLOSEST_HIT_SHADER || shaderInstance->shaderType == ANY_HIT_SHADER)
 			{
 				const auto& attributesParameter = function->parameters[1];
-				for (const auto& var : vars)
+
+				var = nullptr;
+				for (const auto& var_ : vars)
 				{
-					if (var->name == attributesParameter.identifier)
+					if (var_->name == attributesParameter.identifier)
 					{
-						std::string globalVariableForParameter = var->original.substr(var->original.find_last_of(' ') + 1);
-						find_and_replace(globalVariableForParameter, ";", "");
-						preFunctionAssignment += attributesParameter.type + " " + attributesParameter.identifier + " = " + globalVariableForParameter + ";\n";
+						var = var_;
 						break;
 					}
 				}
+				assert(var != nullptr);
+				
+				std::string globalVariableForParameter = var->original.substr(var->original.find_last_of(' ') + 1);
+				find_and_replace(globalVariableForParameter, ";", "");
+				preFunctionAssignment += attributesParameter.type + " " + attributesParameter.identifier + " = " + globalVariableForParameter + ";\n";
 			}
 
 			content = preFunctionAssignment + content + "\n" + postFunctionAssignment;
