@@ -12,11 +12,14 @@ namespace platform
 {
 	namespace vulkan
 	{
+		struct Fence;
+
 		static constexpr size_t FrameCount = SIMUL_VULKAN_FRAME_LAG + 1;
 
 		struct CommandBufferResources
 		{
 			vk::CommandBuffer cmdBuffer;
+			vk::CommandBuffer computeCmdBuffer;
 			vk::CommandBuffer graphicsToPresentCmdBuffer;
 		};
 		
@@ -73,19 +76,24 @@ namespace platform
 			std::vector<CommandBufferResources> cmdBufferResources;
 
 			vk::Queue graphicsQueue;
+			vk::Queue computeQueue;
 			vk::Queue presentQueue;
 			vk::CommandPool cmdPool;
+			vk::CommandPool computeCmdPool;
 			vk::CommandPool presentCmdPool;
 
+			vulkan::Fence* timelineSemaphore;
 			vk::Semaphore imageAcquiredSemaphores[FrameCount];
 			vk::Semaphore drawCompleteSemaphores[FrameCount];
 			vk::Semaphore imageOwnershipSemaphores[FrameCount];
 			vk::Fence fences[FrameCount];
+			vk::Fence computeFences[FrameCount];
 			vk::RenderPass renderPass;
 
 			uint32_t frameIndex = 0; // Our internal frame index counter.
 			uint32_t imageIndex;	 // Returned from Vulkan each frame.
 			uint32_t graphicsQueueFamilyIndex;
+			uint32_t computeQueueFamilyIndex;
 			uint32_t presentQueueFamilyIndex;
 
 			uint32_t pendingWidth = 0;

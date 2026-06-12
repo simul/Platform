@@ -120,10 +120,13 @@ void DisplaySurface::InvalidateDeviceObjects()
 			{
 				renderPlatform->DestroyCommandList((void*&)(VkCommandBuffer&)cmdBufferResource.graphicsToPresentCmdBuffer, presentCmdPool);
 			}
+
+			renderPlatform->DestroyCommandList((void*&)(VkCommandBuffer&)cmdBufferResource.computeCmdBuffer, computeCmdPool);
 		}
 		cmdBufferResources.clear();
 
 		renderPlatform->DestroyCommandAllocator((void*&)(VkCommandPool&)cmdPool);
+		renderPlatform->DestroyCommandAllocator((void*&)(VkCommandPool&)computeCmdPool);
 		if (presentCmdPool)
 		{
 			renderPlatform->DestroyCommandAllocator((void*&)(VkCommandPool&)presentCmdPool);
@@ -140,6 +143,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 		vulkanDevice->destroyRenderPass(renderPass, nullptr);
 
 		vulkanDevice->destroyCommandPool(cmdPool, nullptr);
+		vulkanDevice->destroyCommandPool(computeCmdPool, nullptr);
 		vulkanDevice->destroyCommandPool(presentCmdPool, nullptr);
 
 		vulkanDevice->destroySwapchainKHR(swapchain, nullptr);
@@ -151,12 +155,17 @@ void DisplaySurface::InvalidateDeviceObjects()
 			vulkanDevice->destroySemaphore(drawCompleteSemaphores[i], nullptr);
 			vulkanDevice->destroySemaphore(imageOwnershipSemaphores[i], nullptr);
 			vulkanDevice->destroyFence(fences[i], nullptr);
+			vulkanDevice->destroyFence(computeFences[i], nullptr);
 			
 			imageAcquiredSemaphores[i] = nullptr;
 			drawCompleteSemaphores[i] = nullptr;
 			imageOwnershipSemaphores[i] = nullptr;
 			fences[i] = nullptr;
+			computeFences[i] = nullptr;
 		}
+
+		timelineSemaphore->AsVulkanSemaphore() = VK_NULL_HANDLE;
+		delete timelineSemaphore;
 	}
 }
 
@@ -174,8 +183,9 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex* delegatorReadWriteMu
 
 	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	vk::Device* vulkanDevice = vulkanRenderPlatform->AsVulkanDevice();
+	vk::Result result;
 
-	vk::Result result = vulkanDevice->waitForFences(1, &fences[frameIndex], VK_TRUE, UINT64_MAX);
+	result = vulkanDevice->waitForFences(1, &fences[frameIndex], VK_TRUE, UINT64_MAX);
 	if (result != vk::Result::eSuccess)
 	{
 		SIMUL_CERR << "Vulkan operation failed\n";
@@ -185,6 +195,17 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex* delegatorReadWriteMu
 	{
 		SIMUL_CERR << "Vulkan operation failed\n";
 	}
+	result = vulkanDevice->waitForFences(1, &computeFences[frameIndex], VK_TRUE, UINT64_MAX);
+	if (result != vk::Result::eSuccess)
+	{
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
+	result = vulkanDevice->resetFences(1, &computeFences[frameIndex]);
+	if (result != vk::Result::eSuccess)
+	{
+		SIMUL_CERR << "Vulkan operation failed\n";
+	}
+
 	result = vulkanDevice->acquireNextImageKHR(swapchain, UINT64_MAX, imageAcquiredSemaphores[frameIndex], vk::Fence(), &imageIndex);
 	if (result == vk::Result::eErrorOutOfDateKHR)
 	{
@@ -198,34 +219,39 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex* delegatorReadWriteMu
 	// swapchain is not as optimal as it could be, but the platform's presentation engine will still present the image correctly.
 	SIMUL_ASSERT((result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR));
 
-	vk::CommandBuffer& commandBuffer = cmdBufferResources[frameIndex].cmdBuffer;
-	vk::CommandPool& commandPool = cmdPool;
+	vk::CommandBuffer& commandBuffer		= cmdBufferResources[frameIndex].cmdBuffer;
+	vk::CommandBuffer& computeCommandBuffer = cmdBufferResources[frameIndex].computeCmdBuffer;
 	vk::Framebuffer& framebuffer = swapchainImageResources[imageIndex].framebuffer;
 
-	const vk::CommandBufferBeginInfo commandInfo = vk::CommandBufferBeginInfo()
-	.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	const vk::CommandBufferBeginInfo commandInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 	result = commandBuffer.begin(&commandInfo);
+	SIMUL_VK_CHECK(result);
+	result = computeCommandBuffer.begin(&commandInfo);
 	SIMUL_VK_CHECK(result);
 	
 	EnsureImageLayout();
 	vulkanRenderPlatform->SetDefaultColourFormat(pixelFormat);
 	
+	timelineSemaphore->AsVulkanSemaphore() = imageAcquiredSemaphores[frameIndex];
+
 	ERRNO_BREAK
 	if (renderer)
 	{
-		crossplatform::CommandContext graphicsCommandContext = {&commandBuffer, &cmdPool};
-		crossplatform::CommandContext computeCommandContext = {nullptr, nullptr};
+		crossplatform::CommandContext graphicsCommandContext = {&commandBuffer, &cmdPool, timelineSemaphore};
+		crossplatform::CommandContext computeCommandContext = {&computeCommandBuffer, &computeCmdPool};
 		crossplatform::CommandContext* commandContexts[2] = {&graphicsCommandContext, &computeCommandContext};
 
 		renderer->Render(mViewId, commandContexts, std::size(commandContexts), &framebuffer, viewport.w, viewport.h, frameNumber);
 
 		// RenderPlatform::RestartCommands may have been called and new command context created.
-		// mCommandLists[curIdx] = (ID3D12GraphicsCommandList*)graphicsCommandContext.commandList;
-		// mCommandAllocators[curIdx] = (ID3D12CommandAllocator*)graphicsCommandContext.commandAllocator;
+		commandBuffer			= *((vk::CommandBuffer*)graphicsCommandContext.commandList);
+		computeCommandBuffer	= *((vk::CommandBuffer*)computeCommandContext.commandList);
+		timelineSemaphore		= (vulkan::Fence*)graphicsCommandContext.syncPrimitive; 
 	}
 
 	EnsureImagePresentLayout();
 	commandBuffer.end();
+	computeCommandBuffer.end();
 
 	Present();
 
@@ -546,10 +572,12 @@ void DisplaySurface::GetQueues()
 	vk::PhysicalDevice* gpu = GetGPU();
 
 	graphicsQueueFamilyIndex = UINT32_MAX;
+	computeQueueFamilyIndex = UINT32_MAX;
 	presentQueueFamilyIndex = UINT32_MAX;
 
 	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 	graphicsQueueFamilyIndex = vulkanRenderPlatform->GetQueueFamilyIndex(crossplatform::CommandContextType::GRAPHICS);
+	computeQueueFamilyIndex = vulkanRenderPlatform->GetQueueFamilyIndex(crossplatform::CommandContextType::COMPUTE);
 
 	// Iterate over each queue to learn whether it supports presenting:
 	for (uint32_t i = 0; i < (uint32_t)vulkanRenderPlatform->GetQueueProperties().size(); i++)
@@ -571,6 +599,7 @@ void DisplaySurface::GetQueues()
 	}
 
 	vulkanDevice->getQueue(graphicsQueueFamilyIndex, 0, &graphicsQueue);
+	vulkanDevice->getQueue(computeQueueFamilyIndex, 0, &computeQueue);
 	bool separatePresentQueue = (graphicsQueueFamilyIndex != presentQueueFamilyIndex);
 	if (separatePresentQueue)
 	{
@@ -596,6 +625,9 @@ void DisplaySurface::CreateSyncObjects()
 		auto result = device->createFence(&fenceCI, nullptr, &fences[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
+		result = device->createFence(&fenceCI, nullptr, &computeFences[i]);
+		SIMUL_ASSERT(result == vk::Result::eSuccess);
+
 		result = device->createSemaphore(&semaphoreCI, nullptr, &imageAcquiredSemaphores[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
@@ -609,6 +641,10 @@ void DisplaySurface::CreateSyncObjects()
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
 		}
 	}
+
+	timelineSemaphore = (vulkan::Fence*)renderPlatform->CreateFence("");
+	timelineSemaphore->InvalidateDeviceObjects();
+	timelineSemaphore->AsVulkanSemaphore() = VK_NULL_HANDLE;
 }
 
 void DisplaySurface::CreateCommandPoolsAndBuffers()
@@ -620,7 +656,7 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 
 	// Before Creating/Recreating Command Buffers/Pool, we must ensure that they are not being used on the GPU.
 	// When a pool is destroyed, all command buffers allocated from the pool are freed.
-	auto CreateCommandPoolAndBuffers = [&device, &vulkanRenderPlatform, this](vk::CommandPool& cmdPool, uint32_t queueFamilyIndex)
+	auto CreateCommandPoolAndBuffers = [&device, &vulkanRenderPlatform, this](vk::CommandPool& cmdPool, crossplatform::CommandContextType type, uint32_t queueFamilyIndex)
 	{
 		if (cmdPool)
 		{
@@ -628,32 +664,30 @@ void DisplaySurface::CreateCommandPoolsAndBuffers()
 			device->destroyCommandPool(cmdPool, nullptr);
 		}
 
-		const vk::CommandPoolCreateInfo cmdPoolCI = vk::CommandPoolCreateInfo()
-			.setQueueFamilyIndex(queueFamilyIndex)
-			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(crossplatform::CommandContextType::GRAPHICS);
+		cmdPool = (VkCommandPool)vulkanRenderPlatform->CreateCommandAllocator(type);
 		SIMUL_ASSERT(cmdPool != nullptr);
 		SetVulkanName(renderPlatform, cmdPool, std::format("Command Pool ({})", queueFamilyIndex));
 
 		for (size_t i = 0; i < cmdBufferResources.size(); ++i)
 		{
-			vk::CommandBuffer& cmdBuffer = cmdBufferResources[i].cmdBuffer;
+			vk::CommandBuffer& cmdBuffer = type == crossplatform::CommandContextType::GRAPHICS ? cmdBufferResources[i].cmdBuffer : cmdBufferResources[i].computeCmdBuffer;
 			if (presentQueueFamilyIndex == queueFamilyIndex)
 			{
 				cmdBuffer = cmdBufferResources[i].graphicsToPresentCmdBuffer;
 			}
 
-			cmdBuffer = (VkCommandBuffer)vulkanRenderPlatform->CreateCommandList(crossplatform::CommandContextType::GRAPHICS, cmdPool);
+			cmdBuffer = (VkCommandBuffer)vulkanRenderPlatform->CreateCommandList(type, cmdPool);
 			SIMUL_ASSERT(cmdBuffer != nullptr);
 			SetVulkanName(renderPlatform, cmdBufferResources[i].cmdBuffer, std::format("Command Buffer {}", i));
 		}
 	};
 
-	CreateCommandPoolAndBuffers(cmdPool, graphicsQueueFamilyIndex);
+	CreateCommandPoolAndBuffers(cmdPool, crossplatform::CommandContextType::GRAPHICS, graphicsQueueFamilyIndex);
+	CreateCommandPoolAndBuffers(computeCmdPool, crossplatform::CommandContextType::COMPUTE, computeQueueFamilyIndex);
 
 	if (separatePresentQueue)
 	{
-		CreateCommandPoolAndBuffers(presentCmdPool, presentQueueFamilyIndex);
+		CreateCommandPoolAndBuffers(presentCmdPool, crossplatform::CommandContextType::GRAPHICS, presentQueueFamilyIndex);
 
 		// Create Image Ownership transfer command buffers for later execution.
 		for (uint32_t i = 0; i < cmdBufferResources.size(); i++)
@@ -736,14 +770,36 @@ void DisplaySurface::Present()
 
 	bool separatePresentQueue = (graphicsQueueFamilyIndex != presentQueueFamilyIndex);
 
+	const vk::PipelineStageFlags computePipelineStageFlags = vk::PipelineStageFlagBits::eComputeShader;
+	const vk::SubmitInfo computeSubmitInfo = vk::SubmitInfo()
+		.setPWaitDstStageMask(&computePipelineStageFlags)
+		.setCommandBufferCount(1)
+		.setPCommandBuffers(&cmdBufferResources[frameIndex].computeCmdBuffer);
+	result = computeQueue.submit(1, &computeSubmitInfo, computeFences[frameIndex]);
+	SIMUL_ASSERT(result == vk::Result::eSuccess);
+
+	vk::TimelineSemaphoreSubmitInfo timelineSemaphoreSubmit;
+	uint64_t waitValues[1] = { 0 };
+	uint64_t signalValues[1] = { 0 };
+	if (timelineSemaphore->AsVulkanSemaphore() != imageAcquiredSemaphores[frameIndex])
+	{
+		waitValues[0] = timelineSemaphore->value;
+		signalValues[0] = 0;
+	}
+	timelineSemaphoreSubmit.waitSemaphoreValueCount = 1;
+	timelineSemaphoreSubmit.pWaitSemaphoreValues = waitValues;
+	timelineSemaphoreSubmit.signalSemaphoreValueCount = 1;
+	timelineSemaphoreSubmit.pSignalSemaphoreValues = signalValues;
+
 	// https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_discussion_of_solution
 	// Wait for the image acquired semaphore to be signaled to ensure that the image won't be rendered to until the presentation
 	// engine has fully released ownership to the application, and it is  okay to render to the image.
 	const vk::PipelineStageFlags pipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 	const vk::SubmitInfo submitInfo = vk::SubmitInfo()
+		.setPNext(&timelineSemaphoreSubmit)
 		.setPWaitDstStageMask(&pipelineStageFlags)
 		.setWaitSemaphoreCount(1)
-		.setPWaitSemaphores(&imageAcquiredSemaphores[frameIndex])
+		.setPWaitSemaphores(&timelineSemaphore->AsVulkanSemaphore())
 		.setCommandBufferCount(1)
 		.setPCommandBuffers(&cmdBufferResources[frameIndex].cmdBuffer)
 		.setSignalSemaphoreCount(1)
