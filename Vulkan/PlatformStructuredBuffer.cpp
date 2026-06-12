@@ -57,7 +57,7 @@ void PlatformStructuredBuffer::RestoreDeviceObjects(crossplatform::RenderPlatfor
 
 void PlatformStructuredBuffer::AddPerFrameBuffer(const void *init_data)
 {
-	vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer;
+	vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eIndirectBuffer;
 	if (mCpuRead)
 		usageFlags |= vk::BufferUsageFlagBits::eTransferSrc;
 	int buffer_aligned_size = mSlots * kBufferAlign;
@@ -232,7 +232,7 @@ size_t PlatformStructuredBuffer::GetLastOffset()
 
 vk::Buffer *PlatformStructuredBuffer::GetLastBuffer()
 {
-	return &lastBuffer->mBuffer;
+	return lastBuffer == perFrameBuffers.end() ? nullptr : &lastBuffer->mBuffer;
 }
 
 size_t PlatformStructuredBuffer::GetSize()

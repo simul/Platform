@@ -55,6 +55,9 @@ std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRec
 	}
 	else
 	{
+		DispatchLoaderDynamic d;
+		d.vkGetRayTracingShaderGroupHandlesKHR = platform::vulkan::vkGetRayTracingShaderGroupHandlesKHR;
+
 		// Shader Handles
 		vk::PhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties;
 		reinterpret_cast<RenderPlatform*>(renderPlatform)->FillPhysicalDeviceProperties2ExtensionStructure(rayTracingPipelineProperties);
@@ -65,12 +68,10 @@ std::map<crossplatform::ShaderRecord::Type, std::vector<crossplatform::ShaderRec
 		const size_t handleSizeAligned = MakeAlignedSize(vkHandleSize, vkHandleSizeAligned);
 		const size_t shaderGroupHandleDataSize = vulkanPass->m_ShaderGroupInfos.size() * handleSizeAligned;
 
-		crossplatform::GraphicsDeviceContext graphicsDeviceContext;
-		const EffectPass::RenderPassPipeline& renderPassPipeline = vulkanPass->GetRenderPassPipeline(graphicsDeviceContext);
+		crossplatform::DeviceContext deviceContext;
+		const EffectPass::RenderPassPipeline& renderPassPipeline = vulkanPass->GetRenderPassPipeline(deviceContext);
 
 		shaderGroupHandles.resize(shaderGroupHandleDataSize);
-		DispatchLoaderDynamic d;
-		d.vkGetRayTracingShaderGroupHandlesKHR = platform::vulkan::vkGetRayTracingShaderGroupHandlesKHR;
 		SIMUL_VK_CHECK(device->getRayTracingShaderGroupHandlesKHR(renderPassPipeline.pipeline, 0, static_cast<uint32_t>(vulkanPass->m_ShaderGroupInfos.size()), shaderGroupHandleDataSize, shaderGroupHandles.data(), d));
 
 		// We need to bundles the handles together by type.

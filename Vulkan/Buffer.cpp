@@ -69,7 +69,7 @@ void Buffer::EnsureVertexBuffer(crossplatform::RenderPlatform* r
 	}
 
 	vulkanRenderPlatform->CreateVulkanBuffer(nullptr,
-		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR,
 		vk::MemoryPropertyFlagBits::eDeviceLocal, mBuffer, mAllocation, "VertexBuffer");
 
 	loadingComplete=false;
@@ -102,7 +102,7 @@ void Buffer::EnsureIndexBuffer(crossplatform::RenderPlatform* r,int num_indices,
 	}
 	
 	vulkanRenderPlatform->CreateVulkanBuffer(nullptr,
-		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+		size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR,
 		vk::MemoryPropertyFlagBits::eDeviceLocal, mBuffer, mAllocation, "IndexBuffer");
 
 	loadingComplete = false;

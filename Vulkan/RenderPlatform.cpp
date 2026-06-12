@@ -17,6 +17,8 @@
 #include "Platform/Vulkan/RenderPlatform.h"
 #include "Platform/Vulkan/Texture.h"
 #include "Platform/Vulkan/ShaderBindingTable.h"
+#include "Platform/Vulkan/BottomLevelAccelerationStructure.h"
+#include "Platform/Vulkan/TopLevelAccelerationStructure.h"
 #include <vulkan/vulkan.hpp>
 #if VULKAN_HPP_CPP_VERSION > 17
 #include <vulkan/vulkan_to_string.hpp>
@@ -702,48 +704,63 @@ void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext
 	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	commandBuffer->end();
 
-	vk::TimelineSemaphoreSubmitInfo semaphoreSI = vk::TimelineSemaphoreSubmitInfo();
-	semaphoreSI.waitSemaphoreValueCount = (uint32_t)waitFences.size();
-	semaphoreSI.signalSemaphoreValueCount = (uint32_t)signalFences.size();
-
-	std::vector<uint64_t> waitSemaphoreValues;
-	waitSemaphoreValues.reserve(semaphoreSI.waitSemaphoreValueCount);
-	std::vector<uint64_t> signalSemaphoreValues;
-	signalSemaphoreValues.reserve(semaphoreSI.signalSemaphoreValueCount);
+	Fence*& syncPrimitive = (Fence*&)deviceContext.GetCommandContext().syncPrimitive;
 
 	std::vector<vk::Semaphore> waitSemaphores;
-	waitSemaphoreValues.reserve(semaphoreSI.waitSemaphoreValueCount);
-	std::vector<vk::Semaphore> signalSemaphores;
-	signalSemaphoreValues.reserve(semaphoreSI.signalSemaphoreValueCount);
-
+	std::vector<uint64_t> waitSemaphoreValues;
 	for (const auto& waitFence : waitFences)
 	{
 		vulkan::Fence* f = (vulkan::Fence*)waitFence;
 		waitSemaphores.push_back(f->AsVulkanSemaphore());
 		waitSemaphoreValues.push_back(f->value);
 	}
+
+	std::vector<vk::Semaphore> signalSemaphores;
+	std::vector<uint64_t> signalSemaphoreValues;
 	for (const auto& signalFence : signalFences)
 	{
 		vulkan::Fence* f = (vulkan::Fence*)signalFence;
 		signalSemaphores.push_back(f->AsVulkanSemaphore());
+		f->value++; // Increment the fence value to a new value which we can wait upon.
 		signalSemaphoreValues.push_back(f->value);
 	}
 
-	semaphoreSI.pWaitSemaphoreValues = waitSemaphoreValues.data();
-	semaphoreSI.pSignalSemaphoreValues = signalSemaphoreValues.data();
+	if (syncPrimitive)
+	{
+		waitSemaphores.push_back(syncPrimitive->AsVulkanSemaphore());
+		waitSemaphoreValues.push_back(syncPrimitive->value);
+		syncPrimitive = nullptr;
+
+		syncPrimitive = (Fence*)CreateFence("");
+		signalSemaphores.push_back(syncPrimitive->AsVulkanSemaphore());
+		syncPrimitive->value++; // Increment the fence value to a new value which we can wait upon.
+		signalSemaphoreValues.push_back(syncPrimitive->value);
+	}
+
+	std::vector<vk::PipelineStageFlags> waitDstStages;
+	for (size_t i = 0; i < waitSemaphores.size(); i++)
+	{
+		waitDstStages.push_back(vk::PipelineStageFlagBits::eTopOfPipe);
+	}
+
+	vk::TimelineSemaphoreSubmitInfo timelineSemaphoreSI = vk::TimelineSemaphoreSubmitInfo();
+	timelineSemaphoreSI.pWaitSemaphoreValues = waitSemaphoreValues.data();
+	timelineSemaphoreSI.pSignalSemaphoreValues = signalSemaphoreValues.data();
+	timelineSemaphoreSI.waitSemaphoreValueCount = (uint32_t)waitSemaphoreValues.size();
+	timelineSemaphoreSI.signalSemaphoreValueCount = (uint32_t)signalSemaphoreValues.size();
 
 	vk::FenceCreateInfo fenceCI;
 	fenceCI.setPNext(nullptr).setFlags(vk::FenceCreateFlags(0));
 	vk::Fence fence = vulkanDevice->createFence(fenceCI);
 
 	vk::SubmitInfo si = vk::SubmitInfo()
-		.setPNext(&semaphoreSI)
-		.setWaitSemaphoreCount(semaphoreSI.waitSemaphoreValueCount)
+		.setPNext(&timelineSemaphoreSI)
+		.setWaitSemaphoreCount(timelineSemaphoreSI.waitSemaphoreValueCount)
 		.setPWaitSemaphores(waitSemaphores.data())
-		.setWaitDstStageMask(nullptr)
+		.setPWaitDstStageMask(waitDstStages.data())
 		.setCommandBufferCount(1)
 		.setPCommandBuffers(commandBuffer)
-		.setSignalSemaphoreCount(semaphoreSI.signalSemaphoreValueCount)
+		.setSignalSemaphoreCount(timelineSemaphoreSI.signalSemaphoreValueCount)
 		.setPSignalSemaphores(signalSemaphores.data());
 	vk::Queue queue = (VkQueue)GetCommandQueue(deviceContext.commandContextType);
 	SIMUL_VK_CHECK(queue.submit(1, &si, fence));
@@ -755,6 +772,9 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext
 	vk::CommandBuffer *commandBuffer = deviceContext.asVulkanContext();
 	commandBuffer->reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 	commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse));
+
+	deviceContext.contextState.Reset();
+	ApplyResourceGroup(deviceContext, 0);
 }
 
 void RenderPlatform::ClearReleaseManager(bool force)
@@ -1164,8 +1184,7 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 
 	// Apply the pass setting up the descriptors, pipeline and render pass.
 	pass->Apply(deviceContext, false);
-	crossplatform::GraphicsDeviceContext *graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
-	const EffectPass::RenderPassPipeline &renderPassPipeline = pass->GetRenderPassPipeline(*graphicsDeviceContext);
+	const EffectPass::RenderPassPipeline &renderPassPipeline = pass->GetRenderPassPipeline(deviceContext);
 
 	vk::DescriptorSet descriptorSets[4];
 	int8_t maxDescriptorSet = -1;
@@ -1216,8 +1235,10 @@ bool RenderPlatform::ApplyContextState(crossplatform::DeviceContext &deviceConte
 	}
 
 	// If not a compute shader, apply viewports:
-	if (!is_compute)
+	if (!is_compute && deviceContext.AsGraphicsDeviceContext() && deviceContext.deviceContextType == crossplatform::DeviceContextType::GRAPHICS)
 	{
+		crossplatform::GraphicsDeviceContext* graphicsDeviceContext = deviceContext.AsGraphicsDeviceContext();
+
 		for (auto i : cs->applyVertexBuffers)
 		{
 			vulkan::Buffer *buffer = (vulkan::Buffer *)i.second;
@@ -1347,10 +1368,10 @@ crossplatform::PixelFormat RenderPlatform::GetActivePixelFormat(crossplatform::G
 		if (tv && tv->textureTargets[0].texture)
 			pixelFormat = tv->textureTargets[0].texture->pixelFormat;
 	}
-	/*if (pixelFormat == crossplatform::PixelFormat::UNKNOWN)
+	if (pixelFormat == crossplatform::PixelFormat::UNKNOWN)
 	{
 		SIMUL_ASSERT_WARN_ONCE(pixelFormat != crossplatform::PixelFormat::UNKNOWN, "Unknown active pixel format!");
-	}*/
+	}
 	return pixelFormat;
 }
 
@@ -2408,20 +2429,12 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 
 crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
 {
-	//return new BottomLevelAccelerationStructure(this);
-	return nullptr;
+	return new BottomLevelAccelerationStructure(this);
 }
 
 crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
 {
-	//return new TopLevelAccelerationStructure(this);
-	return nullptr;
-}
-
-crossplatform::AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()
-{
-	//return new AccelerationStructureManager(this);
-	return nullptr;
+	return new TopLevelAccelerationStructure(this);
 }
 
 crossplatform::ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()

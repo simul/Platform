@@ -198,7 +198,7 @@ void Effect::UnbindTextures(crossplatform::DeviceContext& deviceContext)
 
 void Effect::PostLoad()
 {
-	crossplatform::GraphicsDeviceContext graphicsDeviceContext;
+	crossplatform::DeviceContext deviceContext;
 
 	for (const auto& technique : techniques)
 	{
@@ -209,7 +209,7 @@ void Effect::PostLoad()
 			crossplatform::Shader* rg = vulkanPass->shaders[crossplatform::SHADERTYPE_RAY_GENERATION];
 			if (rg)
 			{
-				vulkanPass->GetRenderPassPipeline(graphicsDeviceContext);
+				vulkanPass->GetRenderPassPipeline(deviceContext);
 			}
 		}
 	}

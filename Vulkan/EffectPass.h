@@ -56,7 +56,7 @@ namespace platform
 
 			vk::ShaderStageFlags GetShaderFlagsForSlot(int slot, bool(platform::crossplatform::Shader::* pfn)(int) const);
 			
-			void InitializePipeline(crossplatform::GraphicsDeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline
+			void InitializePipeline(crossplatform::DeviceContext& deviceContext, RenderPassPipeline* renderPassPipeline
 				, crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology
 				, const crossplatform::RenderState* blendState = nullptr
 				, const crossplatform::RenderState* depthStencilState = nullptr
@@ -64,7 +64,7 @@ namespace platform
 				, bool multiview = false);
 
 		public:
-			RenderPassPipeline& GetRenderPassPipeline(crossplatform::GraphicsDeviceContext& deviceContext);
+			RenderPassPipeline& GetRenderPassPipeline(crossplatform::DeviceContext& deviceContext);
 			RenderPassHash GetHash(crossplatform::PixelFormat pixelFormat, int numOfSamples, crossplatform::Topology topology, const crossplatform::Layout* layout);
 
 		private:

@@ -222,10 +222,10 @@ namespace platform
 			uint32_t textureSlotsForSB=0;
 			uint32_t bufferSlots=0;
 
-			uint32_t resourceGroupApplyCounter[4]={0,0,0,0};
-			uint32_t resourceGroupUploadedCounter[4] = {0, 0, 0, 0};
-			uint32_t resourceGroupAppliedCounter[4] = {0, 0, 0, 0};
-			uint32_t resourceGroupAppliedCounterCompute[4] = {0, 0, 0, 0};
+			uint32_t resourceGroupApplyCounter[4]			= {0, 0, 0, 0};
+			uint32_t resourceGroupUploadedCounter[4]		= {0, 0, 0, 0};
+			uint32_t resourceGroupAppliedCounter[4]			= {0, 0, 0, 0};
+			uint32_t resourceGroupAppliedCounterCompute[4]	= {0, 0, 0, 0};
 
 			const crossplatform::RenderState* blendState=nullptr;
 			const crossplatform::RenderState* rasterizerState=nullptr;
@@ -310,6 +310,7 @@ namespace platform
 		{
 			void* commandList = nullptr;		//ID3D12GraphicsCommandList* or vk::CommandBuffer*
 			void* commandAllocator = nullptr;	//ID3D12CommandAllocator* or vk::CommandPool*
+			void* syncPrimitive = nullptr;		//Additional API specific data
 		};
 
 		struct SIMUL_CROSSPLATFORM_EXPORT DeviceContext

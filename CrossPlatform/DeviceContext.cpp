@@ -93,6 +93,8 @@ GraphicsDeviceContext::GraphicsDeviceContext(DeviceContext& deviceContext)
 	contextState = deviceContext.contextState;
 	renderPlatform = deviceContext.renderPlatform;
 	commandContexts = deviceContext.commandContexts;
+
+	renderPlatform->ApplyResourceGroup(*this, 0);
 }
 
 GraphicsDeviceContext::~GraphicsDeviceContext()
@@ -182,6 +184,8 @@ MultiviewGraphicsDeviceContext::MultiviewGraphicsDeviceContext(DeviceContext& de
 	contextState = deviceContext.contextState;
 	renderPlatform = deviceContext.renderPlatform;
 	commandContexts = deviceContext.commandContexts;
+
+	renderPlatform->ApplyResourceGroup(*this, 0);
 }
 
 ComputeDeviceContext::ComputeDeviceContext()
@@ -199,6 +203,8 @@ ComputeDeviceContext::ComputeDeviceContext(DeviceContext& deviceContext)
 	contextState = deviceContext.contextState;
 	renderPlatform = deviceContext.renderPlatform;
 	commandContexts = deviceContext.commandContexts;
+
+	renderPlatform->ApplyResourceGroup(*this, 0);
 }
 
 // TODO: this is terrible, let's get rid of it.

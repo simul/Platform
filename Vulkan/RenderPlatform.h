@@ -99,10 +99,8 @@ namespace platform
 			void InvalidateDeviceObjects() override;
 			Fence(crossplatform::RenderPlatform* r);
 			~Fence();
-			vk::Semaphore AsVulkanSemaphore()
-			{
-				return vkSemaphore;
-			}
+			const vk::Semaphore& AsVulkanSemaphore() const { return vkSemaphore; }
+			vk::Semaphore& AsVulkanSemaphore() { return vkSemaphore; }
 
 		protected:
 			vk::Semaphore vkSemaphore = VK_NULL_HANDLE;
@@ -263,7 +261,6 @@ namespace platform
 			crossplatform::Shader *CreateShader() override;
 			crossplatform::BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure();
 			crossplatform::TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure();
-			crossplatform::AccelerationStructureManager* CreateAccelerationStructureManager();
 			crossplatform::ShaderBindingTable* CreateShaderBindingTable();
 
 			crossplatform::DisplaySurface *CreateDisplaySurface() override;
