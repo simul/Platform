@@ -80,9 +80,9 @@ void RewriteVulkanMessage(std::string &str)
 	str = out;
 }
 
-vk::Bool32 VKAPI_PTR DebugReportCallback(
-	vk::DebugReportFlagsEXT flags,
-	vk::DebugReportObjectTypeEXT objectType,
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
+	VkDebugReportFlagsEXT flags_,
+	VkDebugReportObjectTypeEXT objectType,
 	uint64_t object,
 	size_t location,
 	int32_t messageCode,
@@ -90,6 +90,7 @@ vk::Bool32 VKAPI_PTR DebugReportCallback(
 	const char *pMessage,
 	void *pUserData)
 {
+	vk::DebugReportFlagsEXT flags = static_cast<vk::DebugReportFlagsEXT>(flags_);
 	if (pLayerPrefix)
 		std::cerr << pLayerPrefix << " layer: ";
 	if (flags & vk::DebugReportFlagBitsEXT::eError)
@@ -109,12 +110,15 @@ vk::Bool32 VKAPI_PTR DebugReportCallback(
 
 // VK_EXT_debug_utils
 
-vk::Bool32 VKAPI_PTR DebugUtilsCallback(
-	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	vk::DebugUtilsMessageTypeFlagsEXT messageType,
-	const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity_,
+	VkDebugUtilsMessageTypeFlagsEXT messageType_,
+	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData_,
 	void *pUserData)
 {
+	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity = static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(messageSeverity_);
+	vk::DebugUtilsMessageTypeFlagsEXT messageType = static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType_);
+	const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData = reinterpret_cast<const vk::DebugUtilsMessengerCallbackDataEXT *>(pCallbackData_);
 	auto GetMessageSeverityString = [](vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity) -> std::string
 	{
 		bool separator = false;
