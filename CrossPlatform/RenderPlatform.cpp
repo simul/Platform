@@ -1657,10 +1657,14 @@ void RenderPlatform::DrawAxes(GraphicsDeviceContext &deviceContext,const mat4 &m
 	crossplatform::MakeWorldViewProjMatrix((float*)&wvp,m,deviceContext.viewStruct.view,deviceContext.viewStruct.proj);
 	debugConstants.debugWorldViewProj=wvp;
 	debugConstants.radius			=size;
+	// The axes shader needs the render target size in pixels to give the ribbons a constant screen-space width.
+	Viewport v		=GetViewport(deviceContext,0);
+	debugConstants.viewport=vec4((float)v.x,(float)v.y,(float)v.w,(float)v.h);
 	SetConstantBuffer(deviceContext,&debugConstants);
 	debugEffect->Apply(deviceContext,"axes",0);
-	SetTopology(deviceContext,Topology::LINELIST);
-	Draw(deviceContext, 7, 0);
+	// Each axis is a quad ribbon of two triangles: 3 axes * 6 vertices.
+	SetTopology(deviceContext,Topology::TRIANGLELIST);
+	Draw(deviceContext, 18, 0);
 	debugEffect->Unapply(deviceContext);
 }
 

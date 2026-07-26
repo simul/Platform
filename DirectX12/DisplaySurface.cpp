@@ -81,7 +81,9 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	swapChainDesc12.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc12.SampleDesc.Count = 1;
 	swapChainDesc12.SampleDesc.Quality = 0;
-	swapChainDesc12.Flags = mIsVSYNC == false ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+	// ALLOW_TEARING is set unconditionally so vsync can be toggled at runtime via
+	// SetVsync() without recreating the swapchain.
+	swapChainDesc12.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
 	IDXGIFactory4* factory = nullptr;
 	res = CreateDXGIFactory2(0, SIMUL_PPV_ARGS(&factory));
@@ -426,8 +428,9 @@ void DisplaySurface::Resize()
 	(
 		0,						// Use current back buffer count
 		screenWidth, screenHeight,
+		// Keep ALLOW_TEARING so runtime vsync toggling stays valid (see RestoreDeviceObjects).
 		DXGI_FORMAT_UNKNOWN,	// Use current format
-		mIsVSYNC == false ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0
+		DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
 	);
 	SIMUL_ASSERT(res == S_OK);
 	#endif

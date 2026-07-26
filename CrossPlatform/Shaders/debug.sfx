@@ -665,23 +665,46 @@ shader v2f LinesNoVBVS(idOnly IN)
 	OUT.colour		=debugColour;
 	return OUT;
 }
+// Half-width of the axis ribbons, in pixels. Line widths greater than one pixel are not
+// portable across graphics APIs, so each axis is drawn as a screen-space quad ribbon instead.
+#define AXES_HALF_WIDTH_PIXELS 6.0
 shader v2f AxesVS(idOnly IN)
 {
 	v2f OUT;
-	vec3 poss[12];
-	poss[0]			=vec3(0,0,0);
-	poss[2]			=vec3(0,0,0);
-	poss[4]			=vec3(0,0,0);
-	poss[1]			=vec3(1.0,0,0);
-	poss[3]			=vec3(0,1.0,0);
-	poss[5]			=vec3(0,0,1.0);
-	vec3 pos		=radius*poss[IN.vertex_id];
-	OUT.hPosition	=mul(debugWorldViewProj,vec4(pos.xyz,1.0));
+	// Six vertices per axis: two triangles forming a quad.
+	// Quad corners: 0=(origin,-), 1=(origin,+), 2=(tip,-), 3=(tip,+).
+	uint quad_indices[6];
+	quad_indices[0]=0; quad_indices[1]=1; quad_indices[2]=2;
+	quad_indices[3]=2; quad_indices[4]=1; quad_indices[5]=3;
+	vec3 axes[3];
+	axes[0]			=vec3(1.0,0,0);
+	axes[1]			=vec3(0,1.0,0);
+	axes[2]			=vec3(0,0,1.0);
+	uint axis		=IN.vertex_id/6;
+	uint qi			=quad_indices[IN.vertex_id%6];
+	float side		=(qi%2==0)?-1.0:1.0;
+	vec4 clip0		=mul(debugWorldViewProj,vec4(0.0,0.0,0.0,1.0));
+	vec4 clip1		=mul(debugWorldViewProj,vec4(radius*axes[axis],1.0));
+	vec2 ndc0		=clip0.xy/clip0.w;
+	vec2 ndc1		=clip1.xy/clip1.w;
+	vec2 d			=ndc1-ndc0;
+	float len		=length(d);
+	vec2 perp		=vec2(1.0,0.0);
+	if(len>1e-6)
+		perp		=vec2(-d.y,d.x)/len;
+	// viewport.zw is the render target size in pixels; convert the pixel width to NDC units.
+	vec2 offset		=perp*side*AXES_HALF_WIDTH_PIXELS*2.0/viewport.zw;
+	if(qi/2==0)
+		OUT.hPosition=clip0;
+	else
+		OUT.hPosition=clip1;
+	// Multiplying by w keeps the offset constant in screen space after the perspective divide.
+	OUT.hPosition.xy+=offset*OUT.hPosition.w;
 	vec4 colours[3];
 	colours[0]=vec4(1.0,0.2,0.2,1.0);
 	colours[1]=vec4(0,1.0,0,1.0);
 	colours[2]=vec4(0,0.4,1.0,1.0);
-	OUT.colour		=colours[IN.vertex_id/2];
+	OUT.colour		=colours[axis];
 	return OUT;
 }
 VertexShader lines_novb=CompileShader(vs_5_0,LinesNoVBVS());
@@ -691,7 +714,7 @@ technique axes
 {
 	pass p0
 	{
-		SetRasterizerState( wireframeRasterizer );
+		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(AlphaBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
 		SetGeometryShader(NULL);

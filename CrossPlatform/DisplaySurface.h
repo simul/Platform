@@ -22,6 +22,10 @@ namespace platform
 			virtual void RestoreDeviceObjects(cp_hwnd handle, RenderPlatform *renderPlatform, bool m_vsync_enabled, PixelFormat outFmt);
 			//! Platform-dependent function called when uninitializing the display surface.
 			virtual void InvalidateDeviceObjects() {}
+			//! Change vsync at runtime. Platforms that cannot change present behaviour
+			//! on the fly (e.g. Vulkan) override this to trigger swapchain recreation.
+			virtual void SetVsync(bool v) { mIsVSYNC = v; }
+			bool IsVsync() const { return mIsVSYNC; }
 			void Release();
 			void SetRenderer(RenderDelegatorInterface *ci);
 			void ResizeSwapChain(DeviceContext &deviceContext);

@@ -107,8 +107,9 @@ void DisplaySurface::InitSwapChain()
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 	// Set the alpha mode to unspecified.
 	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-	// Set flags for V-Sync and back buffer resizing.
-	swapChainDesc.Flags = (mIsVSYNC == false ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0) | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	// Set flags for V-Sync and back buffer resizing. ALLOW_TEARING is set unconditionally
+	// so that vsync can be toggled at runtime via SetVsync() without recreating the swapchain.
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	//Create Swapchain.
 	HRESULT result = S_OK;
@@ -182,8 +183,9 @@ void DisplaySurface::EndFrame()
 	{
 		renderPlatform->GetImmediateContext().asD3D11DeviceContext()->ExecuteCommandList(mCommandList,true);
 		SAFE_RELEASE(mCommandList);
-		static DWORD dwFlags        = mIsVSYNC ? 0 : DXGI_PRESENT_ALLOW_TEARING;
-		static UINT SyncInterval    = mIsVSYNC ? 1 : 0;
+		// Not static: must follow the current mIsVSYNC so SetVsync() takes effect.
+		DWORD dwFlags     = mIsVSYNC ? 0 : DXGI_PRESENT_ALLOW_TEARING;
+		UINT SyncInterval = mIsVSYNC ? 1 : 0;
 		V_CHECK(mSwapChain->Present(SyncInterval, dwFlags));
 	}
 	// We check for resize here, because we must manage the SwapChain from the main thread.

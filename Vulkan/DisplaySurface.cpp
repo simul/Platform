@@ -184,6 +184,14 @@ void DisplaySurface::InvalidateDeviceObjects()
 	// vulkanDevice->destroysurface(mSurface,nullptr);
 }
 
+void DisplaySurface::SetVsync(bool v)
+{
+	if (mIsVSYNC == v)
+		return;
+	mIsVSYNC = v;
+	vsyncChangePending = true;
+}
+
 void DisplaySurface::GetQueues()
 {
 	auto vkGpu = GetGPU();
@@ -985,6 +993,13 @@ void DisplaySurface::Resize()
 		return;
 	if (viewport.w != W || viewport.h != H)
 		regen = true;
+	// A vsync change requires a new swapchain: the present mode is baked in at
+	// swapchain creation. InitSwapChain reads mIsVSYNC when choosing the mode.
+	if (vsyncChangePending)
+	{
+		regen = true;
+		vsyncChangePending = false;
+	}
 	if (!regen)
 		return;
 	// InitSwapChain re-queries the surface capabilities, recreates the swapchain and framebuffers
