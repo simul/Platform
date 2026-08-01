@@ -21,7 +21,7 @@ using namespace core;
 #endif
 
 #ifdef UNIX
-#include <linux/limits.h>
+#include <climits>
 #endif
 
 std::string platform::core::GetExeDirectory()
