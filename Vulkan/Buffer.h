@@ -29,14 +29,28 @@ namespace platform
 			vk::Buffer	asVulkanBuffer();
 			void		FinishLoading(crossplatform::DeviceContext& deviceContext);
 		private:
-			vk::Buffer mBuffer;
-			AllocationInfo mAllocation;
-			
-			vk::Buffer mStagingBuffer;
-			AllocationInfo mStagingAllocation;
-			
+			//! Allocate the ring of staging and device buffers. numSlots must be set first.
+			void		CreateBuffers(vk::BufferUsageFlags deviceUsage, const char* name);
+
+			//! A dynamic buffer is written by the CPU every frame while previous frames may still be in flight,
+			//! so it needs one slot per frame in flight, in the same way as PlatformConstantBuffer and
+			//! PlatformStructuredBuffer. A static buffer is written once and needs only one slot.
+			static const uint32_t kNumBuffers = SIMUL_VULKAN_FRAME_LAG + 1;
+
+			vk::Buffer mBuffers[kNumBuffers];
+			AllocationInfo mAllocations[kNumBuffers];
+
+			vk::Buffer mStagingBuffers[kNumBuffers];
+			AllocationInfo mStagingAllocations[kNumBuffers];
+
+			bool loadingComplete[kNumBuffers] = {};
+
+			//! 1 for a static buffer, kNumBuffers for a cpu_access buffer.
+			uint32_t numSlots = 1;
+			//! The slot written by the most recent Map(), and read by asVulkanBuffer() and FinishLoading().
+			uint32_t currentSlot = 0;
+
 			uint32_t size;
-			bool loadingComplete = true;
 		};
 	}
 };

@@ -261,7 +261,10 @@ void ImGui_ImplPlatform_RenderDrawData(GraphicsDeviceContext &deviceContext,ImDr
 		vb->Unmap(deviceContext);
 		
 		std::shared_ptr<Buffer> &ib=bd->indexBuffers[n];
-		if (!ib || bd->IndexBufferSize < cmd_list->IdxBuffer.size())
+		// Test this buffer's own capacity, as the vertex path above does. bd->IndexBufferSize is the size the *next*
+		// allocation will be given, and is always >= any single command list's index count, so testing against it
+		// meant the buffer never grew after it was first created and the memcpy below could overrun it.
+		if (!ib || ib->count < cmd_list->IdxBuffer.size())
 		{
 			if (!ib)
 			{

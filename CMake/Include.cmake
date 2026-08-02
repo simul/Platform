@@ -42,6 +42,12 @@ set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/ )
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/ )
 set( CMAKE_PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/ )
 
+# Install destinations, relative to CMAKE_INSTALL_PREFIX. These must never be the build
+# output paths above: those are absolute, so install()ing to them writes the build machine's
+# directory tree into the install prefix (and into any package built from it).
+set( SIMUL_INSTALL_LIB_DEST lib CACHE STRING "Destination for installed Platform libraries, relative to the install prefix" )
+set( SIMUL_INSTALL_BIN_DEST bin CACHE STRING "Destination for installed Platform runtime binaries, relative to the install prefix" )
+
 set(STATIC_LINK_SUFFIX "")
 set(DYNAMIC_LINK_SUFFIX "") 
 set(SIMUL_DYNAMIC_LIBS OFF )
@@ -415,7 +421,7 @@ function(add_static_library libname)
 			)
 		endif()
 		target_compile_definitions(${target} PRIVATE ${lib_DEFINITIONS})
-		install( TARGETS ${target} DESTINATION ${LIBRARY_OUTPUT_PATH} )
+		install( TARGETS ${target} ARCHIVE DESTINATION ${SIMUL_INSTALL_LIB_DEST} )
 		set_target_properties(${target} PROPERTIES PREFIX "" )
 		target_link_directories( ${target} PUBLIC ${lib_LINK_DIRS})
 		if(NOT "${lib_DEPENDENCIES}" STREQUAL "")
@@ -497,7 +503,10 @@ function(add_dll libname)
 			target_include_directories(${target} PUBLIC ${dll_PUBLICINCLUDES} )
 		endif()
 		target_compile_definitions(${target} PRIVATE ${dll_DEFINITIONS} ${DYNLINK} )
-		install( TARGETS ${target} DESTINATION ${LIBRARY_OUTPUT_PATH} )
+		install( TARGETS ${target}
+			RUNTIME DESTINATION ${SIMUL_INSTALL_BIN_DEST}
+			LIBRARY DESTINATION ${SIMUL_INSTALL_LIB_DEST}
+			ARCHIVE DESTINATION ${SIMUL_INSTALL_LIB_DEST} )
 		target_link_libraries( ${target} ${dll_LINK} )
 		target_link_directories( ${target} PUBLIC ${dll_LINK_DIRS})
 		set_target_properties( ${target} PROPERTIES PREFIX "" )
