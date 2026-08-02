@@ -35,7 +35,7 @@
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #include <libdbg.h>
 #endif
-#if defined(UNIX) || defined(__linux__) || defined(__SWITCH__)
+#if defined(UNIX) || defined(__linux__) || defined(__SWITCH__) || defined(DARWIN__) || defined(__APPLE__)
 #define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
 #ifndef __COMMODORE__
 #include <signal.h>
