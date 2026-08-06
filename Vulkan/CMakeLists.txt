@@ -62,7 +62,7 @@ if(SIMUL_SOURCE_BUILD)
 	target_link_libraries(PlatformVulkan${STATIC_LINK_SUFFIX} PUBLIC glfw)
 
 	# Suppress nullability extension warning for external VMA header
-	if(PLATFORM_LINUX)
+	if(PLATFORM_LINUX OR PLATFORM_MACOS)
 		target_compile_options(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE -Wno-nullability-extension)
 	endif()
 

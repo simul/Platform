@@ -50,6 +50,11 @@ typedef int errno_t;
 #include <unistd.h>
 #endif
 
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#include <limits.h>
+#endif
+
 // workaround for Linux distributions that haven't yet upgraded to GLEW 1.9
 #ifndef GL_COMPUTE_SHADER
 #define GL_COMPUTE_SHADER 0x91B9
@@ -507,9 +512,22 @@ std::string GetExecutableDirectory()
 	}
 	else
 		str=L"";
+#elif defined(__APPLE__)
+	// No /proc on Darwin - resolve the running executable's path via _NSGetExecutablePath,
+	// then realpath() it to collapse any symlinks, matching the readlink("/proc/self/exe")
+	// behaviour the Linux branch below relies on (callers append "/../.." expecting the
+	// filename to still be part of this path).
+	char rawPath[PATH_MAX];
+	uint32_t size = sizeof(rawPath);
+	if(_NSGetExecutablePath(rawPath, &size) != 0)
+		return std::string();
+	char resolvedPath[PATH_MAX];
+	if(realpath(rawPath, resolvedPath))
+		return std::string(resolvedPath);
+	return std::string(rawPath);
 #else
 	char pBuf[512];
-	size_t len = sizeof(pBuf); 
+	size_t len = sizeof(pBuf);
 	int bytes = std::min((int)readlink("/proc/self/exe", pBuf, len), (int)len - 1);
 	if(bytes >= 0)
 		pBuf[bytes] = '\0';

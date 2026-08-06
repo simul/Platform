@@ -123,7 +123,7 @@ add_subdirectory(Applications/Sfx)
 
 # Platform and API subdirectories
 if(PLATFORM_SUPPORT_VULKAN)
-	if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
+	if(PLATFORM_WINDOWS OR PLATFORM_LINUX OR PLATFORM_MACOS)
 		add_subdirectory(Vulkan)
 	endif()
 endif()

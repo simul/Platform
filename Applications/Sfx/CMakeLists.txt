@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
+if(PLATFORM_WINDOWS OR PLATFORM_LINUX OR PLATFORM_MACOS)
 	file(GLOB CMAKE 	"*.cmake" )
 	file(GLOB SOURCES 	Compiler.cpp
 						FileLoader.cpp
