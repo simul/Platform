@@ -49,6 +49,14 @@ if(SIMUL_SOURCE_BUILD)
 	if(PLATFORM_LINUX)
 		target_compile_definitions(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_XCB_KHR  )
 	endif()
+	if(PLATFORM_MACOS)
+		# Activates the VK_EXT_metal_surface case in DeviceManager.cpp's platformSurfaceExt
+		# selection (Initialize() otherwise pushes a null extension name into
+		# required_instance_extensions and crashes). GLFW's Cocoa backend already prefers this
+		# same extension over the deprecated VK_MVK_macos_surface when creating the actual
+		# VkSurfaceKHR, so this keeps the requested instance extension consistent with it.
+		target_compile_definitions(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE  VK_USE_PLATFORM_METAL_EXT  )
+	endif()
 	
 	target_include_directories(PlatformVulkan${STATIC_LINK_SUFFIX} PUBLIC "${Vulkan_INCLUDE_DIR}")
 	target_include_directories(PlatformVulkan${STATIC_LINK_SUFFIX} PRIVATE "${SIMUL_PLATFORM_DIR}/External/stb")
