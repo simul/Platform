@@ -545,6 +545,10 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #if defined(VK_USE_PLATFORM_METAL_EXT) || defined(VK_USE_PLATFORM_MACOS_MVK)
 	inst_info.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
 #endif
+	SIMUL_COUT << "MACDEBUG enabled instance extensions (" << instance_extension_names_cstr.size() << "):" << std::endl;
+	for (const char *n : instance_extension_names_cstr)
+		SIMUL_COUT << "MACDEBUG   " << n << std::endl;
+	SIMUL_COUT << "MACDEBUG platformSurfaceExt=" << (platformSurfaceExt ? platformSurfaceExt : "nullptr") << std::endl;
 	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks *)nullptr, &deviceManagerInternal->instance);
 

@@ -136,6 +136,13 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	mSurface = *((VkSurfaceKHR *)handle);
 #endif
 #endif
+#if defined(VK_USE_PLATFORM_METAL_EXT) || defined(VK_USE_PLATFORM_MACOS_MVK)
+	// As with the XCB non-Xlib case above: GLFW already created the VkSurfaceKHR (via
+	// glfwCreateWindowSurface, see pc_client/Main.cpp) using whichever of
+	// VK_EXT_metal_surface/VK_MVK_macos_surface it resolved internally - handle is a
+	// pointer to that already-created surface, not a native window handle to wrap.
+	mSurface = *((VkSurfaceKHR *)handle);
+#endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()
 													 .setWindow((ANativeWindow *)mHwnd);
@@ -605,12 +612,15 @@ void DisplaySurface::InitSwapChain()
 	for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG + 1; i++)
 	{
 		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
+		SIMUL_COUT << "MACDEBUG createFence[" << i << "] result=" << (int)result << " handle=" << (void *)(VkFence)fences[i] << std::endl;
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		result = vulkanDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &image_acquired_semaphores[i]);
+		SIMUL_COUT << "MACDEBUG createSemaphore(acquired)[" << i << "] result=" << (int)result << std::endl;
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		result = vulkanDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &draw_complete_semaphores[i]);
+		SIMUL_COUT << "MACDEBUG createSemaphore(drawComplete)[" << i << "] result=" << (int)result << std::endl;
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		if (separate_present_queue)

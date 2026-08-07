@@ -117,6 +117,30 @@ if(PLATFORM_WINDOWS)
 	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" c STRING "" )
 endif()
 
+if(PLATFORM_MACOS)
+	# macOS ships GNU Bison 2.3 (2007, last GPLv2 release) at /usr/bin/bison via the Xcode
+	# command line tools; it doesn't understand the -W warning flags the Sfx grammar's build
+	# rule passes (see Applications/Sfx/CMakeLists.txt), and fails with "invalid option -- W".
+	# Homebrew's bison/flex are keg-only (macOS ships its own), so they're never on PATH by
+	# default - point find_package(BISON)/find_package(FLEX) straight at them, the same way
+	# OPENSSL_ROOT_DIR is auto-detected for Homebrew's keg-only openssl@3 in the root
+	# CMakeLists.txt. If the user already set BISON_EXECUTABLE/FLEX_EXECUTABLE, leave it alone.
+	if(NOT BISON_EXECUTABLE)
+		if(EXISTS /opt/homebrew/opt/bison/bin/bison)
+			set(BISON_EXECUTABLE /opt/homebrew/opt/bison/bin/bison CACHE FILEPATH "")
+		elseif(EXISTS /usr/local/opt/bison/bin/bison)
+			set(BISON_EXECUTABLE /usr/local/opt/bison/bin/bison CACHE FILEPATH "")
+		endif()
+	endif()
+	if(NOT FLEX_EXECUTABLE)
+		if(EXISTS /opt/homebrew/opt/flex/bin/flex)
+			set(FLEX_EXECUTABLE /opt/homebrew/opt/flex/bin/flex CACHE FILEPATH "")
+		elseif(EXISTS /usr/local/opt/flex/bin/flex)
+			set(FLEX_EXECUTABLE /usr/local/opt/flex/bin/flex CACHE FILEPATH "")
+		endif()
+	endif()
+endif()
+
 if(PLATFORM_WINDOWS)
 set(PLATFORM_SFX_EXECUTABLE "${CMAKE_BINARY_DIR}/bin/Release/Sfx.exe" CACHE STRING "")
 else()
