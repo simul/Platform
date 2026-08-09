@@ -522,7 +522,7 @@ function(ExecutableDefaults target)
 endfunction()
 
 function(add_static_executable target)
-	cmake_parse_arguments(exe "WIN32;CONSOLE" "FOLDER" "SOURCES;DEFINITIONS;DEPENDENCIES;INCLUDES;PUBLICINCLUDES" ${ARGN} )
+	cmake_parse_arguments(exe "WIN32;CONSOLE;MACOSX_BUNDLE" "FOLDER" "SOURCES;DEFINITIONS;DEPENDENCIES;INCLUDES;PUBLICINCLUDES" ${ARGN} )
 	if("${exe_FOLDER}" STREQUAL "")
 		set(exe_FOLDER Static/Applications)
 	else()
@@ -530,6 +530,12 @@ function(add_static_executable target)
 	endif()
 	if(${exe_WIN32})
 		set(exe_SYSTEM WIN32)
+	elseif(${exe_MACOSX_BUNDLE})
+		# Real .app bundle in the build tree, not just at install time: CMake copies any source
+		# with MACOSX_PACKAGE_LOCATION straight into it, so the icon and Info.plist are already
+		# in place for a build-tree run, matching the installed layout produced by install(TARGETS
+		# ... BUNDLE DESTINATION .).
+		set(exe_SYSTEM MACOSX_BUNDLE)
 	else()
 		set(exe_SYSTEM "")
 	endif()
