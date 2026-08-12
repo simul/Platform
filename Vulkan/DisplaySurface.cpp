@@ -612,15 +612,12 @@ void DisplaySurface::InitSwapChain()
 	for (uint32_t i = 0; i < SIMUL_VULKAN_FRAME_LAG + 1; i++)
 	{
 		auto result = vulkanDevice->createFence(&fence_ci, nullptr, &fences[i]);
-		SIMUL_COUT << "MACDEBUG createFence[" << i << "] result=" << (int)result << " handle=" << (void *)(VkFence)fences[i] << std::endl;
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		result = vulkanDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &image_acquired_semaphores[i]);
-		SIMUL_COUT << "MACDEBUG createSemaphore(acquired)[" << i << "] result=" << (int)result << std::endl;
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		result = vulkanDevice->createSemaphore(&semaphoreCreateInfo, nullptr, &draw_complete_semaphores[i]);
-		SIMUL_COUT << "MACDEBUG createSemaphore(drawComplete)[" << i << "] result=" << (int)result << std::endl;
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
 
 		if (separate_present_queue)
