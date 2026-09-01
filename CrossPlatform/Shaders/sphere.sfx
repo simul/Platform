@@ -75,7 +75,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		pos					=radius*vec3(cos(azimuth)*cos_el,sin(azimuth)*cos_el,sin(elevation));
 		// bright at the equator:
 		float b				=(uint)(latitude_strip+1)==latitudes/2?1.0:0.7;
-		b					*=(loop_index>0&&loop_index<(loopSteps+2))?1.0:0.0;
+		b					*=(loop_index>0&&loop_index<(int(loopSteps)+2))?1.0:0.0;
 		OUT.colour			=multiplier;
 		//OUT.colour.a		*=latitude_strip%2?1.0:0.5;
 		OUT.colour.a		*=b; //Latitude Colour
@@ -93,7 +93,7 @@ shader v2f VS_DrawLatLongSphere(idOnly IN)
 		pos						=radius*vec3(cos(azimuth)*cos_el,sin(azimuth)*cos_el,sin(elevation));
 		// bright at the meridian:
 		float b					=(longitude_strip%(longitudes/2))==0?1.0:0.8;
-		b						*=loop_index>0&&loop_index<(loopSteps+2)?b:0.0;
+		b						*=loop_index>0&&loop_index<(int(loopSteps)+2)?b:0.0;
 		OUT.colour				=multiplier;
 		//	OUT.colour.r=1.0-float(longitude_strip)/float(longitudes);
 			OUT.colour.a			*=b;//latitude>0&&latitude<latitudes?b:0.0; //Longitude Colour
