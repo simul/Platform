@@ -1,7 +1,6 @@
 #include "Platform/Core/FileLoader.h"
 #include "Platform/Core/DefaultFileLoader.h"
 #include "Platform/Core/StringToWString.h"
-#include "Platform/Core/StringFunctions.h"
 #include "Platform/Core/RuntimeError.h"
 #include <iostream>
 
@@ -9,7 +8,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 #elif PLATFORM_STD_FILESYSTEM == 2
-#include <experimental/filesystem>
+#include <filesystem>
 namespace fs = std::experimental::filesystem;
 #endif
 using namespace platform;
@@ -22,7 +21,7 @@ using namespace core;
 #endif
 
 #ifdef UNIX
-#include <linux/limits.h>
+#include <climits>
 #endif
 
 std::string platform::core::GetExeDirectory()
@@ -66,17 +65,22 @@ std::string platform::core::GetExeDirectory()
 }
 
 static FileLoader *fileLoader = nullptr;
-static DefaultFileLoader defaultFileLoader = DefaultFileLoader();
+
+FileLoader::FileLoader()
+{
+	std::cout << "FileLoader constructor" << std::endl;
+}
 
 FileLoader::~FileLoader()
 {
-	std::cout<<"FileLoader destructor"<<std::endl;
+	std::cout << "FileLoader destructor" << std::endl;
 }
 
 FileLoader *FileLoader::GetFileLoader()
 {
 	if (!fileLoader)
 	{
+		static DefaultFileLoader defaultFileLoader;
 		fileLoader = &defaultFileLoader;
 	}
 	return fileLoader;

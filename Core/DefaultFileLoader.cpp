@@ -15,7 +15,7 @@
 #endif
 #include <cstdlib> // for malloc, free
 #include <stdio.h> // for fopen, seek, fclose
-#include <time.h>
+
 typedef struct stat Stat;
 using namespace platform;
 using namespace core;
@@ -24,7 +24,7 @@ using namespace core;
 #include <filesystem>
 namespace fs = std::filesystem;
 #elif PLATFORM_STD_FILESYSTEM == 2
-#include <experimental/filesystem>
+#include <filesystem>
 namespace fs = std::experimental::filesystem;
 #endif
 

@@ -431,6 +431,8 @@ void DeviceManager::CreateInstance(bool use_debug, std::vector<std::string> requ
 	platformSurfaceExt = VK_KHR_DISPLAY_EXTENSION_NAME;
 #elif defined(VK_USE_PLATFORM_IOS_MVK)
 	platformSurfaceExt = VK_MVK_IOS_SURFACE_EXTENSION_NAME;
+#elif defined(VK_USE_PLATFORM_METAL_EXT)
+	platformSurfaceExt = VK_EXT_METAL_SURFACE_EXTENSION_NAME;
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
 	platformSurfaceExt = VK_MVK_MACOS_SURFACE_EXTENSION_NAME;
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -452,6 +454,13 @@ void DeviceManager::CreateInstance(bool use_debug, std::vector<std::string> requ
 #endif
 	ExclusivePushBack(required_instance_extensions, VK_KHR_SURFACE_EXTENSION_NAME);
 	ExclusivePushBack(required_instance_extensions, platformSurfaceExt);
+#if defined(VK_USE_PLATFORM_METAL_EXT) || defined(VK_USE_PLATFORM_MACOS_MVK)
+	// MoltenVK is a "portability" ICD (not fully conformant Vulkan); since the
+	// VK_KHR_portability_enumeration spec update, vkCreateInstance silently filters it out
+	// unless the instance both requests this extension and sets the matching creation flag
+	// below - otherwise it fails with eErrorIncompatibleDriver.
+	ExclusivePushBack(required_instance_extensions, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
 
 	uint32_t instanceExtensionCount = 0;
 	result = vk::enumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, nullptr);
@@ -530,6 +539,10 @@ void DeviceManager::CreateInstance(bool use_debug, std::vector<std::string> requ
 		.setPpEnabledLayerNames(instanceLayerNamesCstr.data())
 		.setEnabledExtensionCount((uint32_t)instanceExtensionNamesCstr.size())
 		.setPpEnabledExtensionNames(instanceExtensionNamesCstr.data());
+#if defined(VK_USE_PLATFORM_METAL_EXT) || defined(VK_USE_PLATFORM_MACOS_MVK)
+	instanceCI.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
+#endif
+
 	ERRNO_BREAK
 	result = vk::createInstance(&instanceCI, nullptr, &deviceManagerInternal->instance);
 

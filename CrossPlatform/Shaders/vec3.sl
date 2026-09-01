@@ -16,57 +16,17 @@ struct tvector3
 	T x, y, z;
 
 	// Constructors
-	tvector3()
-	{
-		x = T(0);
-		y = T(0);
-		z = T(0);
-	}
-	tvector3(T x, T y, T z)
-	{
-		this->x = x;
-		this->y = y;
-		this->z = z;
-	}
-	tvector3(T v)
-	{
-		x = v;
-		y = v;
-		z = v;
-	}
-	tvector3(const T *v)
-	{
-		x = v[0];
-		y = v[1];
-		z = v[2];
-	}
-	tvector3(const tvector3<T> &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-	}
+	constexpr tvector3() : x(T(0)), y(T(0)), z(T(0)) {}
+	constexpr tvector3(T x, T y, T z) : x(x), y(y), z(z) {}
+	constexpr tvector3(T v) : x(v), y(v), z(v) {}
+	constexpr tvector3(const T *v) : x(v[0]), y(v[1]), z(v[2]) {}
+	constexpr tvector3(const tvector3<T> &v) = default;
 	template <typename U>
-	tvector3(const U *v)
-	{
-		x = T(v[0]);
-		y = T(v[1]);
-		z = T(v[2]);
-	}
+	constexpr tvector3(const U *v) : x(T(v[0])), y(T(v[1])), z(T(v[2])) {}
 	template <typename U>
-	tvector3(const tvector3<U> &v)
-	{
-		x = T(v.x);
-		y = T(v.y);
-		z = T(v.z);
-	}
+	constexpr tvector3(const tvector3<U> &v) : x(T(v.x)), y(T(v.y)), z(T(v.z)) {}
 	template <typename U>
-	tvector3(const pvector3<U> &v)
-	{
-		x = T(v.x);
-		y = T(v.y);
-		z = T(v.z);
-	}
+	constexpr tvector3(const pvector3<U> &v) : x(T(v.x)), y(T(v.y)), z(T(v.z)) {}
 
 	// Equality operators
 	bool operator==(const tvector3 &v) const

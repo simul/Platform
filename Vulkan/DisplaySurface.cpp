@@ -92,6 +92,13 @@ void DisplaySurface::RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderP
 	surface = *((VkSurfaceKHR*)handle);
 #endif
 #endif
+#if defined(VK_USE_PLATFORM_METAL_EXT) || defined(VK_USE_PLATFORM_MACOS_MVK)
+	// As with the XCB non-Xlib case above: GLFW already created the VkSurfaceKHR (via
+	// glfwCreateWindowSurface, see pc_client/Main.cpp) using whichever of
+	// VK_EXT_metal_surface/VK_MVK_macos_surface it resolved internally - handle is a
+	// pointer to that already-created surface, not a native window handle to wrap.
+	mSurface = *((VkSurfaceKHR *)handle);
+#endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 	vk::AndroidSurfaceCreateInfoKHR createInfo = vk::AndroidSurfaceCreateInfoKHR()
 													 .setWindow((ANativeWindow*)mHwnd);
@@ -167,6 +174,14 @@ void DisplaySurface::InvalidateDeviceObjects()
 		timelineSemaphore->AsVulkanSemaphore() = VK_NULL_HANDLE;
 		delete timelineSemaphore;
 	}
+}
+
+void DisplaySurface::SetVsync(bool v)
+{
+	if (mIsVSYNC == v)
+		return;
+	mIsVSYNC = v;
+	vsyncChangePending = true;
 }
 
 void DisplaySurface::Render(platform::core::ReadWriteMutex* delegatorReadWriteMutex, long long frameNumber)
@@ -265,6 +280,12 @@ void DisplaySurface::EndFrame()
 	// We check for resize here, because we must manage the SwapChain from the main thread.
 	// we may have to do it after executing the command list, because Resize destroys the CL, and we don't want to lose commands.
 	Resize();
+}
+
+void DisplaySurface::SetRequestedExtent(uint32_t w, uint32_t h)
+{
+	pendingWidth = w;
+	pendingHeight = h;
 }
 
 void DisplaySurface::InitSwapChain()
@@ -854,7 +875,7 @@ void DisplaySurface::Resize()
 {
 	vk::Device* vulkanDevice = ((vulkan::RenderPlatform*)renderPlatform)->AsVulkanDevice();
 
-	bool recreate = false;
+	bool regen = false;
 	uint32_t W = 0;
 	uint32_t H = 0;
 
@@ -868,7 +889,7 @@ void DisplaySurface::Resize()
 	if (GetWindowRect((HWND)mHwnd, &wrect))
 	{
 		if (wrect.left != lastWindow.x || wrect.top != lastWindow.y)
-			recreate = true;
+			regen = true;
 		lastWindow.x = wrect.left;
 		lastWindow.y = wrect.top;
 		lastWindow.z = wrect.right - wrect.left;
@@ -913,8 +934,15 @@ void DisplaySurface::Resize()
 	if (W == 0 || H == 0)
 		return;
 	if (viewport.w != W || viewport.h != H)
-		recreate = true;
-	if (!recreate)
+		regen = true;
+	// A vsync change requires a new swapchain: the present mode is baked in at
+	// swapchain creation. InitSwapChain reads mIsVSYNC when choosing the mode.
+	if (vsyncChangePending)
+	{
+		regen = true;
+		vsyncChangePending = false;
+	}
+	if (!regen)
 		return;
 
 	// InitSwapChain re-queries the surface capabilities, recreates the swapchain and framebuffers

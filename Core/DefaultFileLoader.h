@@ -10,7 +10,7 @@ namespace platform
 	namespace core
 	{
 		//! The default derived file loader
-		class PLATFORM_CORE_EXPORT DefaultFileLoader:public platform::core::FileLoader
+		class PLATFORM_CORE_EXPORT DefaultFileLoader : public platform::core::FileLoader
 		{
 		public:
 			DefaultFileLoader();

@@ -37,6 +37,9 @@ namespace platform
 			virtual ~DisplaySurface();
 			virtual void RestoreDeviceObjects(cp_hwnd handle, crossplatform::RenderPlatform* renderPlatform, bool vsync, crossplatform::PixelFormat outFmt) override;
 			virtual void InvalidateDeviceObjects() override;
+			//! Vulkan present mode is fixed at swapchain creation, so a vsync change
+			//! is deferred: the next Resize() recreates the swapchain with the new mode.
+			void SetVsync(bool v) override;
 			virtual void Render(platform::core::ReadWriteMutex *delegatorReadWriteMutex,long long frameNumber) override;
 			virtual void EndFrame() override;
 			//! Push in an externally-known framebuffer extent for surfaces whose
@@ -61,6 +64,10 @@ namespace platform
 			vk::Instance* GetVulkanInstance();
 			vk::Device* GetVulkanDevice();
 			vk::PhysicalDevice* GetGPU();
+
+			//! Set by SetVsync() when the present mode must change; consumed by Resize(),
+			//! which recreates the swapchain so the new vsync setting takes effect.
+			bool vsyncChangePending = false;
 
 			// The format being used.
 			crossplatform::PixelFormat pixelFormat = crossplatform::PixelFormat::UNDEFINED;

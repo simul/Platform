@@ -26,7 +26,7 @@ elseif(PLATFORM_LINUX)
 endif()
 set_property(CACHE PLATFORM_STD_FILESYSTEM PROPERTY STRINGS 0 1 2)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(ENV_VULKAN_SDK_DIR "$ENV{VULKAN_SDK}")
 	if(ENV_VULKAN_SDK_DIR)
 		cmake_path(NORMAL_PATH ENV_VULKAN_SDK_DIR OUTPUT_VARIABLE ENV_VULKAN_SDK_DIR)
@@ -47,6 +47,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(PLATFORM_LINUX "" ON )
 else()
 	option(PLATFORM_LINUX "" OFF )
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	option(PLATFORM_MACOS "" ON )
+else()
+	option(PLATFORM_MACOS "" OFF )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
@@ -88,7 +94,7 @@ else()
 	endif()
 endif()
 
-if(PLATFORM_WINDOWS OR PLATFORM_LINUX)
+if(PLATFORM_WINDOWS OR PLATFORM_LINUX OR PLATFORM_MACOS)
 	if("${Vulkan_INCLUDE_DIR}" STREQUAL "")
 		option(PLATFORM_SUPPORT_VULKAN "" OFF )
 	else()
@@ -109,6 +115,30 @@ if(PLATFORM_WINDOWS)
 	set( BISON_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_bison.exe" CACHE STRING "" )
 	set( FLEX_EXECUTABLE "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/win_flex.exe" CACHE STRING "" )
 	set( FLEX_INCLUDE_DIR "${SIMUL_PLATFORM_DIR}/External/win_flex_bison/" c STRING "" )
+endif()
+
+if(PLATFORM_MACOS)
+	# macOS ships GNU Bison 2.3 (2007, last GPLv2 release) at /usr/bin/bison via the Xcode
+	# command line tools; it doesn't understand the -W warning flags the Sfx grammar's build
+	# rule passes (see Applications/Sfx/CMakeLists.txt), and fails with "invalid option -- W".
+	# Homebrew's bison/flex are keg-only (macOS ships its own), so they're never on PATH by
+	# default - point find_package(BISON)/find_package(FLEX) straight at them, the same way
+	# OPENSSL_ROOT_DIR is auto-detected for Homebrew's keg-only openssl@3 in the root
+	# CMakeLists.txt. If the user already set BISON_EXECUTABLE/FLEX_EXECUTABLE, leave it alone.
+	if(NOT BISON_EXECUTABLE)
+		if(EXISTS /opt/homebrew/opt/bison/bin/bison)
+			set(BISON_EXECUTABLE /opt/homebrew/opt/bison/bin/bison CACHE FILEPATH "")
+		elseif(EXISTS /usr/local/opt/bison/bin/bison)
+			set(BISON_EXECUTABLE /usr/local/opt/bison/bin/bison CACHE FILEPATH "")
+		endif()
+	endif()
+	if(NOT FLEX_EXECUTABLE)
+		if(EXISTS /opt/homebrew/opt/flex/bin/flex)
+			set(FLEX_EXECUTABLE /opt/homebrew/opt/flex/bin/flex CACHE FILEPATH "")
+		elseif(EXISTS /usr/local/opt/flex/bin/flex)
+			set(FLEX_EXECUTABLE /usr/local/opt/flex/bin/flex CACHE FILEPATH "")
+		endif()
+	endif()
 endif()
 
 if(PLATFORM_WINDOWS)
