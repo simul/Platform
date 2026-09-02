@@ -42,7 +42,12 @@ Quaternionf platform::crossplatform::ConvertRotation(AxesStandard fromStandard, 
 		}
 		else if (toStandard == AxesStandard::OpenGL)
 		{
-			q = Quaternionf(-rotation.x, rotation.z, -rotation.y, rotation.s);
+			// x is NOT negated here. Engineering and OpenGL are both right-handed, so this
+			// change of basis has determinant +1 and the quaternion's vector part permutes
+			// exactly as ConvertPosition permutes a position: (x, z, -y). Negating x as well
+			// made this disagree with ConvertPosition, with ConvertAxis's e_gl[] = {0, 2, 4},
+			// and with the OpenGL -> Engineering case below, of which it must be the inverse.
+			q = Quaternionf(rotation.x, rotation.z, -rotation.y, rotation.s);
 		}
 	}
 	else if (fromStandard == AxesStandard::OpenGL)

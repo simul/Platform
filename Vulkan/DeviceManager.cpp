@@ -80,9 +80,9 @@ void RewriteVulkanMessage(std::string &str)
 	str = out;
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
-	VkDebugReportFlagsEXT flags_,
-	VkDebugReportObjectTypeEXT objectType,
+vk::Bool32 VKAPI_PTR DebugReportCallback(
+	vk::DebugReportFlagsEXT flags,
+	vk::DebugReportObjectTypeEXT objectType,
 	uint64_t object,
 	size_t location,
 	int32_t messageCode,
@@ -90,7 +90,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 	const char *pMessage,
 	void *pUserData)
 {
-	vk::DebugReportFlagsEXT flags = static_cast<vk::DebugReportFlagsEXT>(flags_);
 	if (pLayerPrefix)
 		std::cerr << pLayerPrefix << " layer: ";
 	if (flags & vk::DebugReportFlagBitsEXT::eError)
@@ -110,15 +109,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
 
 // VK_EXT_debug_utils
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity_,
-	VkDebugUtilsMessageTypeFlagsEXT messageType_,
-	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData_,
+vk::Bool32 VKAPI_PTR DebugUtilsCallback(
+	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	vk::DebugUtilsMessageTypeFlagsEXT messageType,
+	const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
 	void *pUserData)
 {
-	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity = static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(messageSeverity_);
-	vk::DebugUtilsMessageTypeFlagsEXT messageType = static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType_);
-	const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData = reinterpret_cast<const vk::DebugUtilsMessengerCallbackDataEXT *>(pCallbackData_);
 	auto GetMessageSeverityString = [](vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity) -> std::string
 	{
 		bool separator = false;
@@ -545,10 +541,6 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 #if defined(VK_USE_PLATFORM_METAL_EXT) || defined(VK_USE_PLATFORM_MACOS_MVK)
 	inst_info.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
 #endif
-	SIMUL_COUT << "MACDEBUG enabled instance extensions (" << instance_extension_names_cstr.size() << "):" << std::endl;
-	for (const char *n : instance_extension_names_cstr)
-		SIMUL_COUT << "MACDEBUG   " << n << std::endl;
-	SIMUL_COUT << "MACDEBUG platformSurfaceExt=" << (platformSurfaceExt ? platformSurfaceExt : "nullptr") << std::endl;
 	ERRNO_BREAK
 	result = vk::createInstance(&inst_info, (vk::AllocationCallbacks *)nullptr, &deviceManagerInternal->instance);
 
