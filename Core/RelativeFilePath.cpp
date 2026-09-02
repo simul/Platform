@@ -35,7 +35,7 @@ char *strtok_s(char * str, size_t * , const char * delim, char ** )
 // Macro off the string buffer manipulation functions.
 //	NOTE (trent, 7/25/17): this will likely need a linux equivalent.
 #ifndef _MSC_VER
-    #if defined(UNIX)
+    #if defined(PLATFORM_UNIX)
         #define _strcpy(d,n,s) (strncpy(d,s,n))
     #else //__APPLE__
         #define _strcpy(d,n,s)	(strlcpy(d,s,n))

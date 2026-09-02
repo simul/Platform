@@ -35,7 +35,7 @@
 #define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
 #include <libdbg.h>
 #endif
-#if defined(UNIX) || defined(__linux__) || defined(__SWITCH__) || defined(DARWIN__) || defined(__APPLE__)
+#ifndef _MSC_VER
 #define strerror_s(sys_msg, sizeofsys_msg, err_code) strerror_r(err_code, sys_msg, sizeofsys_msg)
 #ifndef __COMMODORE__
 #include <signal.h>
@@ -300,7 +300,7 @@ namespace platform
 	errno = 0;
 
 #if SIMUL_INTERNAL_CHECKS
-#ifndef UNIX
+#ifdef _MSC_VER
 #define ERRNO_CHECK                                                      \
 	if (errno != 0)                                                      \
 	{                                                                    \
@@ -330,7 +330,7 @@ namespace platform
 #endif
 #endif
 /// This errno check is always enabled, wherease ERRNO_CHECK can be disabled for production.
-#ifdef UNIX
+#ifndef _MSC_VER
 #define ALWAYS_ERRNO_CHECK                                                  \
 	if (errno != 0)                                                         \
 	{                                                                       \
@@ -360,7 +360,7 @@ namespace platform
 #endif
 /// This errno check is only used to find specific bugs, then removed from the code.
 #if SIMUL_INTERNAL_CHECKS
-#ifdef UNIX
+#ifndef _MSC_VER
 #define ERRNO_BREAK                                                         \
 	if (errno != 0)                                                         \
 	{                                                                       \

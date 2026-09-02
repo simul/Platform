@@ -5,7 +5,7 @@
 #ifndef _MAX_PATH
 #define _MAX_PATH 260
 #endif
-#ifdef UNIX
+#ifndef _MSC_VER
 #define _getcwd getcwd
 #endif
 

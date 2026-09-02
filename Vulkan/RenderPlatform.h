@@ -16,7 +16,7 @@
 #endif
 #define MAX_STACKED_TARGETS 10
 
-#ifdef UNIX
+#ifndef _MSC_VER
 template <typename T, std::size_t N>
 constexpr std::size_t _countof(T const (&)[N]) noexcept
 {

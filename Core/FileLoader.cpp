@@ -20,7 +20,7 @@ using namespace core;
 #include <unistd.h>
 #endif
 
-#ifdef UNIX
+#ifdef PLATFORM_UNIX
 #include <climits>
 #endif
 
@@ -32,7 +32,7 @@ std::string platform::core::GetExeDirectory()
 	GetModuleFileNameW( NULL, szPath, MAX_PATH );
 #endif
 
-#ifdef UNIX
+#ifdef PLATFORM_UNIX
 	// Linux specific
 	char szPath[PATH_MAX];
 	ssize_t count = readlink( "/proc/self/exe", szPath, PATH_MAX );
@@ -56,7 +56,7 @@ std::string platform::core::GetExeDirectory()
 	#endif
 #endif
 
-#if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(UNIX))
+#if PLATFORM_STD_FILESYSTEM > 0 && (defined(_WIN32) || defined(PLATFORM_UNIX))
 	fs::path p = fs::path{szPath}.parent_path() / ""; // to finish the folder path with (back)slash
 	return p.string();
 #else

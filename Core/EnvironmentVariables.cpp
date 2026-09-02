@@ -64,7 +64,7 @@ std::string EnvironmentVariables::GetSimulEnvironmentVariable(const std::string 
 	}
 	std::string ret=WStringToUtf8(wret);
 	return ret;
-#elif defined(UNIX)
+#elif defined(PLATFORM_UNIX)
 	std::string ret;
 	//size_t len;
 	//char value[4097];

@@ -2,7 +2,7 @@
 
 // The macOS counterpart of Linux/ThisPlatform/StringFunctions.h. Apple clang defines
 // __APPLE__ rather than __linux__, which the Linux header's guard does not admit.
-#if defined(UNIX) || defined(__APPLE__) || defined(__linux__) || defined(__ANDROID__)
+#ifndef _MSC_VER
 	#include <string.h>
 	#define _strcpy(d,n,s) (strncpy(d,s,n))
 	#define strcpy_s(d, n, s) (strncpy(d,s,n));

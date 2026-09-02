@@ -1098,7 +1098,7 @@ bool Effect::Load(crossplatform::RenderPlatform *r, const char *filename_utf8)
 	static const std::regex re_file_entry("([a-z0-9A-Z_\\((\\))]+\\.[a-z0-9A-Z_]+)(?:\\(([a-z0-9A-Z_]+)\\))?(?:\\s*inline:\\(0x([a-f0-9A-F]+),0x([a-f0-9A-F]+)\\))?"s + variant_regex);
 	while(next>=0)
 	{
-#if UNIX
+#if PLATFORM_UNIX
 		string line		=str.substr(pos,next-pos);
 #else
 		string line		=str.substr(pos,next-pos-1);

@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(UNIX) || defined(__linux__) || defined(__ANDROID__)
+#ifndef _MSC_VER
 	#include <string.h>
 	#define _strcpy(d,n,s) (strncpy(d,s,n))
 	#define strcpy_s(d, n, s) (strncpy(d,s,n));

@@ -244,7 +244,7 @@ function(LibraryDefaults targname)
 	target_compile_definitions(${targname} PRIVATE PLATFORM_STD_FILESYSTEM=${PLATFORM_STD_FILESYSTEM} )
 	
 	if(PLATFORM_EMSCRIPTEN)
-		target_compile_definitions(${targname} PRIVATE UNIX=1)
+		target_compile_definitions(${targname} PRIVATE PLATFORM_UNIX=1)
 	endif()
 	if(PLATFORM_SUPPORT_D3D11)
 		target_compile_definitions(${targname} PRIVATE SIMUL_USE_D3D11=1 PLATFORM_SUPPORT_D3D11=1)

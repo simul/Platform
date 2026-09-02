@@ -131,7 +131,7 @@ bool platform::core::RunCommandLine(const char *command_utf8, OutputDelegate out
 
 	return (!has_errors);
 }
-#elif defined(UNIX)
+#elif defined(PLATFORM_UNIX)
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>

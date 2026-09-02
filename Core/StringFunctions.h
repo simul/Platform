@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <stdarg.h>
-#ifdef UNIX
+#ifndef _MSC_VER
 #include <strings.h> // for strcasecmp
 #endif
 #include "Platform/Core/Export.h"

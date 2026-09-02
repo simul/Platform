@@ -27,7 +27,7 @@ namespace platform
 		#ifdef _MSC_VER
 				return _aligned_malloc(nbytes,align);
 		#else
-            #ifndef UNIX
+            #ifndef PLATFORM_UNIX
 				return aligned_alloc(align,nbytes);
 			#else
 				if(align==1)
