@@ -114,7 +114,7 @@ void TrackingAllocator::TrackVideoMemory(const void* ptr,size_t nbytes,const cha
 		auto m=memBlocks.find(ptr);
 		if(m!=memBlocks.end())
 		{
-			SIMUL_CERR<<"Trying to allocate memory that's currently allocated: "<<(int64_t)ptr<<", already allocated by "<<allocationNames[ptr].c_str()<<endl;
+			SIMUL_CERR<<"Trying to allocate memory that's currently allocated: 0x"<<ptr<<", already allocated by "<<allocationNames[ptr].c_str()<<endl;
 		}
 		memBlocks[ptr]	=nbytes;
 		std::string name;
@@ -162,7 +162,7 @@ void TrackingAllocator::UntrackVideoMemory(const void* ptr)
 		auto m=memBlocks.find(ptr);
 		if(m==memBlocks.end())
 		{
-			std::cerr<<"Trying to deallocate memory that's not been allocated: "<<(int64_t)ptr<<endl;
+			std::cerr<<"Trying to deallocate memory that's not been allocated: 0x"<<ptr<<endl;
 			return;
 		}
 		size_t size=m->second;

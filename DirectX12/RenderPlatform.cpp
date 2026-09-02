@@ -1589,8 +1589,8 @@ void RenderPlatform::RestartCommands(crossplatform::DeviceContext &deviceContext
 	ID3D12CommandAllocator*& commandAllocator = reinterpret_cast<ID3D12CommandAllocator*&>(commandContext.commandAllocator);
 
 	// Push to release manager, but should check that the GPU is finished with these before releasing them.
-	PushToReleaseManager(commandList);
-	PushToReleaseManager(commandAllocator);
+	PushToReleaseManager(commandList, nullptr, false);
+	PushToReleaseManager(commandAllocator, nullptr, false);
 
 	commandAllocator = (ID3D12CommandAllocator*)CreateCommandAllocator(deviceContext.commandContextType);
 	commandList = (ID3D12GraphicsCommandList*)CreateCommandList(deviceContext.commandContextType, commandAllocator);
