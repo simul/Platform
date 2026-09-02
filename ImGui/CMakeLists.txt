@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.12)
 
-if(PLATFORM_UNIX)
+if(UNIX)
 set(OS_CPP imgui_impl_glfw.cpp)
 set(OS_H imgui_impl_glfw.h)
 else()
