@@ -6,7 +6,7 @@ using namespace crossplatform;
 AccelerationStructureManager::AccelerationStructureManager(RenderPlatform* r)
 	:generatedCombinedAS(false)
 {
-	combinedTLAS = r->CreateTopLevelAccelerationStructure();
+	combinedTLAS = r->CreateTopLevelAccelerationStructure("");
 }
 
 AccelerationStructureManager::~AccelerationStructureManager()

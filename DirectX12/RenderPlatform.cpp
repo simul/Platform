@@ -3221,14 +3221,14 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	return S;
 }
 
-crossplatform::BottomLevelAccelerationStructure *RenderPlatform::CreateBottomLevelAccelerationStructure()
+crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure(const std::string& name)
 {
-	return new BottomLevelAccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this, name);
 }
 
-crossplatform::TopLevelAccelerationStructure *RenderPlatform::CreateTopLevelAccelerationStructure()
+crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure(const std::string& name)
 {
-	return new TopLevelAccelerationStructure(this);
+	return new TopLevelAccelerationStructure(this, name);
 }
 
 crossplatform::ShaderBindingTable *RenderPlatform::CreateShaderBindingTable()

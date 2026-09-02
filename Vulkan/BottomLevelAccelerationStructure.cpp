@@ -11,8 +11,8 @@ using namespace vulkan;
 //BottomLevelAccelerationStructure//
 ////////////////////////////////////
 
-BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r)
-	:crossplatform::BottomLevelAccelerationStructure(r)
+BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name)
+	:crossplatform::BottomLevelAccelerationStructure(r, name)
 {
 }
 
@@ -103,7 +103,7 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 		vulkanRenderPlatform->CreateVulkanBuffer(nullptr, transforms_cpu.size() * sizeof(mat4), 
 			vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, 
-			transformsBuffer, transformsBufferAllocation,"AccelerationStructure Transforms");
+			transformsBuffer, transformsBufferAllocation, name + "_BLAS_TransformsBuffer");
 		void* mappedData = nullptr;
 		SIMUL_VK_CHECK((vk::Result)vmaMapMemory(transformsBufferAllocation.allocator, transformsBufferAllocation.allocation, &mappedData));
 		if (mappedData)
@@ -203,17 +203,17 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 
 	device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, &m_ASBGI, m_PrimitiveCounts.data(), &m_ASBSI, d);
 
-	auto BuildBuffer = [&](size_t size, vk::BufferUsageFlagBits flags, vk::Buffer& buffer, AllocationInfo& allocationInfo, const char* name) -> void
+	auto BuildBuffer = [&](size_t size, vk::BufferUsageFlagBits flags, vk::Buffer& buffer, AllocationInfo& allocationInfo, const std::string& name) -> void
 		{
 		vulkanRenderPlatform->CreateVulkanBuffer(nullptr, size, 
 			flags | vk::BufferUsageFlagBits::eShaderDeviceAddress, 
 			vk::MemoryPropertyFlagBits::eDeviceLocal, 
-			buffer, allocationInfo, name);
+			buffer, allocationInfo, name.c_str());
 
 		};
 
-	BuildBuffer(m_ASBSI.accelerationStructureSize, vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR, accelerationStructureBuffer, accelerationStructureBufferAllocation, "BLAS_AccelerationStructureBuffer");
-	BuildBuffer(m_ASBSI.buildScratchSize, vk::BufferUsageFlagBits::eStorageBuffer, scratchBuffer, scratchBufferAllocation, "BLAS_ScratchBuffer");
+	BuildBuffer(m_ASBSI.accelerationStructureSize, vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR, accelerationStructureBuffer, accelerationStructureBufferAllocation, name + "_BLAS_MainBuffer");
+	BuildBuffer(m_ASBSI.buildScratchSize, vk::BufferUsageFlagBits::eStorageBuffer, scratchBuffer, scratchBufferAllocation, name + "_BLAS_ScratchBuffer");
 
 	vk::AccelerationStructureCreateInfoKHR asCI;
 	asCI.createFlags;

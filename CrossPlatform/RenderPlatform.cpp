@@ -1460,14 +1460,14 @@ std::shared_ptr<Material> RenderPlatform::GetOrCreateMaterial(const char *name)
 	return mat;
 }
 
-BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
+BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure(const std::string& name)
 {
-	return new BottomLevelAccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this, name);
 }
 
-TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
+TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure(const std::string& name)
 {
-	return new TopLevelAccelerationStructure(this);
+	return new TopLevelAccelerationStructure(this, name);
 }
 
 AccelerationStructureManager* RenderPlatform::CreateAccelerationStructureManager()

@@ -7,8 +7,8 @@ using namespace crossplatform;
 //BottomLevelAccelerationStructure//
 ////////////////////////////////////
 
-BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r)
-	:BaseAccelerationStructure(r)
+BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name)
+	:BaseAccelerationStructure(r, name)
 {
 }
 

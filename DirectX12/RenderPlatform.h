@@ -198,8 +198,8 @@ namespace platform
 			crossplatform::Query *CreateQuery(crossplatform::QueryType q) override;
 			crossplatform::Fence *CreateFence(const char *name) override;
 			crossplatform::Shader *CreateShader() override;
-			crossplatform::BottomLevelAccelerationStructure *CreateBottomLevelAccelerationStructure() override;
-			crossplatform::TopLevelAccelerationStructure *CreateTopLevelAccelerationStructure() override;
+			crossplatform::BottomLevelAccelerationStructure *CreateBottomLevelAccelerationStructure(const std::string& name) override;
+			crossplatform::TopLevelAccelerationStructure *CreateTopLevelAccelerationStructure(const std::string& name) override;
 			crossplatform::ShaderBindingTable *CreateShaderBindingTable() override;
 			crossplatform::DisplaySurface *CreateDisplaySurface() override;
 			crossplatform::GpuProfiler *CreateGpuProfiler() override;

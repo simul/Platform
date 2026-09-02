@@ -18,8 +18,8 @@ using namespace dx12;
 //BottomLevelAccelerationStructure//
 ////////////////////////////////////
 
-BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r)
-	:crossplatform::BottomLevelAccelerationStructure(r)
+BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name)
+	:crossplatform::BottomLevelAccelerationStructure(r, name)
 {
 }
 
@@ -96,7 +96,8 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 		size_t nodeCount = 0;
 		math::Matrix4x4 m = math::Matrix4x4::IdentityMatrix();
 		FillTransformsFromNode(mesh->GetRootNode(), nodeCount, m);
-		AllocateUploadBuffer(device, transforms_cpu.data(), transforms_cpu.size() * sizeof(mat4), &transforms, L"AccelerationStructure Transforms");
+		std::wstring transfromsBufferName = core::StringToWString(name) + L"_BLAS_TransformsBuffer";
+		AllocateUploadBuffer(device, transforms_cpu.data(), transforms_cpu.size() * sizeof(mat4), &transforms, transfromsBufferName.c_str());
 
 		// Build Geometry Descs
 		std::function<void(crossplatform::Mesh::SubNode&, size_t&, size_t&)> FillGeometryFromNode =
@@ -187,9 +188,15 @@ void BottomLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(cross
 	//  - the system will be doing this type of access in its implementation of acceleration structure builds behind the scenes.
 	//  - from the app point of view, synchronization of writes/reads to acceleration structures is accomplished using UAV barriers.
 	if (!scratchResource)
-		AllocateUAVBuffer(device, prebuildInfo.ScratchDataSizeInBytes, &scratchResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"BottomLevelAccelerationStructure - ScratchResource");
+	{
+		std::wstring scratchBufferName = core::StringToWString(name) + L"_BLAS_ScratchBuffer";
+		AllocateUAVBuffer(device, prebuildInfo.ScratchDataSizeInBytes, &scratchResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, scratchBufferName.c_str());
+	}
 	if (!accelerationStructure)
-		AllocateUAVBuffer(device, prebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, L"BottomLevelAccelerationStructure - ResultResource");
+	{
+		std::wstring mainBufferName = core::StringToWString(name) + L"_BLAS_MainBuffer";
+		AllocateUAVBuffer(device, prebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, mainBufferName.c_str());
+	}
 
 	// Bottom Level Acceleration Structure desc
 	buildDesc.DestAccelerationStructureData = accelerationStructure->GetGPUVirtualAddress();

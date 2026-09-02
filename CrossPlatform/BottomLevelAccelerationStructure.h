@@ -26,7 +26,7 @@ namespace platform
 			uint32_t geometryCount = 0;
 
 		public:
-			BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r);
+			BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name);
 			virtual ~BottomLevelAccelerationStructure();
 			void RestoreDeviceObjects() override {};
 			void InvalidateDeviceObjects() override {};

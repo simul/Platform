@@ -259,8 +259,8 @@ namespace platform
 			crossplatform::Query *CreateQuery(crossplatform::QueryType type) override;
 			crossplatform::Fence* CreateFence(const char* name) override;
 			crossplatform::Shader *CreateShader() override;
-			crossplatform::BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure();
-			crossplatform::TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure();
+			crossplatform::BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure(const std::string& name);
+			crossplatform::TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure(const std::string& name);
 			crossplatform::ShaderBindingTable* CreateShaderBindingTable();
 
 			crossplatform::DisplaySurface *CreateDisplaySurface() override;
@@ -323,8 +323,8 @@ namespace platform
 			static vk::Extent2D GetTargetAndViewportExtext2D(const crossplatform::TargetsAndViewport *targetsAndViewport);
 
 			uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
-			void CreateVulkanBuffer(crossplatform::Resource *res, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const char *name);
-			void CreateVulkanImage(crossplatform::Resource *res, vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name);
+			void CreateVulkanBuffer(crossplatform::Resource *res, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const std::string& name);
+			void CreateVulkanImage(crossplatform::Resource *res, vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const std::string& name);
 			void ReallocVulkanImage(vk::ImageCreateInfo &imageCreateInfo, VmaAllocation &dstAllocation, vk::Image &image);
 			void CreateVulkanRenderpass(crossplatform::DeviceContext &deviceContext, vk::RenderPass &renderPass, int num_colour, const crossplatform::PixelFormat *pixelFormats, crossplatform::PixelFormat depthFormat = crossplatform::PixelFormat::UNKNOWN, bool depthTest = false, bool depthWrite = false, bool clear = false, int numOfSamples = 1, bool multiview = false, const vk::ImageLayout *initial_layouts = nullptr, const vk::ImageLayout *final_layouts = nullptr);
 			static void SetDefaultColourFormat(crossplatform::PixelFormat p);

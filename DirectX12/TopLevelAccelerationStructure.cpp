@@ -5,6 +5,7 @@
 #include "Platform/DirectX12/BaseAccelerationStructure.h"
 #include "Platform/DirectX12/TopLevelAccelerationStructure.h"
 #include "Platform/DirectX12/BottomLevelAccelerationStructure.h"
+#include "Platform/DirectX12/RenderPlatform.h"
 
 using namespace platform;
 using namespace dx12;
@@ -18,8 +19,8 @@ using namespace dx12;
 //TopLevelAccelerationStructure//
 /////////////////////////////////
 
-TopLevelAccelerationStructure::TopLevelAccelerationStructure(crossplatform::RenderPlatform* r)
-	:crossplatform::TopLevelAccelerationStructure(r)
+TopLevelAccelerationStructure::TopLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name)
+	:crossplatform::TopLevelAccelerationStructure(r, name)
 {
 
 }
@@ -96,7 +97,10 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 		instanceDescs.push_back(instanceDesc);
 	}
 	if (!instanceDescsResource)
-		AllocateUploadBuffer(device, instanceDescs.data(), (instanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC)), &instanceDescsResource, L"InstanceDescsResource");
+	{
+		std::wstring instancesBufferName = core::StringToWString(name) + L"_TLAS_InstancesBuffer";
+		AllocateUploadBuffer(device, instanceDescs.data(), (instanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC)), &instanceDescsResource, instancesBufferName.c_str());
+	}
 
 	instanceCount = static_cast<uint32_t>(instanceDescs.size());
 
@@ -118,9 +122,15 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 	//  - the system will be doing this type of access in its implementation of acceleration structure builds behind the scenes.
 	//  - from the app point of view, synchronization of writes/reads to acceleration structures is accomplished using UAV barriers.
 	if (!scratchResource)
-		AllocateUAVBuffer(device, prebuildInfo.ScratchDataSizeInBytes, &scratchResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"TopLevelAccelerationStructure - ScratchResource");
+	{
+		std::wstring scratchBufferName = core::StringToWString(name) + L"_TLAS_ScratchBuffer";
+		AllocateUAVBuffer(device, prebuildInfo.ScratchDataSizeInBytes, &scratchResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, scratchBufferName.c_str());
+	}
 	if (!accelerationStructure)
-		AllocateUAVBuffer(device, prebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, L"TopLevelAccelerationStructure - ResultResource");
+	{
+		std::wstring mainBufferName = core::StringToWString(name) + L"_TLAS_MainBuffer";
+		AllocateUAVBuffer(device, prebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, mainBufferName.c_str());
+	}
 
 	// Top Level Acceleration Structure desc
 	buildDesc.DestAccelerationStructureData = accelerationStructure->GetGPUVirtualAddress();

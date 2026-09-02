@@ -16,10 +16,11 @@ namespace platform
 		{
 		protected:
 			crossplatform::RenderPlatform* renderPlatform = nullptr;
+			std::string name = "";
 			bool initialized = false;
 
 		protected:
-			BaseAccelerationStructure(crossplatform::RenderPlatform* r);
+			BaseAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name);
 			virtual ~BaseAccelerationStructure();
 			virtual void RestoreDeviceObjects();
 			virtual void InvalidateDeviceObjects();

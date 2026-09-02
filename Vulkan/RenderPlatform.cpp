@@ -1438,7 +1438,7 @@ uint32_t RenderPlatform::FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyF
 	return 0;
 }
 
-void RenderPlatform::CreateVulkanBuffer(crossplatform::Resource *res, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const char *name)
+void RenderPlatform::CreateVulkanBuffer(crossplatform::Resource *res, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Buffer &buffer, AllocationInfo &allocationInfo, const std::string& name)
 {
 	vk::BufferCreateInfo bufferInfo = {};
 	bufferInfo.size = size;
@@ -1463,14 +1463,14 @@ void RenderPlatform::CreateVulkanBuffer(crossplatform::Resource *res, vk::Device
 	SIMUL_VK_CHECK((vk::Result)vmaCreateBuffer(allocationInfo.allocator, &_bufferInfo, &allocationCI, &_buffer, &allocationInfo.allocation, &allocationInfo.allocationInfo));
 	buffer = _buffer;
 
-	if (name)
+	if (name.c_str())
 	{
 		SetVulkanName(this, buffer, name);
-		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
+		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name.c_str());
 	}
 }
 
-void RenderPlatform::CreateVulkanImage(crossplatform::Resource *res, vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const char *name)
+void RenderPlatform::CreateVulkanImage(crossplatform::Resource *res, vk::ImageCreateInfo &imageCreateInfo, vk::MemoryPropertyFlags properties, vk::Image &image, AllocationInfo &allocationInfo, const std::string& name)
 {
 	VkImage _image = VK_NULL_HANDLE;
 	const VkImageCreateInfo &_imageCreateInfo = imageCreateInfo.operator const VkImageCreateInfo &();
@@ -1490,10 +1490,10 @@ void RenderPlatform::CreateVulkanImage(crossplatform::Resource *res, vk::ImageCr
 	SIMUL_VK_CHECK((vk::Result)vmaCreateImage(allocationInfo.allocator, &_imageCreateInfo, &allocationCI, &_image, &allocationInfo.allocation, &allocationInfo.allocationInfo));
 	image = _image;
 
-	if (name && image)
+	if (name.c_str() && image)
 	{
 		SetVulkanName(this, image, name);
-		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name);
+		vmaSetAllocationName(allocationInfo.allocator, allocationInfo.allocation, name.c_str());
 	}
 	else
 	{
@@ -2427,14 +2427,14 @@ crossplatform::Shader *RenderPlatform::CreateShader()
 	return S;
 }
 
-crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure()
+crossplatform::BottomLevelAccelerationStructure* RenderPlatform::CreateBottomLevelAccelerationStructure(const std::string& name)
 {
-	return new BottomLevelAccelerationStructure(this);
+	return new BottomLevelAccelerationStructure(this, name);
 }
 
-crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure()
+crossplatform::TopLevelAccelerationStructure* RenderPlatform::CreateTopLevelAccelerationStructure(const std::string& name)
 {
-	return new TopLevelAccelerationStructure(this);
+	return new TopLevelAccelerationStructure(this, name);
 }
 
 crossplatform::ShaderBindingTable* RenderPlatform::CreateShaderBindingTable()

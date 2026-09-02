@@ -14,7 +14,7 @@ namespace platform
 		class BottomLevelAccelerationStructure final : public crossplatform::BottomLevelAccelerationStructure
 		{
 		public:
-			BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r);
+			BottomLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name);
 			~BottomLevelAccelerationStructure();
 			void RestoreDeviceObjects() override;
 			void InvalidateDeviceObjects() override;

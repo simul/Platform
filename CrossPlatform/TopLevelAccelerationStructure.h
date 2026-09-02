@@ -42,7 +42,7 @@ namespace platform
 			int ID;
 
 		public:
-			TopLevelAccelerationStructure(crossplatform::RenderPlatform* r);
+			TopLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name);
 			virtual ~TopLevelAccelerationStructure();
 			void RestoreDeviceObjects() override {};
 			void InvalidateDeviceObjects() override {};

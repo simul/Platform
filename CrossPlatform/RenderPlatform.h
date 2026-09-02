@@ -392,9 +392,9 @@ namespace platform
 			/// Create a platform-specific material instance.
 			std::shared_ptr<Material> GetOrCreateMaterial(const char *name);
 			/// Create a platform specific raytracing acceleration structure.
-			virtual BottomLevelAccelerationStructure *CreateBottomLevelAccelerationStructure();
+			virtual BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure(const std::string& name);
 			/// Create a platform specific raytracing acceleration structure.
-			virtual TopLevelAccelerationStructure *CreateTopLevelAccelerationStructure();
+			virtual TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure(const std::string& name);
 			/// Create a platform agnostic raytracing acceleration structure maanger.
 			AccelerationStructureManager *CreateAccelerationStructureManager();
 			/// Create a platform agnostic raytracing shader binding table.

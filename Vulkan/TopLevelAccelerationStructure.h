@@ -12,7 +12,7 @@ namespace platform
 		class TopLevelAccelerationStructure final : public crossplatform::TopLevelAccelerationStructure
 		{
 		public:
-			TopLevelAccelerationStructure(crossplatform::RenderPlatform* r);
+			TopLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name);
 			~TopLevelAccelerationStructure();
 			void RestoreDeviceObjects() override;
 			void InvalidateDeviceObjects() override;

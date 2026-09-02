@@ -11,8 +11,8 @@ using namespace crossplatform;
 
 static std::atomic<int> IDCount(0);
 
-TopLevelAccelerationStructure::TopLevelAccelerationStructure(crossplatform::RenderPlatform* r)
-	:BaseAccelerationStructure(r)
+TopLevelAccelerationStructure::TopLevelAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name)
+	:BaseAccelerationStructure(r, name)
 {
 	ID = IDCount;
 	IDCount++;

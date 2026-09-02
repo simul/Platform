@@ -6,9 +6,10 @@ using namespace crossplatform;
 //BaseAccelerationStructure//
 /////////////////////////////
 
-BaseAccelerationStructure::BaseAccelerationStructure(crossplatform::RenderPlatform* r)
+BaseAccelerationStructure::BaseAccelerationStructure(crossplatform::RenderPlatform* r, const std::string& name)
 {
 	renderPlatform = r;
+	this->name = name;
 }
 
 BaseAccelerationStructure::~BaseAccelerationStructure()
