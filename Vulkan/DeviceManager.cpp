@@ -80,9 +80,9 @@ void RewriteVulkanMessage(std::string &str)
 	str = out;
 }
 
-vk::Bool32 VKAPI_PTR DebugReportCallback(
-	vk::DebugReportFlagsEXT flags,
-	vk::DebugReportObjectTypeEXT objectType,
+VkBool32 VKAPI_PTR DebugReportCallback(
+	VkDebugReportFlagsEXT flags,
+	VkDebugReportObjectTypeEXT objectType,
 	uint64_t object,
 	size_t location,
 	int32_t messageCode,
@@ -92,9 +92,9 @@ vk::Bool32 VKAPI_PTR DebugReportCallback(
 {
 	if (pLayerPrefix)
 		std::cerr << pLayerPrefix << " layer: ";
-	if (flags & vk::DebugReportFlagBitsEXT::eError)
+	if (vk::DebugReportFlagsEXT(flags) & vk::DebugReportFlagBitsEXT::eError)
 		std::cerr << " Error: ";
-	if (flags & vk::DebugReportFlagBitsEXT::eWarning)
+	if (vk::DebugReportFlagsEXT(flags) & vk::DebugReportFlagBitsEXT::eWarning)
 		std::cerr << " Warning: ";
 	if (pMessage)
 	{
@@ -102,17 +102,17 @@ vk::Bool32 VKAPI_PTR DebugReportCallback(
 		RewriteVulkanMessage(str);
 		std::cerr << str.c_str() << std::endl;
 	}
-	if (flags & vk::DebugReportFlagBitsEXT::eError)
+	if (vk::DebugReportFlagsEXT(flags) & vk::DebugReportFlagBitsEXT::eError)
 		SIMUL_BREAK("Vulkan Error");
 	return VK_FALSE;
 }
 
 // VK_EXT_debug_utils
 
-vk::Bool32 VKAPI_PTR DebugUtilsCallback(
-	vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	vk::DebugUtilsMessageTypeFlagsEXT messageType,
-	const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
+VkBool32 VKAPI_PTR DebugUtilsCallback(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
 	void *pUserData)
 {
 	auto GetMessageSeverityString = [](vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity) -> std::string
@@ -173,8 +173,8 @@ vk::Bool32 VKAPI_PTR DebugUtilsCallback(
 		return msg_flags;
 	};
 
-	std::string messageSeverityStr = GetMessageSeverityString(messageSeverity);
-	std::string messageTypeStr = GetMessageTypeString((vk::DebugUtilsMessageTypeFlagBitsEXT)(VkDebugUtilsMessageTypeFlagsEXT)messageType);
+	std::string messageSeverityStr = GetMessageSeverityString(vk::DebugUtilsMessageSeverityFlagBitsEXT(messageSeverity));
+	std::string messageTypeStr = GetMessageTypeString((vk::DebugUtilsMessageTypeFlagBitsEXT)messageType);
 
 	std::stringstream errorMessage;
 	errorMessage << pCallbackData->pMessageIdName << "(" << messageSeverityStr << " / " << messageTypeStr << "): msgNum: " << pCallbackData->messageIdNumber << " - " << pCallbackData->pMessage;
@@ -182,7 +182,7 @@ vk::Bool32 VKAPI_PTR DebugUtilsCallback(
 
 	std::cerr << errorMessageStr.c_str() << std::endl;
 
-	if ((messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
+	if ((vk::DebugUtilsMessageSeverityFlagBitsEXT(messageSeverity) & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
 		SIMUL_BREAK("Vulkan Error");
 	return VK_FALSE;
 }
