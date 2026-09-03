@@ -254,7 +254,6 @@ namespace platform
 
 			ResourceBindingLimits GetResourceBindingLimits() const;
 			ID3D12RootSignature *GetGraphicsRootSignature() const;
-			ID3D12RootSignature *GetRaytracingLocalRootSignature() const;
 			ID3D12RootSignature *GetRaytracingGlobalRootSignature() const;
 
 			D3D12_CPU_DESCRIPTOR_HANDLE GetNullCBV() const;
@@ -311,10 +310,9 @@ namespace platform
 			dx12::Heap *mRenderTargetHeap = nullptr;
 			dx12::Heap *mDepthStencilHeap = nullptr;
 			dx12::Heap *mNullHeap = nullptr;
-			//! Shared root signature for graphics
+			//! Shared root signature for graphics and compute
 			ID3D12RootSignature *mGRootSignature = nullptr;
 			//! For raytracing
-			ID3D12RootSignature *mGRaytracingLocalSignature = nullptr;
 			ID3D12RootSignature *mGRaytracingGlobalSignature = nullptr;
 
 			//! Dummy 2D texture

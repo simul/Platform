@@ -274,16 +274,16 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 		if (ta.resourceType == crossplatform::ShaderResourceType::ACCELERATION_STRUCTURE)
 		{
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
-			ID3D12Resource* a = ((dx12::TopLevelAccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResource(deviceContext);
-
-			auto cmdList = deviceContext.asD3D12Context();
-			ID3D12GraphicsCommandList4* rtc = (ID3D12GraphicsCommandList4*)cmdList;
-			//commandList->SetComputeRootDescriptorTable(GlobalRootSignatureParams::OutputViewSlot, m_raytracingOutputResourceUAVGpuDescriptor);
-			rtc->SetComputeRootShaderResourceView(2, a->GetGPUVirtualAddress());
-			if (slot < 33)
+			D3D12_CPU_DESCRIPTOR_HANDLE* srv = nullptr;
+			if (ta.accelerationStructure && ta.texture->IsValid())
+			{
+			}
+			srv = ((dx12::TopLevelAccelerationStructure*)ta.accelerationStructure)->AsD3D12ShaderResourceView(deviceContext);
+			if (!srv)
+			{
 				mSrvSrcHandles[slot] = nullSrv;
-			//device->CopyDescriptorsSimple(1, frameHeap->CpuHandle(), mCbSrcHandles[s], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			//mSrvSrcHandles[slot]	= *ta.texture->AsD3D12ShaderResourceView(deviceContext, true, ta.resourceType, ta.index, ta.mip,is_pixel_shader);
+			}
+			mSrvSrcHandles[slot] = *srv;
 #endif
 		}
 		else
@@ -314,18 +314,13 @@ void EffectPass::SetSRVs(crossplatform::TextureAssignmentMap& textures, crosspla
 			}
 			mSrvSrcHandles[slot] = *srv;
 		}
-		if (slot < 33)
-		{
-			mSrvUsedSlotsArray[slot] = true;
-		}
+		mSrvUsedSlotsArray[slot] = true;
 		usedTextureSlots |= (1 << slot);
 	}
 	// Iterate over the structured buffers:
 	for (int i = 0; i < numSbResourceSlots; i++)
 	{
 		int slot = sbResourceSlots[i];
-		if (slot >= 33)
-			continue;
 		if (mSrvUsedSlotsArray[slot])
 		{
 			SIMUL_INTERNAL_CERR << "The slot: " << slot << " at pass: " << mTechName << ", has already being used by a texture. \n";

@@ -767,12 +767,12 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 	mCopyQueue = CreateCommandQueue(m12Device, D3D12_COMMAND_LIST_TYPE_COPY, "Copy CommandQueue");
 #endif
 
-	// Load the RootSignature blobs - Graphics
+	// Load the RootSignature blobs - Graphics / Compute
 	{
 		ID3DBlob *blob = nullptr;
 		ID3DBlob *error = nullptr;
 		// Global Root Signature
-		// This is a root signature that is shared across all raytracing shaders invoked during a DispatchRays() call.
+		// This is a root signature that is shared across all graphics / compute shaders invoked during a Draw*() / Dispatch calls.
 		D3D12_DESCRIPTOR_RANGE cbvSrvUavDescriptorRanges[] = {{}, {}, {}};
 		memset(cbvSrvUavDescriptorRanges, 0, sizeof(cbvSrvUavDescriptorRanges));
 		D3D12_DESCRIPTOR_RANGE &cbvDescriptorRange = cbvSrvUavDescriptorRanges[0];
@@ -815,7 +815,7 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 
 		mGRootSignature->SetName(L"Graphics Root Signature");
 	}
-	// Load the RootSignature blobs - Compute
+	
 
 	// Load the RootSignature blobs - Raytracing Global
 	{
@@ -830,48 +830,30 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		cbvDescriptorRange.NumDescriptors = 14;
 		cbvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		cbvDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		// cbvDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
 
 		D3D12_DESCRIPTOR_RANGE &srvDescriptorRange = cbvSrvUavDescriptorRanges[1];
 		srvDescriptorRange.BaseShaderRegister = 0;
 		srvDescriptorRange.NumDescriptors = 32;
 		srvDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		srvDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		// srvDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
 
 		D3D12_DESCRIPTOR_RANGE &uavDescriptorRange = cbvSrvUavDescriptorRanges[2];
 		uavDescriptorRange.BaseShaderRegister = 0;
 		uavDescriptorRange.NumDescriptors = 32;
 		uavDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 		uavDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		// uavDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
 
 		D3D12_DESCRIPTOR_RANGE samplerDescriptorRange = {};
 		samplerDescriptorRange.BaseShaderRegister = 0;
 		samplerDescriptorRange.NumDescriptors = 16;
 		samplerDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
 		samplerDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		// samplerDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
 
-		D3D12_DESCRIPTOR_RANGE sceneBuffersDescriptorRange = {};
-		sceneBuffersDescriptorRange.BaseShaderRegister = 25;
-		sceneBuffersDescriptorRange.NumDescriptors = 1;
-		sceneBuffersDescriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		sceneBuffersDescriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		// sceneBuffersDescriptorRange.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-
-		// CD3DX12_DESCRIPTOR_RANGE1 UAVDescriptor;
-		// UAVDescriptor.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
-
-		CD3DX12_ROOT_PARAMETER rootParameters[3];
+		CD3DX12_ROOT_PARAMETER rootParameters[2];
 		memset(rootParameters, 0, sizeof(rootParameters));
 		rootParameters[0].InitAsDescriptorTable(3, cbvSrvUavDescriptorRanges);
 		rootParameters[1].InitAsDescriptorTable(1, &samplerDescriptorRange);
-		rootParameters[2].InitAsShaderResourceView(33);
 		CD3DX12_ROOT_SIGNATURE_DESC rsDesc(ARRAYSIZE(rootParameters), rootParameters);
-		// rsDesc.Flags=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;;
-		// rsDesc.Desc_1_1.Flags|=D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-		// rsDesc.Version=D3D_ROOT_SIGNATURE_VERSION_1_1;
 		HRESULT res = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
 		if (res != S_OK)
 		{
@@ -880,7 +862,6 @@ void RenderPlatform::RestoreDeviceObjects(void *device)
 		}
 		V_CHECK(m12Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), SIMUL_PPV_ARGS(&mGRaytracingGlobalSignature)));
 		mGRaytracingGlobalSignature->SetName(L"Raytracing Global Root Signature");
-		// mGRaytracingSignature	=LoadRootSignature("//RTX.cso");
 	}
 #ifndef _GAMING_XBOX
 #if PLATFORM_D3D12_RELEASE_MANAGER_CHECKS
@@ -1081,7 +1062,6 @@ void RenderPlatform::InvalidateDeviceObjects()
 	SAFE_DELETE(mDummy2D);
 	SAFE_DELETE(mDummy3D);
 	SAFE_RELEASE(mGRootSignature);
-	SAFE_RELEASE(mGRaytracingLocalSignature);
 	SAFE_RELEASE(mGRaytracingGlobalSignature);
 
 	crossplatform::RenderPlatform::InvalidateDeviceObjects();
@@ -2419,11 +2399,6 @@ ResourceBindingLimits RenderPlatform::GetResourceBindingLimits() const
 ID3D12RootSignature *RenderPlatform::GetGraphicsRootSignature() const
 {
 	return mGRootSignature;
-}
-
-ID3D12RootSignature *RenderPlatform::GetRaytracingLocalRootSignature() const
-{
-	return mGRaytracingLocalSignature;
 }
 
 ID3D12RootSignature *RenderPlatform::GetRaytracingGlobalRootSignature() const

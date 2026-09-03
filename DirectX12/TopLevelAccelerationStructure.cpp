@@ -42,13 +42,6 @@ void TopLevelAccelerationStructure::InvalidateDeviceObjects()
 	SAFE_RELEASE(instanceDescsResource);
 }
 
-ID3D12Resource* TopLevelAccelerationStructure::AsD3D12ShaderResource(crossplatform::DeviceContext& deviceContext)
-{
-	if (!initialized)
-		BuildAccelerationStructureAtRuntime(deviceContext);
-	return accelerationStructure;
-}
-
 void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crossplatform::DeviceContext& deviceContext)
 {
 #if PLATFORM_SUPPORT_D3D12_RAYTRACING
@@ -146,4 +139,32 @@ void TopLevelAccelerationStructure::BuildAccelerationStructureAtRuntime(crosspla
 	SAFE_RELEASE(device5);
 #endif
 	initialized = true;
+}
+
+ID3D12Resource* TopLevelAccelerationStructure::AsD3D12ShaderResource(crossplatform::DeviceContext& deviceContext)
+{
+	if (!initialized)
+		BuildAccelerationStructureAtRuntime(deviceContext);
+	return accelerationStructure;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE* TopLevelAccelerationStructure::AsD3D12ShaderResourceView(crossplatform::DeviceContext& deviceContext)
+{
+	ID3D12Resource* accelerationStructure = AsD3D12ShaderResource(deviceContext);
+
+	shaderResourceViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+	shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+	shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	shaderResourceViewDesc.RaytracingAccelerationStructure.Location = accelerationStructure->GetGPUVirtualAddress();
+
+	dx12::RenderPlatform* dx12RenderPlatform = reinterpret_cast<dx12::RenderPlatform*>(deviceContext.renderPlatform);
+	ID3D12Device* device = dx12RenderPlatform->AsD3D12Device();
+
+	std::string descriptorHeapName = name + "_TLAS_DescriptorHeap";
+	descriptorHeap.Restore(dx12RenderPlatform, 1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptorHeapName.c_str(), false);
+	shaderResourceView = descriptorHeap.CpuHandle();
+
+	device->CreateShaderResourceView(nullptr, &shaderResourceViewDesc, shaderResourceView);
+
+	return &shaderResourceView;
 }

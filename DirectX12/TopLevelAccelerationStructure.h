@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/CrossPlatform/TopLevelAccelerationStructure.h"
 #include "Platform/CrossPlatform/RenderPlatform.h"
+#include "Platform/DirectX12/Heap.h"
 
 #if defined(_GAMING_XBOX_XBOXONE)
 #define PLATFORM_SUPPORT_D3D12_RAYTRACING 0
@@ -17,8 +18,10 @@ namespace platform
 			~TopLevelAccelerationStructure();
 			void RestoreDeviceObjects() override;
 			void InvalidateDeviceObjects() override;
-			ID3D12Resource* AsD3D12ShaderResource(crossplatform::DeviceContext& deviceContext);
 			void BuildAccelerationStructureAtRuntime(crossplatform::DeviceContext& deviceContext) override;
+			
+			ID3D12Resource* AsD3D12ShaderResource(crossplatform::DeviceContext& deviceContext);
+			D3D12_CPU_DESCRIPTOR_HANDLE* AsD3D12ShaderResourceView(crossplatform::DeviceContext& deviceContext);
 
 		protected:
 		#if PLATFORM_SUPPORT_D3D12_RAYTRACING
@@ -33,6 +36,10 @@ namespace platform
 			ID3D12Resource* accelerationStructure = nullptr;
 			ID3D12Resource* scratchResource = nullptr;
 			ID3D12Resource* instanceDescsResource = nullptr;
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+			D3D12_CPU_DESCRIPTOR_HANDLE shaderResourceView = { 0 };
+			Heap descriptorHeap;
 		};
 	}
 }
