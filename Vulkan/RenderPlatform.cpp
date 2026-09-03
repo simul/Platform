@@ -77,12 +77,16 @@ void Fence::InvalidateDeviceObjects()
 {
 	vulkan::RenderPlatform* vulkanRenderPlatfrom = (vulkan::RenderPlatform*)renderPlatform;
 	vulkanRenderPlatfrom->AsVulkanDevice()->destroySemaphore(vkSemaphore, nullptr);
+	vkSemaphore = VK_NULL_HANDLE;
 }
 
-Fence::Fence(crossplatform::RenderPlatform* r)
+Fence::Fence(crossplatform::RenderPlatform* r, const char* name)
 {
 	crossplatform::Fence::RestoreDeviceObjects(r);
 	RestoreDeviceObjects(r);
+
+	this->name = name;
+	SetVulkanName(r, vkSemaphore, name);
 }
 
 Fence::~Fence()
@@ -91,10 +95,15 @@ Fence::~Fence()
 	crossplatform::Fence::InvalidateDeviceObjects();
 }
 
+void Fence::SetExternalSemaphore(vk::Semaphore semaphore)
+{
+	vkSemaphore = semaphore;
+	name = "ExternalSemaphore";
+}
+
 crossplatform::Fence* RenderPlatform::CreateFence(const char* name)
 {
-	vulkan::Fence* q = new vulkan::Fence(this);
-	SetVulkanName(q->renderPlatform, q->AsVulkanSemaphore(), name);
+	vulkan::Fence* q = new vulkan::Fence(this, name);
 	return q;
 }
 
@@ -729,9 +738,7 @@ void RenderPlatform::ExecuteCommands(crossplatform::DeviceContext& deviceContext
 	{
 		waitSemaphores.push_back(syncPrimitive->AsVulkanSemaphore());
 		waitSemaphoreValues.push_back(syncPrimitive->value);
-		syncPrimitive = nullptr;
 
-		syncPrimitive = (Fence*)CreateFence("");
 		signalSemaphores.push_back(syncPrimitive->AsVulkanSemaphore());
 		syncPrimitive->value++; // Increment the fence value to a new value which we can wait upon.
 		signalSemaphoreValues.push_back(syncPrimitive->value);

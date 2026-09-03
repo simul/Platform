@@ -136,11 +136,15 @@ namespace platform
 			vec3 pos;
 			vec4 colour;
 		};
+		// Create a Fence for GPU to GPU/CPU synchronisation
+		// D3D12: Create a ID3D12Fence.
+		// Vulkan: Create a VkSemaphore(Timeline)
 		struct SIMUL_CROSSPLATFORM_EXPORT Fence
 		{
 			virtual ~Fence() = default;
 			uint64_t value = 0;
 			RenderPlatform* renderPlatform = nullptr;
+			const char* name = nullptr;
 			virtual void RestoreDeviceObjects(RenderPlatform *r)
 			{
 				renderPlatform = r;

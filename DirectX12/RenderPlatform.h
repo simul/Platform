@@ -77,7 +77,7 @@ namespace platform
 		{
 			void RestoreDeviceObjects(crossplatform::RenderPlatform *r) override;
 			void InvalidateDeviceObjects() override;
-			Fence(crossplatform::RenderPlatform *r);
+			Fence(crossplatform::RenderPlatform *r, const char* name);
 			~Fence();
 			ID3D12Fence *AsD3D12Fence()
 			{

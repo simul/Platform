@@ -97,10 +97,12 @@ namespace platform
 		{
 			void RestoreDeviceObjects(crossplatform::RenderPlatform* r) override;
 			void InvalidateDeviceObjects() override;
-			Fence(crossplatform::RenderPlatform* r);
+			Fence(crossplatform::RenderPlatform* r, const char* name);
 			~Fence();
+
 			const vk::Semaphore& AsVulkanSemaphore() const { return vkSemaphore; }
-			vk::Semaphore& AsVulkanSemaphore() { return vkSemaphore; }
+
+			void SetExternalSemaphore(vk::Semaphore semaphore);
 
 		protected:
 			vk::Semaphore vkSemaphore = VK_NULL_HANDLE;

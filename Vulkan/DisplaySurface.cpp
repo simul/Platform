@@ -2,7 +2,7 @@
 #include "DeviceManager.h"
 #include "Platform/Core/StringFunctions.h"
 #include "Platform/CrossPlatform/RenderDelegator.h"
-#include "RenderPlatform.h"
+#include "Platform/Vulkan/RenderPlatform.h"
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xutil.h>
@@ -171,7 +171,7 @@ void DisplaySurface::InvalidateDeviceObjects()
 			computeFences[i] = nullptr;
 		}
 
-		timelineSemaphore->AsVulkanSemaphore() = VK_NULL_HANDLE;
+		timelineSemaphore->SetExternalSemaphore(VK_NULL_HANDLE);
 		delete timelineSemaphore;
 	}
 }
@@ -247,7 +247,7 @@ void DisplaySurface::Render(platform::core::ReadWriteMutex* delegatorReadWriteMu
 	EnsureImageLayout();
 	vulkanRenderPlatform->SetDefaultColourFormat(pixelFormat);
 	
-	timelineSemaphore->AsVulkanSemaphore() = imageAcquiredSemaphores[frameIndex];
+	timelineSemaphore->SetExternalSemaphore(imageAcquiredSemaphores[frameIndex]);
 
 	ERRNO_BREAK
 	if (renderer)
@@ -635,6 +635,7 @@ void DisplaySurface::GetQueues()
 void DisplaySurface::CreateSyncObjects()
 {
 	vk::Device* device = GetVulkanDevice();
+	vulkan::RenderPlatform* vulkanRenderPlatform = (vulkan::RenderPlatform*)renderPlatform;
 
 	// Create semaphores to synchronize acquiring presentable buffers before rendering and waiting for drawing to be complete before presenting
 	const auto semaphoreCI = vk::SemaphoreCreateInfo();
@@ -645,27 +646,31 @@ void DisplaySurface::CreateSyncObjects()
 	{
 		auto result = device->createFence(&fenceCI, nullptr, &fences[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		platform::vulkan::SetVulkanName(vulkanRenderPlatform, fences[i], std::format("Fence DisplaySurface {}", i)); 
 
 		result = device->createFence(&fenceCI, nullptr, &computeFences[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		platform::vulkan::SetVulkanName(vulkanRenderPlatform, computeFences[i], std::format("Compute Fence DisplaySurface {}", i)); 
 
 		result = device->createSemaphore(&semaphoreCI, nullptr, &imageAcquiredSemaphores[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		platform::vulkan::SetVulkanName(vulkanRenderPlatform, imageAcquiredSemaphores[i], std::format("ImageAcquiredSemaphore DisplaySurface {}", i)); 
 
 		result = device->createSemaphore(&semaphoreCI, nullptr, &drawCompleteSemaphores[i]);
 		SIMUL_ASSERT(result == vk::Result::eSuccess);
+		platform::vulkan::SetVulkanName(vulkanRenderPlatform, drawCompleteSemaphores[i], std::format("DrawCompleteSemaphore DisplaySurface {}", i)); 
 
 		bool separatePresentQueue = (graphicsQueueFamilyIndex != presentQueueFamilyIndex);
 		if (separatePresentQueue)
 		{
 			result = device->createSemaphore(&semaphoreCI, nullptr, &imageOwnershipSemaphores[i]);
 			SIMUL_ASSERT(result == vk::Result::eSuccess);
+			platform::vulkan::SetVulkanName(vulkanRenderPlatform, imageOwnershipSemaphores[i], std::format("ImageOwnershipSemaphore DisplaySurface {}", i)); 
 		}
 	}
 
-	timelineSemaphore = (vulkan::Fence*)renderPlatform->CreateFence("");
+	timelineSemaphore = (vulkan::Fence*)renderPlatform->CreateFence("TimelineSemaphore");
 	timelineSemaphore->InvalidateDeviceObjects();
-	timelineSemaphore->AsVulkanSemaphore() = VK_NULL_HANDLE;
 }
 
 void DisplaySurface::CreateCommandPoolsAndBuffers()

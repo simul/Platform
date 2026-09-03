@@ -75,10 +75,15 @@ void Fence::InvalidateDeviceObjects()
 	SAFE_RELEASE(d3d12Fence);
 }
 
-Fence::Fence(crossplatform::RenderPlatform *r)
+Fence::Fence(crossplatform::RenderPlatform *r, const char* name)
 {
+	crossplatform::Fence::RestoreDeviceObjects(r);
 	RestoreDeviceObjects(r);
+
+	this->name = name;
+	d3d12Fence->SetName(platform::core::StringToWString(name).c_str());
 }
+
 Fence::~Fence()
 {
 	InvalidateDeviceObjects();
@@ -86,8 +91,7 @@ Fence::~Fence()
 
 crossplatform::Fence *RenderPlatform::CreateFence(const char *name)
 {
-	dx12::Fence *q = new dx12::Fence(this);
-	q->AsD3D12Fence()->SetName(platform::core::StringToWString(name).c_str());
+	dx12::Fence *q = new dx12::Fence(this, name);
 	return q;
 }
 
