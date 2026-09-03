@@ -192,7 +192,7 @@ void Texture::FinishLoading(crossplatform::DeviceContext &deviceContext)
 	if (GetSampleCount() > 1)
 	{
 		AssumeLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-		SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
+		SetImageLayout(commandBuffer, mImage, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eUndefined,
 			mCurrentImageLayout, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer,
 			vk::PipelineStageFlagBits::eFragmentShader);
 	}
@@ -530,13 +530,13 @@ bool Texture::ensureTexture2DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
-		.setInitialLayout(vk::ImageLayout::ePreinitialized);
+		.setInitialLayout(vk::ImageLayout::eUndefined);
 
 	std::string _name = name + " texture mImage";
 	vulkanRenderPlatform->CreateVulkanImage(this, mImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 
 	InitViewTable(1, m);
-	AssumeLayout(vk::ImageLayout::ePreinitialized);
+	AssumeLayout(vk::ImageLayout::eUndefined);
 
 	pixelFormat=f;
 	width=w;
@@ -628,7 +628,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
-		.setInitialLayout(vk::ImageLayout::ePreinitialized);
+		.setInitialLayout(vk::ImageLayout::eUndefined);
 
 	std::string _name = name + " texture mImage";
 	vulkanRenderPlatform->CreateVulkanImage(this, mImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
@@ -651,7 +651,7 @@ bool Texture::ensureTextureArraySizeAndFormat(crossplatform::RenderPlatform* r, 
 		SetName(platform::core::QuickFormat("%s TextureArray %d of %d x %d",name.c_str(),num,w,l));
 	
 	InitViewTable(totalNum, mips);
-	AssumeLayout(vk::ImageLayout::ePreinitialized);
+	AssumeLayout(vk::ImageLayout::eUndefined);
 	if(data)
 	{
 		ResizeLoadedTextures(mips, totalNum);
@@ -711,13 +711,13 @@ bool Texture::ensureTexture3DSizeAndFormat(crossplatform::RenderPlatform* r, int
 		.setSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(0)
 		.setPQueueFamilyIndices(nullptr)
-		.setInitialLayout(vk::ImageLayout::ePreinitialized);
+		.setInitialLayout(vk::ImageLayout::eUndefined);
 
 	std::string _name = name + " texture mImage";
 	vulkanRenderPlatform->CreateVulkanImage(this, mImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, mImage, mAllocationInfo, _name.c_str());
 	
 	InitViewTable(1, m);
-	AssumeLayout(vk::ImageLayout::ePreinitialized);
+	AssumeLayout(vk::ImageLayout::eUndefined);
 
 	pixelFormat=f;
 	width=w;
