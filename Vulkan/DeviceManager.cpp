@@ -555,6 +555,17 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 	}
 #endif
 
+	if (result == vk::Result::eErrorLayerNotPresent && !instance_layer_names.empty())
+	{
+		// A layer can be listed by vkEnumerateInstanceLayerProperties yet still fail to load at
+		// vkCreateInstance time (e.g. Homebrew's VkLayer_khronos_validation.json names a bare dylib
+		// that dlopen cannot resolve on macOS); retry without layers so the client still runs.
+		SIMUL_CERR << "vkCreateInstance: requested layer not loadable; retrying without validation layers." << std::endl;
+		inst_info.setEnabledLayerCount(0);
+		inst_info.setPpEnabledLayerNames(nullptr);
+		result = vk::createInstance(&inst_info, (vk::AllocationCallbacks *)nullptr, &deviceManagerInternal->instance);
+	}
+
 	// Vulkan sets errno without warning or error.
 	errno = 0;
 
@@ -591,6 +602,8 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"vkCreateInstance Failure");
 	}
 	ERRNO_BREAK
+	if (result != vk::Result::eSuccess)
+		return;
 
 	/* Make initial call to query gpu_count, then second call for gpu info*/
 	uint32_t gpu_count;
@@ -613,6 +626,7 @@ void DeviceManager::Initialize(bool use_debug, bool instrument, bool default_dri
 			"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
 			"Please look at the Getting Started guide for additional information.\n"
 			"vkEnumeratePhysicalDevices Failure");
+		return;
 	}
 	ERRNO_BREAK
 	/* Look for device extensions */
