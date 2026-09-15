@@ -169,6 +169,11 @@ void Texture::InvalidateDeviceObjectsExceptLoaded()
 			r->PushToReleaseManager(mImage, &mAllocationInfo);
 			mImage=nullptr;
 		}
+		// The render platform caches framebuffers keyed by image view handle values. Once these views are
+		// released a new view can be allocated at the same address, which would hit a cached framebuffer
+		// whose attachments no longer exist - so drop the cache whenever views go.
+		if (!mImageViews.empty())
+			r->InvalidCachedFramebuffersAndRenderPasses();
 		// don't free defaultImageView, it's a duplicate.
 		for (auto imageView : mImageViews)
 		{

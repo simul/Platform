@@ -546,15 +546,37 @@ void DisplaySurface::InitSwapChain()
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SIMUL_ASSERT(supported != 0);
 	auto *vulkanDevice = ((vulkan::RenderPlatform *)renderPlatform)->AsVulkanDevice();
+	if (oldSwapchain)
+	{
+		// Frames already presented to the old swapchain finish asynchronously: on MoltenVK a Metal
+		// completion handler dereferences the swapchain, so destroying it while a present is still
+		// in flight crashes on resize. Wait for the queues to drain before releasing anything that
+		// belongs to the old swapchain.
+		vulkanDevice->waitIdle();
+		for (auto &i : swapchain_image_resources)
+		{
+			vulkanDevice->destroyFramebuffer(i.framebuffer, nullptr);
+			vulkanDevice->destroyImageView(i.view, nullptr);
+		}
+		swapchain_image_resources.clear();
+		for (int i = 0; i < SIMUL_VULKAN_FRAME_LAG + 1; i++)
+		{
+			vulkanDevice->destroyFence(fences[i], nullptr);
+			vulkanDevice->destroySemaphore(image_acquired_semaphores[i], nullptr);
+			vulkanDevice->destroySemaphore(draw_complete_semaphores[i], nullptr);
+			vulkanDevice->destroySemaphore(image_ownership_semaphores[i], nullptr);
+			fences[i] = vk::Fence();
+			image_acquired_semaphores[i] = vk::Semaphore();
+			draw_complete_semaphores[i] = vk::Semaphore();
+			image_ownership_semaphores[i] = vk::Semaphore();
+		}
+	}
 	result = vulkanDevice->createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
 	SIMUL_ASSERT(result == vk::Result::eSuccess);
 	SetVulkanName(renderPlatform, swapchain, "Swapchain");
 
-	// If we just re-created an existing swapchain, we should destroy the
-	// old
-	// swapchain at this point.
-	// Note: destroying the swapchain also cleans up all its associated
-	// presentable images once the platform is done with them.
+	// The old swapchain was retired by createSwapchainKHR and is idle, so it can now be destroyed
+	// along with its presentable images.
 	if (oldSwapchain)
 	{
 		vulkanDevice->destroySwapchainKHR(oldSwapchain, nullptr);
